@@ -667,7 +667,7 @@ export default function ReceptionistDashboard() {
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                         <div className="sm:col-span-2">
                           <label className="block text-xs text-gray-400 mb-1.5 font-medium pl-2">Full Name *</label>
-                          <input type="text" required value={enquiryForm.fullName} onChange={e => setEnquiryForm({...enquiryForm, fullName: e.target.value})} className="w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg p-3 text-sm focus:border-purple-500 outline-none text-white transition-colors" placeholder="e.g. John Doe" />
+                          <input type="text" required value={enquiryForm.fullName} onChange={e => setEnquiryForm({...enquiryForm, fullName: e.target.value})} className="w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg p-3 text-sm focus:border-purple-500 outline-none text-white transition-colors" placeholder="e.g. Mayur Acharya" />
                         </div>
                         <div className="sm:col-span-2">
                           <label className="block text-xs text-gray-400 mb-1.5 font-medium pl-2">Address</label>
@@ -765,7 +765,7 @@ export default function ReceptionistDashboard() {
                 </div>
                 <div className="p-6 border-t border-[#2a2a2a] bg-[#1a1a1a] flex justify-end gap-4">
                   <button onClick={() => setIsEnquiryModalOpen(false)} type="button" className="px-6 py-2.5 rounded-lg text-gray-400 hover:text-red-500 transition-colors font-bold cursor-pointer">Cancel</button>
-                  <button form="enquiryForm" type="submit" className="bg-purple-600 hover:bg-purple-500 text-white px-8 py-2.5 rounded-lg font-bold shadow-md transition-colors cursor-pointer">Submit to DB</button>
+                  <button form="enquiryForm" type="submit" className="bg-purple-600 hover:bg-purple-500 text-white px-8 py-2.5 rounded-lg font-bold shadow-md transition-colors cursor-pointer">Submit to Sales Manager</button>
                 </div>
               </div>
             </div>
