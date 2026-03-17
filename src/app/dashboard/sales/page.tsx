@@ -795,14 +795,13 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
                             <div><p className="text-xs text-gray-500 font-medium mb-1 flex items-center gap-1"><FaPhoneAlt className="text-[10px] text-gray-600" /> Alt Phone</p><p className="font-mono text-white font-semibold">{selectedLead.altPhone && selectedLead.altPhone !== "N/A" ? selectedLead.altPhone : "Not Provided"}</p></div>
                             <div className="col-span-2"><p className="text-xs text-gray-500 font-medium mb-1">Residential Address</p><p className="text-white font-semibold">{selectedLead.address && selectedLead.address !== "N/A" ? selectedLead.address : "Not Provided"}</p></div>
                             
-                            <div className="col-span-2 border-t border-white/5 pt-4"></div>
+                         
                             
                             <div><p className="text-xs text-gray-500 font-medium mb-1">Budget</p><p className="text-green-400 font-bold">{selectedLead.salesBudget !== "Pending" ? selectedLead.salesBudget : selectedLead.budget}</p></div>
                             <div><p className="text-xs text-gray-500 font-medium mb-1">Property Type</p><p className="text-white font-semibold">{selectedLead.propType || "Pending"}</p></div>
                             <div><p className="text-xs text-gray-500 font-medium mb-1">Type of Use</p><p className="text-white font-semibold">{selectedLead.useType !== "Pending" ? selectedLead.useType : (selectedLead.purpose || "N/A")}</p></div>
                             <div><p className="text-xs text-gray-500 font-medium mb-1">Planning to Buy?</p><p className="text-white font-semibold">{selectedLead.planningPurchase || "Pending"}</p></div>
                             
-                            <div className="col-span-2 border-t border-white/5 pt-4"></div>
 
                             <div><p className="text-xs text-gray-500 font-medium mb-1">Loan Required?</p><p className="text-white font-semibold">{getLatestLoanDetails()?.loanRequired}</p></div>
                             <div><p className="text-xs text-gray-500 font-medium mb-1">Status</p><p className="text-purple-400 font-semibold">{selectedLead.status || "Routed"}</p></div>
@@ -836,7 +835,7 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
                             
                             return (
                               <>
-                                <h3 className="text-sm font-bold text-blue-400 border-b border-[#333] pb-2 mb-6 uppercase tracking-widest flex items-center justify-between">
+                                <h3 className="text-sm font-bold text-blue-400 border-b border-[#333] pb-2 mb-6 uppercase  flex items-center justify-between">
                                   <span className="flex items-center gap-2"><FaUniversity /> Deal Loan Overview</span>
                                 </h3>
 
@@ -850,28 +849,28 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
                                   <div><p className="text-xs text-gray-500 font-medium mb-1">Loan Required?</p><p className="text-white font-semibold">{curLoan?.loanRequired}</p></div>
                                   <div><p className="text-xs text-gray-500 font-medium mb-1">Current Status</p><p className={`font-bold px-2 py-0.5 rounded inline-block border ${sColor}`}>{curLoan?.status}</p></div>
                                   
-                                  <div className="col-span-2 border-t border-[#2a2a2a] pt-4"></div>
+                            
                                   
                                   <div><p className="text-xs text-gray-500 font-medium mb-1">Amount Requested</p><p className="text-orange-400 font-semibold">{curLoan?.amountReq}</p></div>
                                   <div><p className="text-xs text-gray-500 font-medium mb-1">Amount Approved</p><p className="text-green-400 font-semibold">{curLoan?.amountApp}</p></div>
                                   
-                                  <div className="col-span-2 border-t border-[#2a2a2a] pt-4"></div>
+                                
                                   
                                   <div><p className="text-xs text-gray-500 font-medium mb-1">Bank Name</p><p className="text-white font-semibold">{curLoan?.bankName}</p></div>
                                   <div><p className="text-xs text-gray-500 font-medium mb-1">CIBIL Score</p><p className="text-white font-semibold">{curLoan?.cibil}</p></div>
                                   
-                                  <div className="col-span-2 border-t border-[#2a2a2a] pt-4"></div>
+                          
 
                                   <div><p className="text-xs text-gray-500 font-medium mb-1">Agent Name</p><p className="text-white font-semibold">{curLoan?.agent}</p></div>
                                   <div><p className="text-xs text-gray-500 font-medium mb-1">Agent Contact</p><p className="text-white font-semibold">{curLoan?.agentContact}</p></div>
                                   
-                                  <div className="col-span-2 border-t border-[#2a2a2a] pt-4"></div>
+                                  
                                   
                                   <div><p className="text-xs text-gray-500 font-medium mb-1">Emp Type</p><p className="text-white font-semibold">{curLoan?.empType}</p></div>
                                   <div><p className="text-xs text-gray-500 font-medium mb-1">Monthly Income</p><p className="text-white font-semibold">{curLoan?.income}</p></div>
                                   <div><p className="text-xs text-gray-500 font-medium mb-1">Existing EMIs</p><p className="text-white font-semibold">{curLoan?.emi}</p></div>
 
-                                  <div className="col-span-2 border-t border-[#2a2a2a] pt-4"></div>
+                             
                                   <div className="col-span-2 mb-2"><p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Document Status</p></div>
 
                                   {/* Dynamic Document Indicators */}
