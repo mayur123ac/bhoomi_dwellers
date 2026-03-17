@@ -9,12 +9,13 @@ const connectToDatabase = async () => {
   return mongoose.connect(MONGODB_URI);
 };
 
-// 1. Define the Schema with the NEW siteVisitDate field
+// 1. Define the Schema with the NEW siteVisitDate & createdBy fields
 const followupSchema = new mongoose.Schema({
   leadId: { type: String, required: true },
   salesManagerName: { type: String, required: true },
+  createdBy: { type: String, default: "sales" }, // 🔥 Added to track Admin vs Sales roles
   message: { type: String, required: true },
-  siteVisitDate: { type: String, default: null }, // 🔥 Added Site Visit Date
+  siteVisitDate: { type: String, default: null }, 
   createdAt: { type: Date, default: Date.now }
 });
 
@@ -36,7 +37,9 @@ export async function POST(req: Request) {
   try {
     await connectToDatabase();
     const body = await req.json();
-    const { leadId, salesManagerName, message, siteVisitDate } = body;
+    
+    // 🔥 Extract createdBy from the request body
+    const { leadId, salesManagerName, createdBy, message, siteVisitDate } = body;
 
     if (!leadId || !message) {
       return NextResponse.json({ success: false, message: "Missing fields" }, { status: 400 });
@@ -45,8 +48,9 @@ export async function POST(req: Request) {
     const newMessage = await FollowupMessage.create({
       leadId: String(leadId), // Force string conversion
       salesManagerName,
+      createdBy: createdBy || "sales", // 🔥 Save the role to Mongo
       message,
-      siteVisitDate: siteVisitDate || null // 🔥 Save the date to Mongo
+      siteVisitDate: siteVisitDate || null 
     });
 
     return NextResponse.json({ success: true, data: newMessage }, { status: 201 });

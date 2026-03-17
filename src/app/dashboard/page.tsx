@@ -261,7 +261,7 @@ export default function AdminAtlasDashboard() {
                       <p className="text-gray-400 text-xs mb-1">Password</p>
                       <div className="flex items-center justify-between bg-[#121212] border border-[#2a2a2a] p-2 rounded-md">
                         {/* 🔥 Display the fetched password here */}
-                        <span className="font-mono text-gray-300 tracking-widest text-xs">
+                        <span className="font-mono text-white tracking-widest text-xs">
                           {showPassword ? (user?.password || "N/A") : "••••••••"}
                         </span>
                         <button onClick={() => setShowPassword(!showPassword)} className="text-gray-500 hover:text-purple-400 cursor-pointer">

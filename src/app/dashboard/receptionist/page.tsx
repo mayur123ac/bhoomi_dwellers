@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { 
   FaThLarge, FaCog, FaBell, FaTimes, FaClipboardList, 
-  FaChevronLeft, FaRobot, FaPaperPlane, FaCalendarAlt, FaEye, FaEyeSlash, FaPhoneAlt, FaUserCircle
+  FaChevronLeft, FaRobot, FaPaperPlane, FaCalendarAlt, FaEye, FaEyeSlash, FaPhoneAlt, FaUserCircle, FaBriefcase, FaSearch
 } from "react-icons/fa";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from "recharts";
 
@@ -35,13 +35,15 @@ export default function ReceptionistDashboard() {
   const [enquiries, setEnquiries] = useState<any[]>([]);
   const [isFetchingEnquiries, setIsFetchingEnquiries] = useState(true);
   const [chartData, setChartData] = useState<any[]>([]);
+  const [searchRecep, setSearchRecep] = useState("");
 
-  // Form State 
+  // 🔥 UPDATED FORM STATE
   const [enquiryForm, setEnquiryForm] = useState({
     fullName: "", mobile: "", altMobile: "", email: "", address: "", 
     occupation: "", organization: "", budget: "", 
     configuration: "", purpose: "", source: "", assignedTo: "",
-    siteVisitDate: "", appxPurchaseDate: ""
+    siteVisitDate: "", appxPurchaseDate: "", loanPlanned: "", sourceOther: "",
+    cpDetails: { name: "", company: "", phone: "" }
   });
 
   // ================= EFFECTS =================
@@ -63,7 +65,7 @@ export default function ReceptionistDashboard() {
         const parsedUser = JSON.parse(storedUser);
         setUser({ ...parsedUser, name: parsedUser.name || "User", password: parsedUser.password || "********" });
         
-        if (parsedUser.role?.toLowerCase() === "receptionist") {
+        if (parsedUser.role?.toLowerCase() === "receptionist" || parsedUser.role?.toLowerCase() === "admin") {
           fetchSalesManagers();
           fetchEnquiries();
         } else {
@@ -92,17 +94,17 @@ export default function ReceptionistDashboard() {
     setIsFetchingEnquiries(true);
     try {
       const res = await fetch("/api/walkin_enquiries");
-      const contentType = res.headers.get("content-type");
       
-      if (res.ok && contentType && contentType.includes("application/json")) {
+      if (res.ok) {
         const json = await res.json();
+        const dataArray = json.data || json; // Safely handle different response structures
         
-        if (json.data && Array.isArray(json.data)) {
+        if (Array.isArray(dataArray)) {
           let configCounts: Record<string, number> = {
             "1 BHK": 0, "2 BHK": 0, "3 BHK": 0, "4+ BHK": 0, "Other": 0
           };
 
-          const formattedData = json.data.map((item: any) => {
+          const formattedData = dataArray.map((item: any) => {
             const c = String(item.configuration || "").trim();
             if (configCounts[c] !== undefined) {
               configCounts[c]++;
@@ -140,11 +142,12 @@ export default function ReceptionistDashboard() {
     setIsFetchingManagers(true);
     try {
       const res = await fetch("/api/users/sales-manager"); 
-      const contentType = res.headers.get("content-type");
-      if (res.ok && contentType && contentType.includes("application/json")) {
+      if (res.ok) {
         const json = await res.json();
-        if (json.success && Array.isArray(json.data)) {
-          setSalesManagers(json.data);
+        // Safely extract the data array whether it's wrapped in {success: true, data: []} or just []
+        const dataArray = json.data || json;
+        if (Array.isArray(dataArray)) {
+          setSalesManagers(dataArray);
         }
       }
     } catch (error) {
@@ -159,6 +162,7 @@ export default function ReceptionistDashboard() {
     router.push("/");
   };
 
+  // 🔥 UPDATED FORM SUBMISSION PAYLOAD
   const handleEnquirySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const newEntry = {
@@ -172,7 +176,12 @@ export default function ReceptionistDashboard() {
       budget: enquiryForm.budget || "Pending",
       configuration: enquiryForm.configuration || "N/A",
       purpose: enquiryForm.purpose || "N/A",
-      source: enquiryForm.source || "Direct Walk-in",
+      source: enquiryForm.source,
+      source_other: enquiryForm.source === "Others" ? enquiryForm.sourceOther : null,
+      cp_name: enquiryForm.source === "Channel Partner" ? enquiryForm.cpDetails.name : null,
+      cp_company: enquiryForm.source === "Channel Partner" ? enquiryForm.cpDetails.company : null,
+      cp_phone: enquiryForm.source === "Channel Partner" ? enquiryForm.cpDetails.phone : null,
+      loan_planned: enquiryForm.loanPlanned || "Pending",
       assignedTo: enquiryForm.assignedTo,
       status: "Routed"
     };
@@ -188,12 +197,17 @@ export default function ReceptionistDashboard() {
         fetchEnquiries(); 
         alert(`Success! Lead routed to ${enquiryForm.assignedTo}!`);
         setIsEnquiryModalOpen(false);
-        setEnquiryForm({ fullName: "", mobile: "", altMobile: "", email: "", address: "", occupation: "", organization: "", budget: "", configuration: "", purpose: "", source: "", assignedTo: "", siteVisitDate: "", appxPurchaseDate: "" });
+        setEnquiryForm({ 
+          fullName: "", mobile: "", altMobile: "", email: "", address: "", 
+          occupation: "", organization: "", budget: "", configuration: "", purpose: "", 
+          source: "", assignedTo: "", siteVisitDate: "", appxPurchaseDate: "",
+          loanPlanned: "", sourceOther: "", cpDetails: { name: "", company: "", phone: "" }
+        });
       } else {
-        alert("Server Error. Ensure you added the 'alt_phone' column in PostgreSQL!");
+        alert("Server Error. Ensure you updated the schema in PostgreSQL to accept the new fields!");
       }
     } catch (error) {
-      alert("Network Error.");
+      alert("Network Error while submitting form.");
     }
   };
 
@@ -235,8 +249,12 @@ export default function ReceptionistDashboard() {
     }, 600);
   };
 
-  const todayStr = new Date().toISOString().split('T')[0];
-  const todaysVisits = enquiries.filter(e => e.siteVisitDate && e.siteVisitDate.startsWith(todayStr));
+  // Filter leads based on search term
+  const receptionistLeads = enquiries.filter((e: any) => 
+    e.name?.toLowerCase().includes(searchRecep.toLowerCase()) || 
+    String(e.id).includes(searchRecep) ||
+    e.phone?.includes(searchRecep)
+  );
 
   return (
     <div className="flex h-screen font-sans bg-[#121212] text-white overflow-hidden">
@@ -253,13 +271,10 @@ export default function ReceptionistDashboard() {
             {(activeTab === "forms" || activeTab === "detail") && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-purple-500 rounded-r shadow-[0_0_10px_2px_rgba(168,85,247,0.5)]"></div>}
             <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${(activeTab === "forms" || activeTab === "detail") ? "bg-purple-900/20 text-purple-400" : "text-gray-500 hover:bg-white/5 hover:text-gray-300"}`}><FaClipboardList className="w-6 h-6" /></div>
           </div>
-          
-          {/* 🔥 NEW: AI ASSISTANT TAB 🔥 */}
           <div onClick={() => setActiveTab("assistant")} className="group relative flex justify-center cursor-pointer w-full" title="CRM AI Assistant">
             {activeTab === "assistant" && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-purple-500 rounded-r shadow-[0_0_10px_2px_rgba(168,85,247,0.5)]"></div>}
             <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${activeTab === "assistant" ? "bg-purple-900/20 text-purple-400" : "text-gray-500 hover:bg-white/5 hover:text-gray-300"}`}><FaRobot className="w-6 h-6" /></div>
           </div>
-
           <div onClick={() => setActiveTab("settings")} className="group relative flex justify-center cursor-pointer w-full mt-auto" title="Settings & Profile">
             {activeTab === "settings" && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-purple-500 rounded-r shadow-[0_0_10px_2px_rgba(168,85,247,0.5)]"></div>}
             <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${activeTab === "settings" ? "bg-purple-900/20 text-purple-400" : "text-gray-500 hover:bg-white/5 hover:text-gray-300"}`}><FaCog className="w-6 h-6" /></div>
@@ -365,9 +380,11 @@ export default function ReceptionistDashboard() {
             </div>
           )}
 
-          {/* 🔥 NEW: AI ASSISTANT TAB CONTENT 🔥 */}
+          {/* ========================================================================= */}
+          {/* AI ASSISTANT TAB */}
+          {/* ========================================================================= */}
           {activeTab === "assistant" && (
-             <div className="animate-fadeIn max-w-4xl mx-auto h-full flex flex-col pb-4">
+             <div className="animate-fadeIn max-w-4xl mx-auto h-[80vh] flex flex-col pb-4">
                 <div className="flex items-center gap-4 mb-6">
                    <div className="w-12 h-12 rounded-xl bg-purple-900/30 flex items-center justify-center text-purple-400 text-2xl">
                       <FaRobot />
@@ -395,13 +412,14 @@ export default function ReceptionistDashboard() {
                      <div ref={chatEndRef} />
                    </div>
                    <form onSubmit={handleChatSubmit} className="p-4 border-t border-[#2a2a2a] bg-[#1a1a1a] flex gap-3">
-                     <input type="text" value={chatInput} onChange={(e) => setChatInput(e.target.value)} placeholder="Type a client's name or ask a question..." className="flex-1 bg-[#222] border border-[#333] rounded-xl p-5 text-sm outline-none focus:border-purple-500 text-white transition-colors" />
-                     <button type="submit" className="w-12 h-15 bg-purple-600 text-white rounded-xl flex items-center justify-center hover:bg-purple-500 transition-colors shadow-lg cursor-pointer"><FaPaperPlane className="text-sm ml-[-2px]"/></button>
+                     <input type="text" value={chatInput} onChange={(e) => setChatInput(e.target.value)} placeholder="Type a client's name or ask a question..." className="flex-1 bg-[#222] border border-[#333] rounded-xl p-4 text-sm outline-none focus:border-purple-500 text-white transition-colors" />
+                     <button type="submit" className="w-14 h-14 bg-purple-600 text-white rounded-xl flex items-center justify-center hover:bg-purple-500 transition-colors shadow-lg cursor-pointer"><FaPaperPlane className="text-sm ml-[-2px]"/></button>
                    </form>
                 </div>
              </div>
           )}
 
+          {/* Header for non-full-screen tabs */}
           {activeTab !== "settings" && activeTab !== "detail" && activeTab !== "assistant" && (
             <div className="flex justify-between items-center mb-8">
               <h1 className="text-2xl md:text-3xl font-bold flex items-center flex-wrap gap-3">
@@ -476,7 +494,13 @@ export default function ReceptionistDashboard() {
               <div className="bg-[#1a1a1a] rounded-2xl border border-[#2a2a2a] shadow-sm overflow-hidden">
                 <div className="p-6 border-b border-[#2a2a2a] flex justify-between items-center">
                   <h2 className="text-lg font-bold">Front Desk Log</h2>
-                  <button onClick={() => setIsEnquiryModalOpen(true)} className="bg-purple-600 hover:bg-purple-500 text-white font-bold py-2 px-4 rounded-lg transition-colors shadow-md text-xs flex items-center gap-2 cursor-pointer">+ New Entry</button>
+                  <div className="flex gap-4 items-center">
+                    <div className="relative hidden md:block">
+                      <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs" />
+                      <input type="text" placeholder="Search leads..." value={searchRecep} onChange={e => setSearchRecep(e.target.value)} className="bg-[#121212] border border-[#333] rounded-lg pl-9 pr-4 py-2 text-sm text-white focus:border-purple-500 outline-none w-48 transition-colors" />
+                    </div>
+                    <button onClick={() => setIsEnquiryModalOpen(true)} className="bg-purple-600 hover:bg-purple-500 text-white font-bold py-2 px-4 rounded-lg transition-colors shadow-md text-xs flex items-center gap-2 cursor-pointer">+ New Entry</button>
+                  </div>
                 </div>
                 
                 <div className="overflow-x-auto custom-scrollbar">
@@ -496,10 +520,10 @@ export default function ReceptionistDashboard() {
                     <tbody className="divide-y divide-[#2a2a2a]">
                       {isFetchingEnquiries ? (
                         <tr><td colSpan={8} className="p-8 text-center text-gray-400 text-sm">Fetching live table data...</td></tr>
-                      ) : enquiries.length === 0 ? (
-                        <tr><td colSpan={8} className="p-8 text-center text-gray-400 text-sm">No leads recorded yet.</td></tr>
+                      ) : receptionistLeads.length === 0 ? (
+                        <tr><td colSpan={8} className="p-8 text-center text-gray-400 text-sm">No matching leads found.</td></tr>
                       ) : (
-                        enquiries.map((enquiry) => (
+                        receptionistLeads.map((enquiry: any) => (
                           <tr key={enquiry.id} className="hover:bg-[#252525] transition-colors cursor-pointer" onClick={() => { setSelectedEnquiry(enquiry); setActiveTab("detail"); }}>
                             <td className="p-4 text-sm font-bold text-purple-500">#{enquiry.id}</td>
                             <td className="p-4 text-sm font-semibold">{enquiry.name}</td>
@@ -528,26 +552,31 @@ export default function ReceptionistDashboard() {
             <div className="animate-fadeIn">
               <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
                 <h2 className="text-xl font-bold">Recent Enquiries</h2>
-                <button onClick={() => setIsEnquiryModalOpen(true)} className="bg-purple-600 hover:bg-purple-500 text-white font-bold py-2.5 px-6 rounded-xl transition-colors shadow-md text-sm flex items-center gap-2 cursor-pointer"><FaClipboardList /> + Add New Form</button>
+                <div className="flex gap-4 items-center">
+                  <div className="relative">
+                    <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs" />
+                    <input type="text" placeholder="Search leads..." value={searchRecep} onChange={e => setSearchRecep(e.target.value)} className="bg-[#1a1a1a] border border-[#333] rounded-lg pl-9 pr-4 py-2 text-sm text-white focus:border-purple-500 outline-none w-48 transition-colors" />
+                  </div>
+                  <button onClick={() => setIsEnquiryModalOpen(true)} className="bg-purple-600 hover:bg-purple-500 text-white font-bold py-2.5 px-6 rounded-xl transition-colors shadow-md text-sm flex items-center gap-2 cursor-pointer"><FaClipboardList /> + Add New Form</button>
+                </div>
               </div>
 
               {isFetchingEnquiries ? (
                 <div className="text-center text-gray-400 py-10">Fetching live database forms...</div>
-              ) : enquiries.length === 0 ? (
-                <div className="text-center text-gray-400 py-10">No forms have been created yet.</div>
+              ) : receptionistLeads.length === 0 ? (
+                <div className="text-center text-gray-400 py-10">No matching forms found.</div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {enquiries.map((enquiry, index) => (
+                  {receptionistLeads.map((enquiry: any, index: number) => (
                     <div key={index} onClick={() => { setSelectedEnquiry(enquiry); setActiveTab("detail"); }} className="bg-[#1a1a1a] rounded-2xl p-6 border border-[#2a2a2a] shadow-sm hover:bg-[#1e1e1e] hover:border-purple-500/50 transition-all cursor-pointer group flex flex-col justify-between">
                       
                       <div>
-                        {/* 🔥 FIX: Clean space between ID and NAME 🔥 */}
                         <div className="flex justify-between items-start mb-6 border-b border-[#2a2a2a] pb-4">
                           <h3 className="text-xl font-bold text-white group-hover:text-purple-400 transition-colors line-clamp-1 pr-2 flex items-center gap-2">
                             <span className="text-purple-500 flex-shrink-0">#{enquiry.id}</span>
                             <span className="line-clamp-1">{enquiry.name}</span>
                           </h3>
-                          <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider flex-shrink-0 ${enquiry.status === 'Routed' ? 'border border-green-500/30 text-green-500 bg-green-500/10' : 'border border-yellow-500/30 text-yellow-500 bg-yellow-500/10'}`}>
+                          <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider flex-shrink-0 ${enquiry.status === 'Routed' ? 'border border-blue-500/30 text-blue-400 bg-blue-500/10' : 'border border-yellow-500/30 text-yellow-500 bg-yellow-500/10'}`}>
                             {enquiry.status}
                           </span>
                         </div>
@@ -588,25 +617,29 @@ export default function ReceptionistDashboard() {
               <div className="flex items-center gap-4 mb-8 bg-[#1a1a1a] rounded-2xl border border-[#2a2a2a] p-8 shadow-xl">
                 <button onClick={() => setActiveTab("forms")} className="w-10 h-10 flex items-center justify-center bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#2a2a2a] rounded-xl text-gray-400 transition-colors cursor-pointer shadow-sm"><FaChevronLeft className="text-sm" /></button>
                 <div>
-                  {/* 🔥 FIX: Clean space between ID and NAME 🔥 */}
                   <h1 className="text-2xl md:text-3xl font-bold text-white flex items-center gap-3">
                     <span className="text-purple-500">#{selectedEnquiry.id}</span> 
                     <span>{selectedEnquiry.name}</span>
-                    <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${selectedEnquiry.status === 'Routed' ? 'border border-green-500/30 text-green-500 bg-green-500/10' : 'border border-yellow-500/30 text-yellow-500 bg-yellow-500/10'}`}>{selectedEnquiry.status}</span>
+                    <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${selectedEnquiry.status === 'Routed' ? 'border border-blue-500/30 text-blue-400 bg-blue-500/10' : 'border border-yellow-500/30 text-yellow-500 bg-yellow-500/10'}`}>{selectedEnquiry.status}</span>
                   </h1>
                   <p className="text-sm mt-1 text-gray-400">Created on {selectedEnquiry.date}</p>
                 </div>
               </div>
 
               <div className="bg-[#1a1a1a] rounded-2xl border border-[#2a2a2a] p-8 shadow-xl">
-                <div className="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-xl p-5 flex items-center justify-between gap-4 mb-8 text-white">
+                <div className="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8 text-white">
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 rounded-full border border-green-500/30 text-green-500 bg-green-500/10 flex items-center justify-center font-bold text-xl shadow-md">
                       {String(selectedEnquiry.assignedTo || "U").charAt(0).toUpperCase()}
                     </div>
                     <div><p className="text-xs text-purple-200 font-bold tracking-wider uppercase mb-1">Assigned Sales Manager</p><p className="font-bold text-lg">{selectedEnquiry.assignedTo}</p></div>
                   </div>
-                  <div className="text-right hidden sm:block"><p className="text-xs text-purple-200 uppercase tracking-wider font-bold mb-1">Source</p><p className="font-semibold">{selectedEnquiry.source}</p></div>
+                  <div className="sm:text-right">
+                    <p className="text-xs text-purple-200 uppercase tracking-wider font-bold mb-1">Source</p>
+                    <p className="font-semibold flex items-center sm:justify-end gap-2">
+                       <FaBriefcase className="text-purple-300 opacity-70"/> {selectedEnquiry.source || "N/A"}
+                    </p>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
@@ -614,28 +647,68 @@ export default function ReceptionistDashboard() {
                     <div>
                       <h3 className="text-sm font-bold text-gray-400 border-b border-[#2a2a2a] pb-2 mb-4 uppercase tracking-widest">Contact Information</h3>
                       <div className="space-y-4">
-                        <div><p className="text-xs text-gray-400 font-medium mb-1 pl-2">Phone Number (Masked)</p><p className="font-semibold text-lg tracking-widest">{maskPhoneNumber(selectedEnquiry.phone)}</p></div>
-                        <div><p className="text-xs text-gray-400 font-medium mb-1 pl-2">Alt. Phone (Masked)</p><p className="font-semibold text-lg tracking-widest">{selectedEnquiry.altPhone ? maskPhoneNumber(selectedEnquiry.altPhone) : "N/A"}</p></div>
-                        <div><p className="text-xs text-gray-400 font-medium mb-1 pl-2">Email Address</p><p className="font-medium">{selectedEnquiry.email}</p></div>
-                        <div><p className="text-xs text-gray-400 font-medium mb-1 pl-2">Residential Address</p><p className="font-medium">{selectedEnquiry.address}</p></div>
+                        <div><p className="text-xs text-gray-400 font-medium mb-1 ">Phone Number </p><p className="font-semibold text-lg tracking-widest">{maskPhoneNumber(selectedEnquiry.phone)}</p></div>
+                        <div><p className="text-xs text-gray-400 font-medium mb-1">Alt. Phone </p><p className="font-semibold text-lg tracking-widest">{selectedEnquiry.altPhone ? maskPhoneNumber(selectedEnquiry.altPhone) : "N/A"}</p></div>
+                        <div><p className="text-xs text-gray-400 font-medium mb-1">Email Address</p><p className="font-medium">{selectedEnquiry.email}</p></div>
+                        <div><p className="text-xs text-gray-400 font-medium mb-1">Residential Address</p><p className="font-medium">{selectedEnquiry.address}</p></div>
                       </div>
                     </div>
                     <div>
                       <h3 className="text-sm font-bold text-gray-400 border-b border-[#2a2a2a] pb-2 mb-4 uppercase tracking-widest">Professional Info</h3>
                       <div className="grid grid-cols-2 gap-4">
-                        <div><p className="text-xs text-gray-400 font-medium mb-1 pl-2">Occupation</p><p className="font-medium">{selectedEnquiry.occupation}</p></div>
-                        <div><p className="text-xs text-gray-400 font-medium mb-1 pl-2">Organization</p><p className="font-medium">{selectedEnquiry.organization}</p></div>
+                        <div><p className="text-xs text-gray-400 font-medium mb-1">Occupation</p><p className="font-medium">{selectedEnquiry.occupation}</p></div>
+                        <div><p className="text-xs text-gray-400 font-medium mb-1">Organization</p><p className="font-medium">{selectedEnquiry.organization}</p></div>
                       </div>
                     </div>
                   </div>
-                  <div>
-                    <h3 className="text-sm font-bold text-gray-400 border-b border-[#2a2a2a] pb-2 mb-4 uppercase tracking-widest">Property Requirements</h3>
-                    <div className="bg-[#222] border border-[#2a2a2a] rounded-xl p-5 space-y-5">
-                      <div><p className="text-xs text-gray-400 font-medium mb-1 pl-2">Estimated Budget</p><p className="text-green-500 font-bold text-xl">{selectedEnquiry.budget}</p></div>
-                      <div className="grid grid-cols-2 gap-4 border-t border-[#2a2a2a] pt-5">
-                        <div><p className="text-xs text-gray-400 font-medium mb-1 pl-2">Configuration</p><p className="font-medium">{selectedEnquiry.configuration}</p></div>
-                        <div><p className="text-xs text-gray-400 font-medium mb-1 pl-2">Purpose of Purchase</p><p className="font-medium">{selectedEnquiry.purpose}</p></div>
+                  <div className="space-y-6">
+                    <div>
+                      <h3 className="text-sm font-bold text-gray-400 border-b border-[#2a2a2a] pb-2 mb-4 uppercase tracking-widest">Property Requirements</h3>
+                      <div className="bg-[#222] border border-[#2a2a2a] rounded-xl p-5 space-y-5">
+                        <div><p className="text-xs text-gray-400 font-medium mb-1 pl-2">Estimated Budget</p><p className="text-green-500 font-bold text-xl">{selectedEnquiry.budget}</p></div>
+                        <div className="grid grid-cols-2 gap-4 border-t border-[#2a2a2a] pt-5">
+                          <div><p className="text-xs text-gray-400 font-medium mb-1 pl-2">Configuration</p><p className="font-medium text-white">{selectedEnquiry.configuration}</p></div>
+                          <div><p className="text-xs text-gray-400 font-medium mb-1 pl-2">Purpose of Purchase</p><p className="font-medium text-white">{selectedEnquiry.purpose}</p></div>
+                        </div>
+                        <div className="border-t border-[#2a2a2a] pt-5">
+                           <p className="text-xs text-gray-400 font-medium mb-1 pl-2">Loan Planned?</p>
+                           <p className="font-medium text-white">{selectedEnquiry.loan_planned || "Pending"}</p>
+                        </div>
                       </div>
+                    </div>
+
+                    {/* 🔥 SOURCE DETAILS (CP / OTHERS) 🔥 */}
+                    <div className="bg-[#222] border border-[#333] rounded-xl p-5">
+                      <h3 className="text-xs text-purple-400 font-bold uppercase tracking-wider mb-4 border-b border-[#333] pb-2">Acquisition Data</h3>
+                      <div className="grid grid-cols-2 gap-4">
+                         <div>
+                            <p className="text-xs text-gray-500 font-medium mb-1">Primary Source</p>
+                            <p className="text-white font-medium text-sm">{selectedEnquiry.source || "N/A"}</p>
+                         </div>
+                         {selectedEnquiry.source === "Others" && (
+                            <div>
+                               <p className="text-xs text-gray-500 font-medium mb-1">Specified Name</p>
+                               <p className="text-white font-medium text-sm">{selectedEnquiry.source_other}</p>
+                            </div>
+                         )}
+                      </div>
+                      
+                      {selectedEnquiry.source === "Channel Partner" && (
+                         <div className="mt-4 pt-4 border-t border-[#333] grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div>
+                               <p className="text-xs text-gray-500 font-medium mb-1">CP Name</p>
+                               <p className="text-white font-medium text-sm">{selectedEnquiry.cp_name || "N/A"}</p>
+                            </div>
+                            <div>
+                               <p className="text-xs text-gray-500 font-medium mb-1">CP Company</p>
+                               <p className="text-white font-medium text-sm">{selectedEnquiry.cp_company || "N/A"}</p>
+                            </div>
+                            <div>
+                               <p className="text-xs text-gray-500 font-medium mb-1">CP Phone</p>
+                               <p className="text-white font-medium text-sm">{selectedEnquiry.cp_phone || "N/A"}</p>
+                            </div>
+                         </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -650,21 +723,21 @@ export default function ReceptionistDashboard() {
             <div className="fixed inset-0 bg-black/80 z-[100] flex justify-center items-center p-4 sm:p-6 animate-fadeIn">
               <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl">
                 
-                <div className="p-6 border-b border-[#2a2a2a] flex justify-between items-center">
+                <div className="p-6 border-b border-[#2a2a2a] flex justify-between items-center bg-[#151515]">
                   <div>
-                    <h2 className="text-xl font-bold text-white">Client Enquiry Form</h2>
-                    <p className="text-xs text-gray-400 mt-1">Fill out all details from the physical document.</p>
+                    <h2 className="text-xl font-bold text-white flex items-center gap-2"><FaUserCircle className="text-purple-500"/> Client Enquiry Form</h2>
+                    <p className="text-xs text-gray-400 mt-1">Fill out all details accurately to route to the Sales Manager.</p>
                   </div>
                   <button onClick={() => setIsEnquiryModalOpen(false)} className="text-gray-400 hover:text-red-500 transition-colors cursor-pointer p-2"><FaTimes className="text-xl" /></button>
                 </div>
 
-                <div className="p-6 overflow-y-auto custom-scrollbar flex-1">
+                <div className="p-6 overflow-y-auto custom-scrollbar flex-1 bg-[#0a0a0a]">
                   <form id="enquiryForm" onSubmit={handleEnquirySubmit} className="space-y-8">
                     
                     {/* Block 1 */}
-                    <div>
-                      <h3 className="text-sm font-bold text-purple-400 mb-4 uppercase tracking-wider border-b border-purple-500/20 pb-2">Personal Information</h3>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    <div className="bg-[#111111] p-6 rounded-xl border border-[#222]">
+                      <h3 className="text-sm font-bold text-purple-400 mb-5 uppercase tracking-wider border-b border-purple-500/20 pb-2">Personal Information</h3>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                         <div className="sm:col-span-2">
                           <label className="block text-xs text-gray-400 mb-1.5 font-medium pl-2">Full Name *</label>
                           <input type="text" required value={enquiryForm.fullName} onChange={e => setEnquiryForm({...enquiryForm, fullName: e.target.value})} className="w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg p-3 text-sm focus:border-purple-500 outline-none text-white transition-colors" placeholder="e.g. Mayur Acharya" />
@@ -697,12 +770,23 @@ export default function ReceptionistDashboard() {
                           <label className="block text-xs text-gray-400 mb-1.5 font-medium pl-2">Organization / Office Add.</label>
                           <input type="text" value={enquiryForm.organization} onChange={e => setEnquiryForm({...enquiryForm, organization: e.target.value})} className="w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg p-3 text-sm focus:border-purple-500 outline-none text-white transition-colors" placeholder="Company Name & Location" />
                         </div>
+                        
+                        {/* 🔥 FEATURE 1: LOAN PLANNED 🔥 */}
+                        <div>
+                          <label className="block text-xs text-gray-400 mb-1.5 font-medium pl-2">Loan Planned *</label>
+                          <select required value={enquiryForm.loanPlanned} onChange={e => setEnquiryForm({...enquiryForm, loanPlanned: e.target.value})} className="w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg p-3 text-sm focus:border-purple-500 outline-none text-white transition-colors cursor-pointer">
+                            <option value="" disabled>Select Option</option>
+                            <option value="Yes">Yes</option>
+                            <option value="No">No</option>
+                          </select>
+                        </div>
+
                       </div>
                     </div>
 
                     {/* Block 2 */}
-                    <div>
-                      <h3 className="text-sm font-bold text-purple-400 mb-4 uppercase tracking-wider border-b border-purple-500/20 pb-2">Requirement & Timeline</h3>
+                    <div className="bg-[#111111] p-6 rounded-xl border border-[#222]">
+                      <h3 className="text-sm font-bold text-purple-400 mb-5 uppercase tracking-wider border-b border-purple-500/20 pb-2">Requirement & Timeline</h3>
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
                         <div>
                           <label className="block text-xs text-gray-400 mb-1.5 font-medium pl-2">Budget *</label>
@@ -736,19 +820,28 @@ export default function ReceptionistDashboard() {
                     </div>
 
                     {/* Block 3 */}
-                    <div>
-                      <h3 className="text-sm font-bold text-green-500 mb-4 uppercase tracking-wider border-b border-green-500/20 pb-2">Routing & Source</h3>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    <div className="bg-[#111111] p-6 rounded-xl border border-green-500/20">
+                      <h3 className="text-sm font-bold text-green-500 mb-5 uppercase tracking-wider border-b border-green-500/20 pb-2">Routing & Source</h3>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                        
+                        {/* 🔥 FEATURE 2: UPDATED SOURCE DROPDOWN 🔥 */}
                         <div>
-                          <label className="block text-xs text-gray-400 mb-1.5 font-medium pl-2">Source</label>
-                          <select value={enquiryForm.source} onChange={e => setEnquiryForm({...enquiryForm, source: e.target.value})} className="w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg p-3 text-sm focus:border-purple-500 outline-none text-white transition-colors cursor-pointer">
-                            <option value="Direct Walk-in">Direct Walk-in</option><option value="Website">Website</option>
-                            <option value="Referral">Referral</option><option value="Call Center">Call Center</option>
+                          <label className="block text-xs text-gray-400 mb-1.5 font-medium pl-2">Source *</label>
+                          <select required value={enquiryForm.source} onChange={e => setEnquiryForm({...enquiryForm, source: e.target.value})} className="w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg p-3 text-sm focus:border-purple-500 outline-none text-white transition-colors cursor-pointer">
+                            <option value="" disabled>Select Source</option>
+                            <option value="Advertisement">Advertisement</option>
+                            <option value="Referral">Referral</option>
+                            <option value="Exhibition">Exhibition</option>
+                            <option value="Channel Partner">Channel Partner</option>
+                            <option value="Website">Website</option>
+                            <option value="Call Center">Call Center</option>
+                            <option value="Others">Others</option>
                           </select>
                         </div>
+
                         <div>
                           <label className="block text-xs text-green-500 mb-1.5 font-bold pl-2">Assign to Sales Manager *</label>
-                          <select required value={enquiryForm.assignedTo} onChange={e => setEnquiryForm({...enquiryForm, assignedTo: e.target.value})} className="w-full bg-[#1a1a1a] border-2 border-green-500/50 rounded-lg p-3 text-sm focus:border-green-500 outline-none text-white transition-colors cursor-pointer">
+                          <select required value={enquiryForm.assignedTo} onChange={e => setEnquiryForm({...enquiryForm, assignedTo: e.target.value})} className="w-full bg-[#1a1a1a] border-2 border-green-500/50 rounded-lg p-3 text-sm focus:border-green-500 outline-none text-white transition-colors cursor-pointer shadow-[0_0_15px_rgba(34,197,94,0.1)]">
                             <option value="" disabled>-- Select Available Manager --</option>
                             {isFetchingManagers ? (
                               <option disabled>Loading managers...</option>
@@ -759,13 +852,42 @@ export default function ReceptionistDashboard() {
                             )}
                           </select>
                         </div>
+
+                        {/* 🔥 FEATURE 2.1: CONDITIONAL "OTHERS" INPUT 🔥 */}
+                        {enquiryForm.source === "Others" && (
+                          <div className="sm:col-span-2 mt-2">
+                             <label className="block text-xs text-gray-400 mb-1.5 font-medium pl-2">Specify Source *</label>
+                             <input required type="text" value={enquiryForm.sourceOther} onChange={e => setEnquiryForm({...enquiryForm, sourceOther: e.target.value})} className="w-full bg-[#1a1a1a] border border-purple-500/50 rounded-lg p-3 text-sm focus:border-purple-500 outline-none text-white transition-colors" placeholder="Please specify the lead source" />
+                          </div>
+                        )}
+
+                        {/* 🔥 FEATURE 3: CONDITIONAL "CHANNEL PARTNER" INPUTS 🔥 */}
+                        {enquiryForm.source === "Channel Partner" && (
+                          <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-5 mt-2 p-5 bg-[#1e1e1e] rounded-xl border border-[#333]">
+                             <h4 className="sm:col-span-3 text-xs font-bold text-purple-400 mb-1">Channel Partner Details</h4>
+                             <div>
+                               <label className="block text-xs text-gray-400 mb-1.5 font-medium pl-2">CP Name *</label>
+                               <input required type="text" value={enquiryForm.cpDetails.name} onChange={e => setEnquiryForm({...enquiryForm, cpDetails: {...enquiryForm.cpDetails, name: e.target.value}})} className="w-full bg-[#121212] border border-[#333] rounded-lg p-3 text-sm focus:border-purple-500 outline-none text-white transition-colors" placeholder="Name" />
+                             </div>
+                             <div>
+                               <label className="block text-xs text-gray-400 mb-1.5 font-medium pl-2">CP Company *</label>
+                               <input required type="text" value={enquiryForm.cpDetails.company} onChange={e => setEnquiryForm({...enquiryForm, cpDetails: {...enquiryForm.cpDetails, company: e.target.value}})} className="w-full bg-[#121212] border border-[#333] rounded-lg p-3 text-sm focus:border-purple-500 outline-none text-white transition-colors" placeholder="Company Name" />
+                             </div>
+                             <div>
+                               <label className="block text-xs text-gray-400 mb-1.5 font-medium pl-2">CP Contact *</label>
+                               <input required type="tel" value={enquiryForm.cpDetails.phone} onChange={e => setEnquiryForm({...enquiryForm, cpDetails: {...enquiryForm.cpDetails, phone: e.target.value}})} className="w-full bg-[#121212] border border-[#333] rounded-lg p-3 text-sm focus:border-purple-500 outline-none text-white transition-colors" placeholder="Phone No." />
+                             </div>
+                          </div>
+                        )}
+
                       </div>
                     </div>
                   </form>
                 </div>
-                <div className="p-6 border-t border-[#2a2a2a] bg-[#1a1a1a] flex justify-end gap-4">
-                  <button onClick={() => setIsEnquiryModalOpen(false)} type="button" className="px-6 py-2.5 rounded-lg text-gray-400 hover:text-red-500 transition-colors font-bold cursor-pointer">Cancel</button>
-                  <button form="enquiryForm" type="submit" className="bg-purple-600 hover:bg-purple-500 text-white px-8 py-2.5 rounded-lg font-bold shadow-md transition-colors cursor-pointer">Submit to Sales Manager</button>
+                
+                <div className="p-6 border-t border-[#2a2a2a] bg-[#151515] flex justify-end gap-4 shadow-inner">
+                  <button onClick={() => setIsEnquiryModalOpen(false)} type="button" className="px-6 py-2.5 rounded-lg text-gray-400 hover:text-red-500 transition-colors font-bold cursor-pointer hover:bg-red-500/10">Cancel</button>
+                  <button form="enquiryForm" type="submit" className="bg-purple-600 hover:bg-purple-500 text-white px-8 py-2.5 rounded-lg font-bold shadow-[0_0_15px_rgba(168,85,247,0.3)] transition-colors cursor-pointer">Submit & Route Lead</button>
                 </div>
               </div>
             </div>
@@ -779,6 +901,8 @@ export default function ReceptionistDashboard() {
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #3a3a3a; border-radius: 10px; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #555; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fadeIn { animation: fadeIn 0.2s ease-out; }
       `}} />
     </div>
   );
