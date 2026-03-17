@@ -9,7 +9,7 @@ const userSchema = new Schema(
   {
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
+    password: { type: String, required: true},
     // Notice how there is NO enum here anymore
     role: { 
       type: String, 
