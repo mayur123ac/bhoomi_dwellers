@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   FaThLarge, FaClipboardList, FaUsers, FaIdCard, FaCog, 
-  FaSearch, FaBell, FaChevronLeft, FaPhoneAlt, FaComments, 
+  FaSearch, FaBell, FaChevronLeft, FaPhoneAlt, FaComments,FaDropdown, 
   FaCheckCircle, FaCalendarAlt, FaTimes, FaPlus, FaPen, 
   FaFileInvoice, FaPaperPlane, FaMicrophone, FaWhatsapp, FaTable, FaChartPie, FaUserCircle,
   FaEye, FaEyeSlash
@@ -337,7 +337,7 @@ function DashboardOverview({ managers, allLeads, isLoading, user }: { managers: 
           <h2 className="text-lg font-bold text-white mb-1 flex items-center gap-2">
             <FaChartPie className="text-purple-500" /> Top Performers (Active Leads)
           </h2>
-          <p className="text-xs text-gray-500 mb-6">Sales managers ranked by their active pipeline volume.</p>
+          <p className="text-xs text-gray-500 mb-6">Sales managers ranked by their Performance.</p>
           <div className="flex-1 min-h-[280px]">
             {isLoading ? (
               <div className="h-full flex items-center justify-center text-sm text-gray-500">Loading metrics...</div>
@@ -406,7 +406,7 @@ function DashboardOverview({ managers, allLeads, isLoading, user }: { managers: 
           <p className="text-sm text-gray-500 mt-1">Select a sales manager to pull their real-time tabular data.</p>
         </div>
         <div className="w-full sm:w-72 relative">
-          <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs z-10" />
+          <FaChevronLeft className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs z-10" />
           <select
             value={selectedManagerName}
             onChange={(e) => setSelectedManagerName(e.target.value)}
@@ -658,7 +658,7 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
           <div>
             <h2 className="text-lg font-bold text-white flex items-center gap-2">
               <FaUsers className="text-purple-500"/>
-              {selectedManager ? `${selectedManager.name}'s Leads Pipeline` : "Select a Manager"}
+              {selectedManager ? `${selectedManager.name}'s Leads` : "Select a Manager"}
             </h2>
             <p className="text-xs text-gray-500 mt-1">Manage and track cards dynamically.</p>
           </div>
