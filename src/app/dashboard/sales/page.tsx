@@ -581,7 +581,7 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm text-gray-400">
                   <thead className="text-xs text-gray-500 uppercase bg-[#222]">
-                    <tr><th className="px-6 py-4">LEAD NO.</th><th className="px-4 py-4">NAME</th><th className="px-4 py-4">PROP. TYPE</th><th className="px-4 py-4">BUDGET</th><th className="px-4 py-4">LOAN PLANNED?</th><th className="px-4 py-4">LOAN STATUS</th> <th className="px-4 py-4">AMT REQ / APPROVED</th><th className="px-6 py-4">SITE VISIT</th></tr>
+                  <tr><th className="px-6 py-4">LEAD NO.</th><th className="px-4 py-4">NAME</th><th className="px-4 py-4">PROP. TYPE</th><th className="px-4 py-4">BUDGET</th><th className="px-4 py-4">LOAN PLANNED?</th><th className="px-4 py-4">LOAN STATUS</th> <th className="px-4 py-4">AMT REQ / APPROVED</th><th className="px-6 py-4">SITE VISIT</th></tr>
                   </thead>
                   <tbody className="divide-y divide-[#2a2a2a]">
                     {isLoading?<tr><td colSpan={8} className="text-center py-8">Loading...</td></tr>

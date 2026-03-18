@@ -27,7 +27,6 @@ function useAdminData() {
 
   const fetchAdminData = async () => {
     try {
-      // 1. Sales Managers
       let smData: any[] = [];
       const resUsers = await fetch("/api/users?role=sales_manager");
       if (resUsers.ok) { const j = await resUsers.json(); smData = j.data || j; }
@@ -36,7 +35,6 @@ function useAdminData() {
         if (alt.ok) { const j = await alt.json(); smData = j.data || []; }
       }
 
-      // 2. Receptionists
       let recData: any[] = [];
       const resRec = await fetch("/api/users/receptionist");
       if (resRec.ok) { const j = await resRec.json(); recData = j.data || j; }
@@ -45,17 +43,14 @@ function useAdminData() {
         if (alt.ok) { const j = await alt.json(); recData = j.data || []; }
       }
 
-      // 3. Leads
       let pgLeads: any[] = [];
       const resLeads = await fetch("/api/walkin_enquiries");
       if (resLeads.ok) { const j = await resLeads.json(); pgLeads = Array.isArray(j.data) ? j.data : []; }
 
-      // 4. Followups
       let mongoFollowUps: any[] = [];
       const resFups = await fetch("/api/followups");
       if (resFups.ok) { const j = await resFups.json(); mongoFollowUps = Array.isArray(j.data) ? j.data : []; }
 
-      // 5. Merge
       const mergedLeads = pgLeads.map((lead: any) => {
         const leadFups   = mongoFollowUps.filter((f: any) => String(f.leadId) === String(lead.id));
         const salesForms = leadFups.filter((f: any) => f.message?.includes("Detailed Salesform Submitted"));
@@ -67,35 +62,34 @@ function useAdminData() {
           return match ? match[1].trim() : "Pending";
         };
 
-        // Loan data from latest 🏦 update
         const loanUpdates = leadFups.filter((f: any) => f.message?.includes("🏦 Loan Update:"));
         let loanStatus = "N/A", loanAmtReq = "N/A", loanAmtApp = "N/A";
         if (loanUpdates.length > 0) {
           const lm = loanUpdates[loanUpdates.length - 1].message;
-          const ms = lm.match(/• Status: (.*)/);        if (ms) loanStatus  = ms[1].trim();
+          const ms = lm.match(/• Status: (.*)/);           if (ms) loanStatus  = ms[1].trim();
           const mr = lm.match(/• Amount Requested: (.*)/); if (mr) loanAmtReq = mr[1].trim();
           const ma = lm.match(/• Amount Approved: (.*)/);  if (ma) loanAmtApp = ma[1].trim();
         }
 
-        const fupsWithDate  = leadFups.filter((f: any) => f.siteVisitDate && f.siteVisitDate.trim() !== "");
+        const fupsWithDate    = leadFups.filter((f: any) => f.siteVisitDate && f.siteVisitDate.trim() !== "");
         const latestVisitDate = fupsWithDate.length > 0 ? fupsWithDate[fupsWithDate.length - 1].siteVisitDate : null;
-        const activeBudget  = extractField("Budget") !== "Pending" ? extractField("Budget") : lead.budget;
+        const activeBudget    = extractField("Budget") !== "Pending" ? extractField("Budget") : lead.budget;
 
         return {
           ...lead,
-          propType:          extractField("Property Type"),
-          salesBudget:       activeBudget,
-          useType:           extractField("Use Type") !== "Pending" ? extractField("Use Type") : (lead.purpose || "Pending"),
-          planningPurchase:  extractField("Planning to Purchase"),
-          decisionMaker:     extractField("Decision Maker"),
-          loanPlanned:       extractField("Loan Planned") !== "Pending" ? extractField("Loan Planned") : (lead.loan_planned || "Pending"),
+          propType:           extractField("Property Type"),
+          salesBudget:        activeBudget,
+          useType:            extractField("Use Type") !== "Pending" ? extractField("Use Type") : (lead.purpose || "Pending"),
+          planningPurchase:   extractField("Planning to Purchase"),
+          decisionMaker:      extractField("Decision Maker"),
+          loanPlanned:        extractField("Loan Planned") !== "Pending" ? extractField("Loan Planned") : (lead.loan_planned || "Pending"),
           leadInterestStatus: extractField("Lead Status"),
           loanStatus, loanAmtReq, loanAmtApp,
           source: lead.source, sourceOther: lead.source_other,
           cpName: lead.cp_name, cpCompany: lead.cp_company, cpPhone: lead.cp_phone,
           altPhone: lead.alt_phone, address: lead.address,
           mongoVisitDate: latestVisitDate,
-          status: lead.status === "Completed" ? "Completed" : (latestVisitDate ? "Visit Scheduled" : lead.status),
+          status: latestVisitDate ? "Visit Scheduled" : lead.status,
         };
       });
 
@@ -164,11 +158,11 @@ const maskPhone = (phone: any) => {
 // ============================================================================
 export default function AdminAtlasDashboard() {
   const router = useRouter();
-  const [activeView, setActiveView]       = useState("dashboard");
+  const [activeView, setActiveView]             = useState("dashboard");
   const [isSidebarHovered, setIsSidebarHovered] = useState(false);
-  const [user, setUser]                   = useState<any>({ name: "Admin", role: "Admin", email: "", password: "" });
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [showPassword, setShowPassword]   = useState(false);
+  const [user, setUser]                         = useState<any>({ name: "Admin", role: "Admin", email: "", password: "" });
+  const [isProfileOpen, setIsProfileOpen]       = useState(false);
+  const [showPassword, setShowPassword]         = useState(false);
 
   const { managers, receptionists, allLeads, followUps, isLoading, refetch } = useAdminData();
 
@@ -198,10 +192,10 @@ export default function AdminAtlasDashboard() {
   const handleLogout = () => { localStorage.removeItem("crm_user"); router.push("/"); };
 
   const menuItems = [
-    { id: "dashboard",    icon: FaThLarge,       label: "Overview" },
-    { id: "receptionist", icon: FaClipboardList,  label: "Receptionist" },
-    { id: "sales",        icon: FaUsers,          label: "Sales Managers" },
-    { id: "employees",    icon: FaIdCard,         label: "Add Employee" },
+    { id: "dashboard",    icon: FaThLarge,      label: "Overview" },
+    { id: "receptionist", icon: FaClipboardList, label: "Receptionist" },
+    { id: "sales",        icon: FaUsers,         label: "Sales Managers" },
+    { id: "employees",    icon: FaIdCard,        label: "Add Employee" },
   ];
 
   return (
@@ -294,6 +288,181 @@ export default function AdminAtlasDashboard() {
 }
 
 // ============================================================================
+// DASHBOARD ANALYTICS — bar + pie charts for selected manager's leads
+// ============================================================================
+function DashboardAnalytics({ leads }: { leads: any[] }) {
+  const [pieMode, setPieMode] = useState<"interest"|"loan"|"usetype"|"loanrequired"|"visits">("interest");
+  const [barMode, setBarMode] = useState<"weekly"|"source">("weekly");
+
+  const interestData = useMemo(() => {
+    const c: Record<string,number> = { Interested:0,"Not Interested":0,Maybe:0,Pending:0 };
+    leads.forEach(l => { const s=l.leadInterestStatus; if(s&&s!=="Pending"&&c[s]!==undefined) c[s]++; else c["Pending"]++; });
+    return Object.entries(c).filter(([,v])=>v>0).map(([name,value])=>({name,value}));
+  },[leads]);
+
+  const loanPieData = useMemo(() => {
+    const c: Record<string,number> = { Approved:0,"In Progress":0,Rejected:0,"N/A":0 };
+    leads.forEach(l => { const s=l.loanStatus; if(s&&c[s]!==undefined) c[s]++; else c["N/A"]++; });
+    return Object.entries(c).filter(([,v])=>v>0).map(([name,value])=>({name,value}));
+  },[leads]);
+
+  const useTypeData = useMemo(() => {
+    const c: Record<string,number> = {};
+    leads.forEach(l => { const ut=(l.useType&&l.useType!=="Pending")?l.useType:(l.purpose||"Unknown"); c[ut]=(c[ut]||0)+1; });
+    return Object.entries(c).filter(([k])=>k!=="Unknown").map(([name,value])=>({name,value}));
+  },[leads]);
+
+  const loanRequiredData = useMemo(() => {
+    const c: Record<string,number> = { Yes:0,No:0,"Not Sure":0,Pending:0 };
+    leads.forEach(l => { const lp=l.loanPlanned; if(lp&&c[lp]!==undefined) c[lp]++; else c["Pending"]++; });
+    return Object.entries(c).filter(([,v])=>v>0).map(([name,value])=>({name,value}));
+  },[leads]);
+
+  const visitData = useMemo(() => {
+    const scheduled = leads.filter(l=>l.mongoVisitDate).length;
+    return [{ name:"Scheduled", value:scheduled },{ name:"Pending", value:leads.length-scheduled }];
+  },[leads]);
+
+  const weeklyData = useMemo(() => {
+    const days   = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+    const counts = [0,0,0,0,0,0,0];
+    const now    = new Date();
+    leads.forEach(l => {
+      if(!l.created_at) return;
+      const d = new Date(l.created_at);
+      if(Math.floor((now.getTime()-d.getTime())/86400000)<7) counts[d.getDay()]++;
+    });
+    return days.map((day,i)=>({day,leads:counts[i]}));
+  },[leads]);
+
+  const weeklyTotal = weeklyData.reduce((a,b)=>a+b.leads,0);
+
+  const sourceData = useMemo(() => {
+    const c: Record<string,number> = {};
+    leads.forEach(l => { const src=l.source||"Unknown"; c[src]=(c[src]||0)+1; });
+    return Object.entries(c).map(([source,count])=>({source,count})).sort((a,b)=>b.count-a.count).slice(0,6);
+  },[leads]);
+
+  const interestColors: Record<string,string> = { Interested:"#4ade80","Not Interested":"#f87171",Maybe:"#fbbf24",Pending:"#6b7280" };
+  const loanColors:     Record<string,string> = { Approved:"#4ade80","In Progress":"#fbbf24",Rejected:"#f87171","N/A":"#6b7280" };
+  const useTypeColors:  Record<string,string> = { "Self Use":"#818cf8",Investment:"#34d399","Personal use":"#f87171","N/A":"#6b7280" };
+  const loanReqColors:  Record<string,string> = { Yes:"#60a5fa",No:"#6b7280","Not Sure":"#fbbf24",Pending:"#374151" };
+  const visitColors:    Record<string,string> = { Scheduled:"#f97316",Pending:"#374151" };
+
+  const pieData   = pieMode==="interest" ? interestData : pieMode==="loan" ? loanPieData : pieMode==="usetype" ? useTypeData : pieMode==="loanrequired" ? loanRequiredData : visitData;
+  const pieColors = pieMode==="interest" ? interestColors : pieMode==="loan" ? loanColors : pieMode==="usetype" ? useTypeColors : pieMode==="loanrequired" ? loanReqColors : visitColors;
+  const totalLeads = leads.length;
+
+  const BarTip = ({ active, payload, label }: any) => active&&payload?.length
+    ? <div className="bg-[#1a1a1a] border border-[#333] rounded-lg px-3 py-2 text-xs shadow-xl"><p className="text-gray-400">{label||payload[0].name}</p><p className="text-white font-bold">{payload[0].value}</p></div>
+    : null;
+
+  const PieTip = ({ active, payload }: any) => active&&payload?.length
+    ? <div className="bg-[#1a1a1a] border border-[#333] rounded-lg px-3 py-2 text-xs shadow-xl"><p className="text-gray-300 font-bold">{payload[0].name}</p><p className="text-white">{payload[0].value} leads</p></div>
+    : null;
+
+  const BAR_COLORS = ["#a855f7","#818cf8","#60a5fa","#34d399","#fbbf24","#f87171","#c084fc"];
+  const SRC_COLORS = ["#a855f7","#60a5fa","#4ade80","#fbbf24","#f87171","#34d399"];
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* BAR CHART */}
+      <div className="bg-[#111111] border border-[#222] rounded-2xl p-5 shadow-sm">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-white font-bold text-sm flex items-center gap-2">
+              <FaChartPie className="text-purple-400 text-xs"/>
+              {barMode==="weekly" ? "Leads Added This Week" : "Lead Source Distribution"}
+            </h3>
+            {barMode==="weekly" && <p className="text-purple-400 text-xs mt-0.5 font-semibold">{weeklyTotal} total this week</p>}
+          </div>
+          <select value={barMode} onChange={e=>setBarMode(e.target.value as any)}
+            className="bg-[#1a1a1a] border border-[#333] rounded-lg px-3 py-1.5 text-xs text-white outline-none cursor-pointer focus:border-purple-500 appearance-none">
+            <option value="weekly">Leads This Week</option>
+            <option value="source">Lead Source Distribution</option>
+          </select>
+        </div>
+        <ResponsiveContainer width="100%" height={220}>
+          {barMode==="weekly" ? (
+            <BarChart data={weeklyData} margin={{top:4,right:8,left:-20,bottom:0}}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#2a2a2a"/>
+              <XAxis dataKey="day" tick={{fill:"#9ca3af",fontSize:11}} axisLine={false} tickLine={false}/>
+              <YAxis tick={{fill:"#9ca3af",fontSize:11}} axisLine={false} tickLine={false} allowDecimals={false}/>
+              <RechartsTooltip content={<BarTip/>}/>
+              <Bar dataKey="leads" radius={[6,6,0,0]}>
+                {weeklyData.map((_:any,i:number)=><Cell key={i} fill={BAR_COLORS[i%7]}/>)}
+              </Bar>
+            </BarChart>
+          ) : (
+            <BarChart data={sourceData} layout="vertical" margin={{top:0,right:16,left:0,bottom:0}}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#2a2a2a" horizontal={false}/>
+              <XAxis type="number" tick={{fill:"#9ca3af",fontSize:11}} axisLine={false} tickLine={false} allowDecimals={false}/>
+              <YAxis type="category" dataKey="source" width={100} tick={{fill:"#9ca3af",fontSize:10}} axisLine={false} tickLine={false}/>
+              <RechartsTooltip content={<BarTip/>}/>
+              <Bar dataKey="count" radius={[0,6,6,0]}>
+                {sourceData.map((_:any,i:number)=><Cell key={i} fill={SRC_COLORS[i%6]}/>)}
+              </Bar>
+            </BarChart>
+          )}
+        </ResponsiveContainer>
+      </div>
+
+      {/* PIE CHART */}
+      <div className="bg-[#111111] border border-[#222] rounded-2xl p-5 shadow-sm">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-white font-bold text-sm flex items-center gap-2">
+            <FaChartPie className="text-blue-400 text-xs"/>
+            {pieMode==="interest"     ? "Lead Interest Breakdown"   :
+             pieMode==="loan"         ? "Loan Status Breakdown"      :
+             pieMode==="usetype"      ? "Self-Use vs Investment"      :
+             pieMode==="loanrequired" ? "Loan Required?"              :
+                                        "Visit Scheduled vs Pending"}
+          </h3>
+          <select value={pieMode} onChange={e=>setPieMode(e.target.value as any)}
+            className="bg-[#1a1a1a] border border-[#333] rounded-lg px-3 py-1.5 text-xs text-white outline-none cursor-pointer focus:border-purple-500 appearance-none">
+            <option value="interest">Lead Interest</option>
+            <option value="loan">Loan Status</option>
+            <option value="usetype">Self-Use vs Investment</option>
+            <option value="loanrequired">Loan Required?</option>
+            <option value="visits">Visit Scheduled vs Pending</option>
+          </select>
+        </div>
+        <div className="flex items-center gap-4">
+          <ResponsiveContainer width="55%" height={200}>
+            <PieChart>
+              <Pie data={pieData} cx="50%" cy="50%" innerRadius={55} outerRadius={85} paddingAngle={3} dataKey="value">
+                {pieData.map((entry:any,i:number)=>(
+                  <Cell key={i} fill={pieColors[entry.name]??"#6b7280"}/>
+                ))}
+              </Pie>
+              <RechartsTooltip content={<PieTip/>}/>
+            </PieChart>
+          </ResponsiveContainer>
+          <div className="flex flex-col gap-2 flex-1">
+            {pieData.map((entry:any)=>{
+              const color = pieColors[entry.name]??"#6b7280";
+              const pct   = totalLeads>0 ? Math.round((entry.value/totalLeads)*100) : 0;
+              return (
+                <div key={entry.name} className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{backgroundColor:color}}/>
+                    <span className="text-[11px] text-gray-400 font-medium">{entry.name}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[11px] text-white font-bold">{entry.value}</span>
+                    <span className="text-[10px] text-gray-500">({pct}%)</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
 // DASHBOARD OVERVIEW
 // ============================================================================
 function DashboardOverview({ managers, allLeads, isLoading, user }: any) {
@@ -303,8 +472,8 @@ function DashboardOverview({ managers, allLeads, isLoading, user }: any) {
   const managerStats = managers.map((m: any) => {
     const mLeads = allLeads.filter((l: any) => l.assigned_to === m.name);
     return {
-      name: m.name,
-      activeLeads: mLeads.filter((l: any) => l.status !== "Completed").length,
+      name:       m.name,
+      activeLeads: mLeads.length,
       siteVisits:  mLeads.filter((l: any) => l.status === "Visit Scheduled" || !!l.mongoVisitDate).length,
     };
   }).sort((a: any, b: any) => b.activeLeads - a.activeLeads);
@@ -317,18 +486,19 @@ function DashboardOverview({ managers, allLeads, isLoading, user }: any) {
   }, [managerStats, isLoading, hasAutoSelected]);
 
   const activeManagerLeads = allLeads.filter((l: any) => l.assigned_to === selectedManagerName);
-  const completedCount = activeManagerLeads.filter((l: any) => l.status === "Completed").length;
-  const visitCount     = activeManagerLeads.filter((l: any) => l.status === "Visit Scheduled" || !!l.mongoVisitDate).length;
-  const pieData        = managerStats.filter((m: any) => m.siteVisits > 0);
-  const PIE_COLORS     = ["#d946ef","#8b5cf6","#3b82f6","#0ea5e9","#10b981","#f59e0b"];
+  const visitCount         = activeManagerLeads.filter((l: any) => l.status === "Visit Scheduled" || !!l.mongoVisitDate).length;
+  const pieData            = managerStats.filter((m: any) => m.siteVisits > 0);
+  const PIE_COLORS         = ["#d946ef","#8b5cf6","#3b82f6","#0ea5e9","#10b981","#f59e0b"];
 
   return (
     <div className="h-full flex flex-col p-8 overflow-y-auto custom-scrollbar">
+      {/* Welcome banner */}
       <div className="bg-[#111111] border border-[#222] rounded-2xl p-6 mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shadow-sm">
         <h2 className="text-xl font-bold text-white">Welcome back, {user?.name || "Admin"}!</h2>
         <p className="text-sm text-gray-400">Here is what's happening with your team today.</p>
       </div>
 
+      {/* Top performers + site visits */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         <div className="lg:col-span-2 bg-[#111111] border border-[#222] rounded-2xl p-6 shadow-sm flex flex-col">
           <h2 className="text-lg font-bold text-white mb-1 flex items-center gap-2"><FaChartPie className="text-purple-500"/> Top Performers</h2>
@@ -373,7 +543,7 @@ function DashboardOverview({ managers, allLeads, isLoading, user }: any) {
         </div>
       </div>
 
-      {/* Team Performance Table */}
+      {/* Team Performance Table header + dropdown */}
       <div className="bg-[#111111] border border-[#222] rounded-2xl p-6 mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shadow-sm">
         <div>
           <h2 className="text-xl font-bold text-white flex items-center gap-2"><FaTable className="text-purple-500"/> Team Performance Table</h2>
@@ -396,13 +566,26 @@ function DashboardOverview({ managers, allLeads, isLoading, user }: any) {
         </div>
       ) : (
         <div className="animate-fadeIn space-y-8">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          {/* Stat cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="bg-[#111] border border-[#222] rounded-2xl p-5 shadow-sm"><p className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-1">Total Assigned</p><p className="text-3xl font-black text-white">{activeManagerLeads.length}</p></div>
-            <div className="bg-[#111] border border-[#222] rounded-2xl p-5 shadow-sm"><p className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-1">Active Pipeline</p><p className="text-3xl font-black text-blue-400">{activeManagerLeads.length - completedCount}</p></div>
             <div className="bg-[#111] border border-[#222] rounded-2xl p-5 shadow-sm"><p className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-1">Site Visits</p><p className="text-3xl font-black text-orange-400">{visitCount}</p></div>
-            <div className="bg-[#111] border border-[#222] rounded-2xl p-5 shadow-sm"><p className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-1">Completed</p><p className="text-3xl font-black text-green-500">{completedCount}</p></div>
+            <div className="bg-[#111] border border-[#222] rounded-2xl p-5 shadow-sm"><p className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-1">Loans Active</p><p className="text-3xl font-black text-blue-400">{activeManagerLeads.filter((l:any)=>l.loanPlanned==="Yes").length}</p></div>
           </div>
 
+          {/* ── ANALYTICS CHARTS for selected manager ── */}
+          {activeManagerLeads.length > 0 && (
+            <div>
+              <div className="flex items-center gap-3 mb-4">
+                <FaChartPie className="text-purple-500"/>
+                <h3 className="text-white font-bold text-sm uppercase tracking-wider">Lead Analytics — {selectedManagerName}</h3>
+                <span className="text-xs text-gray-500 bg-[#222] px-2 py-0.5 rounded border border-[#333]">{activeManagerLeads.length} leads</span>
+              </div>
+              <DashboardAnalytics leads={activeManagerLeads} />
+            </div>
+          )}
+
+          {/* Leads table */}
           <div className="bg-[#111111] rounded-2xl border border-[#222] shadow-sm overflow-hidden">
             <div className="p-5 border-b border-[#222] flex justify-between items-center bg-[#151515]">
               <h3 className="font-bold text-white flex items-center gap-2"><FaUsers className="text-purple-500"/> Leads Database ({selectedManagerName})</h3>
@@ -465,7 +648,6 @@ function AdminSalesView({ managers, allLeads, followUps, isLoading, adminUser, r
   const [selectedManager, setSelectedManager] = useState<any>(null);
   const [searchManager, setSearchManager]     = useState("");
 
-  // sub-states for the lead detail panel (mirrors sales/page.tsx)
   const [subView, setSubView]     = useState<"cards"|"detail">("cards");
   const [selectedLead, setSelectedLead] = useState<any>(null);
   const [detailTab, setDetailTab]   = useState<"personal"|"loan">("personal");
@@ -567,16 +749,6 @@ function AdminSalesView({ managers, allLeads, followUps, isLoading, adminUser, r
     } catch {}
   };
 
-  const handleMarkCompleted = async (lead: any) => {
-    if (!lead) return;
-    const nm = { leadId:String(lead.id),salesManagerName:adminUser.name,createdBy:"admin",message:"✅ Lead marked as COMPLETED by Admin.",siteVisitDate:null,createdAt:new Date().toISOString() };
-    try {
-      await fetch("/api/followups",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(nm)});
-      await fetch(`/api/walkin_enquiries/${lead.id}`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({status:"Completed"})});
-      refetch();
-    } catch {}
-  };
-
   return (
     <div className="flex h-full">
       {toastMsg && (
@@ -666,18 +838,15 @@ function AdminSalesView({ managers, allLeads, followUps, isLoading, adminUser, r
                     {activeManagerLeads.map((lead: any) => {
                       const interest = lead.leadInterestStatus && lead.leadInterestStatus !== "Pending" ? lead.leadInterestStatus : null;
                       const loanSt   = lead.loanStatus && lead.loanStatus !== "N/A" ? lead.loanStatus : null;
-                      const isCompleted = lead.status === "Completed";
                       return (
                         <div key={lead.id}
-                          className={`rounded-2xl p-6 border shadow-sm transition-all group flex flex-col justify-between cursor-pointer
-                            ${isCompleted ? "bg-green-900/20 border-green-700/40 hover:border-green-500/60" : "bg-[#1a1a1a] border-[#2a2a2a] hover:border-purple-500/50 hover:bg-[#1e1e1e]"}`}
+                          className="rounded-2xl p-6 border shadow-sm transition-all group flex flex-col justify-between cursor-pointer bg-[#1a1a1a] border-[#2a2a2a] hover:border-purple-500/50 hover:bg-[#1e1e1e]"
                           onClick={() => { setSelectedLead(lead); setSubView("detail"); }}
                         >
                           <div>
-                            {/* Header */}
-                            <div className={`flex justify-between items-start mb-5 pb-4 border-b ${isCompleted?"border-green-800/40":"border-[#2a2a2a]"}`}>
-                              <h3 className={`text-xl font-bold transition-colors line-clamp-1 pr-2 ${isCompleted?"text-green-300":"text-white group-hover:text-purple-400"}`}>
-                                <span className={`mr-2 ${isCompleted?"text-green-500":"text-purple-500"}`}>#{lead.id}</span>{lead.name}
+                            <div className="flex justify-between items-start mb-5 pb-4 border-b border-[#2a2a2a]">
+                              <h3 className="text-xl font-bold transition-colors line-clamp-1 pr-2 text-white group-hover:text-purple-400">
+                                <span className="mr-2 text-purple-500">#{lead.id}</span>{lead.name}
                               </h3>
                               {interest
                                 ? <InterestBadge status={interest}/>
@@ -686,7 +855,6 @@ function AdminSalesView({ managers, allLeads, followUps, isLoading, adminUser, r
                             </div>
 
                             <div className="space-y-3 mb-5">
-                              {/* Budget + Loan badge */}
                               <div className="flex justify-between items-center">
                                 <div><p className="text-xs text-gray-400 font-medium">Budget</p><p className="text-sm font-semibold text-green-400">{lead.salesBudget}</p></div>
                                 <div className="flex flex-col items-end gap-1">
@@ -697,7 +865,7 @@ function AdminSalesView({ managers, allLeads, followUps, isLoading, adminUser, r
 
                               {lead.propType && lead.propType!=="Pending" && <div><p className="text-xs text-gray-400 font-medium">Property</p><p className="text-sm font-medium text-white">{lead.propType}</p></div>}
 
-                              <div className={`p-3 rounded-lg border flex flex-col gap-1.5 ${isCompleted?"bg-green-900/10 border-green-800/30":"bg-[#222] border-[#2a2a2a]"}`}>
+                              <div className="p-3 rounded-lg border flex flex-col gap-1.5 bg-[#222] border-[#2a2a2a]">
                                 <p className="text-xs text-gray-400 flex items-center gap-2"><FaPhoneAlt className="text-gray-500 w-3 h-3"/> <span className="font-mono text-gray-200">{maskPhone(lead.phone)}</span></p>
                               </div>
 
@@ -710,18 +878,11 @@ function AdminSalesView({ managers, allLeads, followUps, isLoading, adminUser, r
                             </div>
                           </div>
 
-                          <div className={`pt-4 border-t mt-auto ${isCompleted?"border-green-800/30":"border-[#2a2a2a]"}`}>
-                            {isCompleted ? (
-                              <div className="text-xs text-green-500/70 font-bold text-center">Lead Completed</div>
-                            ) : (
-                              <div className="flex justify-between items-center gap-2">
-                                <p className="text-gray-500 text-[10px]">{formatDate(lead.created_at).split(",")[0]}</p>
-                                <button onClick={(e) => { e.stopPropagation(); handleMarkCompleted(lead); }}
-                                  className="flex items-center gap-1.5 px-3 py-1.5 bg-green-600/20 border border-green-500/50 hover:bg-green-600 hover:text-white text-green-400 text-xs font-bold rounded-lg transition-colors">
-                                  <FaCheckCircle/> Complete
-                                </button>
-                              </div>
-                            )}
+                          <div className="pt-4 border-t mt-auto border-[#2a2a2a]">
+                            <div className="flex justify-between items-center gap-2">
+                              <p className="text-gray-500 text-[10px]">{formatDate(lead.created_at).split(",")[0]}</p>
+                              <span className="text-[10px] font-bold text-gray-500 group-hover:text-purple-400 transition-colors uppercase tracking-widest">Details →</span>
+                            </div>
                           </div>
                         </div>
                       );
@@ -736,7 +897,6 @@ function AdminSalesView({ managers, allLeads, followUps, isLoading, adminUser, r
               <div className="flex-1 overflow-y-auto custom-scrollbar p-6">
                 <div className="animate-fadeIn max-w-[1200px] mx-auto flex flex-col h-full">
 
-                  {/* Detail header */}
                   <div className="flex items-center justify-between mb-4 rounded-2xl border p-4 sm:p-5 shadow-xl flex-shrink-0 bg-[#1a1a1a] border-[#2a2a2a]">
                     <div className="flex items-center gap-4">
                       <button onClick={() => { setSubView("cards"); setShowSalesForm(false); setShowLoanForm(false); }}
@@ -750,7 +910,7 @@ function AdminSalesView({ managers, allLeads, followUps, isLoading, adminUser, r
                       </h1>
                     </div>
                     <div className="flex gap-3">
-                      {!showSalesForm && !showLoanForm && selectedLead.status !== "Completed" && (
+                      {!showSalesForm && !showLoanForm && (
                         <>
                           <button onClick={() => { prefillSalesForm(); setShowSalesForm(true); setShowLoanForm(false); }}
                             className="bg-purple-600 hover:bg-purple-500 text-white font-bold px-4 py-2 rounded-lg text-sm flex items-center gap-2 transition-colors cursor-pointer shadow-lg shadow-purple-600/20">
@@ -759,10 +919,6 @@ function AdminSalesView({ managers, allLeads, followUps, isLoading, adminUser, r
                           <button onClick={() => { prefillLoanForm(); setShowLoanForm(true); setShowSalesForm(false); }}
                             className="bg-blue-600 hover:bg-blue-500 text-white font-bold px-4 py-2 rounded-lg text-sm flex items-center gap-2 transition-colors cursor-pointer shadow-lg shadow-blue-600/20">
                             <FaUniversity/> Track Loan
-                          </button>
-                          <button onClick={() => handleMarkCompleted(selectedLead)}
-                            className="bg-green-600 hover:bg-green-500 text-white font-bold px-4 py-2 rounded-lg text-sm flex items-center gap-2 transition-colors cursor-pointer">
-                            <FaCheckCircle/> Complete
                           </button>
                         </>
                       )}
@@ -895,7 +1051,6 @@ function AdminSalesView({ managers, allLeads, followUps, isLoading, adminUser, r
 
                       ) : (
                         <div className="flex flex-col h-full animate-fadeIn">
-                          {/* Tabs */}
                           <div className="flex items-center gap-2 mb-4 bg-[#1a1a1a] border border-[#2a2a2a] p-1.5 rounded-xl flex-shrink-0">
                             <button onClick={()=>setDetailTab("personal")} className={`flex-1 py-2 text-sm font-bold rounded-lg transition-colors cursor-pointer ${detailTab==="personal"?"bg-purple-600 text-white shadow-md":"text-gray-400 hover:text-white hover:bg-[#222]"}`}>Personal Information</button>
                             <button onClick={()=>setDetailTab("loan")} className={`flex-1 py-2 text-sm font-bold rounded-lg transition-colors cursor-pointer ${detailTab==="loan"?"bg-blue-600 text-white shadow-md":"text-gray-400 hover:text-white hover:bg-[#222]"}`}>Loan Tracking</button>
@@ -1015,12 +1170,10 @@ function AdminSalesView({ managers, allLeads, followUps, isLoading, adminUser, r
                         })}
                         <div ref={followUpEndRef}/>
                       </div>
-                      {selectedLead.status !== "Completed" && (
-                        <form onSubmit={handleSendCustomNote} className="p-4 bg-[#1a1a1a] border-t border-[#333] flex gap-3 items-center flex-shrink-0">
-                          <input type="text" value={customNote} onChange={e=>setCustomNote(e.target.value)} placeholder="Add admin note..." className="flex-1 bg-[#121212] border border-[#333] rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-purple-500 transition-colors shadow-inner"/>
-                          <button type="submit" className="w-12 h-12 bg-purple-600 hover:bg-purple-500 text-white rounded-xl flex items-center justify-center cursor-pointer transition-colors shadow-lg"><FaPaperPlane className="text-sm ml-[-2px]"/></button>
-                        </form>
-                      )}
+                      <form onSubmit={handleSendCustomNote} className="p-4 bg-[#1a1a1a] border-t border-[#333] flex gap-3 items-center flex-shrink-0">
+                        <input type="text" value={customNote} onChange={e=>setCustomNote(e.target.value)} placeholder="Add admin note..." className="flex-1 bg-[#121212] border border-[#333] rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-purple-500 transition-colors shadow-inner"/>
+                        <button type="submit" className="w-12 h-12 bg-purple-600 hover:bg-purple-500 text-white rounded-xl flex items-center justify-center cursor-pointer transition-colors shadow-lg"><FaPaperPlane className="text-sm ml-[-2px]"/></button>
+                      </form>
                     </div>
                   </div>
                 </div>
