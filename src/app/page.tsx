@@ -4,47 +4,43 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { FaBuilding } from "react-icons/fa";
-import { MdEmail, MdLock, MdVisibility, MdVisibilityOff } from "react-icons/md";
+import { MdPerson, MdLock, MdVisibility, MdVisibilityOff } from "react-icons/md"; // 🔥 MdEmail → MdPerson
 
 export default function Login() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState(""); // 🔥 was: email
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  
-  // 🔥 Added state to handle the inline error and loading status
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(""); // Clear previous errors
+    setError("");
     setIsLoading(true);
 
     try {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ identifier, password }), // 🔥 was: { email, password }
       });
 
       if (res.ok) {
         const data = await res.json();
         localStorage.setItem("crm_user", JSON.stringify(data.user));
         
-        // 🔥 Dynamic Routing based on Role
         const userRole = data.user.role.toLowerCase();
         if (userRole === "receptionist") {
           router.push("/dashboard/receptionist");
-        }else if(userRole == "admin"){
-          router.push("/dashboard")
+        } else if (userRole === "admin") {
+          router.push("/dashboard");
         } else if (userRole === "sales manager") {
           router.push("/dashboard/sales");
         } else {
-          router.push("/dashboard"); // Admin goes here
+          router.push("/dashboard");
         }
       } else {
-        // 🔥 RESTORED ERROR HANDLING: Shows the red box for wrong password / deactivated account
         const errorData = await res.json();
         setError(errorData.message || "Invalid credentials.");
       }
@@ -75,15 +71,15 @@ export default function Login() {
 
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
-              <label className="block text-white text-sm font-medium mb-2">Email Address</label>
+              <label className="block text-white text-sm font-medium mb-2">Email or Username</label>
               <div className="relative">
-                <MdEmail className="absolute left-3 top-3.5 text-gray-500 text-lg" />
+                <MdPerson className="absolute left-3 top-3.5 text-gray-500 text-lg" />
                 <input 
-                  type="email" 
+                  type="text"  // 🔥 must be "text" not "email" — browser blocks usernames on type="email"
                   className="w-full bg-[#2a2a2a] text-white border border-[#3a3a3a] rounded-lg py-2.5 pl-10 pr-4 focus:outline-none focus:border-purple-500 transition-colors"
-                  placeholder="name@company.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="name@gmail.com or username"
+                  value={identifier}                        // 🔥 was: email
+                  onChange={(e) => setIdentifier(e.target.value)} // 🔥 was: setEmail
                   required
                 />
               </div>
@@ -114,7 +110,6 @@ export default function Login() {
               </div>
             </div>
 
-            {/* 🔥 INLINE ERROR MESSAGE (Replaces Alert) 🔥 */}
             {error && (
               <div className="bg-red-950/40 border border-red-500/50 text-red-500 text-sm p-3.5 rounded-lg flex items-start animate-fadeIn mt-2">
                 <span className="font-medium leading-relaxed">{error}</span>

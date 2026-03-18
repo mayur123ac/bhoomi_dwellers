@@ -4,46 +4,70 @@ import User from "@/models/User";
 
 export async function POST(req: Request) {
   try {
-    const { email, password } = await req.json();
+    const { identifier, password } = await req.json();
+
+    if (!identifier || !password) {
+      return NextResponse.json(
+        { message: "Please provide both a username/email and password." },
+        { status: 400 }
+      );
+    }
+
     await connectMongoDB();
 
-    // 🔥 Fix 1: Clean the email (remove spaces and make lowercase)
-    const cleanEmail = email.trim().toLowerCase();
+    const cleanIdentifier = identifier.trim(); // 🔥 REMOVED .toLowerCase() — breaks case-sensitive usernames
 
-    // 1. Find the user
-    const user = await User.findOne({ email: cleanEmail });
+    // 🔥 All three use case-insensitive regex now
+    const user = await User.findOne({
+      $or: [
+        { email:    { $regex: `^${cleanIdentifier}$`, $options: "i" } },
+        { username: { $regex: `^${cleanIdentifier}$`, $options: "i" } },
+        { name:     { $regex: `^${cleanIdentifier}$`, $options: "i" } },
+      ],
+    });
 
-    // 🔥 Fix 2: Tell us EXACTLY if the email is missing
     if (!user) {
-      return NextResponse.json({ message: "DEBUG: Email not found in database." }, { status: 401 });
+      return NextResponse.json(
+        { message: "No account found with that email or username." },
+        { status: 401 }
+      );
     }
 
-    // 🔥 Fix 3: Tell us EXACTLY if the password is wrong
-    if (user.password !== password) {
-      return NextResponse.json({ message: "DEBUG: Password does not match." }, { status: 401 });
+    // 🔥 Trim both to avoid hidden space mismatches
+    if (user.password.trim() !== password.trim()) {
+      return NextResponse.json(
+        { message: "Incorrect password. Please try again." },
+        { status: 401 }
+      );
     }
 
-    // 4. STRICT SYSTEM ACCESS GATE
     if (user.isActive === false) {
       return NextResponse.json(
-        { message: "Account deactivated please contact admin" }, 
+        { message: "Account deactivated. Please contact admin." },
         { status: 403 }
       );
     }
 
-    // 5. If everything passes, log them in
-    return NextResponse.json({
-      message: "Login successful.",
-      user: {
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        isActive: user.isActive
-      }
-    }, { status: 200 });
+    return NextResponse.json(
+      {
+        message: "Login successful.",
+        user: {
+          _id:      user._id,
+          name:     user.name,
+          username: user.username,
+          email:    user.email,
+          role:     user.role,
+          isActive: user.isActive,
+        },
+      },
+      { status: 200 }
+    );
 
   } catch (error) {
-    return NextResponse.json({ message: "An error occurred during login." }, { status: 500 });
+    console.error("🔥 Login error:", error);
+    return NextResponse.json(
+      { message: "An error occurred during login." },
+      { status: 500 }
+    );
   }
 }

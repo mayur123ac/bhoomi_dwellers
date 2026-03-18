@@ -105,32 +105,55 @@ export default function SalesDashboard() {
   const [activeView, setActiveView] = useState("overview");
   const [showPassword, setShowPassword] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [dismissedFollowUps, setDismissedFollowUps] = useState<Set<string>>(new Set());
+  const [dismissedVisits, setDismissedVisits]         = useState<Set<string>>(new Set());
+  const [showVisitNotifications, setShowVisitNotifications] = useState(false);
 
   const { managers, receptionists, allLeads, followUps, isLoading, refetch } = useAdminData(); // ✅ KEEP THIS ONE
 
   const followUpLeads = useMemo(() => {
-    const now = new Date();
-    const myLeads = user.role === "admin"
-      ? allLeads
-      : allLeads.filter((l: any) => l.assigned_to === user.name);
+      const now = new Date();
+      const myLeads = user.role === "admin"
+        ? allLeads
+        : allLeads.filter((l: any) => l.assigned_to === user.name);
 
-    return myLeads.filter((lead: any) => {
-      if (lead.status === "Completed") return false;
-      if (lead.leadInterestStatus === "Not Interested") return false;
-      const leadFups = followUps.filter((f: any) => String(f.leadId) === String(lead.id));
-      const lastActivityMs = leadFups.length > 0
-        ? Math.max(...leadFups.map((f: any) => new Date(f.createdAt).getTime()))
-        : new Date(lead.created_at).getTime();
-      return (now.getTime() - lastActivityMs) / (1000 * 60 * 60 * 24) >= 2;
-    }).map((lead: any) => {
-      const leadFups = followUps.filter((f: any) => String(f.leadId) === String(lead.id));
-      const lastActivityMs = leadFups.length > 0
-        ? Math.max(...leadFups.map((f: any) => new Date(f.createdAt).getTime()))
-        : new Date(lead.created_at).getTime();
-      return { ...lead, daysSince: Math.floor((now.getTime() - lastActivityMs) / (1000 * 60 * 60 * 24)) };
-    }).sort((a: any, b: any) => b.daysSince - a.daysSince);
-  }, [allLeads, followUps, user]);
+      return myLeads.filter((lead: any) => {
+        if (lead.status === "Completed") return false;
+        if (lead.leadInterestStatus === "Not Interested") return false;
+        const leadFups = followUps.filter((f: any) => String(f.leadId) === String(lead.id));
+        const lastActivityMs = leadFups.length > 0
+          ? Math.max(...leadFups.map((f: any) => new Date(f.createdAt).getTime()))
+          : new Date(lead.created_at).getTime();
+        return (now.getTime() - lastActivityMs) / (1000 * 60 * 60 * 24) >= 2;
+      }).map((lead: any) => {
+        const leadFups = followUps.filter((f: any) => String(f.leadId) === String(lead.id));
+        const lastActivityMs = leadFups.length > 0
+          ? Math.max(...leadFups.map((f: any) => new Date(f.createdAt).getTime()))
+          : new Date(lead.created_at).getTime();
+        return { ...lead, daysSince: Math.floor((now.getTime() - lastActivityMs) / (1000 * 60 * 60 * 24)) };
+      }).sort((a: any, b: any) => b.daysSince - a.daysSince);
+    }, [allLeads, followUps, user]);
+    const visitNotificationLeads = useMemo(() => {
+    const now   = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
+    return allLeads
+      .filter((lead: any) => {
+        if (!lead.mongoVisitDate) return false;
+        if (dismissedVisits.has(String(lead.id))) return false;
+        const visitDay = new Date(lead.mongoVisitDate);
+        const visit    = new Date(visitDay.getFullYear(), visitDay.getMonth(), visitDay.getDate());
+        const diffDays = Math.round((visit.getTime() - today.getTime()) / 86400000);
+        return diffDays >= 0 && diffDays <= 1; // today or tomorrow
+      })
+      .map((lead: any) => {
+        const visitDay = new Date(lead.mongoVisitDate);
+        const visit    = new Date(visitDay.getFullYear(), visitDay.getMonth(), visitDay.getDate());
+        const diffDays = Math.round((visit.getTime() - today.getTime()) / 86400000);
+        return { ...lead, visitDiff: diffDays }; // 0 = today, 1 = tomorrow
+      })
+      .sort((a: any, b: any) => a.visitDiff - b.visitDiff);
+  }, [allLeads, dismissedVisits]);
   // ❌ DELETE THIS LINE — it was the duplicate causing the error:
   // const { managers, receptionists, allLeads, followUps, isLoading, refetch } = useAdminData();
 
@@ -170,18 +193,112 @@ export default function SalesDashboard() {
 
       <div className="flex-1 flex flex-col h-screen overflow-hidden relative">
         <header className="h-16 bg-[#1a1a1a] border-b border-[#2a2a2a] flex items-center justify-between px-8 flex-shrink-0 z-30 shadow-sm">
-          <h1 className="text-white font-semibold flex items-center text-sm md:text-base tracking-wide">Bhoomi Dwellers<span className="text-gray-500 text-xs md:text-sm font-normal ml-2">- Sales Manager</span></h1>
-          <div className="flex items-center space-x-6 relative">
-            {/* ── NOTIFICATION BELL ── */}
+          <h1 className="text-white font-semibold flex items-center text-sm md:text-base tracking-wide">
+            Bhoomi Dwellers<span className="text-gray-500 text-xs md:text-sm font-normal ml-2">- Sales Manager</span>
+          </h1>
+          <div className="flex items-center gap-3 relative">
+
+            {/* ── SITE VISIT BELL ── */}
             <div className="relative">
               <button
-                onClick={() => { setShowNotifications(!showNotifications); setIsProfileOpen(false); }}
+                onClick={() => { setShowVisitNotifications(!showVisitNotifications); setShowNotifications(false); setIsProfileOpen(false); }}
+                className="relative w-9 h-9 rounded-full bg-[#1a1a1a] border border-[#2a2a2a] flex items-center justify-center text-gray-400 hover:text-white hover:border-orange-500/50 transition-colors cursor-pointer"
+              >
+                <FaCalendarAlt className="text-sm"/>
+                {visitNotificationLeads.length > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-orange-500 rounded-full text-[9px] font-black text-white flex items-center justify-center shadow">
+                    {visitNotificationLeads.length > 9 ? "9+" : visitNotificationLeads.length}
+                  </span>
+                )}
+              </button>
+
+              {showVisitNotifications && (
+                <div className="absolute top-12 right-0 w-80 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl shadow-2xl z-50 animate-fadeIn overflow-hidden">
+                  <div className="p-4 border-b border-[#2a2a2a] flex items-center justify-between">
+                    <div>
+                      <h3 className="text-white font-bold text-sm">Site Visit Reminders</h3>
+                      <p className="text-gray-500 text-[10px] mt-0.5">Scheduled for today & tomorrow</p>
+                    </div>
+                    {visitNotificationLeads.length > 0 && (
+                      <span className="text-[10px] font-bold bg-orange-500/10 border border-orange-500/30 text-orange-400 px-2 py-0.5 rounded-full">
+                        {visitNotificationLeads.length} upcoming
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="max-h-80 overflow-y-auto custom-scrollbar">
+                    {visitNotificationLeads.length === 0 ? (
+                      <div className="p-6 text-center text-gray-600 text-sm">
+                        <FaCalendarAlt className="text-2xl mb-2 mx-auto opacity-20"/>
+                        No visits in the next 24 hours!
+                      </div>
+                    ) : (
+                      visitNotificationLeads.map((lead: any) => {
+                        const isToday    = lead.visitDiff === 0;
+                        const colorText  = isToday ? "text-red-400"    : "text-yellow-400";
+                        const colorBg    = isToday ? "bg-red-500/10"   : "bg-yellow-500/10";
+                        const colorBorder= isToday ? "border-red-500/30" : "border-yellow-500/30";
+                        const label      = isToday ? "TODAY"           : "TOMORROW";
+
+                        return (
+                          <div key={lead.id} className="p-4 border-b border-[#222] hover:bg-[#222] transition-colors group relative">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDismissedVisits(prev => new Set([...prev, String(lead.id)]));
+                              }}
+                              className="absolute top-3 right-3 text-gray-600 hover:text-white transition-colors cursor-pointer opacity-0 group-hover:opacity-100"
+                            >
+                              <FaTimes className="text-xs"/>
+                            </button>
+
+                            <div className="flex items-start justify-between gap-3 pr-4">
+                              <div className="flex-1 min-w-0">
+                                <p className="text-white font-bold text-xs group-hover:text-orange-400 transition-colors truncate">
+                                  #{lead.id} — {lead.name}
+                                </p>
+                                <p className="text-gray-500 text-[10px] mt-0.5 truncate">
+                                  {lead.propType !== "Pending" ? lead.propType : "Property TBD"} · {lead.salesBudget}
+                                </p>
+                                <p className="text-gray-400 text-[10px] mt-1">
+                                  📅 {new Date(lead.mongoVisitDate).toLocaleDateString("en-IN", { day:"2-digit", month:"short", hour:"2-digit", minute:"2-digit" })}
+                                </p>
+                              </div>
+                              <div className="flex-shrink-0">
+                                <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full border ${colorText} ${colorBg} ${colorBorder}`}>
+                                  {label}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+
+                  {visitNotificationLeads.length > 0 && (
+                    <div className="p-3 border-t border-[#222] bg-[#151515]">
+                      <p className="text-[10px] text-gray-600 text-center">
+                        🗓️ Showing visits scheduled within the next 24 hours
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* ── FOLLOW-UP BELL ── */}
+            <div className="relative">
+              <button
+                onClick={() => { setShowNotifications(!showNotifications); setShowVisitNotifications(false); setIsProfileOpen(false); }}
                 className="relative w-9 h-9 rounded-full bg-[#1a1a1a] border border-[#2a2a2a] flex items-center justify-center text-gray-400 hover:text-white hover:border-purple-500/50 transition-colors cursor-pointer"
               >
                 <FaBell className="text-sm"/>
-                {followUpLeads.length > 0 && (
+                {followUpLeads.filter((l: any) => !dismissedFollowUps.has(String(l.id))).length > 0 && (
                   <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-[9px] font-black text-white flex items-center justify-center shadow">
-                    {followUpLeads.length > 9 ? "9+" : followUpLeads.length}
+                    {followUpLeads.filter((l: any) => !dismissedFollowUps.has(String(l.id))).length > 9
+                      ? "9+"
+                      : followUpLeads.filter((l: any) => !dismissedFollowUps.has(String(l.id))).length}
                   </span>
                 )}
               </button>
@@ -193,87 +310,117 @@ export default function SalesDashboard() {
                       <h3 className="text-white font-bold text-sm">Follow-up Reminders</h3>
                       <p className="text-gray-500 text-[10px] mt-0.5">Leads with no activity in 2+ days</p>
                     </div>
-                    {followUpLeads.length > 0 && (
+                    {followUpLeads.filter((l: any) => !dismissedFollowUps.has(String(l.id))).length > 0 && (
                       <span className="text-[10px] font-bold bg-red-500/10 border border-red-500/30 text-red-400 px-2 py-0.5 rounded-full">
-                        {followUpLeads.length} pending
+                        {followUpLeads.filter((l: any) => !dismissedFollowUps.has(String(l.id))).length} pending
                       </span>
                     )}
                   </div>
 
                   <div className="max-h-80 overflow-y-auto custom-scrollbar">
-                    {followUpLeads.length === 0 ? (
+                    {followUpLeads.filter((l: any) => !dismissedFollowUps.has(String(l.id))).length === 0 ? (
                       <div className="p-6 text-center text-gray-600 text-sm">
                         <FaBell className="text-2xl mb-2 mx-auto opacity-20"/>
                         All leads are up to date!
                       </div>
                     ) : (
-                      followUpLeads.map((lead: any) => (
-                        <div
-                          key={lead.id}
-                          onClick={() => {
-                            setShowNotifications(false);
-                            setActiveView("detail");
-                          }}
-                          className="p-4 border-b border-[#222] hover:bg-[#222] transition-colors cursor-pointer group"
-                        >
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="flex-1 min-w-0">
-                              <p className="text-white font-bold text-xs group-hover:text-purple-400 transition-colors truncate">
-                                #{lead.id} — {lead.name}
-                              </p>
-                              <p className="text-gray-500 text-[10px] mt-0.5 truncate">
-                                {lead.propType !== "Pending" ? lead.propType : "No property set"} · {lead.salesBudget}
-                              </p>
-                              {lead.leadInterestStatus && lead.leadInterestStatus !== "Pending" && (
-                                <span className={`inline-block mt-1 text-[9px] font-bold uppercase px-2 py-0.5 rounded-full border ${
-                                  lead.leadInterestStatus === "Interested"
-                                    ? "text-green-400 border-green-500/30 bg-green-500/10"
-                                    : "text-yellow-400 border-yellow-500/30 bg-yellow-500/10"
-                                }`}>{lead.leadInterestStatus}</span>
-                              )}
-                            </div>
-                            <div className="flex-shrink-0 text-right">
-                              <div className={`text-xs font-black ${lead.daysSince >= 7 ? "text-red-400" : lead.daysSince >= 4 ? "text-orange-400" : "text-yellow-400"}`}>
-                                {lead.daysSince}d
+                      followUpLeads
+                        .filter((lead: any) => !dismissedFollowUps.has(String(lead.id)))
+                        .map((lead: any) => (
+                          <div
+                            key={lead.id}
+                            onClick={() => { setShowNotifications(false); setActiveView("detail"); }}
+                            className="p-4 border-b border-[#222] hover:bg-[#222] transition-colors cursor-pointer group relative"
+                          >
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDismissedFollowUps(prev => new Set([...prev, String(lead.id)]));
+                              }}
+                              className="absolute top-3 right-3 text-gray-600 hover:text-white transition-colors cursor-pointer opacity-0 group-hover:opacity-100"
+                            >
+                              <FaTimes className="text-xs"/>
+                            </button>
+
+                            <div className="flex items-start justify-between gap-3 pr-4">
+                              <div className="flex-1 min-w-0">
+                                <p className="text-white font-bold text-xs group-hover:text-purple-400 transition-colors truncate">
+                                  #{lead.id} — {lead.name}
+                                </p>
+                                <p className="text-gray-500 text-[10px] mt-0.5 truncate">
+                                  {lead.propType !== "Pending" ? lead.propType : "No property set"} · {lead.salesBudget}
+                                </p>
+                                {lead.leadInterestStatus && lead.leadInterestStatus !== "Pending" && (
+                                  <span className={`inline-block mt-1 text-[9px] font-bold uppercase px-2 py-0.5 rounded-full border ${
+                                    lead.leadInterestStatus === "Interested"
+                                      ? "text-green-400 border-green-500/30 bg-green-500/10"
+                                      : "text-yellow-400 border-yellow-500/30 bg-yellow-500/10"
+                                  }`}>{lead.leadInterestStatus}</span>
+                                )}
                               </div>
-                              <p className="text-[9px] text-gray-600">no contact</p>
+                              <div className="flex-shrink-0 text-right">
+                                <div className={`text-xs font-black ${lead.daysSince >= 7 ? "text-red-400" : lead.daysSince >= 4 ? "text-orange-400" : "text-yellow-400"}`}>
+                                  {lead.daysSince}d
+                                </div>
+                                <p className="text-[9px] text-gray-600">no contact</p>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      ))
+                        ))
                     )}
                   </div>
 
-                  {followUpLeads.length > 0 && (
+                  {followUpLeads.filter((l: any) => !dismissedFollowUps.has(String(l.id))).length > 0 && (
                     <div className="p-3 border-t border-[#222] bg-[#151515]">
                       <p className="text-[10px] text-gray-600 text-center">
                         ⚠️ Not Interested leads are excluded from reminders
                       </p>
                     </div>
                   )}
+                    
                 </div>
               )}
             </div>
-            <div onClick={() => { setIsProfileOpen(!isProfileOpen); setShowNotifications(false); }} className="w-9 h-9 rounded-full bg-purple-900/30 text-purple-400 border border-purple-500/50 flex items-center justify-center font-bold text-sm cursor-pointer shadow-sm hover:bg-purple-900/50 transition-colors">
-              {String(user?.name || "U").charAt(0).toUpperCase()}
-            </div>
-            {isProfileOpen && (
-              <div className="absolute top-12 right-0 w-64 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl shadow-2xl p-5 z-50 animate-fadeIn">
-                <div className="mb-4"><h3 className="text-white font-bold text-lg">{user.name}</h3><p className="text-gray-400 text-sm truncate">{user.email}</p></div>
-                <hr className="border-[#2a2a2a] mb-4" />
-                <div className="space-y-4 mb-6 text-sm">
-                  <p className="text-gray-400 flex justify-between items-center">Role: <span className="text-purple-400 font-bold capitalize bg-purple-500/10 px-2 py-0.5 rounded border border-purple-500/30">{user?.role}</span></p>
-                  <div>
-                    <p className="text-gray-400 text-xs mb-1">Password</p>
-                    <div className="flex items-center justify-between bg-[#121212] border border-[#2a2a2a] p-2 rounded-md">
-                      <span className="font-mono text-gray-300 tracking-widest text-xs">{showPassword ? user.password : "••••••••"}</span>
-                      <button onClick={() => setShowPassword(!showPassword)} className="text-gray-500 hover:text-purple-400 cursor-pointer"><FaEyeSlash /></button>
+
+            {/* ── PROFILE MENU (This is what you were missing) ── */}
+            <div className="relative">
+              <button
+                onClick={() => { 
+                  setIsProfileOpen(!isProfileOpen); 
+                  setShowNotifications(false); 
+                  setShowVisitNotifications(false); 
+                }}
+                className="w-9 h-9 rounded-full bg-purple-900/30 text-purple-400 border border-purple-500/50 flex items-center justify-center font-bold text-sm cursor-pointer shadow-sm hover:bg-purple-900/50 transition-colors"
+              >
+                <FaUserCircle className="text-lg" />
+              </button>
+
+              {isProfileOpen && (
+                <div className="absolute top-12 right-0 w-64 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl shadow-2xl p-5 z-50 animate-fadeIn">
+                  <div className="mb-4">
+                    <h3 className="text-white font-bold text-lg">{user.name}</h3>
+                    <p className="text-gray-400 text-sm truncate">{user.email}</p>
+                  </div>
+                  <hr className="border-[#2a2a2a] mb-4" />
+                  <div className="space-y-4 mb-6 text-sm">
+                    <p className="text-gray-400 flex justify-between items-center">
+                      Role: <span className="text-purple-400 font-bold capitalize bg-purple-500/10 px-2 py-0.5 rounded border border-purple-500/30">{user?.role}</span>
+                    </p>
+                    <div>
+                      <p className="text-gray-400 text-xs mb-1">Password</p>
+                      <div className="flex items-center justify-between bg-[#121212] border border-[#2a2a2a] p-2 rounded-md">
+                        <span className="font-mono text-gray-300 tracking-widest text-xs">{showPassword ? user.password : "••••••••"}</span>
+                        <button onClick={() => setShowPassword(!showPassword)} className="text-gray-500 hover:text-purple-400 cursor-pointer"><FaEyeSlash /></button>
+                      </div>
                     </div>
                   </div>
+                  <button onClick={handleLogout} className="w-full bg-[#3B1F1F] text-[#F28B82] hover:bg-red-900/40 border border-red-900/30 py-2.5 rounded-lg font-semibold transition-colors cursor-pointer">
+                    Logout
+                  </button>
                 </div>
-                <button onClick={handleLogout} className="w-full bg-[#3B1F1F] text-[#F28B82] hover:bg-red-900/40 border border-red-900/30 py-2.5 rounded-lg font-semibold transition-colors cursor-pointer">Logout</button>
-              </div>
-            )}
+              )}
+            </div>
+
           </div>
         </header>
         <main className="flex-1 overflow-y-auto p-8 bg-[#121212] custom-scrollbar">
@@ -687,7 +834,7 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm text-gray-400">
                   <thead className="text-xs text-gray-500 uppercase bg-[#222]">
-                    <tr><th className="px-6 py-4">LEAD NO.</th><th className="px-4 py-4">NAME</th><th className="px-4 py-4">PROP. TYPE</th><th className="px-4 py-4">BUDGET</th><th className="px-4 py-4">LOAN PLANNED?</th><th className="px-4 py-4">LOAN STATUS</th> <th className="px-4 py-4">AMT REQ / APPROVED</th><th className="px-6 py-4">SITE VISIT</th></tr>
+                  <tr><th className="px-6 py-4">LEAD NO.</th><th className="px-4 py-4">NAME</th><th className="px-4 py-4">PROP. TYPE</th><th className="px-4 py-4">BUDGET</th><th className="px-4 py-4">LOAN PLANNED?</th><th className="px-4 py-4">LOAN STATUS</th> <th className="px-4 py-4">AMT REQ / APPROVED</th><th className="px-6 py-4">SITE VISIT</th></tr>
                   </thead>
                   <tbody className="divide-y divide-[#2a2a2a]">
                     {isLoading?<tr><td colSpan={8} className="text-center py-8">Loading...</td></tr>
@@ -735,7 +882,7 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
         {subView==="cards"&&(
           <div className="animate-fadeIn">
             <div className="flex justify-between items-center mb-8 border-b border-[#2a2a2a] pb-6">
-              <h1 className="text-2xl font-bold text-white">Active Leads Pipeline</h1>
+              <h1 className="text-2xl font-bold text-white">Active Leads</h1>
               <div className="relative">
                 <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs"/>
                 <input type="text" placeholder="Search..." value={searchTerm} onChange={e=>setSearchTerm(e.target.value)} className="bg-[#1a1a1a] border border-[#333] rounded-lg pl-9 pr-4 py-2 text-sm text-white focus:border-purple-500 outline-none w-64 transition-colors"/>
@@ -937,7 +1084,7 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
                       <button onClick={()=>setDetailTab("personal")} className={`flex-1 py-2 text-sm font-bold rounded-lg transition-colors cursor-pointer ${detailTab==="personal"?"bg-purple-600 text-white shadow-md":"text-gray-400 hover:text-white hover:bg-[#222]"}`}>Personal Information</button>
                       <button onClick={()=>setDetailTab("loan")} className={`flex-1 py-2 text-sm font-bold rounded-lg transition-colors cursor-pointer ${detailTab==="loan"?"bg-blue-600 text-white shadow-md":"text-gray-400 hover:text-white hover:bg-[#222]"}`}>Loan Tracking</button>
                     </div>
-                   <div className="flex-1 overflow-y-auto custom-scrollbar bg-[#1a1a1a] border border-[#333] rounded-xl p-4 shadow-lg">
+                   <div className="flex-1 overflow-y-auto custom-scrollbar bg-[#1a1a1a] border border-[#333] rounded-xl p-6 pt-4 pb-4 shadow-lg">
                       {detailTab==="personal"?(
                         <div>
                           <div className="grid grid-cols-2 gap-y-3 gap-x-4 text-sm">
@@ -1090,7 +1237,7 @@ function AssistantView({ allLeads }: { allLeads: any[] }) {
         const bg: Record<string, number> = {};
         allLeads.forEach(l => { const b = l.salesBudget || l.budget || "Unknown"; bg[b] = (bg[b] || 0) + 1; });
         const top = Object.entries(bg).sort((a, b) => b[1] - a[1]).slice(0, 3);
-        r = `📊 Full Pipeline Analysis\n${"─".repeat(32)}\n\n` +
+        r = `📊 Full Lead Analysis\n${"─".repeat(32)}\n\n` +
           `📋 Total Leads:       ${allLeads.length}\n` +
           `📅 Visit Scheduled:  ${vs}\n` +
           `📥 Routed (New):      ${ro}\n` +

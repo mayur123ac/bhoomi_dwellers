@@ -7,12 +7,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   FaUserTie, FaListUl, FaPlus,
   FaTicketAlt, FaSitemap, FaThLarge, FaCog, FaSun, FaBell, FaLock, FaIdCard,
-  FaClipboardList, FaUsers, FaEye, FaEyeSlash, FaTrash
+  FaClipboardList, FaUsers, FaEye, FaEyeSlash, FaTrash,FaUserEdit 
 } from "react-icons/fa";
 
 // Define our TypeScript types
 type RoleType = { _id: string; name: string };
-type EmployeeType = { _id: string; name: string; email: string; role: string; isActive: boolean; password?: string };
+type EmployeeType = { _id: string; name: string; username: string; email: string; role: string; isActive: boolean; password?: string };
 
 export default function EmployeesPage() {
   const router = useRouter();
@@ -24,9 +24,11 @@ export default function EmployeesPage() {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
+  
 
   // --- EMPLOYEE PAGE STATE ---
   const [name, setName] = useState("");
+  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("");
@@ -35,6 +37,12 @@ export default function EmployeesPage() {
   const [employees, setEmployees] = useState<EmployeeType[]>([]);
   const [newRoleInput, setNewRoleInput] = useState("");
   const [revealedPasswords, setRevealedPasswords] = useState<{ [key: string]: boolean }>({});
+
+  // --- INLINE EDIT STATE ---
+  const [editingId, setEditingId]     = useState<string | null>(null);
+  const [editForm, setEditForm]       = useState<Partial<EmployeeType>>({});
+  const [editSaving, setEditSaving]   = useState(false);
+  const [editError, setEditError]     = useState("");
 
   // --- ACCESS MANAGEMENT STATE ---
   const [selectedManageUserId, setSelectedManageUserId] = useState("");
@@ -108,11 +116,11 @@ export default function EmployeesPage() {
       const res = await fetch("/api/employees", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password, role }),
+        body: JSON.stringify({ name, username, email, password, role }),
       });
 
       if (res.ok) {
-        setName(""); setEmail(""); setPassword(""); setRole("");
+        setName(""); setUsername(""); setEmail(""); setPassword(""); setRole("");
         fetchEmployees(); 
       } else {
         const data = await res.json();
@@ -162,6 +170,49 @@ export default function EmployeesPage() {
       }
     } catch (error) {
       alert("Error deleting employee.");
+    }
+  };
+  const handleEditStart = (emp: EmployeeType) => {
+    setEditingId(emp._id);
+    setEditError("");
+    setEditForm({
+      name:     emp.name,
+      username: emp.username,
+      email:    emp.email,
+      password: emp.password || "",
+      role:     emp.role,
+    });
+  };
+
+  const handleEditCancel = () => {
+    setEditingId(null);
+    setEditForm({});
+    setEditError("");
+  };
+
+  const handleEditSave = async (userId: string) => {
+    setEditSaving(true);
+    setEditError("");
+    try {
+      const res = await fetch("/api/employees", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, editData: editForm }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        setEditingId(null);
+        setEditForm({});
+        fetchEmployees(); // 🔥 Re-fetch to reflect latest DB state
+      } else {
+        setEditError(data.message || "Failed to save changes.");
+      }
+    } catch (error) {
+      setEditError("Something went wrong. Please try again.");
+    } finally {
+      setEditSaving(false);
     }
   };
 
@@ -315,7 +366,7 @@ export default function EmployeesPage() {
               </Link>
             </div>
           ) : (
-            <div className="max-w-5xl mx-auto">
+            <div className="max-w-6xl mx-auto">
               {/* ADMIN SECURE CONTENT BELOW */}
               <h1 className="text-2xl font-bold mb-6 text-white">Master Configurations</h1>
 
@@ -339,32 +390,53 @@ export default function EmployeesPage() {
               {/* Create Employee Form */}
               <div className="bg-[#111111] rounded-xl border border-[#222] p-6 mb-6 shadow-sm">
                 <h2 className="text-lg font-semibold mb-5 text-white">Create & Assign Role to Employee</h2>
-                <form onSubmit={handleAddEmployee} className="grid grid-cols-1 md:grid-cols-5 gap-5 items-end">
+               <form onSubmit={handleAddEmployee} className="grid grid-cols-1 md:grid-cols-6 gap-4 items-end">
                   <div>
                     <label className="block text-xs text-gray-400 mb-1.5 font-medium">Full Name</label>
-                    <input type="text" value={name} onChange={(e)=>setName(e.target.value)} required className="w-full bg-[#1a1a1a] border border-[#333] rounded-lg p-2.5 text-sm focus:border-purple-500 outline-none text-white transition-colors" placeholder="e.g. John Doe" />
+                    <input type="text" value={name} onChange={(e)=>setName(e.target.value)} required 
+                      className="w-full bg-[#1a1a1a] border border-[#333] rounded-lg p-2.5 text-sm focus:border-purple-500 outline-none text-white transition-colors" 
+                      placeholder="e.g. John Doe" />
                   </div>
+
+                  {/* 🔥 NEW USERNAME FIELD */}
+                  <div>
+                    <label className="block text-xs text-gray-400 mb-1.5 font-medium">Username</label>
+                    <input type="text" value={username} onChange={(e)=>setUsername(e.target.value)} required 
+                      className="w-full bg-[#1a1a1a] border border-[#333] rounded-lg p-2.5 text-sm focus:border-purple-500 outline-none text-white transition-colors" 
+                      placeholder="e.g. johndoe" />
+                  </div>
+
                   <div>
                     <label className="block text-xs text-gray-400 mb-1.5 font-medium">Email</label>
-                    <input type="email" value={email} onChange={(e)=>setEmail(e.target.value)} required className="w-full bg-[#1a1a1a] border border-[#333] rounded-lg p-2.5 text-sm focus:border-purple-500 outline-none text-white transition-colors" placeholder="email@company.com" />
+                    <input type="email" value={email} onChange={(e)=>setEmail(e.target.value)} required 
+                      className="w-full bg-[#1a1a1a] border border-[#333] rounded-lg p-2.5 text-sm focus:border-purple-500 outline-none text-white transition-colors" 
+                      placeholder="email@company.com" />
                   </div>
+
                   <div>
                     <label className="block text-xs text-gray-400 mb-1.5 font-medium">Password</label>
-                    <input type="text" value={password} onChange={(e)=>setPassword(e.target.value)} required className="w-full bg-[#1a1a1a] border border-[#333] rounded-lg p-2.5 text-sm focus:border-purple-500 outline-none text-white transition-colors" placeholder="Set password" />
+                    <input type="text" value={password} onChange={(e)=>setPassword(e.target.value)} required 
+                      className="w-full bg-[#1a1a1a] border border-[#333] rounded-lg p-2.5 text-sm focus:border-purple-500 outline-none text-white transition-colors" 
+                      placeholder="Set password" />
                   </div>
+
                   <div>
                     <label className="block text-xs text-gray-400 mb-1.5 font-medium">Assign Role</label>
-                    <select value={role} onChange={(e)=>setRole(e.target.value)} required className="w-full bg-[#1a1a1a] border border-[#333] rounded-lg p-2.5 text-sm focus:border-purple-500 outline-none text-gray-300 transition-colors cursor-pointer">
+                    <select value={role} onChange={(e)=>setRole(e.target.value)} required 
+                      className="w-full bg-[#1a1a1a] border border-[#333] rounded-lg p-2.5 text-sm focus:border-purple-500 outline-none text-gray-300 transition-colors cursor-pointer">
                       <option value="" disabled>-- Choose Role --</option>
                       {dbRoles.map((r) => (
                         <option key={r._id} value={r.name}>{r.name}</option>
                       ))}
                     </select>
                   </div>
-                  <button type="submit" className="bg-purple-600 hover:bg-purple-500 text-white font-semibold py-2.5 px-4 rounded-lg transition-colors shadow-sm cursor-pointer">
+
+                  <button type="submit" 
+                    className="bg-purple-600 hover:bg-purple-500 text-white font-semibold py-2.5 px-4 rounded-lg transition-colors shadow-sm cursor-pointer">
                     Add Employee
                   </button>
-                </form>
+
+                 </form>
               </div>
 
               {/* 🔥 ACCOUNT ACTIVATION DROPDOWN MODULE 🔥 */}
@@ -417,7 +489,8 @@ export default function EmployeesPage() {
                     <thead className="text-xs uppercase bg-[#1a1a1a]">
                       <tr>
                         <th className="px-6 py-4 font-semibold border-b border-[#222]">Name</th>
-                        <th className="px-6 py-4 font-semibold border-b border-[#222]">Username / Email</th>
+                        <th className="px-6 py-4 font-semibold border-b border-[#222]">Username</th>
+                        <th className="px-6 py-4 font-semibold border-b border-[#222]">Email</th>
                         <th className="px-6 py-4 font-semibold border-b border-[#222]">Password</th>
                         <th className="px-6 py-4 font-semibold border-b border-[#222]">Assigned Role</th>
                         <th className="px-6 py-4 font-semibold border-b border-[#222] text-center">System Status</th>
@@ -427,49 +500,131 @@ export default function EmployeesPage() {
                     <tbody className="divide-y divide-[#222]">
                       {employees.map((emp) => {
                         const isRevealed = revealedPasswords[emp._id] || false;
+                        const isEditing  = editingId === emp._id;
+
                         return (
-                          <tr key={emp._id} className="hover:bg-[#151515] transition-colors group">
-                            <td className="px-6 py-4 text-white font-medium">{emp.name}</td>
-                            <td className="px-6 py-4">{emp.email}</td>
-                            <td className="px-6 py-4">
-                              <div className="flex items-center gap-3">
-                                <span className="font-mono text-gray-300 tracking-wider">
-                                  {isRevealed ? (emp.password || "N/A") : "••••••••"}
-                                </span>
-                                <button onClick={() => toggleRowPassword(emp._id)} className="text-gray-500 hover:text-purple-400 transition-colors cursor-pointer">
-                                  {isRevealed ? <FaEyeSlash /> : <FaEye />}
-                                </button>
-                              </div>
+                          <tr key={emp._id} className={`transition-colors group ${isEditing ? "bg-[#1a1a2e]" : "hover:bg-[#151515]"}`}>
+
+                            {/* NAME */}
+                            <td className="px-4 py-3 text-white font-medium">
+                              {isEditing
+                                ? <input value={editForm.name || ""} onChange={e => setEditForm(p => ({ ...p, name: e.target.value }))}
+                                    className="w-full bg-[#0f0f0f] border border-purple-500/50 rounded-lg px-2.5 py-1.5 text-sm text-white outline-none focus:border-purple-400" />
+                                : emp.name}
                             </td>
-                            <td className="px-6 py-4 text-purple-400 font-semibold capitalize">{emp.role}</td>
-                            <td className="px-6 py-4 text-center">
-                              {/* Visual Indicator matching screenshot perfectly */}
-                              <span 
-                                className={`border px-3 py-1 rounded text-xs font-bold uppercase tracking-widest inline-block w-[80px] ${
-                                  emp.isActive 
-                                  ? "border-green-500/30 text-green-500 bg-green-500/10" 
+
+                            {/* USERNAME */}
+                            <td className="px-4 py-3 text-gray-300 font-mono">
+                              {isEditing
+                                ? <input value={editForm.username || ""} onChange={e => setEditForm(p => ({ ...p, username: e.target.value }))}
+                                    className="w-full bg-[#0f0f0f] border border-purple-500/50 rounded-lg px-2.5 py-1.5 text-sm text-white outline-none focus:border-purple-400" />
+                                : emp.username}
+                            </td>
+
+                            {/* EMAIL */}
+                            <td className="px-4 py-3">
+                              {isEditing
+                                ? <input type="email" value={editForm.email || ""} onChange={e => setEditForm(p => ({ ...p, email: e.target.value }))}
+                                    className="w-full bg-[#0f0f0f] border border-purple-500/50 rounded-lg px-2.5 py-1.5 text-sm text-white outline-none focus:border-purple-400" />
+                                : emp.email}
+                            </td>
+
+                            {/* PASSWORD */}
+                            <td className="px-4 py-3">
+                              {isEditing
+                                ? <input value={editForm.password || ""} onChange={e => setEditForm(p => ({ ...p, password: e.target.value }))}
+                                    className="w-full bg-[#0f0f0f] border border-purple-500/50 rounded-lg px-2.5 py-1.5 text-sm text-white outline-none focus:border-purple-400" />
+                                : (
+                                  <div className="flex items-center gap-3">
+                                    <span className="font-mono text-gray-300 tracking-wider">
+                                      {isRevealed ? (emp.password || "N/A") : "••••••••"}
+                                    </span>
+                                    <button onClick={() => toggleRowPassword(emp._id)} className="text-gray-500 hover:text-purple-400 transition-colors cursor-pointer">
+                                      {isRevealed ? <FaEyeSlash /> : <FaEye />}
+                                    </button>
+                                  </div>
+                                )}
+                            </td>
+
+                            {/* ROLE */}
+                            <td className="px-4 py-3 text-purple-400 font-semibold capitalize">
+                              {isEditing
+                                ? (
+                                  <select value={editForm.role || ""} onChange={e => setEditForm(p => ({ ...p, role: e.target.value }))}
+                                    className="w-full bg-[#0f0f0f] border border-purple-500/50 rounded-lg px-2.5 py-1.5 text-sm text-purple-300 outline-none focus:border-purple-400 cursor-pointer">
+                                    {dbRoles.map(r => (
+                                      <option key={r._id} value={r.name}>{r.name}</option>
+                                    ))}
+                                  </select>
+                                )
+                                : emp.role}
+                            </td>
+
+                            {/* STATUS */}
+                            <td className="px-4 py-3 text-center">
+                              <span className={`border px-3 py-1 rounded text-xs font-bold uppercase tracking-widest inline-block w-[80px] ${
+                                emp.isActive
+                                  ? "border-green-500/30 text-green-500 bg-green-500/10"
                                   : "border-red-500/30 text-red-500 bg-red-500/10"
-                                }`}
-                              >
+                              }`}>
                                 {emp.isActive ? "Active" : "Inactive"}
                               </span>
                             </td>
-                            <td className="px-6 py-4 text-center">
-                              <button 
-                                onClick={() => handleDeleteEmployee(emp._id, emp.name)}
-                                className="text-gray-600 hover:text-red-500 hover:bg-red-500/10 p-2 rounded-lg transition-colors cursor-pointer opacity-100"
-                                title="Delete Employee Permanently"
-                              >
-                                <FaTrash />
-                              </button>
+
+                            {/* ACTIONS */}
+                            <td className="px-4 py-3">
+                              {isEditing ? (
+                                <div className="flex flex-col items-center gap-1.5">
+                                  {/* Save / Cancel buttons */}
+                                  <div className="flex items-center gap-2">
+                                    <button
+                                      onClick={() => handleEditSave(emp._id)}
+                                      disabled={editSaving}
+                                      className="bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
+                                    >
+                                      {editSaving ? "Saving..." : "Save"}
+                                    </button>
+                                    <button
+                                      onClick={handleEditCancel}
+                                      className="bg-[#2a2a2a] hover:bg-[#333] text-gray-300 text-xs font-bold px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
+                                    >
+                                      Cancel
+                                    </button>
+                                  </div>
+                                  {/* Inline error message */}
+                                  {editError && (
+                                    <span className="text-red-400 text-xs text-center leading-tight max-w-[120px]">{editError}</span>
+                                  )}
+                                </div>
+                              ) : (
+                                <div className="flex items-center justify-center gap-1">
+                                  {/* Edit button */}
+                                  <button
+                                    onClick={() => handleEditStart(emp)}
+                                    className="text-gray-500 hover:text-purple-400 hover:bg-purple-500/10 p-2 rounded-lg transition-colors cursor-pointer"
+                                    title="Edit Employee"
+                                  >
+                                    <FaUserEdit />
+                                  </button>
+                                  {/* Delete button */}
+                                  <button
+                                    onClick={() => handleDeleteEmployee(emp._id, emp.name)}
+                                    className="text-gray-600 hover:text-red-500 hover:bg-red-500/10 p-2 rounded-lg transition-colors cursor-pointer"
+                                    title="Delete Employee Permanently"
+                                  >
+                                    <FaTrash />
+                                  </button>
+                                </div>
+                              )}
                             </td>
+
                           </tr>
                         );
                       })}
-                      
+
                       {employees.length === 0 && (
                         <tr>
-                          <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
+                          <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
                             No employees found in the database.
                           </td>
                         </tr>
