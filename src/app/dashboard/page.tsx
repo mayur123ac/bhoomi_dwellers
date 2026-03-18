@@ -243,7 +243,7 @@ export default function AdminAtlasDashboard() {
         <header className="h-16 bg-[#111111]/80 backdrop-blur-md border-b border-[#222] flex items-center justify-between px-8 z-30">
           <h1 className="text-white font-bold text-lg capitalize tracking-wide flex items-center gap-3">
             {activeView.replace("_", " ")}
-            <span className="bg-[#222] text-gray-400 px-2 py-0.5 rounded text-xs border border-[#333]">Admin Root</span>
+            <span className="bg-[#222] text-gray-400 px-2 py-0.5 rounded text-xs border border-[#333]">Admin</span>
           </h1>
           <div className="flex items-center gap-6">
             <FaBell className="text-gray-500 hover:text-white cursor-pointer" />

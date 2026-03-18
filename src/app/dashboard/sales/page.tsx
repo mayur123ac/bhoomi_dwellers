@@ -4,7 +4,7 @@ import { useEffect, useState, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
   FaThLarge, FaCog, FaFileInvoice,
-  FaChevronLeft, FaCheckCircle, FaPaperPlane, FaTimes, FaPhoneAlt, FaCalendarAlt, FaUserCircle, FaMicrophone, FaWhatsapp, FaRobot, FaEyeSlash, FaSearch, FaUniversity, FaUsers, FaFileAlt, FaCheck, FaClock
+  FaChevronLeft, FaCheckCircle, FaPaperPlane, FaTimes, FaPhoneAlt, FaCalendarAlt, FaUserCircle, FaMicrophone, FaWhatsapp, FaRobot, FaEyeSlash, FaSearch, FaUniversity, FaUsers, FaFileAlt, FaCheck, FaClock,FaBell
 } from "react-icons/fa";
 import {
   PieChart, Pie, Cell, Tooltip as RTooltip, ResponsiveContainer,
@@ -98,16 +98,41 @@ function useAdminData() {
   return { managers, receptionists, allLeads, followUps, isLoading, refetch: fetchAdminData };
 }
 
-// ============================================================================
-// MAIN LAYOUT SHELL
-// ============================================================================
 export default function SalesDashboard() {
   const router = useRouter();
   const [user, setUser] = useState({ name: "Loading...", role: "Sales Manager", email: "", password: "" });
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [activeView, setActiveView] = useState("overview");
   const [showPassword, setShowPassword] = useState(false);
-  const { managers, receptionists, allLeads, followUps, isLoading, refetch } = useAdminData();
+  const [showNotifications, setShowNotifications] = useState(false);
+
+  const { managers, receptionists, allLeads, followUps, isLoading, refetch } = useAdminData(); // ✅ KEEP THIS ONE
+
+  const followUpLeads = useMemo(() => {
+    const now = new Date();
+    const myLeads = user.role === "admin"
+      ? allLeads
+      : allLeads.filter((l: any) => l.assigned_to === user.name);
+
+    return myLeads.filter((lead: any) => {
+      if (lead.status === "Completed") return false;
+      if (lead.leadInterestStatus === "Not Interested") return false;
+      const leadFups = followUps.filter((f: any) => String(f.leadId) === String(lead.id));
+      const lastActivityMs = leadFups.length > 0
+        ? Math.max(...leadFups.map((f: any) => new Date(f.createdAt).getTime()))
+        : new Date(lead.created_at).getTime();
+      return (now.getTime() - lastActivityMs) / (1000 * 60 * 60 * 24) >= 2;
+    }).map((lead: any) => {
+      const leadFups = followUps.filter((f: any) => String(f.leadId) === String(lead.id));
+      const lastActivityMs = leadFups.length > 0
+        ? Math.max(...leadFups.map((f: any) => new Date(f.createdAt).getTime()))
+        : new Date(lead.created_at).getTime();
+      return { ...lead, daysSince: Math.floor((now.getTime() - lastActivityMs) / (1000 * 60 * 60 * 24)) };
+    }).sort((a: any, b: any) => b.daysSince - a.daysSince);
+  }, [allLeads, followUps, user]);
+
+  // ❌ DELETE THIS LINE — it was the duplicate causing the error:
+  // const { managers, receptionists, allLeads, followUps, isLoading, refetch } = useAdminData();
 
   useEffect(() => {
     const storedUser = localStorage.getItem("crm_user");
@@ -121,7 +146,6 @@ export default function SalesDashboard() {
   }, [router]);
 
   const handleLogout = () => { localStorage.removeItem("crm_user"); router.push("/"); };
-
   return (
     <div className="flex h-screen bg-[#121212] font-sans text-white overflow-hidden relative">
       <aside className="w-20 bg-[#1a1a1a] border-r border-[#2a2a2a] flex flex-col items-center py-6 flex-shrink-0 z-40 shadow-sm">
@@ -148,7 +172,89 @@ export default function SalesDashboard() {
         <header className="h-16 bg-[#1a1a1a] border-b border-[#2a2a2a] flex items-center justify-between px-8 flex-shrink-0 z-30 shadow-sm">
           <h1 className="text-white font-semibold flex items-center text-sm md:text-base tracking-wide">Bhoomi Dwellers<span className="text-gray-500 text-xs md:text-sm font-normal ml-2">- Sales Manager</span></h1>
           <div className="flex items-center space-x-6 relative">
-            <div onClick={() => setIsProfileOpen(!isProfileOpen)} className="w-9 h-9 rounded-full bg-purple-900/30 text-purple-400 border border-purple-500/50 flex items-center justify-center font-bold text-sm cursor-pointer shadow-sm hover:bg-purple-900/50 transition-colors">
+            {/* ── NOTIFICATION BELL ── */}
+            <div className="relative">
+              <button
+                onClick={() => { setShowNotifications(!showNotifications); setIsProfileOpen(false); }}
+                className="relative w-9 h-9 rounded-full bg-[#1a1a1a] border border-[#2a2a2a] flex items-center justify-center text-gray-400 hover:text-white hover:border-purple-500/50 transition-colors cursor-pointer"
+              >
+                <FaBell className="text-sm"/>
+                {followUpLeads.length > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-[9px] font-black text-white flex items-center justify-center shadow">
+                    {followUpLeads.length > 9 ? "9+" : followUpLeads.length}
+                  </span>
+                )}
+              </button>
+
+              {showNotifications && (
+                <div className="absolute top-12 right-0 w-80 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl shadow-2xl z-50 animate-fadeIn overflow-hidden">
+                  <div className="p-4 border-b border-[#2a2a2a] flex items-center justify-between">
+                    <div>
+                      <h3 className="text-white font-bold text-sm">Follow-up Reminders</h3>
+                      <p className="text-gray-500 text-[10px] mt-0.5">Leads with no activity in 2+ days</p>
+                    </div>
+                    {followUpLeads.length > 0 && (
+                      <span className="text-[10px] font-bold bg-red-500/10 border border-red-500/30 text-red-400 px-2 py-0.5 rounded-full">
+                        {followUpLeads.length} pending
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="max-h-80 overflow-y-auto custom-scrollbar">
+                    {followUpLeads.length === 0 ? (
+                      <div className="p-6 text-center text-gray-600 text-sm">
+                        <FaBell className="text-2xl mb-2 mx-auto opacity-20"/>
+                        All leads are up to date!
+                      </div>
+                    ) : (
+                      followUpLeads.map((lead: any) => (
+                        <div
+                          key={lead.id}
+                          onClick={() => {
+                            setShowNotifications(false);
+                            setActiveView("detail");
+                          }}
+                          className="p-4 border-b border-[#222] hover:bg-[#222] transition-colors cursor-pointer group"
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex-1 min-w-0">
+                              <p className="text-white font-bold text-xs group-hover:text-purple-400 transition-colors truncate">
+                                #{lead.id} — {lead.name}
+                              </p>
+                              <p className="text-gray-500 text-[10px] mt-0.5 truncate">
+                                {lead.propType !== "Pending" ? lead.propType : "No property set"} · {lead.salesBudget}
+                              </p>
+                              {lead.leadInterestStatus && lead.leadInterestStatus !== "Pending" && (
+                                <span className={`inline-block mt-1 text-[9px] font-bold uppercase px-2 py-0.5 rounded-full border ${
+                                  lead.leadInterestStatus === "Interested"
+                                    ? "text-green-400 border-green-500/30 bg-green-500/10"
+                                    : "text-yellow-400 border-yellow-500/30 bg-yellow-500/10"
+                                }`}>{lead.leadInterestStatus}</span>
+                              )}
+                            </div>
+                            <div className="flex-shrink-0 text-right">
+                              <div className={`text-xs font-black ${lead.daysSince >= 7 ? "text-red-400" : lead.daysSince >= 4 ? "text-orange-400" : "text-yellow-400"}`}>
+                                {lead.daysSince}d
+                              </div>
+                              <p className="text-[9px] text-gray-600">no contact</p>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+
+                  {followUpLeads.length > 0 && (
+                    <div className="p-3 border-t border-[#222] bg-[#151515]">
+                      <p className="text-[10px] text-gray-600 text-center">
+                        ⚠️ Not Interested leads are excluded from reminders
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+            <div onClick={() => { setIsProfileOpen(!isProfileOpen); setShowNotifications(false); }} className="w-9 h-9 rounded-full bg-purple-900/30 text-purple-400 border border-purple-500/50 flex items-center justify-center font-bold text-sm cursor-pointer shadow-sm hover:bg-purple-900/50 transition-colors">
               {String(user?.name || "U").charAt(0).toUpperCase()}
             </div>
             {isProfileOpen && (
@@ -566,7 +672,7 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl p-5 shadow-sm"><p className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-1">Total Pipeline</p><p className="text-3xl font-black text-white">{activeManagerLeads.length}</p></div>
+              <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl p-5 shadow-sm"><p className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-1">Total Leads Dashboard</p><p className="text-3xl font-black text-white">{activeManagerLeads.length}</p></div>
               <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl p-5 shadow-sm"><p className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-1">Site Visits</p><p className="text-3xl font-black text-orange-400">{activeManagerLeads.filter((l:any)=>l.mongoVisitDate).length}</p></div>
               <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl p-5 shadow-sm"><p className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-1">Loans Active</p><p className="text-3xl font-black text-blue-400">{activeManagerLeads.filter((l:any)=>l.loanPlanned==="Yes").length}</p></div>
               <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl p-5 shadow-sm"><p className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-1">Interested</p><p className="text-3xl font-black text-green-400">{activeManagerLeads.filter((l:any)=>l.leadInterestStatus==="Interested").length}</p></div>
@@ -576,12 +682,12 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
 
             <div className="bg-[#1a1a1a] rounded-2xl border border-[#2a2a2a] shadow-sm overflow-hidden">
               <div className="p-5 border-b border-[#2a2a2a] flex justify-between items-center bg-[#151515]">
-                <h3 className="font-bold text-white flex items-center gap-2"><FaUsers className="text-purple-500"/> Pipeline Database</h3>
+                <h3 className="font-bold text-white flex items-center gap-2"><FaUsers className="text-purple-500"/> Leads Database</h3>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm text-gray-400">
                   <thead className="text-xs text-gray-500 uppercase bg-[#222]">
-                  <tr><th className="px-6 py-4">LEAD NO.</th><th className="px-4 py-4">NAME</th><th className="px-4 py-4">PROP. TYPE</th><th className="px-4 py-4">BUDGET</th><th className="px-4 py-4">LOAN PLANNED?</th><th className="px-4 py-4">LOAN STATUS</th> <th className="px-4 py-4">AMT REQ / APPROVED</th><th className="px-6 py-4">SITE VISIT</th></tr>
+                    <tr><th className="px-6 py-4">LEAD NO.</th><th className="px-4 py-4">NAME</th><th className="px-4 py-4">PROP. TYPE</th><th className="px-4 py-4">BUDGET</th><th className="px-4 py-4">LOAN PLANNED?</th><th className="px-4 py-4">LOAN STATUS</th> <th className="px-4 py-4">AMT REQ / APPROVED</th><th className="px-6 py-4">SITE VISIT</th></tr>
                   </thead>
                   <tbody className="divide-y divide-[#2a2a2a]">
                     {isLoading?<tr><td colSpan={8} className="text-center py-8">Loading...</td></tr>
@@ -684,7 +790,7 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
 
         {/* ── DETAIL ── */}
         {subView==="detail"&&selectedLead&&(
-          <div className="animate-fadeIn max-w-[1200px] mx-auto flex flex-col h-[calc(100vh-160px)]">
+          <div className="animate-fadeIn max-w-[1600px] mx-auto flex flex-col h-[calc(100vh-130px)]">
             <div className="flex items-center justify-between mb-4 rounded-2xl border p-4 sm:p-5 shadow-xl flex-shrink-0 bg-[#1a1a1a] border-[#2a2a2a]">
               <div className="flex items-center gap-4">
                 <button onClick={()=>{setMainView("forms");setSubView("cards");}} className="w-10 h-10 flex items-center justify-center bg-[#222] hover:bg-[#333] border border-[#444] rounded-lg text-gray-400 transition-colors"><FaChevronLeft className="text-sm"/></button>
@@ -700,8 +806,8 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
               </div>
             </div>
 
-            <div className="flex flex-col lg:flex-row gap-6 flex-1 min-h-0 pb-2">
-              <div className="w-full lg:w-[45%] flex flex-col gap-4 pr-2 h-full pb-2">
+            <div className="flex flex-col lg:flex-row gap-4 flex-1 min-h-0 pb-2">
+              <div className="w-full lg:w-[50%] flex flex-col gap-3 h-full pb-2">
 
                 {showSalesForm?(
                   <div className="bg-[#1a1a1a] rounded-xl border border-[#333] p-5 shadow-xl flex-1 overflow-y-auto custom-scrollbar flex flex-col">
@@ -831,10 +937,10 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
                       <button onClick={()=>setDetailTab("personal")} className={`flex-1 py-2 text-sm font-bold rounded-lg transition-colors cursor-pointer ${detailTab==="personal"?"bg-purple-600 text-white shadow-md":"text-gray-400 hover:text-white hover:bg-[#222]"}`}>Personal Information</button>
                       <button onClick={()=>setDetailTab("loan")} className={`flex-1 py-2 text-sm font-bold rounded-lg transition-colors cursor-pointer ${detailTab==="loan"?"bg-blue-600 text-white shadow-md":"text-gray-400 hover:text-white hover:bg-[#222]"}`}>Loan Tracking</button>
                     </div>
-                    <div className="flex-1 overflow-y-auto custom-scrollbar bg-[#1a1a1a] border border-[#333] rounded-xl p-5 shadow-lg">
+                   <div className="flex-1 overflow-y-auto custom-scrollbar bg-[#1a1a1a] border border-[#333] rounded-xl p-4 shadow-lg">
                       {detailTab==="personal"?(
                         <div>
-                          <div className="grid grid-cols-2 gap-y-6 gap-x-4 text-sm">
+                          <div className="grid grid-cols-2 gap-y-3 gap-x-4 text-sm">
                             <div><p className="text-xs text-gray-500 font-medium mb-1">Email</p><p className="text-white font-semibold">{selectedLead.email!=="N/A"?selectedLead.email:"Not Provided"}</p></div>
                             <div><p className="text-xs text-gray-500 font-medium mb-1 flex items-center gap-1"><FaPhoneAlt className="text-[10px]"/> Phone</p><p className="font-mono text-white font-semibold">{selectedLead.phone}</p></div>
                             <div><p className="text-xs text-gray-500 font-medium mb-1 flex items-center gap-1"><FaPhoneAlt className="text-[10px] text-gray-600"/> Alt Phone</p><p className="font-mono text-white font-semibold">{selectedLead.altPhone&&selectedLead.altPhone!=="N/A"?selectedLead.altPhone:"Not Provided"}</p></div>
@@ -852,16 +958,16 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
                             <div><p className="text-xs text-gray-500 font-medium mb-1">Planning to Buy?</p><p className="text-white font-semibold">{selectedLead.planningPurchase||"Pending"}</p></div>
                             <div><p className="text-xs text-gray-500 font-medium mb-1">Loan Required?</p><p className="text-white font-semibold">{getLatestLoanDetails()?.loanRequired}</p></div>
                             <div><p className="text-xs text-gray-500 font-medium mb-1">Status</p><p className="text-purple-400 font-semibold">{selectedLead.status||"Routed"}</p></div>
-                            <div className="col-span-2 bg-[#222] p-4 rounded-xl border border-blue-900/20"><p className="text-xs text-blue-400 font-bold uppercase tracking-wider mb-1">📍 Site Visit Date</p><p className="text-lg font-black text-white">{selectedLead.mongoVisitDate?formatDate(selectedLead.mongoVisitDate):"Not Scheduled"}</p></div>
+                            <div className="col-span-2 bg-[#222] p-3 rounded-xl border border-blue-900/20"><p className="text-xs text-blue-400 font-bold uppercase tracking-wider mb-0.5">📍 Site Visit Date</p><p className="text-base font-black text-white">{selectedLead.mongoVisitDate?formatDate(selectedLead.mongoVisitDate):"Not Scheduled"}</p></div>
                           </div>
-                          <div className="mt-6 bg-[#222] border border-[#333] rounded-xl p-4">
-                            <h3 className="text-xs text-purple-400 font-bold uppercase tracking-wider mb-3 border-b border-[#333] pb-2">Channel Partner Data</h3>
-                            <div className="grid grid-cols-2 gap-4">
+                          <div className="mt-3 bg-[#222] border border-[#333] rounded-xl p-3">
+                            <h3 className="text-xs text-purple-400 font-bold uppercase tracking-wider mb-2 border-b border-[#333] pb-2">Channel Partner Data</h3>
+                            <div className="grid grid-cols-2 gap-2">
                               <div><p className="text-xs text-gray-500 font-medium mb-1">Primary Source</p><p className="text-white font-medium text-sm">{selectedLead.source||"N/A"}</p></div>
                               {selectedLead.source==="Others"&&(<div><p className="text-xs text-gray-500 font-medium mb-1">Specified Name</p><p className="text-white font-medium text-sm">{selectedLead.sourceOther}</p></div>)}
                             </div>
                             {selectedLead.source==="Channel Partner"&&(
-                              <div className="mt-4 pt-4 border-t border-[#333] grid grid-cols-1 sm:grid-cols-3 gap-4">
+                              <div className="mt-2 pt-2 border-t border-[#333] grid grid-cols-1 sm:grid-cols-3 gap-3">
                                 <div><p className="text-xs text-gray-500 font-medium mb-1">CP Name</p><p className="text-white font-medium text-sm">{selectedLead.cpName||"N/A"}</p></div>
                                 <div><p className="text-xs text-gray-500 font-medium mb-1">CP Company</p><p className="text-white font-medium text-sm">{selectedLead.cpCompany||"N/A"}</p></div>
                                 <div><p className="text-xs text-gray-500 font-medium mb-1">CP Phone</p><p className="text-white font-medium text-sm">{selectedLead.cpPhone||"N/A"}</p></div>
@@ -914,7 +1020,7 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
               </div>
 
               {/* RIGHT PANEL: FOLLOW-UPS */}
-              <div className="w-full lg:w-[55%] flex flex-col bg-[#1a1a1a] border border-[#333] rounded-2xl overflow-hidden shadow-2xl h-full min-h-0">
+              <div className="w-full lg:w-[50%] flex flex-col bg-[#1a1a1a] border border-[#333] rounded-2xl overflow-hidden shadow-2xl h-full min-h-0">
                 <div className="flex-1 p-6 overflow-y-auto custom-scrollbar flex flex-col gap-6 bg-[#181818]">
                   <div className="flex justify-start">
                     <div className="bg-[#222] border border-[#333] rounded-2xl rounded-tl-none p-4 max-w-[85%] shadow-md">
@@ -964,31 +1070,113 @@ function AssistantView({ allLeads }: { allLeads: any[] }) {
   const maskPhone=(p:any)=>{ if(!p||p==="N/A") return "N/A"; const c=String(p).replace(/[^a-zA-Z0-9]/g,""); if(c.length<=5) return c; return `${c.slice(0,2)}*****${c.slice(-3)}`; };
   const formatDate=(ds:string)=>{ if(!ds||ds==="Pending"||ds==="N/A"||ds==="Completed") return "-"; try{return new Date(ds).toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"});}catch{return ds;} };
 
-  const handleChatSubmit=(e:React.FormEvent)=>{
+  const handleChatSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if(!chatInput.trim()) return;
-    const userMsg=chatInput.toLowerCase().trim();
-    setChatMessages(prev=>[...prev,{sender:"user",text:chatInput}]);
+    if (!chatInput.trim()) return;
+    const userMsg = chatInput.toLowerCase().trim();
+    setChatMessages(prev => [...prev, { sender: "user", text: chatInput }]);
     setChatInput("");
-    setTimeout(()=>{
-      let r="";
-      if(userMsg.includes("analysis")||userMsg.includes("summary")||userMsg.includes("overview")){
-        const vs=allLeads.filter(l=>l.status==="Visit Scheduled").length;
-        const ro=allLeads.filter(l=>l.status==="Routed").length;
-        const interested=allLeads.filter(l=>l.leadInterestStatus==="Interested").length;
-        const bg:Record<string,number>={};
-        allLeads.forEach(l=>{const b=l.salesBudget||l.budget||"Unknown";bg[b]=(bg[b]||0)+1;});
-        const top=Object.entries(bg).sort((a,b)=>b[1]-a[1]).slice(0,3);
-        r=`📊 Full Pipeline Analysis\n${"─".repeat(30)}\n\n📋 Total Leads: ${allLeads.length}\n📅 Visit Scheduled: ${vs}\n📥 Routed (New): ${ro}\n✅ Interested: ${interested}\n\n💰 Top Budget Ranges:\n`+top.map(([b,c])=>`   • ${b}: ${c} lead${c>1?"s":""}`).join("\n");
-      } else if(userMsg.includes("total")||userMsg.includes("how many")){
-        r=`You have ${allLeads.length} total leads assigned to you.`;
+
+    setTimeout(() => {
+      let r = "";
+
+      // ── ANALYSIS / SUMMARY ──
+      if (userMsg.includes("analysis") || userMsg.includes("summary") || userMsg.includes("overview")) {
+        const vs = allLeads.filter(l => l.status === "Visit Scheduled").length;
+        const ro = allLeads.filter(l => l.status === "Routed").length;
+        const interested = allLeads.filter(l => l.leadInterestStatus === "Interested").length;
+        const loanActive = allLeads.filter(l => l.loanPlanned === "Yes").length;
+        const loanApproved = allLeads.filter(l => l.loanStatus === "Approved").length;
+        const bg: Record<string, number> = {};
+        allLeads.forEach(l => { const b = l.salesBudget || l.budget || "Unknown"; bg[b] = (bg[b] || 0) + 1; });
+        const top = Object.entries(bg).sort((a, b) => b[1] - a[1]).slice(0, 3);
+        r = `📊 Full Pipeline Analysis\n${"─".repeat(32)}\n\n` +
+          `📋 Total Leads:       ${allLeads.length}\n` +
+          `📅 Visit Scheduled:  ${vs}\n` +
+          `📥 Routed (New):      ${ro}\n` +
+          `✅ Interested:         ${interested}\n` +
+          `🏦 Loans Active:      ${loanActive}\n` +
+          `🟢 Loans Approved:   ${loanApproved}\n\n` +
+          `💰 Top Budget Ranges:\n` +
+          top.map(([b, c]) => `   • ${b}: ${c} lead${c > 1 ? "s" : ""}`).join("\n");
+
+      // ── TOTAL / COUNT ──
+      } else if (userMsg.includes("total") || userMsg.includes("how many")) {
+        r = `You have ${allLeads.length} total leads assigned to you.`;
+
+      // ── LOAN QUERY ──
+      } else if (userMsg.includes("loan")) {
+        const loanLeads = allLeads.filter(l =>
+          l.loanPlanned === "Yes" || (l.loanStatus && l.loanStatus !== "N/A")
+        );
+        if (loanLeads.length === 0) {
+          r = "No leads with active loan tracking found.";
+        } else {
+          r = `🏦 Loan Tracking Summary\n${"─".repeat(32)}\n\n`;
+          loanLeads.forEach(l => {
+            r += `#${l.id} — ${l.name}\n`;
+            r += `   Status: ${l.loanStatus || "Not tracked"}\n`;
+            r += `   Req: ${l.loanAmtReq !== "N/A" ? l.loanAmtReq : "—"}  |  App: ${l.loanAmtApp !== "N/A" ? l.loanAmtApp : "—"}\n\n`;
+          });
+        }
+
+      // ── SPECIFIC LEAD ──
       } else {
-        const m=allLeads.find(l=>userMsg.includes(l.name.toLowerCase())||userMsg.includes(l.name.toLowerCase().split(" ")[0])||userMsg.includes(String(l.id)));
-        if(m) r=`👤 Lead Details — #${m.id}\n${"─".repeat(30)}\n\n• Name: ${m.name}\n• Email: ${m.email&&m.email!=="N/A"?m.email:"Not provided"}\n• Phone: ${maskPhone(m.phone)}\n• Status: ${m.status||"Routed"}\n• Budget: ${m.salesBudget||m.budget||"Pending"}\n• Property Type: ${m.propType||"Pending"}\n• Loan Status: ${m.loanStatus||"N/A"}\n• Interest: ${m.leadInterestStatus||"Pending"}\n• Site Visit: ${m.mongoVisitDate?formatDate(m.mongoVisitDate):"Not scheduled"}`;
-        else r=`I can help you with:\n\n• Type a client's name or lead number to see their full details\n• Ask for "analysis" or "summary" for a pipeline overview\n• Ask "total leads" or "how many leads" for counts`;
+        const m = allLeads.find(l =>
+          userMsg.includes(l.name?.toLowerCase()) ||
+          userMsg.includes(l.name?.toLowerCase().split(" ")[0]) ||
+          userMsg.includes(String(l.id))
+        );
+
+        if (m) {
+          const hasLoan = m.loanStatus && m.loanStatus !== "N/A";
+          const hasCP   = m.source === "Channel Partner";
+
+          r = `👤 Lead #${m.id} — ${m.name}\n${"─".repeat(32)}\n\n` +
+
+            `📋 BASIC INFO\n` +
+            `• Email:         ${m.email && m.email !== "N/A" ? m.email : "Not provided"}\n` +
+            `• Phone:         ${maskPhone(m.phone)}\n` +
+            `• Alt Phone:     ${m.altPhone && m.altPhone !== "N/A" ? maskPhone(m.altPhone) : "N/A"}\n` +
+            `• Address:       ${m.address && m.address !== "N/A" ? m.address : "N/A"}\n` +
+            `• Status:        ${m.status || "Routed"}\n` +
+            `• Assigned To:   ${m.assigned_to || "N/A"}\n` +
+            `• Registered:    ${formatDate(m.created_at)}\n\n` +
+
+            `🏠 PROPERTY INTEREST\n` +
+            `• Property Type: ${m.propType || "Pending"}\n` +
+            `• Budget:        ${m.salesBudget || m.budget || "Pending"}\n` +
+            `• Use Type:      ${m.useType !== "Pending" ? m.useType : (m.purpose || "N/A")}\n` +
+            `• Plan to Buy:   ${m.planningPurchase || "Pending"}\n` +
+            `• Interest:      ${m.leadInterestStatus || "Pending"}\n` +
+            `• Site Visit:    ${m.mongoVisitDate ? formatDate(m.mongoVisitDate) : "Not scheduled"}\n\n` +
+
+            `🏦 LOAN DETAILS\n` +
+            `• Loan Planned:  ${m.loanPlanned || "Pending"}\n` +
+            (hasLoan
+              ? `• Loan Status:   ${m.loanStatus}\n` +
+                `• Amt Required:  ${m.loanAmtReq !== "N/A" ? m.loanAmtReq : "—"}\n` +
+                `• Amt Approved:  ${m.loanAmtApp !== "N/A" ? m.loanAmtApp : "—"}\n`
+              : `• Loan Status:   Not tracked yet\n`) +
+
+            (hasCP
+              ? `\n🤝 CHANNEL PARTNER\n` +
+                `• CP Name:       ${m.cpName || "N/A"}\n` +
+                `• CP Company:    ${m.cpCompany || "N/A"}\n` +
+                `• CP Phone:      ${m.cpPhone || "N/A"}\n`
+              : `\n📍 Source: ${m.source || "N/A"}`);
+
+        } else {
+          r = `I can help you with:\n\n` +
+            `• Type a client name or lead #ID for full details\n` +
+            `• Ask "loan summary" to see all loan-tracked leads\n` +
+            `• Ask "analysis" or "summary" for pipeline overview\n` +
+            `• Ask "total leads" or "how many leads" for counts`;
+        }
       }
-      setChatMessages(prev=>[...prev,{sender:"ai",text:r}]);
-    },600);
+
+      setChatMessages(prev => [...prev, { sender: "ai", text: r }]);
+    }, 600);
   };
 
   return (
