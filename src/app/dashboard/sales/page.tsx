@@ -3,6 +3,13 @@
 import { useEffect, useState, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
+  Bot, User, Send, BarChart2, AlertTriangle, Landmark, CalendarDays,
+  Lightbulb, ClipboardList, Wifi, CheckCircle, XCircle, HelpCircle,
+  Clock, MapPin, Zap, TrendingUp, Home, Building2, Globe, Star,
+  Share2, Image, Banknote, Users, BadgeCheck, CalendarCheck,
+  ArrowRight, Target, BrainCircuit, Flame
+} from "lucide-react";
+import {
   FaThLarge, FaCog, FaFileInvoice,
   FaChevronLeft, FaCheckCircle, FaPaperPlane, FaTimes, FaPhoneAlt, FaCalendarAlt, FaUserCircle, FaMicrophone, FaWhatsapp, FaRobot, FaEyeSlash, FaSearch, FaUniversity, FaUsers, FaFileAlt, FaCheck, FaClock,FaBell
 } from "react-icons/fa";
@@ -423,7 +430,7 @@ export default function SalesDashboard() {
 
           </div>
         </header>
-        <main className="flex-1 overflow-y-auto p-8 bg-[#121212] custom-scrollbar">
+        <main className={`flex-1 overflow-hidden bg-[#121212] custom-scrollbar ${activeView === "assistant" ? "p-0" : "p-8 overflow-y-auto"}`}>
           {activeView === "sales" || activeView === "overview" || activeView === "forms" || activeView === "detail" ? (
             <SalesManagerView managers={managers} allLeads={allLeads} followUps={followUps} isLoading={isLoading} adminUser={user} refetch={refetch} initialView={activeView} setMainView={setActiveView} />
           ) : activeView === "assistant" ? (
@@ -1208,146 +1215,631 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
 // ============================================================================
 // ASSISTANT MODULE
 // ============================================================================
-function AssistantView({ allLeads }: { allLeads: any[] }) {
-  const [chatInput, setChatInput]   = useState("");
-  const [chatMessages, setChatMessages] = useState([{ sender:"ai", text:"Hello! I am your CRM Assistant. Ask me about your total leads, or type a client's name to pull up their details!" }]);
-  const chatEndRef = useRef<HTMLDivElement>(null);
-  useEffect(()=>{ chatEndRef.current?.scrollIntoView({behavior:"smooth"}); },[chatMessages]);
+// ─────────────────────────────────────────────
+// ADD THESE TO YOUR IMPORTS AT THE TOP OF THE FILE
+// ─────────────────────────────────────────────
+// import {
+//   Bot, User, Send, BarChart2, AlertTriangle, Landmark, CalendarDays,
+//   Lightbulb, ClipboardList, Wifi, CheckCircle, XCircle, HelpCircle,
+//   Clock, MapPin, Zap, TrendingUp, Home, Building2, Globe, Star,
+//   Share2, Banknote, Users, BadgeCheck, CalendarCheck,
+//   ArrowRight, Target, BrainCircuit
+// } from "lucide-react";
 
-  const maskPhone=(p:any)=>{ if(!p||p==="N/A") return "N/A"; const c=String(p).replace(/[^a-zA-Z0-9]/g,""); if(c.length<=5) return c; return `${c.slice(0,2)}*****${c.slice(-3)}`; };
-  const formatDate=(ds:string)=>{ if(!ds||ds==="Pending"||ds==="N/A"||ds==="Completed") return "-"; try{return new Date(ds).toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"});}catch{return ds;} };
-
-  const handleChatSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!chatInput.trim()) return;
-    const userMsg = chatInput.toLowerCase().trim();
-    setChatMessages(prev => [...prev, { sender: "user", text: chatInput }]);
-    setChatInput("");
-
-    setTimeout(() => {
-      let r = "";
-
-      // ── ANALYSIS / SUMMARY ──
-      if (userMsg.includes("analysis") || userMsg.includes("summary") || userMsg.includes("overview")) {
-        const vs = allLeads.filter(l => l.status === "Visit Scheduled").length;
-        const ro = allLeads.filter(l => l.status === "Routed").length;
-        const interested = allLeads.filter(l => l.leadInterestStatus === "Interested").length;
-        const loanActive = allLeads.filter(l => l.loanPlanned === "Yes").length;
-        const loanApproved = allLeads.filter(l => l.loanStatus === "Approved").length;
-        const bg: Record<string, number> = {};
-        allLeads.forEach(l => { const b = l.salesBudget || l.budget || "Unknown"; bg[b] = (bg[b] || 0) + 1; });
-        const top = Object.entries(bg).sort((a, b) => b[1] - a[1]).slice(0, 3);
-        r = `📊 Full Lead Analysis\n${"─".repeat(32)}\n\n` +
-          `📋 Total Leads:       ${allLeads.length}\n` +
-          `📅 Visit Scheduled:  ${vs}\n` +
-          `📥 Routed (New):      ${ro}\n` +
-          `✅ Interested:         ${interested}\n` +
-          `🏦 Loans Active:      ${loanActive}\n` +
-          `🟢 Loans Approved:   ${loanApproved}\n\n` +
-          `💰 Top Budget Ranges:\n` +
-          top.map(([b, c]) => `   • ${b}: ${c} lead${c > 1 ? "s" : ""}`).join("\n");
-
-      // ── TOTAL / COUNT ──
-      } else if (userMsg.includes("total") || userMsg.includes("how many")) {
-        r = `You have ${allLeads.length} total leads assigned to you.`;
-
-      // ── LOAN QUERY ──
-      } else if (userMsg.includes("loan")) {
-        const loanLeads = allLeads.filter(l =>
-          l.loanPlanned === "Yes" || (l.loanStatus && l.loanStatus !== "N/A")
-        );
-        if (loanLeads.length === 0) {
-          r = "No leads with active loan tracking found.";
-        } else {
-          r = `🏦 Loan Tracking Summary\n${"─".repeat(32)}\n\n`;
-          loanLeads.forEach(l => {
-            r += `#${l.id} — ${l.name}\n`;
-            r += `   Status: ${l.loanStatus || "Not tracked"}\n`;
-            r += `   Req: ${l.loanAmtReq !== "N/A" ? l.loanAmtReq : "—"}  |  App: ${l.loanAmtApp !== "N/A" ? l.loanAmtApp : "—"}\n\n`;
-          });
-        }
-
-      // ── SPECIFIC LEAD ──
-      } else {
-        const m = allLeads.find(l =>
-          userMsg.includes(l.name?.toLowerCase()) ||
-          userMsg.includes(l.name?.toLowerCase().split(" ")[0]) ||
-          userMsg.includes(String(l.id))
-        );
-
-        if (m) {
-          const hasLoan = m.loanStatus && m.loanStatus !== "N/A";
-          const hasCP   = m.source === "Channel Partner";
-
-          r = `👤 Lead #${m.id} — ${m.name}\n${"─".repeat(32)}\n\n` +
-
-            `📋 BASIC INFO\n` +
-            `• Email:         ${m.email && m.email !== "N/A" ? m.email : "Not provided"}\n` +
-            `• Phone:         ${maskPhone(m.phone)}\n` +
-            `• Alt Phone:     ${m.altPhone && m.altPhone !== "N/A" ? maskPhone(m.altPhone) : "N/A"}\n` +
-            `• Address:       ${m.address && m.address !== "N/A" ? m.address : "N/A"}\n` +
-            `• Status:        ${m.status || "Routed"}\n` +
-            `• Assigned To:   ${m.assigned_to || "N/A"}\n` +
-            `• Registered:    ${formatDate(m.created_at)}\n\n` +
-
-            `🏠 PROPERTY INTEREST\n` +
-            `• Property Type: ${m.propType || "Pending"}\n` +
-            `• Budget:        ${m.salesBudget || m.budget || "Pending"}\n` +
-            `• Use Type:      ${m.useType !== "Pending" ? m.useType : (m.purpose || "N/A")}\n` +
-            `• Plan to Buy:   ${m.planningPurchase || "Pending"}\n` +
-            `• Interest:      ${m.leadInterestStatus || "Pending"}\n` +
-            `• Site Visit:    ${m.mongoVisitDate ? formatDate(m.mongoVisitDate) : "Not scheduled"}\n\n` +
-
-            `🏦 LOAN DETAILS\n` +
-            `• Loan Planned:  ${m.loanPlanned || "Pending"}\n` +
-            (hasLoan
-              ? `• Loan Status:   ${m.loanStatus}\n` +
-                `• Amt Required:  ${m.loanAmtReq !== "N/A" ? m.loanAmtReq : "—"}\n` +
-                `• Amt Approved:  ${m.loanAmtApp !== "N/A" ? m.loanAmtApp : "—"}\n`
-              : `• Loan Status:   Not tracked yet\n`) +
-
-            (hasCP
-              ? `\n🤝 CHANNEL PARTNER\n` +
-                `• CP Name:       ${m.cpName || "N/A"}\n` +
-                `• CP Company:    ${m.cpCompany || "N/A"}\n` +
-                `• CP Phone:      ${m.cpPhone || "N/A"}\n`
-              : `\n📍 Source: ${m.source || "N/A"}`);
-
-        } else {
-          r = `I can help you with:\n\n` +
-            `• Type a client name or lead #ID for full details\n` +
-            `• Ask "loan summary" to see all loan-tracked leads\n` +
-            `• Ask "analysis" or "summary" for pipeline overview\n` +
-            `• Ask "total leads" or "how many leads" for counts`;
-        }
-      }
-
-      setChatMessages(prev => [...prev, { sender: "ai", text: r }]);
-    }, 600);
+// ─────────────────────────────────────────────
+// ICON RESOLVER
+// ─────────────────────────────────────────────
+function LucideIcon({ name, className }: { name: string; className?: string }) {
+  const icons: Record<string, React.ReactNode> = {
+    "check-circle":   <CheckCircle className={className} />,
+    "x-circle":       <XCircle className={className} />,
+    "help-circle":    <HelpCircle className={className} />,
+    "landmark":       <Landmark className={className} />,
+    "clock":          <Clock className={className} />,
+    "alert-triangle": <AlertTriangle className={className} />,
+    "banknote":       <Banknote className={className} />,
+    "calendar-check": <CalendarCheck className={className} />,
+    "map-pin":        <MapPin className={className} />,
+    "calendar":       <CalendarDays className={className} />,
+    "zap":            <Zap className={className} />,
+    "trending-up":    <TrendingUp className={className} />,
+    "home":           <Home className={className} />,
+    "building-2":     <Building2 className={className} />,
+    "globe":          <Globe className={className} />,
+    "star":           <Star className={className} />,
+    "share-2":        <Share2 className={className} />,
+    "users":          <Users className={className} />,
+    "bar-chart-2":    <BarChart2 className={className} />,
+    "badge-check":    <BadgeCheck className={className} />,
+    "lightbulb":      <Lightbulb className={className} />,
+    "target":         <Target className={className} />,
+    "brain-circuit":  <BrainCircuit className={className} />,
   };
+  return <>{icons[name] ?? <ArrowRight className={className} />}</>;
+}
 
-  return (
-    <div className="animate-fadeIn max-w-4xl mx-auto h-[75vh] flex flex-col">
-      <div className="flex items-center gap-4 mb-6">
-        <div className="w-12 h-12 rounded-xl bg-purple-900/30 flex items-center justify-center text-purple-400 text-2xl shadow-inner"><FaRobot/></div>
-        <div><h1 className="text-2xl font-bold text-white tracking-tight">CRM AI Assistant</h1><p className="text-sm text-gray-400">Query your pipeline using natural language.</p></div>
+// ─────────────────────────────────────────────
+// COLOR MAPS
+// ─────────────────────────────────────────────
+const colorBg: Record<string, string> = {
+  green:  "text-green-400 bg-green-500/10 border-green-500/20",
+  red:    "text-red-400 bg-red-500/10 border-red-500/20",
+  yellow: "text-yellow-400 bg-yellow-500/10 border-yellow-500/20",
+  blue:   "text-blue-400 bg-blue-500/10 border-blue-500/20",
+  purple: "text-purple-400 bg-purple-500/10 border-purple-500/20",
+  orange: "text-orange-400 bg-orange-500/10 border-orange-500/20",
+  gray:   "text-gray-400 bg-gray-500/10 border-gray-500/20",
+  pink:   "text-pink-400 bg-pink-500/10 border-pink-500/20",
+};
+
+const colorText: Record<string, string> = {
+  green: "text-green-400", red: "text-red-400",    yellow: "text-yellow-400",
+  blue:  "text-blue-400",  purple: "text-purple-400", orange: "text-orange-400",
+  gray:  "text-gray-400",  pink: "text-pink-400",
+};
+
+// ─────────────────────────────────────────────
+// STRUCTURED MESSAGE RENDERER
+// ─────────────────────────────────────────────
+function StructuredMessage({ data }: { data: any }) {
+
+  // ── PLAIN TEXT ──
+  if (!data || data.type === "text") {
+    return (
+      <p className="text-sm text-gray-200 leading-relaxed whitespace-pre-wrap">
+        {data?.response || "No response."}
+      </p>
+    );
+  }
+
+  // ── SINGLE STAT ──
+  if (data.type === "stat") {
+    return (
+      <div className="flex items-center gap-4 py-1">
+        <div className={`w-12 h-12 rounded-xl border flex items-center justify-center flex-shrink-0 ${colorBg[data.color] || colorBg.gray}`}>
+          <LucideIcon name={data.icon} className="w-5 h-5" />
+        </div>
+        <div>
+          <p className="text-3xl font-black text-white">{data.value}</p>
+          <p className="text-xs text-gray-500 font-medium mt-0.5">{data.title}</p>
+        </div>
       </div>
-      <div className="flex-1 bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl shadow-2xl flex flex-col overflow-hidden">
-        <div className="flex-1 p-6 overflow-y-auto custom-scrollbar space-y-6 bg-[#121212]">
-          {chatMessages.map((msg,idx)=>(
-            <div key={idx} className={`flex ${msg.sender==="user"?"justify-end":"justify-start"}`}>
-              <div className={`flex gap-3 max-w-[85%] ${msg.sender==="user"?"flex-row-reverse":"flex-row"}`}>
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 shadow-lg ${msg.sender==="user"?"bg-blue-600":"bg-purple-600"}`}>{msg.sender==="user"?<FaUserCircle/>:<FaRobot/>}</div>
-                <div className={`p-4 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap shadow-md ${msg.sender==="user"?"bg-blue-600 text-white rounded-tr-none":"bg-[#222] text-gray-200 border border-[#2a2a2a] rounded-tl-none"}`}>{msg.text}</div>
+    );
+  }
+
+  // ── PIPELINE OVERVIEW ──
+  if (data.type === "overview") {
+    return (
+      <div className="space-y-4">
+        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2">
+          <BarChart2 className="w-3.5 h-3.5 text-purple-400" /> {data.title}
+        </p>
+        <div className="grid grid-cols-2 gap-2">
+          {(data.stats || []).map((s: any) => (
+            <div key={s.label} className={`flex items-center gap-3 p-3 rounded-xl border ${colorBg[s.color] || colorBg.gray}`}>
+              <LucideIcon name={s.icon} className={`w-4 h-4 flex-shrink-0 ${colorText[s.color]}`} />
+              <div>
+                <p className="text-lg font-black text-white leading-none">{s.value}</p>
+                <p className="text-[10px] text-gray-500 mt-0.5">{s.label}</p>
               </div>
             </div>
           ))}
-          <div ref={chatEndRef}/>
         </div>
-        <form onSubmit={handleChatSubmit} className="p-4 border-t border-[#2a2a2a] bg-[#1a1a1a] flex gap-3">
-          <input type="text" value={chatInput} onChange={e=>setChatInput(e.target.value)} placeholder="Type here..." className="flex-1 bg-[#222] border border-[#333] rounded-xl px-5 py-3 text-sm outline-none focus:border-purple-500 text-white transition-all shadow-inner"/>
-          <button type="submit" className="w-12 h-12 bg-purple-600 text-white rounded-xl flex items-center justify-center hover:bg-purple-500 transition-all cursor-pointer"><FaPaperPlane className="text-sm ml-[-2px]"/></button>
-        </form>
+        {data.hotLeads?.length > 0 && (
+          <div>
+            <p className="text-[11px] font-bold text-red-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+              <AlertTriangle className="w-3 h-3" /> Hot Leads
+            </p>
+            {data.hotLeads.map((l: any) => (
+              <div key={l.id} className="flex items-center justify-between py-2 border-b border-[#222] last:border-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] text-purple-400 font-mono font-bold">#{l.id}</span>
+                  <span className="text-sm text-white font-semibold">{l.name}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] text-gray-500">{l.interest}</span>
+                  <span className="text-[11px] font-black text-orange-400">{l.score}/100</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ── PRIORITY LIST ──
+  if (data.type === "priority_list") {
+    return (
+      <div className="space-y-3">
+        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2">
+          <AlertTriangle className="w-3.5 h-3.5 text-red-400" /> {data.title}
+        </p>
+        {(data.leads || []).map((l: any, i: number) => (
+          <div key={l.id} className="flex items-center gap-3 p-3 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl">
+            <span className="text-lg font-black text-gray-600 w-5 text-center flex-shrink-0">{i + 1}</span>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-[10px] text-purple-400 font-mono">#{l.id}</span>
+                <span className="text-sm text-white font-bold truncate">{l.name}</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${colorBg[l.priorityColor] || colorBg.gray}`}>
+                  {l.priority}
+                </span>
+                <span className="text-[10px] text-gray-500">{l.budget}</span>
+              </div>
+            </div>
+            <div className="text-right flex-shrink-0">
+              <p className="text-lg font-black text-white">{l.score}</p>
+              <p className="text-[9px] text-gray-600">/ 100</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  // ── LOAN LIST ──
+  if (data.type === "loan_list") {
+    return (
+      <div className="space-y-3">
+        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2">
+          <Landmark className="w-3.5 h-3.5 text-blue-400" /> {data.title}
+        </p>
+        {(data.leads || []).map((l: any) => {
+          const sc = (l.status || "").toLowerCase();
+          const sc2 = sc === "approved" ? colorBg.green : sc === "rejected" ? colorBg.red : sc === "in progress" ? colorBg.yellow : colorBg.gray;
+          return (
+            <div key={l.id} className="p-3 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] text-purple-400 font-mono">#{l.id}</span>
+                  <span className="text-sm text-white font-bold">{l.name}</span>
+                </div>
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${sc2}`}>{l.status}</span>
+              </div>
+              <div className="flex gap-4 text-[11px]">
+                <span className="text-gray-500">Requested: <span className="text-orange-400 font-semibold">{l.amtReq}</span></span>
+                <span className="text-gray-500">Approved: <span className="text-green-400 font-semibold">{l.amtApp}</span></span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+
+  // ── VISIT LIST ──
+  if (data.type === "visit_list") {
+    return (
+      <div className="space-y-3">
+        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2">
+          <CalendarDays className="w-3.5 h-3.5 text-orange-400" /> {data.title}
+        </p>
+        {(data.leads || []).map((l: any) => (
+          <div key={l.id} className="flex items-center gap-3 p-3 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl">
+            <div className="w-10 h-10 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center flex-shrink-0">
+              <CalendarCheck className="w-4 h-4 text-orange-400" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] text-purple-400 font-mono">#{l.id}</span>
+                <span className="text-sm text-white font-bold truncate">{l.name}</span>
+              </div>
+              <p className="text-[11px] text-orange-400 font-semibold mt-0.5">{l.date}</p>
+            </div>
+            <span className="text-[11px] text-green-400 font-semibold flex-shrink-0">{l.budget}</span>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  // ── RECOMMENDATION ──
+  if (data.type === "recommendation") {
+    return (
+      <div className="space-y-4">
+        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2">
+          <BrainCircuit className="w-3.5 h-3.5 text-purple-400" /> AI Recommendation
+        </p>
+        <div className="p-4 bg-purple-500/5 border border-purple-500/20 rounded-xl">
+          <p className="text-[10px] text-gray-500 mb-1">Best lead to act on right now</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <span className="text-[10px] text-purple-400 font-mono mr-2">#{data.lead?.id}</span>
+              <span className="text-white font-bold">{data.lead?.name}</span>
+            </div>
+            <div className="text-right">
+              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${colorBg[data.lead?.priorityColor] || colorBg.gray}`}>
+                {data.lead?.priority}
+              </span>
+              <p className="text-[10px] text-gray-500 mt-1">{data.lead?.score}/100</p>
+            </div>
+          </div>
+        </div>
+        <div className="space-y-2">
+          {(data.suggestions || []).slice(0, 4).map((s: any, i: number) => (
+            <div key={i} className="flex items-start gap-3 p-2.5 bg-[#1a1a1a] rounded-xl border border-[#222]">
+              <div className={`w-7 h-7 rounded-lg border flex items-center justify-center flex-shrink-0 mt-0.5 ${colorBg[s.color] || colorBg.gray}`}>
+                <LucideIcon name={s.icon} className={`w-3.5 h-3.5 ${colorText[s.color]}`} />
+              </div>
+              <p className="text-xs text-gray-300 leading-relaxed">{s.text}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // ── LEAD DETAIL ──
+  if (data.type === "lead_detail") {
+    const l = data.lead || {};
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between pb-3 border-b border-[#222]">
+          <div>
+            <p className="text-[10px] text-purple-400 font-mono mb-0.5">#{l.id}</p>
+            <p className="text-lg font-bold text-white">{l.name}</p>
+          </div>
+          <div className="text-right">
+            <span className={`text-[10px] font-bold px-2 py-1 rounded-full border ${colorBg[data.priorityColor] || colorBg.gray}`}>
+              {data.priority}
+            </span>
+            <p className="text-[10px] text-gray-500 mt-1">Score: {data.score}/100</p>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          {[
+            { label: "Budget",   value: l.budget,      icon: "banknote",  color: "green"  },
+            { label: "Interest", value: l.interest,    icon: "target",    color: "purple" },
+            { label: "Loan",     value: l.loanPlanned, icon: "landmark",  color: "blue"   },
+            { label: "Timeline", value: l.planning,    icon: "calendar",  color: "orange" },
+            { label: "Use Type", value: l.useType,     icon: "home",      color: "purple" },
+            { label: "Source",   value: l.source,      icon: "share-2",   color: "blue"   },
+          ].map(item => (
+            <div key={item.label} className="flex items-center gap-2 p-2 bg-[#1a1a1a] rounded-lg border border-[#222]">
+              <LucideIcon name={item.icon} className={`w-3.5 h-3.5 flex-shrink-0 ${colorText[item.color]}`} />
+              <div className="min-w-0">
+                <p className="text-[9px] text-gray-600">{item.label}</p>
+                <p className="text-white font-semibold text-xs truncate">{item.value}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+        {(data.suggestions || []).length > 0 && (
+          <div>
+            <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+              <Lightbulb className="w-3 h-3 text-yellow-400" /> Suggested Actions
+            </p>
+            <div className="space-y-1.5">
+              {(data.suggestions || []).map((s: any, i: number) => (
+                <div key={i} className="flex items-start gap-2.5 p-2.5 bg-[#1a1a1a] rounded-lg border border-[#222]">
+                  <div className={`w-6 h-6 rounded-lg border flex items-center justify-center flex-shrink-0 ${colorBg[s.color] || colorBg.gray}`}>
+                    <LucideIcon name={s.icon} className={`w-3 h-3 ${colorText[s.color]}`} />
+                  </div>
+                  <p className="text-[11px] text-gray-300 leading-relaxed">{s.text}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ── HELP ──
+  if (data.type === "help") {
+    return (
+      <div className="space-y-2">
+        <p className="text-xs font-bold text-gray-400 mb-3 flex items-center gap-2">
+          <BrainCircuit className="w-3.5 h-3.5 text-purple-400" /> What I can help with
+        </p>
+        {(data.items || []).map((item: any, i: number) => (
+          <div key={i} className="flex items-center gap-3 p-2.5 bg-[#1a1a1a] border border-[#222] rounded-xl">
+            <LucideIcon name={item.icon} className="w-3.5 h-3.5 text-purple-400 flex-shrink-0" />
+            <p className="text-xs text-gray-300">{item.text}</p>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  return <p className="text-sm text-gray-400">Unknown response type.</p>;
+}
+
+// ─────────────────────────────────────────────
+// MAIN ASSISTANT VIEW
+// ─────────────────────────────────────────────
+function AssistantView({ allLeads }: { allLeads: any[] }) {
+  const CACHE_KEY = "crm_ai_chat";
+  const CACHE_TTL = 2 * 24 * 60 * 60 * 1000;
+
+  const [chatInput, setChatInput]       = useState("");
+  const [chatMessages, setChatMessages] = useState<{ sender: string; text: string; ts?: string; typing?: boolean }[]>([]);
+  const [isLoading, setIsLoading]       = useState(false);
+  const chatEndRef = useRef<HTMLDivElement>(null);
+  const inputRef   = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [chatMessages, isLoading]);
+
+  // ── LOAD CACHE ──
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(CACHE_KEY);
+      if (!raw) return;
+      const { messages, savedAt } = JSON.parse(raw);
+      if (Date.now() - savedAt > CACHE_TTL) { localStorage.removeItem(CACHE_KEY); return; }
+      if (Array.isArray(messages)) setChatMessages(messages);
+    } catch { localStorage.removeItem(CACHE_KEY); }
+  }, []);
+
+  // ── SAVE CACHE ──
+  useEffect(() => {
+    if (chatMessages.length === 0) return;
+    try {
+      localStorage.setItem(CACHE_KEY, JSON.stringify({ messages: chatMessages, savedAt: Date.now() }));
+    } catch {}
+  }, [chatMessages]);
+
+  const getTime = () => new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
+
+  // ── SEND MESSAGE ──
+  const sendMessage = async (text: string) => {
+    if (!text.trim() || isLoading) return;
+    setChatInput("");
+
+    // Add user message
+    setChatMessages(prev => [...prev, { sender: "user", text, ts: getTime() }]);
+    setIsLoading(true);
+
+    // 🔥 Show typing indicator for 0.5s before actual response
+    const typingId = Date.now().toString();
+    setChatMessages(prev => [...prev, { sender: "ai", text: "", ts: getTime(), typing: true }]);
+
+    try {
+      const res = await fetch("/api/ai-assistant/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query: text, leads: allLeads }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+
+      // 🔥 Wait 0.5s minimum so typing indicator always shows
+      await new Promise(r => setTimeout(r, 500));
+
+      // Replace typing bubble with real response
+      setChatMessages(prev =>
+        prev.map((m, i) =>
+          i === prev.length - 1 && m.typing
+            ? { sender: "ai", text: data.response, ts: getTime(), typing: false }
+            : m
+        )
+      );
+    } catch (err) {
+      await new Promise(r => setTimeout(r, 500));
+      setChatMessages(prev =>
+        prev.map((m, i) =>
+          i === prev.length - 1 && m.typing
+            ? { sender: "ai", text: `Something went wrong: ${err instanceof Error ? err.message : String(err)}`, ts: getTime(), typing: false }
+            : m
+        )
+      );
+    } finally {
+      setIsLoading(false);
+      inputRef.current?.focus();
+    }
+  };
+
+  const handleSubmit  = (e: React.FormEvent) => { e.preventDefault(); sendMessage(chatInput); };
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(chatInput); }
+  };
+
+  const suggestions = [
+    { icon: <BarChart2    className="w-4 h-4 text-purple-400" />, label: "Leads overview",      prompt: "Leads overview" },
+    { icon: <Flame        className="w-4 h-4 text-red-400" />,    label: "High priority leads",    prompt: "high priority leads" }, // 🔥 Flame instead of AlertTriangle
+    { icon: <Landmark     className="w-4 h-4 text-blue-400" />,   label: "Loan summary",           prompt: "loan summary" },
+    { icon: <CalendarDays className="w-4 h-4 text-orange-400" />, label: "Site visits",            prompt: "site visits" },
+    { icon: <Lightbulb    className="w-4 h-4 text-yellow-400" />, label: "What should I do next?", prompt: "suggest what should I do next" },
+    { icon: <ClipboardList className="w-4 h-4 text-green-400"/>,  label: "Total lead count",       prompt: "how many total leads" },
+  ];
+
+  const isEmpty = chatMessages.length === 0;
+
+  return (
+    <div className="flex flex-col bg-[#0a0a0a]" style={{ height: "calc(100vh - 64px)" }}>
+
+      {/* ── TOPBAR ── */}
+      <div className="flex-shrink-0 flex items-center justify-between px-8 py-4 border-b border-[#1a1a1a]">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center shadow-lg">
+            <Bot className="text-white w-4 h-4" />
+          </div>
+          <div>
+            <h2 className="text-white font-bold text-sm leading-tight">CRM AI Assistant</h2>
+            <p className="text-gray-600 text-[11px]">
+              {allLeads.length > 0 ? `${allLeads.length} leads in context` : "No leads loaded"}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-4">
+          {chatMessages.length > 0 && (
+            <button
+              onClick={() => { setChatMessages([]); localStorage.removeItem(CACHE_KEY); }}
+              className="text-[11px] text-gray-600 hover:text-red-400 transition-colors cursor-pointer border border-[#222] hover:border-red-500/30 px-3 py-1 rounded-full"
+            >
+              Clear chat
+            </button>
+          )}
+          <div className="flex items-center gap-2">
+            <Wifi className="w-3 h-3 text-green-500" />
+            <span className="text-[11px] text-green-500 font-semibold">Online</span>
+          </div>
+        </div>
+      </div>
+
+      {/* ── MESSAGES AREA ── */}
+      <div className="flex-1 overflow-y-auto custom-scrollbar">
+        {isEmpty ? (
+          <div className="flex flex-col items-center justify-center h-full px-8 py-12">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-600/20 to-blue-600/20 border border-purple-500/20 flex items-center justify-center mb-6">
+              <Bot className="text-purple-400 w-8 h-8" />
+            </div>
+            <h1 className="text-2xl font-bold text-white mb-2 text-center">How can I help you today?</h1>
+            <p className="text-gray-500 text-sm text-center mb-10 max-w-md">
+              Ask me about your leads, Leads stats, loan tracking, or type a client name for a full AI analysis.
+            </p>
+           <div className="grid grid-cols-2 md:grid-cols-3 gap-3 w-full max-w-2xl">
+              {suggestions.map((s) => (
+                <button
+                  key={s.prompt}
+                  onClick={() => sendMessage(s.prompt)}
+                  className="group flex items-center gap-3 bg-[#111] hover:bg-[#1a1a1a] border border-[#222] hover:border-purple-500/40 rounded-xl p-4 text-left transition-all cursor-pointer"
+                >
+                  <div className="relative w-8 h-8 rounded-lg bg-[#1a1a1a] border border-[#2a2a2a] flex items-center justify-center flex-shrink-0">
+                    {s.icon}
+                    {/* 🔥 Red pulsing dot only on High Priority card */}
+                    {s.prompt === "high priority leads" && (
+                      <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
+                        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500" />
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-gray-400 group-hover:text-white text-xs font-medium leading-tight transition-colors">
+                    {s.label}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="max-w-3xl mx-auto px-6 py-8 space-y-6">
+            {chatMessages.map((msg, idx) => (
+              <div key={idx} className={`flex gap-3 animate-fadeIn ${msg.sender === "user" ? "flex-row-reverse" : "flex-row"}`}>
+
+                {/* Avatar */}
+                <div className="flex-shrink-0 mt-1">
+                  {msg.sender === "ai" ? (
+                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center shadow-md">
+                      <Bot className="text-white w-3.5 h-3.5" />
+                    </div>
+                  ) : (
+                    <div className="w-8 h-8 rounded-lg bg-[#2a2a2a] border border-[#333] flex items-center justify-center">
+                      <User className="text-gray-400 w-3.5 h-3.5" />
+                    </div>
+                  )}
+                </div>
+
+                {/* Bubble */}
+                <div className={`flex flex-col gap-1 ${msg.sender === "user" ? "items-end max-w-[55%]" : "items-start max-w-[80%]"}`}>
+                  <div className={`
+                    px-4 py-3 rounded-2xl text-sm leading-7
+                    ${msg.sender === "user"
+                      ? "bg-purple-600 text-white rounded-tr-sm"
+                      : "bg-[#141414] border border-[#1f1f1f] text-gray-200 rounded-tl-sm"
+                    }
+                  `}>
+                    {/* 🔥 Typing indicator */}
+                    {/* Replace the typing indicator inside the bubble */}
+                    {msg.typing ? (
+                      <div className="flex items-center gap-3 py-0.5">
+                        {/* 🔥 Animated typing bars — like iMessage */}
+                        <div className="flex items-end gap-[3px] h-4">
+                          {[0, 100, 200, 100, 0].map((delay, i) => (
+                            <div
+                              key={i}
+                              className="w-[3px] bg-purple-400 rounded-full animate-pulse"
+                              style={{
+                                height: `${[8, 12, 16, 12, 8][i]}px`,
+                                animationDelay: `${delay}ms`,
+                                animationDuration: "0.8s",
+                              }}
+                            />
+                          ))}
+                        </div>
+                        <span className="text-[11px] text-gray-500 italic">AI is thinking...</span>
+                      </div>
+                    ) : (
+                      <p className="whitespace-pre-wrap">{msg.text}</p>
+                    )}
+                  </div>
+                  {msg.ts && !msg.typing && (
+                    <span className="text-[10px] text-gray-700 px-1">{msg.ts}</span>
+                  )}
+                </div>
+              </div>
+            ))}
+            <div ref={chatEndRef} />
+          </div>
+        )}
+      </div>
+
+      {/* ── INPUT BAR ── */}
+      <div className="flex-shrink-0 border-t border-[#111] bg-[#0a0a0a] px-4 py-3">
+        <div className="max-w-3xl mx-auto">
+          <form onSubmit={handleSubmit}>
+            <div className="flex items-center gap-3 bg-[#111] border border-[#222] hover:border-[#333] focus-within:border-purple-500/50 rounded-2xl px-4 py-3 transition-all">
+              <textarea
+                ref={inputRef}
+                value={chatInput}
+                onChange={e => {
+                  setChatInput(e.target.value);
+                  e.target.style.height = "auto";
+                  e.target.style.height = Math.min(e.target.scrollHeight, 160) + "px";
+                }}
+                onKeyDown={handleKeyDown}
+                placeholder="Ask about leads, leads, loans, or type a client name..."
+                disabled={isLoading}
+                rows={1}
+                className="flex-1 bg-transparent text-white text-sm outline-none resize-none placeholder-gray-600 disabled:opacity-50 leading-relaxed self-center"
+                style={{ maxHeight: "160px", minHeight: "24px" }}
+              />
+              <button
+                type="submit"
+                disabled={isLoading || !chatInput.trim()}
+                className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all cursor-pointer flex-shrink-0
+                  ${chatInput.trim() && !isLoading
+                    ? "bg-purple-600 hover:bg-purple-500 text-white shadow-lg shadow-purple-600/20"
+                    : "bg-[#1a1a1a] text-gray-600 cursor-not-allowed"
+                  }`}
+              >
+                <Send className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </form>
+
+          {!isEmpty && (
+            <div className="flex gap-2 mt-3 flex-wrap">
+              {suggestions.slice(0, 4).map(s => (
+                <button
+                  key={s.prompt}
+                  onClick={() => sendMessage(s.prompt)}
+                  disabled={isLoading}
+                  className="relative flex items-center gap-1.5 text-[11px] text-gray-500 hover:text-white bg-[#111] hover:bg-[#1a1a1a] border border-[#222] hover:border-[#333] px-3 py-1.5 rounded-full transition-all cursor-pointer disabled:opacity-40"
+                >
+                  {/* 🔥 Red dot on high priority chip */}
+                  {s.prompt === "high priority leads" && (
+                    <span className="flex h-1.5 w-1.5 mr-0.5">
+                      <span className="animate-ping absolute inline-flex h-1.5 w-1.5 rounded-full bg-red-400 opacity-75" />
+                      <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-red-500" />
+                    </span>
+                  )}
+                  <span className="w-3 h-auto flex-shrink-0">{s.icon}</span>
+                  <span className="whitespace-nowrap">{s.label}</span>
+                </button>
+              ))}
+            </div>
+          )}
+
+          <p className="text-center text-[10px] text-gray-700 mt-2">
+            Press Enter to send · Shift+Enter for new line
+          </p>
+        </div>
       </div>
     </div>
   );

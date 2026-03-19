@@ -7,7 +7,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   FaUserTie, FaListUl, FaPlus,
   FaTicketAlt, FaSitemap, FaThLarge, FaCog, FaSun, FaBell, FaLock, FaIdCard,
-  FaClipboardList, FaUsers, FaEye, FaEyeSlash, FaTrash,FaUserEdit 
+  FaClipboardList, FaUsers, FaEye, FaEyeSlash, FaTrash, FaUserEdit,
+  FaPhoneAlt  // 🔥 ADD THIS
 } from "react-icons/fa";
 
 // Define our TypeScript types
@@ -222,10 +223,11 @@ export default function EmployeesPage() {
 
   // 🔥 FIXED: All main dashboard links point back to /dashboard 🔥
   const menuItems = [
-    { id: "dashboard", icon: FaThLarge, label: "Overview", link: "/dashboard" },
-    { id: "receptionist", icon: FaClipboardList, label: "Receptionist", link: "/dashboard" },
-    { id: "sales", icon: FaUsers, label: "Sales Managers", link: "/dashboard" },
-    { id: "employees", icon: FaIdCard, label: "Add Employee", link: "/dashboard/employees" },
+    { id: "dashboard",    icon: FaThLarge,      label: "Overview",      link: "/dashboard" },
+    { id: "receptionist", icon: FaClipboardList, label: "Receptionist",  link: "/dashboard" },
+    { id: "sales",        icon: FaUsers,         label: "Sales Managers",link: "/dashboard" },
+    { id: "employees",    icon: FaIdCard,        label: "Add Employee",  link: "/dashboard/employees" },
+    { id: "callers",      icon: FaPhoneAlt,      label: "Caller Panel",  link: "/dashboard/caller" }, // 🔥 FIXED
   ];
 
   // Show a loading state briefly while checking credentials
@@ -267,11 +269,11 @@ export default function EmployeesPage() {
               key={item.id}
               href={item.link}
               onClick={() => { 
-                setIsSidebarHovered(false);
-                // 🔥 NEW: Save the clicked tab to local storage before leaving
-                if (item.id !== "employees") {
-                  localStorage.setItem("return_tab", item.id);
-                }
+                  setIsSidebarHovered(false);
+                  // Save return tab for non-employee, non-caller routes
+                  if (item.id !== "employees" && item.id !== "callers") {
+                    localStorage.setItem("return_tab", item.id);
+                  }
               }}
               className={`flex items-center px-3 py-3.5 rounded-xl cursor-pointer transition-colors whitespace-nowrap relative group
                 ${activeView === item.id ? "bg-purple-500/10 text-purple-400" : "text-gray-500 hover:bg-[#1a1a1a] hover:text-gray-300"}
