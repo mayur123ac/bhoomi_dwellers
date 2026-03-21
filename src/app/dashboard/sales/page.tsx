@@ -31,12 +31,8 @@ function useAdminData() {
   const fetchAdminData = async () => {
     try {
       let smData = [];
-      const resUsers = await fetch("/api/users?role=sales_manager");
-      if (resUsers.ok) { const json = await resUsers.json(); smData = json.data || json; }
-      else {
-        const resUsersAlt = await fetch("/api/users/sales-manager");
-        if (resUsersAlt.ok) { const json = await resUsersAlt.json(); smData = json.data || []; }
-      }
+      const resUsers = await fetch("/api/users/sales-manager");
+      if (resUsers.ok) { const json = await resUsers.json(); smData = json.data || []; }
       let pgLeads: any[] = [];
       const resLeads = await fetch("/api/walkin_enquiries");
       if (resLeads.ok) { const json = await resLeads.json(); pgLeads = Array.isArray(json.data) ? json.data : []; }
@@ -434,7 +430,11 @@ export default function SalesDashboard() {
           {activeView === "sales" || activeView === "overview" || activeView === "forms" || activeView === "detail" ? (
             <SalesManagerView managers={managers} allLeads={allLeads} followUps={followUps} isLoading={isLoading} adminUser={user} refetch={refetch} initialView={activeView} setMainView={setActiveView} />
           ) : activeView === "assistant" ? (
-            <AssistantView allLeads={allLeads} />
+            <AssistantView allLeads={
+              user.role === "admin" 
+                ? allLeads 
+                : allLeads.filter((l: any) => l.assigned_to === user.name)
+            } />
           ) : (
             <div className="text-gray-400 text-center mt-20">Settings Module Loading...</div>
           )}

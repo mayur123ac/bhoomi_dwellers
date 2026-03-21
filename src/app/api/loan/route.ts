@@ -1,133 +1,133 @@
+// app/api/loan/route.ts
 import { NextResponse } from "next/server";
-import mongoose from "mongoose";
+import { query } from "@/lib/db";
 
-const MONGODB_URI = process.env.MONGODB_URI as string;
-
-if (!MONGODB_URI) {
-  throw new Error("Please define the MONGODB_URI environment variable inside .env.local");
-}
-
-// ============================================================================
-// DATABASE CONNECTION (Optimized for Vercel Serverless)
-// ============================================================================
-let isConnected = false;
-
-const connectToDatabase = async () => {
-  if (isConnected) return;
-  if (mongoose.connection.readyState >= 1) {
-    isConnected = true;
-    return;
-  }
-  await mongoose.connect(MONGODB_URI);
-  isConnected = true;
-};
-
-// ============================================================================
-// 1. SCHEMAS & MODELS
-// ============================================================================
-const loanUpdateSchema = new mongoose.Schema({
-  leadId: { type: String, required: true },
-  salesManagerName: { type: String, required: true },
-  createdBy: { type: String, default: "sales" },
-  
-  // Basic
-  status: { type: String, default: "Pending" },
-  loanType: String, amountReq: String, amountApp: String, processingAmt: String, roi: String, tenure: String,
-  
-  // Bank & Agent
-  bank: String, officer: String, agent: String, agentContact: String,
-  
-  // Financial
-  empType: String, income: String, emi: String, cibil: String,
-  
-  // Property
-  propType: String, propValue: String, project: String, builder: String,
-  
-  // Contact
-  phone: String, altPhone: String, email: String, address: String,
-  
-  // Timeline & Notes
-  appDate: String, apprvDate: String, expDisbDate: String, disbDate: String,
-  notes: String,
-  
-  createdAt: { type: Date, default: Date.now }
-});
-
-// Recreating the FollowupSchema to inject logs
-const followupSchema = new mongoose.Schema({
-  leadId: { type: String, required: true },
-  salesManagerName: { type: String, required: true },
-  createdBy: { type: String, default: "sales" },
-  message: { type: String, required: true },
-  siteVisitDate: { type: String, default: null },
-  createdAt: { type: Date, default: Date.now }
-});
-
-// Prevent model overwrite upon Next.js hot reload
-const LoanUpdate = mongoose.models.LoanUpdate || mongoose.model("LoanUpdate", loanUpdateSchema);
-const FollowupMessage = mongoose.models.FollowupMessage || mongoose.model("FollowupMessage", followupSchema);
-
-// ============================================================================
-// 2. GET LOAN DATA
-// ============================================================================
-export async function GET(req: Request) {
+// ── GET: Fetch all loan updates ───────────────────────────────────────────────
+export async function GET() {
   try {
-    await connectToDatabase();
-    const loans = await LoanUpdate.find().sort({ createdAt: 1 });
+    const loans = await query(
+      `SELECT * FROM loan_updates ORDER BY created_at ASC`
+    );
     return NextResponse.json({ success: true, data: loans }, { status: 200 });
   } catch (error) {
     console.error("Failed to fetch loans:", error);
-    return NextResponse.json({ success: false, message: "Failed to fetch loans" }, { status: 500 });
+    return NextResponse.json(
+      { success: false, message: "Failed to fetch loans" },
+      { status: 500 }
+    );
   }
 }
 
-// ============================================================================
-// 3. POST LOAN DATA (Saves Loan AND creates Follow-up Log)
-// ============================================================================
+// ── POST: Save loan update + inject follow-up timeline message ────────────────
 export async function POST(req: Request) {
   try {
-    await connectToDatabase();
     const body = await req.json();
-    
+
     if (!body.leadId) {
-      return NextResponse.json({ success: false, message: "Missing leadId" }, { status: 400 });
+      return NextResponse.json(
+        { success: false, message: "Missing leadId" },
+        { status: 400 }
+      );
     }
 
-    // 1. Save the comprehensive structured data to the Loan collection
-    const newLoan = await LoanUpdate.create(body);
+    // 1. Save structured loan data to PostgreSQL
+    const rows = await query(
+      `INSERT INTO loan_updates (
+        lead_id, sales_manager_name, created_by,
+        status, loan_type,
+        amount_req, amount_app, processing_amt, roi, tenure,
+        bank, officer, agent, agent_contact,
+        emp_type, income, emi, cibil,
+        prop_type, prop_value, project, builder,
+        phone, alt_phone, email, address,
+        doc_pan, doc_aadhaar, doc_salary, doc_bank, doc_property,
+        app_date, aprv_date, exp_disb_date, disb_date, notes
+      ) VALUES (
+        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,
+        $11,$12,$13,$14,$15,$16,$17,$18,
+        $19,$20,$21,$22,$23,$24,$25,$26,
+        $27,$28,$29,$30,$31,$32,$33,$34,$35,$36
+      ) RETURNING *`,
+      [
+        String(body.leadId),
+        body.salesManagerName   || null,
+        body.createdBy          || "sales",
+        body.status             || "Pending",
+        body.loanType           || null,
+        body.amountReq          || null,
+        body.amountApp          || null,
+        body.processingAmt      || null,
+        body.roi                || null,
+        body.tenure             || null,
+        body.bank               || null,
+        body.officer            || null,
+        body.agent              || null,
+        body.agentContact       || null,
+        body.empType            || null,
+        body.income             || null,
+        body.emi                || null,
+        body.cibil              || null,
+        body.propType           || null,
+        body.propValue          || null,
+        body.project            || null,
+        body.builder            || null,
+        body.phone              || null,
+        body.altPhone           || null,
+        body.email              || null,
+        body.address            || null,
+        body.docPan             || "Pending",
+        body.docAadhaar         || "Pending",
+        body.docSalary          || "Pending",
+        body.docBank            || "Pending",
+        body.docProperty        || "Pending",
+        body.appDate            || null,
+        body.apprvDate          || null,
+        body.expDisbDate        || null,
+        body.disbDate           || null,
+        body.notes              || null,
+      ]
+    );
 
-    // 2. Generate the visual Follow-up summary for the frontend timeline
+    const newLoan = rows[0];
+
+    // 2. Build the same visual summary message your frontend timeline shows
     const summaryMessage = `🏦 Loan Update:
 • Loan Required: Yes
-• Status: ${body.status || 'N/A'}
-• Bank Name: ${body.bank || 'N/A'}
-• Amount Requested: ${body.amountReq || 'N/A'}
-• Amount Approved: ${body.amountApp || 'N/A'}
-• CIBIL Score: ${body.cibil || 'N/A'}
-• Agent Name: ${body.agent || 'N/A'}
-• Agent Contact: ${body.agentContact || 'N/A'}
-• Employment Type: ${body.empType || 'N/A'}
-• Monthly Income: ${body.income || 'N/A'}
-• Existing EMIs: ${body.emi || 'N/A'}
-• PAN Card: ${body.docPan || 'Pending'}
-• Aadhaar Card: ${body.docAadhaar || 'Pending'}
-• Salary Slips: ${body.docSalary || 'Pending'}
-• Bank Statements: ${body.docBank || 'Pending'}
-• Property Docs: ${body.docProperty || 'Pending'}
-• Notes: ${body.notes || 'N/A'}`;
+• Status: ${body.status || "N/A"}
+• Bank Name: ${body.bank || "N/A"}
+• Amount Requested: ${body.amountReq || "N/A"}
+• Amount Approved: ${body.amountApp || "N/A"}
+• CIBIL Score: ${body.cibil || "N/A"}
+• Agent Name: ${body.agent || "N/A"}
+• Agent Contact: ${body.agentContact || "N/A"}
+• Employment Type: ${body.empType || "N/A"}
+• Monthly Income: ${body.income || "N/A"}
+• Existing EMIs: ${body.emi || "N/A"}
+• PAN Card: ${body.docPan || "Pending"}
+• Aadhaar Card: ${body.docAadhaar || "Pending"}
+• Salary Slips: ${body.docSalary || "Pending"}
+• Bank Statements: ${body.docBank || "Pending"}
+• Property Docs: ${body.docProperty || "Pending"}
+• Notes: ${body.notes || "N/A"}`;
 
-    // 3. Inject it into the Follow-ups timeline collection
-    await FollowupMessage.create({
-      leadId: String(body.leadId),
-      salesManagerName: body.salesManagerName,
-      createdBy: body.createdBy || "sales",
-      message: summaryMessage,
-      siteVisitDate: null
-    });
+    // 3. Inject into follow_ups table (PostgreSQL) instead of MongoDB FollowupMessage
+    await query(
+      `INSERT INTO follow_ups (lead_id, message, created_by_name, created_at)
+       VALUES ($1, $2, $3, NOW())`,
+      [
+        String(body.leadId),
+        summaryMessage,
+        body.salesManagerName || body.createdBy || "sales",
+      ]
+    );
 
     return NextResponse.json({ success: true, data: newLoan }, { status: 201 });
+
   } catch (error) {
     console.error("Failed to save loan update:", error);
-    return NextResponse.json({ success: false, message: "Failed to save loan update" }, { status: 500 });
+    return NextResponse.json(
+      { success: false, message: "Failed to save loan update" },
+      { status: 500 }
+    );
   }
 }

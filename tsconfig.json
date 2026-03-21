@@ -29,6 +29,6 @@
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
     "**/*.mts"
-  ],
+, "src/app/api/employees", "scripts/migrate-mongo-to-pg.js"  ],
   "exclude": ["node_modules"]
 }

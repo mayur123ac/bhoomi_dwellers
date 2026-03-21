@@ -38,8 +38,8 @@ export default function Login() {
         } else if (userRole === "sales manager") {
           router.push("/dashboard/sales");
         } else if (userRole === "caller") {   // 🔥 ADD THIS
-          router.push("/dashboard/caller");
-        } else {
+         router.push("/dashboard/caller");
+        }else {
           router.push("/dashboard");
         }
       } else {

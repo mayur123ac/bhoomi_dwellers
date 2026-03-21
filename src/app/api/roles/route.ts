@@ -1,46 +1,54 @@
+// app/api/roles/route.ts
 import { NextResponse } from "next/server";
-import { connectMongoDB } from "@/lib/mongodb";
-import Role from "@/models/Role";
+import { query } from "@/lib/db";
 
-// GET all roles (and create defaults if empty)
+// ── GET: Fetch all roles ──────────────────────────────────────────────────────
 export async function GET() {
   try {
-    await connectMongoDB();
-    let roles = await Role.find().sort({ createdAt: 1 });
+    const roles = await query(
+      `SELECT id, name FROM roles ORDER BY name ASC`
+    );
 
-    // Automatically inject your default roles if the database is empty
-    if (roles.length === 0) {
-      const defaultRoles = [
-        { name: "Admin" },
-        { name: "Sales Manager" },
-        { name: "Caller" },
-        { name: "Receptionist" },
-        { name: "Sourcing Manager" },
-      ];
-      roles = await Role.insertMany(defaultRoles);
-    }
+    // Map id → _id so the employees page keeps working without changes
+    const mapped = roles.map(r => ({ ...r, _id: String(r.id) }));
+    return NextResponse.json(mapped, { status: 200 });
 
-    return NextResponse.json(roles, { status: 200 });
   } catch (error) {
-    return NextResponse.json({ message: "Error fetching roles" }, { status: 500 });
+    console.error("GET /api/roles error:", error);
+    return NextResponse.json({ message: "Error fetching roles." }, { status: 500 });
   }
 }
 
-// POST a new custom role
+// ── POST: Add a new role ──────────────────────────────────────────────────────
 export async function POST(req: Request) {
   try {
     const { name } = await req.json();
-    await connectMongoDB();
 
-    // Prevent duplicates (case-insensitive)
-    const existingRole = await Role.findOne({ name: { $regex: new RegExp(`^${name}$`, "i") } });
-    if (existingRole) {
+    if (!name?.trim()) {
+      return NextResponse.json({ message: "Role name is required." }, { status: 400 });
+    }
+
+    // Conflict check
+    const existing = await query(
+      `SELECT id FROM roles WHERE LOWER(name) = LOWER($1) LIMIT 1`,
+      [name.trim()]
+    );
+    if (existing.length > 0) {
       return NextResponse.json({ message: "Role already exists." }, { status: 400 });
     }
 
-    const newRole = await Role.create({ name });
-    return NextResponse.json(newRole, { status: 201 });
+    const [newRole] = await query(
+      `INSERT INTO roles (name) VALUES ($1) RETURNING id, name`,
+      [name.trim()]
+    );
+
+    return NextResponse.json(
+      { ...newRole, _id: String(newRole.id) },
+      { status: 201 }
+    );
+
   } catch (error) {
-    return NextResponse.json({ message: "Error creating role" }, { status: 500 });
+    console.error("POST /api/roles error:", error);
+    return NextResponse.json({ message: "Error creating role." }, { status: 500 });
   }
 }

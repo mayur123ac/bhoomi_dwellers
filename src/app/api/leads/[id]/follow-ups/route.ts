@@ -1,4 +1,4 @@
-﻿// app/api/followups/route.ts
+// app/api/followups/route.ts
 import { NextResponse } from "next/server";
 import { query } from "@/lib/db";
 
@@ -9,23 +9,23 @@ export async function GET() {
       `SELECT * FROM follow_ups ORDER BY created_at ASC`
     );
 
-    // Return same shape as old MongoDB response so frontend needs no changes
+    // Map to same shape the frontend expects from the old MongoDB response
     const mapped = messages.map(m => ({
-      _id:              String(m.id),
-      leadId:           String(m.lead_id),
+      _id:             String(m.id),
+      leadId:          String(m.lead_id),
       salesManagerName: m.created_by_name || "",
-      createdBy:        m.created_by_name || "sales",
-      message:          m.message,
-      siteVisitDate:    m.site_visit_date || null,
-      createdAt:        m.created_at,
+      createdBy:       m.created_by_name  || "sales",
+      message:         m.message,
+      siteVisitDate:   m.site_visit_date  || null,
+      createdAt:       m.created_at,
     }));
 
     return NextResponse.json({ success: true, data: mapped }, { status: 200 });
 
-  } catch (error) {
-    console.error("GET followups error:", error);
+ } catch (error: any) {
+    console.error("POST followups REAL ERROR:", error.message); // ← change this line
     return NextResponse.json(
-      { success: false, message: "Failed to fetch messages" },
+      { success: false, message: error.message }, // ← and this line
       { status: 500 }
     );
   }
@@ -58,21 +58,21 @@ export async function POST(req: Request) {
 
     const m = rows[0];
 
-    // Return same shape as old MongoDB response
+    // Return same shape as old MongoDB response so frontend needs no changes
     return NextResponse.json({
       success: true,
       data: {
-        _id:              String(m.id),
-        leadId:           String(m.lead_id),
+        _id:             String(m.id),
+        leadId:          String(m.lead_id),
         salesManagerName: m.created_by_name || "",
-        createdBy:        m.created_by_name || "sales",
-        message:          m.message,
-        siteVisitDate:    m.site_visit_date || null,
-        createdAt:        m.created_at,
+        createdBy:       m.created_by_name  || "sales",
+        message:         m.message,
+        siteVisitDate:   m.site_visit_date  || null,
+        createdAt:       m.created_at,
       },
     }, { status: 201 });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error("POST followups error:", error);
     return NextResponse.json(
       { success: false, message: "Failed to save message" },

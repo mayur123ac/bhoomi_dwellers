@@ -28,8 +28,8 @@ function useAdminData() {
   const fetchAdminData = async () => {
     try {
       let smData: any[] = [];
-      const resUsers = await fetch("/api/users?role=sales_manager");
-      if (resUsers.ok) { const j = await resUsers.json(); smData = j.data || j; }
+      const resUsers = await fetch("/api/users/sales-manager");
+      if (resUsers.ok) { const j = await resUsers.json(); smData = j.data || []; }
       else {
         const alt = await fetch("/api/users/sales-manager");
         if (alt.ok) { const j = await alt.json(); smData = j.data || []; }
@@ -196,6 +196,7 @@ export default function AdminAtlasDashboard() {
     { id: "receptionist", icon: FaClipboardList, label: "Receptionist" },
     { id: "sales",        icon: FaUsers,         label: "Sales Managers" },
     { id: "employees",    icon: FaIdCard,        label: "Add Employee" },
+    { id: "caller",       icon: FaPhoneAlt,      label: "Caller Panel" },
   ];
 
   return (
@@ -279,6 +280,7 @@ export default function AdminAtlasDashboard() {
           {activeView === "dashboard"    && <DashboardOverview managers={managers} allLeads={allLeads} isLoading={isLoading} user={user} />}
           {activeView === "sales"        && <AdminSalesView managers={managers} allLeads={allLeads} followUps={followUps} isLoading={isLoading} adminUser={user} refetch={refetch} />}
           {activeView === "receptionist" && <ReceptionistView receptionists={receptionists} allLeads={allLeads} managers={managers} isLoading={isLoading} refetch={refetch} />}
+          {activeView === "caller" && <CallerAdminView />}
         </main>
       </div>
 
@@ -1181,6 +1183,338 @@ function AdminSalesView({ managers, allLeads, followUps, isLoading, adminUser, r
             )}
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// ADDITIONS TO admin/page.tsx
+// ─────────────────────────────────────────────────────────────
+//
+// CHANGE 1: Add "caller" to menuItems array
+// Find this array and add the caller item:
+//
+//   const menuItems = [
+//     { id: "dashboard",    icon: FaThLarge,      label: "Overview" },
+//     { id: "receptionist", icon: FaClipboardList, label: "Receptionist" },
+//     { id: "sales",        icon: FaUsers,         label: "Sales Managers" },
+//     { id: "employees",    icon: FaIdCard,        label: "Add Employee" },
+//     // ADD THIS LINE:
+//     { id: "caller",       icon: FaPhoneAlt,      label: "Caller Panel" },
+//   ];
+//
+// CHANGE 2: Add caller view render in main section
+// Find:
+//   {activeView === "receptionist" && <ReceptionistView ... />}
+// Add after it:
+//   {activeView === "caller" && <CallerAdminView />}
+//
+// ─────────────────────────────────────────────────────────────
+// PASTE THIS ENTIRE COMPONENT at the bottom of admin/page.tsx
+// ─────────────────────────────────────────────────────────────
+
+function CallerAdminView() {
+  const [callerLeads, setCallerLeads]   = useState<any[]>([]);
+  const [batches, setBatches]           = useState<string[]>([]);
+  const [selectedBatch, setSelectedBatch] = useState<string>("all");
+  const [isLoading, setIsLoading]       = useState(true);
+  const [searchTerm, setSearchTerm]     = useState("");
+  const [selectedLead, setSelectedLead] = useState<any>(null);
+  const [subView, setSubView]           = useState<"table" | "detail">("table");
+
+  // Fetch caller leads
+  const fetchLeads = async () => {
+    try {
+      setIsLoading(true);
+      const url = selectedBatch !== "all"
+        ? `/api/caller-leads?batch=${selectedBatch}`
+        : "/api/caller-leads";
+      const res = await fetch(url);
+      if (res.ok) {
+        const json = await res.json();
+        const leads = json.leads || [];
+        setCallerLeads(leads);
+
+        // Build unique batch list from batch_name
+        const uniqueBatches = Array.from(
+          new Set(leads.map((l: any) => l.batch_name).filter(Boolean))
+        ) as string[];
+        setBatches(uniqueBatches);
+      }
+    } catch (e) {
+      console.error("Failed to fetch caller leads:", e);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => { fetchLeads(); }, [selectedBatch]);
+
+  const filtered = callerLeads.filter(l =>
+    !searchTerm ||
+    l.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    l.contact_no?.includes(searchTerm) ||
+    String(l.id).includes(searchTerm) ||
+    (l.assign_manager || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (l.channel_partner || "").toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // Stats
+  const interested    = callerLeads.filter(l => l.interest_status === "Interested").length;
+  const notInterested = callerLeads.filter(l => l.interest_status === "Not Interested").length;
+  const saved         = callerLeads.filter(l => l.status === "saved").length;
+  const pending       = callerLeads.filter(l => !l.interest_status).length;
+
+  const interestBadge = (status?: string) => {
+    if (!status) return <span className="text-[10px] text-gray-600 italic">—</span>;
+    const map: Record<string, string> = {
+      "Interested":     "text-green-400 bg-green-500/10 border-green-500/30",
+      "Not Interested": "text-red-400 bg-red-500/10 border-red-500/30",
+      "Maybe":          "text-yellow-400 bg-yellow-500/10 border-yellow-500/30",
+    };
+    return (
+      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${map[status] ?? "text-gray-400 bg-gray-500/10 border-gray-500/30"}`}>
+        {status}
+      </span>
+    );
+  };
+
+  // ── DETAIL VIEW ──────────────────────────────────────────────
+  if (subView === "detail" && selectedLead) {
+    const followUps: any[] = selectedLead.follow_ups || [];
+    return (
+      <div className="h-full flex flex-col p-8 overflow-y-auto custom-scrollbar animate-fadeIn">
+        {/* Header */}
+        <div className="flex items-center gap-4 mb-6 bg-[#111111] border border-[#222] rounded-2xl p-5 shadow-sm">
+          <button
+            onClick={() => { setSubView("table"); setSelectedLead(null); }}
+            className="w-10 h-10 flex items-center justify-center bg-[#1a1a1a] hover:bg-[#222] border border-[#333] rounded-lg text-gray-400 transition-colors cursor-pointer"
+          >
+            <FaChevronLeft className="text-sm"/>
+          </button>
+          <div>
+            <h1 className="text-xl font-bold text-white flex items-center gap-3">
+              <span className="text-purple-400">#{selectedLead.id}</span>
+              {selectedLead.name}
+            </h1>
+            <p className="text-xs text-gray-500 mt-0.5">
+              Uploaded from: <span className="text-gray-400">{selectedLead.batch_name || "Unknown file"}</span>
+            </p>
+          </div>
+          <div className="ml-auto">
+            {interestBadge(selectedLead.interest_status)}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Lead Info */}
+          <div className="bg-[#111111] border border-[#222] rounded-2xl p-6 shadow-sm">
+            <h3 className="text-xs font-bold text-purple-400 uppercase tracking-wider mb-4 border-b border-[#222] pb-2">
+              Lead Information
+            </h3>
+            <div className="space-y-3 text-sm">
+              {[
+                { label: "Contact No.",     value: selectedLead.contact_no },
+                { label: "Email",           value: selectedLead.email },
+                { label: "Source",          value: selectedLead.source },
+                { label: "Channel Partner", value: selectedLead.channel_partner },
+                { label: "Assign Manager",  value: selectedLead.assign_manager },
+                { label: "Budget",          value: selectedLead.budget },
+                { label: "Location",        value: selectedLead.location },
+                { label: "Sr No.",          value: selectedLead.sr_no },
+                { label: "Form No.",        value: selectedLead.form_no },
+                { label: "Lead Date",       value: selectedLead.lead_date },
+                { label: "Status",          value: selectedLead.status },
+              ].map(({ label, value }) => (
+                <div key={label} className="flex justify-between items-start">
+                  <p className="text-gray-500 text-xs">{label}</p>
+                  <p className="text-white font-medium text-right max-w-[55%] break-words">
+                    {value || "—"}
+                  </p>
+                </div>
+              ))}
+              <div className="flex justify-between items-center pt-1">
+                <p className="text-gray-500 text-xs">Interest Status</p>
+                {interestBadge(selectedLead.interest_status)}
+              </div>
+            </div>
+
+            {/* Feedback */}
+            {selectedLead.feedback && (
+              <div className="mt-4 bg-yellow-500/5 border border-yellow-500/20 rounded-xl p-3">
+                <p className="text-[10px] text-yellow-400 font-bold uppercase tracking-wider mb-1">Caller Feedback</p>
+                <p className="text-sm text-gray-300">{selectedLead.feedback}</p>
+              </div>
+            )}
+
+            {/* Site Visit */}
+            {selectedLead.site_visit_date && (
+              <div className="mt-4 bg-orange-500/10 border border-orange-500/30 rounded-xl p-3 text-center">
+                <p className="text-[10px] text-orange-400 font-bold mb-1">Site Visit Scheduled</p>
+                <p className="text-white font-bold">{formatDate(selectedLead.site_visit_date)}</p>
+              </div>
+            )}
+          </div>
+
+          {/* Follow-ups */}
+          <div className="bg-[#111111] border border-[#222] rounded-2xl overflow-hidden shadow-sm flex flex-col" style={{minHeight: "400px"}}>
+            <div className="p-4 border-b border-[#222] bg-[#151515]">
+              <h3 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                <FaComments className="text-purple-400"/> Follow-up Timeline
+              </h3>
+            </div>
+            <div className="flex-1 overflow-y-auto custom-scrollbar p-5 flex flex-col gap-4 bg-[#0a0a0a]">
+              <div className="flex justify-start">
+                <div className="bg-[#1a1a1a] border border-[#222] rounded-2xl rounded-tl-none p-4 max-w-[85%]">
+                  <div className="flex justify-between items-center mb-2 gap-4">
+                    <span className="font-bold text-xs text-purple-400">System</span>
+                    <span className="text-[10px] text-gray-500">{formatDate(selectedLead.created_at)}</span>
+                  </div>
+                  <p className="text-sm text-gray-300">Lead uploaded to Caller Panel.</p>
+                </div>
+              </div>
+
+              {followUps.length === 0 ? (
+                <div className="flex-1 flex flex-col items-center justify-center text-gray-700 py-6">
+                  <FaComments className="text-3xl mb-3 opacity-20"/>
+                  <p className="text-sm">No follow-ups yet.</p>
+                </div>
+              ) : (
+                followUps.map((fup: any, idx: number) => (
+                  <div key={idx} className="flex justify-start">
+                    <div className="bg-[#2a2135] border border-[#4c1d95] rounded-2xl rounded-tl-none p-4 max-w-[85%]">
+                      <div className="flex justify-between items-center mb-2 gap-4">
+                        <span className="font-bold text-xs text-white">{fup.created_by_name || "Caller"}</span>
+                        <span className="text-[10px] text-gray-400">{formatDate(fup.created_at)}</span>
+                      </div>
+                      <p className="text-sm text-gray-200 whitespace-pre-wrap">{fup.message}</p>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── TABLE VIEW ───────────────────────────────────────────────
+  return (
+    <div className="h-full flex flex-col p-8 overflow-y-auto custom-scrollbar">
+
+      {/* Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        {[
+          { label: "Total Leads",    value: callerLeads.length, color: "text-white",       bg: "bg-purple-500/10 border-purple-500/20" },
+          { label: "Saved",          value: saved,              color: "text-purple-400",  bg: "bg-purple-500/10 border-purple-500/20" },
+          { label: "Interested",     value: interested,         color: "text-green-400",   bg: "bg-green-500/10 border-green-500/20"   },
+          { label: "Not Interested", value: notInterested,      color: "text-red-400",     bg: "bg-red-500/10 border-red-500/20"       },
+        ].map(s => (
+          <div key={s.label} className={`rounded-2xl p-5 border ${s.bg}`}>
+            <p className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-2">{s.label}</p>
+            <p className={`text-3xl font-black ${s.color}`}>{s.value}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Table Controls */}
+      <div className="bg-[#111111] border border-[#222] rounded-2xl overflow-hidden shadow-sm">
+        <div className="p-4 border-b border-[#222] bg-[#151515] flex flex-wrap justify-between items-center gap-3">
+          <h3 className="font-bold text-white flex items-center gap-2 text-sm">
+            <FaPhoneAlt className="text-purple-400"/> Caller Leads Database
+          </h3>
+
+          <div className="flex items-center gap-3 flex-wrap">
+            {/* Excel file dropdown */}
+            <select
+              value={selectedBatch}
+              onChange={e => setSelectedBatch(e.target.value)}
+              className="bg-[#1a1a1a] border border-[#333] rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-purple-500 cursor-pointer"
+            >
+              <option value="all">All Uploads</option>
+              {batches.map(b => (
+                <option key={b} value={b}>{b}</option>
+              ))}
+            </select>
+
+            {/* Search */}
+            <div className="relative">
+              <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs"/>
+              <input
+                type="text"
+                placeholder="Search leads..."
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                className="bg-[#1a1a1a] border border-[#333] rounded-lg pl-9 pr-4 py-2 text-sm text-white focus:border-purple-500 outline-none w-48 transition-colors"
+              />
+            </div>
+
+            <span className="text-[10px] text-gray-500 bg-[#222] px-2 py-0.5 rounded border border-[#333]">
+              {filtered.length} of {callerLeads.length} leads
+            </span>
+
+            <button
+              onClick={fetchLeads}
+              className="text-purple-400 text-xs font-bold bg-purple-500/10 border border-purple-500/20 px-3 py-2 rounded-lg hover:bg-purple-500/20 transition-colors cursor-pointer"
+            >
+              ↻ Refresh
+            </button>
+          </div>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm text-gray-400">
+            <thead className="text-[11px] uppercase bg-[#1a1a1a] text-gray-500">
+              <tr>
+                <th className="px-4 py-3 border-b border-[#222] whitespace-nowrap">#</th>
+                <th className="px-4 py-3 border-b border-[#222] whitespace-nowrap">Name</th>
+                <th className="px-4 py-3 border-b border-[#222] whitespace-nowrap">Contact No.</th>
+                <th className="px-4 py-3 border-b border-[#222] whitespace-nowrap">Source</th>
+                <th className="px-4 py-3 border-b border-[#222] whitespace-nowrap">Channel Partner</th>
+                <th className="px-4 py-3 border-b border-[#222] whitespace-nowrap">Assign Manager</th>
+                <th className="px-4 py-3 border-b border-[#222] whitespace-nowrap">Feedback</th>
+                <th className="px-4 py-3 border-b border-[#222] whitespace-nowrap">Interest</th>
+                <th className="px-4 py-3 border-b border-[#222] whitespace-nowrap">Excel File</th>
+                <th className="px-4 py-3 border-b border-[#222] whitespace-nowrap">Uploaded On</th>
+                <th className="px-4 py-3 border-b border-[#222] whitespace-nowrap text-center">Action</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#1a1a1a]">
+              {isLoading ? (
+                <tr><td colSpan={11} className="px-4 py-8 text-center text-gray-600">Loading caller leads...</td></tr>
+              ) : filtered.length === 0 ? (
+                <tr><td colSpan={11} className="px-4 py-8 text-center text-gray-600">No leads found.</td></tr>
+              ) : filtered.map((lead: any) => (
+                <tr key={lead.id} className="hover:bg-[#1a1a1a] transition-colors group">
+                  <td className="px-4 py-3 font-mono text-purple-400 font-bold">#{lead.id}</td>
+                  <td className="px-4 py-3 text-white font-semibold whitespace-nowrap">{lead.name}</td>
+                  <td className="px-4 py-3 font-mono text-sm">{lead.contact_no || "—"}</td>
+                  <td className="px-4 py-3 text-gray-300">{lead.source || "—"}</td>
+                  <td className="px-4 py-3 text-gray-300 whitespace-nowrap">{lead.channel_partner || "—"}</td>
+                  <td className="px-4 py-3 text-gray-300 whitespace-nowrap">{lead.assign_manager || "—"}</td>
+                  <td className="px-4 py-3 max-w-[160px]">
+                    {lead.feedback
+                      ? <span className="text-xs text-yellow-300 bg-yellow-500/10 border border-yellow-500/20 rounded-lg px-2 py-1 inline-block truncate max-w-[140px]" title={lead.feedback}>{lead.feedback}</span>
+                      : <span className="text-gray-600 text-xs italic">—</span>}
+                  </td>
+                  <td className="px-4 py-3">{interestBadge(lead.interest_status)}</td>
+                  <td className="px-4 py-3 text-[11px] text-blue-400 whitespace-nowrap">{lead.batch_name || "—"}</td>
+                  <td className="px-4 py-3 text-[11px] text-gray-500 whitespace-nowrap">{formatDate(lead.created_at).split(",")[0]}</td>
+                  <td className="px-4 py-3 text-center">
+                    <button
+                      onClick={() => { setSelectedLead(lead); setSubView("detail"); }}
+                      className="text-gray-500 hover:text-purple-400 transition-colors cursor-pointer text-xs flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-purple-500/10 border border-transparent hover:border-purple-500/20 mx-auto"
+                    >
+                      <FaEye className="text-[10px]"/> View
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

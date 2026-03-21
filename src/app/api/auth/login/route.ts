@@ -1,6 +1,6 @@
+// app/api/auth/login/route.ts
 import { NextResponse } from "next/server";
-import { connectMongoDB } from "@/lib/mongodb";
-import User from "@/models/User";
+import { query } from "@/lib/db";
 
 export async function POST(req: Request) {
   try {
@@ -13,27 +13,28 @@ export async function POST(req: Request) {
       );
     }
 
-    await connectMongoDB();
+    const cleanIdentifier = identifier.trim();
 
-    const cleanIdentifier = identifier.trim(); // 🔥 REMOVED .toLowerCase() — breaks case-sensitive usernames
+    // Case-insensitive match on email, username, OR name — same as your old MongoDB $regex
+    const rows = await query(
+      `SELECT * FROM users
+       WHERE LOWER(email)    = LOWER($1)
+          OR LOWER(username) = LOWER($1)
+          OR LOWER(name)     = LOWER($1)
+       LIMIT 1`,
+      [cleanIdentifier]
+    );
 
-    // 🔥 All three use case-insensitive regex now
-    const user = await User.findOne({
-      $or: [
-        { email:    { $regex: `^${cleanIdentifier}$`, $options: "i" } },
-        { username: { $regex: `^${cleanIdentifier}$`, $options: "i" } },
-        { name:     { $regex: `^${cleanIdentifier}$`, $options: "i" } },
-      ],
-    });
-
-    if (!user) {
+    if (rows.length === 0) {
       return NextResponse.json(
         { message: "No account found with that email or username." },
         { status: 401 }
       );
     }
 
-    // 🔥 Trim both to avoid hidden space mismatches
+    const user = rows[0];
+
+    // Plain text password check — same as your current setup
     if (user.password.trim() !== password.trim()) {
       return NextResponse.json(
         { message: "Incorrect password. Please try again." },
@@ -41,7 +42,7 @@ export async function POST(req: Request) {
       );
     }
 
-    if (user.isActive === false) {
+    if (user.is_active === false) {
       return NextResponse.json(
         { message: "Account deactivated. Please contact admin." },
         { status: 403 }
@@ -52,19 +53,20 @@ export async function POST(req: Request) {
       {
         message: "Login successful.",
         user: {
-          _id:      user._id,
+          _id:      String(user.id),  // keeps frontend working — it stores _id in localStorage
           name:     user.name,
           username: user.username,
           email:    user.email,
           role:     user.role,
-          isActive: user.isActive,
+          isActive: user.is_active,
+          password: user.password,   // kept because your profile pages show the password
         },
       },
       { status: 200 }
     );
 
   } catch (error) {
-    console.error("🔥 Login error:", error);
+    console.error("Login error:", error);
     return NextResponse.json(
       { message: "An error occurred during login." },
       { status: 500 }

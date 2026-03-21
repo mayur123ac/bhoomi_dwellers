@@ -1,18 +1,25 @@
+// app/api/users/receptionist/route.ts
 import { NextResponse } from "next/server";
-import { connectMongoDB } from "@/lib/mongodb"; // Adjust this path if your db connection file is somewhere else!
-import User from "@/models/User"; // Adjust this path if your user model is somewhere else!
+import { query } from "@/lib/db";
 
 export async function GET() {
   try {
-    await connectMongoDB();
-    
-    // Using $regex to make it case-insensitive (handles "receptionist", "Receptionist", etc.)
-    const receptionists = await User.find({ role: { $regex: /^receptionist$/i } });
+    const receptionists = await query(
+      `SELECT id, name, username, email, role, is_active as "isActive"
+       FROM users
+       WHERE LOWER(role) = 'receptionist'
+         AND is_active = true
+       ORDER BY name ASC`
+    );
+
+    // Map id → _id so any frontend code using _id keeps working
+    const mapped = receptionists.map(u => ({ ...u, _id: String(u.id) }));
 
     return NextResponse.json(
-      { success: true, data: receptionists },
+      { success: true, data: mapped },
       { status: 200 }
     );
+
   } catch (error) {
     console.error("Error fetching receptionists:", error);
     return NextResponse.json(

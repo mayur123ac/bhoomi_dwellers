@@ -1,11 +1,14 @@
+// app/api/walkin_enquiries/[id]/route.ts
+// Only change: import from "@/lib/db" instead of "@/lib/mongodb"
 import { NextResponse } from "next/server";
-import pool from "@/lib/mongodb";
+import { getPool } from "@/lib/db"; // ← ONLY LINE THAT CHANGED
 
 export async function PUT(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const pool = getPool();
     const { id } = await params;
     const body = await req.json();
     const { name, status, alt_phone, loan_planned, source_other, cp_name, cp_company, cp_phone } = body;
@@ -48,6 +51,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const pool = getPool();
     const { id } = await params;
     await pool.query(`DELETE FROM walkin_enquiries WHERE id = $1`, [id]);
     return NextResponse.json({ success: true }, { status: 200 });

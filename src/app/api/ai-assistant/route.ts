@@ -71,7 +71,7 @@ export async function POST(req: Request) {
     }
 
     // ── PIPELINE OVERVIEW ──
-    if (["analysis", "summary", "overview", "leads", "report"].some(k => query.includes(k))) {
+    if (["analysis", "summary", "overview", "report"].some(k => query.includes(k))) {
       const interested   = leads.filter(l => (l.leadInterestStatus||"").toLowerCase() === "interested").length;
       const notInt       = leads.filter(l => (l.leadInterestStatus||"").toLowerCase() === "not interested").length;
       const maybe        = leads.filter(l => (l.leadInterestStatus||"").toLowerCase() === "maybe").length;
@@ -101,15 +101,23 @@ export async function POST(req: Request) {
     }
 
     // ── HIGH PRIORITY ──
+    // ── HIGH PRIORITY ──
     if (["priority", "hot", "best", "top"].some(k => query.includes(k))) {
       const scored = [...leads].sort((a, b) => analyzeLead(b).score - analyzeLead(a).score);
       let response = `Here are your top priority leads ranked by AI score:\n\n`;
       scored.slice(0, 5).forEach((l, i) => {
         const a = analyzeLead(l);
-        response += `${i + 1}. ${l.name} (#${l.id})\n`;
-        response += `   • Priority: ${a.priority} | Score: ${a.score}/100\n`;
+        response += `${i + 1}. ${l.name} (#${l.id}) — ${a.priority} Priority\n`;
+        response += `   • AI Score: ${a.score}/100\n`;
         response += `   • Budget: ${l.salesBudget || l.budget || "N/A"}\n`;
-        response += `   • Interest: ${l.leadInterestStatus || "Pending"}\n\n`;
+        response += `   • Interest: ${l.leadInterestStatus || "Pending"}\n`;
+        response += `   • Loan: ${l.loanPlanned || "Not confirmed"} ${l.loanStatus && l.loanStatus !== "N/A" ? `(${l.loanStatus})` : ""}\n`;
+        response += `   • Site Visit: ${l.mongoVisitDate ? l.mongoVisitDate.slice(0, 10) : "Not scheduled"}\n`;
+        response += `   • Why prioritized:\n`;
+        a.suggestions.slice(0, 3).forEach(s => {
+          response += `     → ${s}\n`;
+        });
+        response += `\n`;
       });
       return NextResponse.json({ response });
     }
