@@ -2,13 +2,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { query } from "@/lib/db";
 
+// ✅ NEW — to this
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }  // ✅ change this line
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await params;                       // ✅ add this line
+  const { id } = await params;
   try {
-    const leadId = Number(id);        
+    const leadId = Number(id);    
     if (isNaN(leadId)) return NextResponse.json({ error: "Invalid lead ID" }, { status: 400 });
 
     const body = await req.json() as Partial<LeadUpdate>;
