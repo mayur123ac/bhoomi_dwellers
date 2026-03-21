@@ -1,22 +1,18 @@
 // app/api/leads/[id]/route.ts
-// ─────────────────────────────────────────────
-// PATCH /api/leads/:id  — update any lead fields
-// ─────────────────────────────────────────────
-
 import { NextRequest, NextResponse } from "next/server";
-import { query, transaction } from "@/lib/db";
+import { query } from "@/lib/db";
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }  // ✅ Promise
 ) {
+  const { id } = await params;                       // ✅ awaited
   try {
-    const leadId = Number(params.id);
+    const leadId = Number(id);
     if (isNaN(leadId)) return NextResponse.json({ error: "Invalid lead ID" }, { status: 400 });
 
     const body = await req.json() as Partial<LeadUpdate>;
 
-    // Build dynamic SET clause — only update fields that were sent
     const allowed: (keyof LeadUpdate)[] = [
       "name", "contact_no", "email", "source", "budget", "location",
       "channel_partner", "assign_manager", "feedback",
@@ -50,23 +46,22 @@ export async function PATCH(
 
     return NextResponse.json({ success: true, lead: rows[0] });
   } catch (err: any) {
-    console.error(`[PATCH /api/leads/${params.id}]`, err);
+    console.error(`[PATCH /api/leads/${id}]`, err);  // ✅ use id not params.id
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
 
-// ── Types ──────────────────────────────────────
 interface LeadUpdate {
-  name:             string;
-  contact_no:       string;
-  email:            string;
-  source:           string;
-  budget:           string;
-  location:         string;
-  channel_partner:  string;
-  assign_manager:   string;
-  feedback:         string;
-  interest_status:  string | null;
-  status:           string;
-  site_visit_date:  string | null;
+  name:            string;
+  contact_no:      string;
+  email:           string;
+  source:          string;
+  budget:          string;
+  location:        string;
+  channel_partner: string;
+  assign_manager:  string;
+  feedback:        string;
+  interest_status: string | null;
+  status:          string;
+  site_visit_date: string | null;
 }
