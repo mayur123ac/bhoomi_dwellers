@@ -4,11 +4,11 @@ import { query } from "@/lib/db";
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }  // ✅ Promise
+  { params }: { params: Promise<{ id: string }> }  // ✅ change this line
 ) {
-  const { id } = await params;                       // ✅ awaited
+  const { id } = await params;                       // ✅ add this line
   try {
-    const leadId = Number(id);
+    const leadId = Number(id);        
     if (isNaN(leadId)) return NextResponse.json({ error: "Invalid lead ID" }, { status: 400 });
 
     const body = await req.json() as Partial<LeadUpdate>;
@@ -45,10 +45,10 @@ export async function PATCH(
     if (rows.length === 0) return NextResponse.json({ error: "Lead not found" }, { status: 404 });
 
     return NextResponse.json({ success: true, lead: rows[0] });
-  } catch (err: any) {
-    console.error(`[PATCH /api/leads/${id}]`, err);  // ✅ use id not params.id
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    } catch (err: any) {
+        console.error(`[PATCH /api/leads/${id}]`, err);  // ✅ id not params.id
   }
+
 }
 
 interface LeadUpdate {
