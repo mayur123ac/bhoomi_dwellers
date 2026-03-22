@@ -1,4 +1,4 @@
-// app/api/caller-leads/events/route.ts
+// src/app/api/caller-leads/events/route.ts
 import { NextRequest } from "next/server";
 
 const clients = new Set<ReadableStreamDefaultController>();
@@ -22,19 +22,13 @@ export async function GET(req: NextRequest) {
       controller = ctrl;
       clients.add(ctrl);
       ctrl.enqueue(`data: ${JSON.stringify({ type: "connected", ts: Date.now() })}\n\n`);
-
-      // ✅ Heartbeat every 25s — prevents proxy/nginx from killing idle connections
       heartbeatTimer = setInterval(() => {
-        try {
-          ctrl.enqueue(`: heartbeat\n\n`); // SSE comment, ignored by client
-        } catch {
-          clearInterval(heartbeatTimer);
-          clients.delete(ctrl);
-        }
+        try { ctrl.enqueue(`: heartbeat\n\n`); }
+        catch { clearInterval(heartbeatTimer); clients.delete(ctrl); }
       }, 25_000);
     },
     cancel() {
-      clearInterval(heartbeatTimer); // ✅ Clean up timer when client disconnects
+      clearInterval(heartbeatTimer);
       clients.delete(controller);
     },
   });
