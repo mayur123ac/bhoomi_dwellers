@@ -1,140 +1,129 @@
-// app/api/caller-leads/events/route.ts
-import { NextRequest } from "next/server";
-import pkg from "pg";
-const { Pool } = pkg;
+// src/app/api/caller-leads/route.ts
+import { NextResponse } from "next/server";
+import { query, transaction } from "@/lib/db";
+import { broadcastUpdate } from "./events/route";
 
-// ─────────────────────────────────────────────
-// One persistent pool for NOTIFY calls only
-// (each SSE connection gets its own dedicated client for LISTEN)
-// ─────────────────────────────────────────────
-const notifyPool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : false,
-  max: 5,
-});
-
-// ─────────────────────────────────────────────
-// broadcastUpdate — called from all other routes
-// Uses pg_notify so it works across multiple server instances
-// ─────────────────────────────────────────────
-export async function broadcastUpdate(data: object) {
-  const payload = JSON.stringify(data);
-
-  // pg_notify has an 8000 byte limit — guard against oversized payloads
-  if (Buffer.byteLength(payload, "utf8") > 7800) {
-    console.warn("[broadcastUpdate] Payload too large, skipping notify:", payload.length);
-    return;
-  }
-
-  const client = await notifyPool.connect();
+// ── POST: Bulk insert leads from Excel upload ─────────────────────────────────
+export async function POST(req: Request) {
   try {
-    await client.query(`SELECT pg_notify('caller_leads_updates', $1)`, [payload]);
+    const body = await req.json();
+    const { leads = [], fileName, uploadedBy, assignedTo } = body;
+
+    if (!Array.isArray(leads) || leads.length === 0) {
+      return NextResponse.json({ error: "No leads provided" }, { status: 400 });
+    }
+
+    const result = await transaction(async (client) => {
+      const { rows: batchRows } = await client.query(
+        `INSERT INTO caller_upload_batches (file_name, row_count, uploaded_by)
+         VALUES ($1, $2, $3) RETURNING id`,
+        [fileName ?? "upload", leads.length, uploadedBy ?? "unknown"]
+      );
+      const batchId = batchRows[0].id;
+
+      const ids: number[] = [];
+      for (const lead of leads) {
+        const { rows } = await client.query(
+          `INSERT INTO caller_leads
+              (upload_batch, batch_name, sr_no, form_no, lead_date, name,
+               contact_no, email, source, channel_partner, assign_manager,
+               feedback, uploaded_by, assigned_to, saved_by)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
+           RETURNING id`,
+          [
+            batchId, fileName ?? null,
+            lead.sr_no ?? null, lead.form_no ?? null, lead.lead_date ?? null,
+            lead.name ?? "Unknown", lead.contact_no ?? null, lead.email ?? null,
+            lead.source ?? null, lead.channel_partner ?? null,
+            lead.assign_manager ?? null, lead.feedback ?? "",
+            uploadedBy ?? "unknown",
+            (assignedTo || uploadedBy) ?? "unknown",
+            null,
+          ]
+        );
+        ids.push(rows[0].id);
+      }
+      return { batchId, ids };
+    });
+
+    broadcastUpdate({
+      type: "leads_uploaded",
+      batchId: result.batchId,
+      count: leads.length,
+      fileName,
+      uploadedBy,
+      assignedTo: assignedTo || uploadedBy,
+      ts: Date.now(),
+    });
+
+    return NextResponse.json(result, { status: 201 });
   } catch (err: any) {
-    console.error("[broadcastUpdate] pg_notify failed:", err.message);
-  } finally {
-    client.release();
+    console.error("[POST /api/caller-leads]", err.message);
+    return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
 
-// ─────────────────────────────────────────────
-// GET — SSE endpoint, one persistent DB client per browser connection
-// ─────────────────────────────────────────────
-export async function GET(req: NextRequest) {
-  // Each SSE connection gets its own dedicated pool + client for LISTEN
-  // This is required — LISTEN state is per-connection in PostgreSQL
-  const listenPool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : false,
-    max: 1,
-  });
+// ── GET: Fetch all leads ──────────────────────────────────────────────────────
+export async function GET(req: Request) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const batch      = searchParams.get("batch");
+    const batchesOnly = searchParams.get("batches_only");
 
-  let heartbeatTimer: ReturnType<typeof setInterval> | null = null;
-  let dbClient: pkg.PoolClient | null = null;
-  let streamController: ReadableStreamDefaultController | null = null;
-
-  const cleanup = async () => {
-    if (heartbeatTimer) clearInterval(heartbeatTimer);
-    if (dbClient) {
-      try {
-        await dbClient.query("UNLISTEN *");
-        dbClient.release();
-      } catch {}
+    if (batchesOnly === "1") {
+      const rows = await query(
+        `SELECT id, file_name, row_count, uploaded_by, created_at
+         FROM caller_upload_batches ORDER BY created_at DESC`
+      );
+      return NextResponse.json({ batches: rows });
     }
-    try { await listenPool.end(); } catch {}
-  };
 
-  const stream = new ReadableStream({
-    async start(ctrl) {
-      streamController = ctrl;
+    const rows = await query(
+      `SELECT cl.*,
+         COALESCE(
+           json_agg(
+             json_build_object(
+               'id', cf.id, 'message', cf.message,
+               'created_by_name', cf.created_by_name, 'created_at', cf.created_at
+             ) ORDER BY cf.created_at ASC
+           ) FILTER (WHERE cf.id IS NOT NULL), '[]'
+         ) AS follow_ups
+       FROM caller_leads cl
+       LEFT JOIN caller_follow_ups cf ON cf.lead_id = cl.id
+       ${batch ? "WHERE cl.upload_batch::text = $1" : ""}
+       GROUP BY cl.id
+       ORDER BY cl.created_at DESC`,
+      batch ? [batch] : []
+    );
 
-      try {
-        dbClient = await listenPool.connect();
+    return NextResponse.json({ leads: rows });
+  } catch (err: any) {
+    console.error("[GET /api/caller-leads]", err.message);
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
+}
 
-        // Listen on the shared channel
-        await dbClient.query("LISTEN caller_leads_updates");
+// ── DELETE: Delete entire batch ───────────────────────────────────────────────
+export async function DELETE(req: Request) {
+  try {
+    const { batchId } = await req.json();
+    if (!batchId) return NextResponse.json({ error: "batchId required" }, { status: 400 });
 
-        // Forward any DB notification to this SSE client
-        dbClient.on("notification", (msg) => {
-          if (!msg.payload) return;
-          try {
-            ctrl.enqueue(`data: ${msg.payload}\n\n`);
-          } catch {
-            // Client disconnected — clean up
-            cleanup();
-          }
-        });
+    await transaction(async (client) => {
+      await client.query(
+        `DELETE FROM caller_follow_ups
+         WHERE lead_id IN (SELECT id FROM caller_leads WHERE upload_batch::text = $1)`,
+        [batchId]
+      );
+      await client.query(`DELETE FROM caller_leads WHERE upload_batch::text = $1`, [batchId]);
+      await client.query(`DELETE FROM caller_upload_batches WHERE id::text = $1`, [batchId]);
+    });
 
-        // Handle unexpected DB client errors (network drop, etc.)
-        dbClient.on("error", async (err) => {
-          console.error("[SSE] DB client error:", err.message);
-          await cleanup();
-          try { ctrl.close(); } catch {}
-        });
+    broadcastUpdate({ type: "batch_deleted", batchId, ts: Date.now() });
 
-        // Send initial connected event
-        ctrl.enqueue(
-          `data: ${JSON.stringify({ type: "connected", ts: Date.now() })}\n\n`
-        );
-
-        // Heartbeat every 25s — prevents proxy/nginx/Vercel killing idle connections
-        heartbeatTimer = setInterval(() => {
-          try {
-            ctrl.enqueue(`: heartbeat\n\n`);
-          } catch {
-            cleanup();
-          }
-        }, 25_000);
-
-      } catch (err: any) {
-        console.error("[SSE] Failed to connect to DB:", err.message);
-        try {
-          ctrl.enqueue(
-            `data: ${JSON.stringify({ type: "error", message: "SSE setup failed" })}\n\n`
-          );
-          ctrl.close();
-        } catch {}
-        await cleanup();
-      }
-    },
-
-    cancel() {
-      // Browser tab closed / client navigated away
-      cleanup();
-    },
-  });
-
-  // Handle server-side request abort (e.g. client hard-disconnects)
-  req.signal.addEventListener("abort", () => {
-    cleanup();
-    try { streamController?.close(); } catch {}
-  });
-
-  return new Response(stream, {
-    headers: {
-      "Content-Type":      "text/event-stream",
-      "Cache-Control":     "no-cache, no-transform",
-      "Connection":        "keep-alive",
-      "X-Accel-Buffering": "no", // Disables nginx response buffering
-    },
-  });
+    return NextResponse.json({ success: true });
+  } catch (err: any) {
+    console.error("[DELETE /api/caller-leads]", err.message);
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
 }
