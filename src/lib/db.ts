@@ -54,3 +54,10 @@ export async function transaction<T>(
     client.release();
   }
 }
+if (typeof window === "undefined") {
+  setInterval(async () => {
+    try {
+      await query("SELECT 1");
+    } catch {}
+  }, 4 * 60 * 1000); // every 4 minutes
+}
