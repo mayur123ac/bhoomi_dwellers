@@ -772,7 +772,22 @@ export default function PresalesCallerPanel() {
             method:"POST", headers:{"Content-Type":"application/json"},
             body:JSON.stringify({leads:payload, fileName:file.name, uploadedBy:user.name})
           });
-          const resData = await res.json();
+          // ✅ safe parse
+          let resData: any = {};
+          try {
+            const text = await res.text();
+            if (text) resData = JSON.parse(text);
+          } catch {
+            setDbState("error");
+            setDbMessage("DB error: empty response from server");
+            return;
+          }
+
+          if (!res.ok) {
+            setDbState("error");
+            setDbMessage(`DB error: ${resData.error || res.status}`);
+            return;
+          }
           setRawLeads(prev=>prev.map((l,i)=>({...l,dbId:resData.ids?.[i]})));
           setDbState("saved"); setDbMessage(`✓ ${leads.length} leads saved to DB`);
           setTimeout(()=>{ setDbState("idle"); setDbMessage(""); },5000);
