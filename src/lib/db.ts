@@ -1,40 +1,29 @@
 // lib/db.ts
 // ─────────────────────────────────────────────
-// PostgreSQL connection using the 'pg' library
-// npm install pg @types/pg
+// Single PostgreSQL connection — use this everywhere
+// after migration is complete
 // ─────────────────────────────────────────────
-
 import { Pool, PoolClient } from "pg";
 
-// Singleton pool — reused across requests in Next.js
 let pool: Pool | undefined;
 
 export function getPool(): Pool {
   if (!pool) {
     pool = new Pool({
       connectionString: process.env.DATABASE_URL,
-      // OR use individual env vars:
-      // host:     process.env.PGHOST,
-      // port:     Number(process.env.PGPORT) || 5432,
-      // database: process.env.PGDATABASE,
-      // user:     process.env.PGUSER,
-      // password: process.env.PGPASSWORD,
       ssl: process.env.NODE_ENV === "production"
-        ? { rejectUnauthorized: false }   // required for Supabase / Railway / Neon
+        ? { rejectUnauthorized: false }
         : false,
-      max: 10,          // max pool size
+      max: 10,
       idleTimeoutMillis: 30_000,
       connectionTimeoutMillis: 5_000,
     });
-
-    pool.on("error", (err) => {
-      console.error("[DB] Unexpected pool error", err);
-    });
+    pool.on("error", (err) => console.error("[DB] Pool error", err));
   }
   return pool;
 }
 
-// Convenience: run a single query
+// Run a single query — returns rows[]
 export async function query<T = any>(
   text: string,
   params?: any[]
@@ -48,7 +37,7 @@ export async function query<T = any>(
   }
 }
 
-// Convenience: run multiple queries in a transaction
+// Run multiple queries safely in one transaction
 export async function transaction<T>(
   fn: (client: PoolClient) => Promise<T>
 ): Promise<T> {
