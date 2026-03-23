@@ -790,6 +790,7 @@ export default function PresalesCallerPanel() {
           }
           setRawLeads(prev=>prev.map((l,i)=>({...l,dbId:resData.ids?.[i]})));
           setDbState("saved"); setDbMessage(`✓ ${leads.length} leads saved to DB`);
+          await loadFromDB();
           setTimeout(()=>{ setDbState("idle"); setDbMessage(""); },5000);
         } catch (err:any) { setDbState("error"); setDbMessage(`DB error: ${err.message}`); }
       } catch { setUploadError("Failed to parse file. Please upload a valid .xlsx or .xls file."); }

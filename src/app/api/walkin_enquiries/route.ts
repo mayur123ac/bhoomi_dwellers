@@ -1,10 +1,25 @@
 import { NextResponse } from "next/server";
-import { query } from "@/lib/db"; // ✅ same as all other routes
+import { query } from "@/lib/db";
 
 export async function GET(req: Request) {
   try {
-    const rows = await query("SELECT * FROM walkin_enquiries ORDER BY created_at DESC");
-    return NextResponse.json({ success: true, data: rows }, { status: 200 });
+    const { searchParams } = new URL(req.url);
+
+    const limit  = Math.min(parseInt(searchParams.get("limit")  ?? "20", 10), 100); // cap at 100
+    const offset = Math.max(parseInt(searchParams.get("offset") ?? "0",  10), 0);
+
+    // Run data fetch and total count in parallel
+    const [rows, countRows] = await Promise.all([
+      query(
+        "SELECT * FROM walkin_enquiries ORDER BY created_at DESC LIMIT $1 OFFSET $2",
+        [limit, offset]
+      ),
+      query("SELECT COUNT(*)::int AS total FROM walkin_enquiries"),
+    ]);
+
+    const total: number = countRows[0]?.total ?? 0;
+
+    return NextResponse.json({ success: true, data: rows, total }, { status: 200 });
   } catch (error: any) {
     return NextResponse.json({ success: false, message: error.message }, { status: 500 });
   }
@@ -26,8 +41,8 @@ export async function POST(req: Request) {
       );
     }
 
-    const rows = await query(`
-      INSERT INTO walkin_enquiries (
+    const rows = await query(
+      `INSERT INTO walkin_enquiries (
         name, phone, email, address, occupation, organization,
         budget, configuration, purpose, source,
         alt_phone, source_other, cp_name, cp_company, cp_phone, loan_planned,
@@ -55,6 +70,7 @@ export async function POST(req: Request) {
         status        || "Routed",
       ]
     );
+
     return NextResponse.json({ success: true, data: rows[0] }, { status: 201 });
   } catch (error: any) {
     return NextResponse.json({ success: false, message: error.message }, { status: 500 });
