@@ -1,4 +1,4 @@
-// app/api/auth/login/route.ts
+// src/app/api/auth/login/route.ts
 import { NextResponse } from "next/server";
 import { query } from "@/lib/db";
 
@@ -15,12 +15,11 @@ export async function POST(req: Request) {
 
     const cleanIdentifier = identifier.trim();
 
-    // Case-insensitive match on email, username, OR name — same as your old MongoDB $regex
+    // ✅ Removed username — your users table only has email and name
     const rows = await query(
       `SELECT * FROM users
-       WHERE LOWER(email)    = LOWER($1)
-          OR LOWER(username) = LOWER($1)
-          OR LOWER(name)     = LOWER($1)
+       WHERE LOWER(email) = LOWER($1)
+          OR LOWER(name)  = LOWER($1)
        LIMIT 1`,
       [cleanIdentifier]
     );
@@ -34,8 +33,7 @@ export async function POST(req: Request) {
 
     const user = rows[0];
 
-    // Plain text password check — same as your current setup
-    if (user.password.trim() !== password.trim()) {
+    if (!user.password || user.password.trim() !== password.trim()) {
       return NextResponse.json(
         { message: "Incorrect password. Please try again." },
         { status: 401 }
@@ -53,22 +51,22 @@ export async function POST(req: Request) {
       {
         message: "Login successful.",
         user: {
-          _id:      String(user.id),  // keeps frontend working — it stores _id in localStorage
+          _id:      String(user.id),
           name:     user.name,
-          username: user.username,
           email:    user.email,
           role:     user.role,
           isActive: user.is_active,
-          password: user.password,   // kept because your profile pages show the password
+          password: user.password,
         },
       },
       { status: 200 }
     );
 
-  } catch (error) {
+  } catch (error: any) {
     console.error("Login error:", error);
+    // ✅ Return actual error message so you can debug from browser
     return NextResponse.json(
-      { message: "An error occurred during login." },
+      { message: error.message },
       { status: 500 }
     );
   }
