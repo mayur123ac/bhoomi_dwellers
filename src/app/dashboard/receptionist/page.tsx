@@ -35,7 +35,7 @@ const MoonIcon = () => (
 
 export default function ReceptionistDashboard() {
   const router = useRouter();
-  const [isDark, setIsDark] = useState(true);
+  const [isDark, setIsDark] = useState(false);
 
   // ── Theme tokens ──────────────────────────────────────────────────────────
   const t = {
@@ -52,7 +52,7 @@ export default function ReceptionistDashboard() {
     headerGlass:   isDark ? {}                                         : { boxShadow: "0 1px 0 #9CA3AF, 0 4px 16px rgba(0,174,239,0.06)" },
 
     // ── Cards ──
-    card:          isDark ? "bg-[#121218] border-[#2A2A35]"            : "bg-white border-[#9CA3AF]",
+    card:          isDark ? "bg-[#121218] border-[#2A2A35] hover:shadow-[0_0_24px_4px_rgba(99,102,241,0.25)]"           : "bg-gradient-to-r from-[#f1f5ff] via-[#eef2ff] to-[#f5f3ff] border border-indigo-100 rounded-2xl p-6 shadow-sm hover:shadow-[0_-4px_16px_2px_rgba(99,102,241,0.2),0_0_24px_6px_rgba(99,102,241,0.12),0_4px_16px_rgba(0,0,0,0.08)] transition-all duration-300 border-[#9CA3AF] ",
     cardGlass:     isDark ? {}                                         : { boxShadow: "0 1px 2px rgba(0,0,0,0.04), 0 4px 12px rgba(0,174,239,0.07), 0 12px 28px rgba(0,0,0,0.08)" },
 
     // ── Tables ──
@@ -1108,7 +1108,7 @@ export default function ReceptionistDashboard() {
                     className={`px-8 py-2.5 rounded-lg font-bold transition-colors cursor-pointer ${t.btnPrimary} ${
                       isDark ? "shadow-[0_0_15px_rgba(168,85,247,0.3)]" : "shadow-[0_0_12px_rgba(0,174,239,0.25)]"
                     }`}
-                  >Submit & Route Lead</button>
+                  >Submit</button>
                 </div>
               </div>
             </div>

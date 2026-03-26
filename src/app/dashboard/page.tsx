@@ -4,36 +4,130 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  FaThLarge, FaClipboardList, FaUsers, FaIdCard, FaCog,
+  FaThLarge, FaClipboardList, FaUsers, FaIdCard,
   FaSearch, FaBell, FaChevronLeft, FaPhoneAlt, FaComments,
-  FaCheckCircle, FaCalendarAlt, FaTimes, FaPlus, FaPen,
-  FaFileInvoice, FaPaperPlane, FaMicrophone, FaWhatsapp, FaTable, FaChartPie, FaUserCircle,
-  FaEye, FaEyeSlash, FaUniversity, FaFileAlt, FaCheck, FaClock, FaRobot
+  FaCheckCircle, FaCalendarAlt, FaTimes,
+  FaFileInvoice, FaPaperPlane, FaMicrophone, FaWhatsapp, FaTable, FaChartPie, FaEyeSlash, FaUniversity, FaFileAlt, FaCheck, FaClock, FaHandshake
 } from "react-icons/fa";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, Cell,
-  CartesianGrid, PieChart, Pie, Legend
+  CartesianGrid, PieChart, Pie,
 } from "recharts";
+
+// ─── SUN/MOON ICONS ───────────────────────────────────────────────────────────
+const SunIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="5"/>
+    <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+    <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+  </svg>
+);
+const MoonIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+  </svg>
+);
+
+// ─── THEME TOKEN BUILDER — MAGENTA ACCENT ────────────────────────
+function buildTheme(isDark: boolean) {
+  return {
+    pageWrap:      isDark ? "bg-[#0A0A0F] text-white"                   : "text-[#1A1A1A]",
+    mainBg:        isDark ? "bg-[#121212]"                              : "bg-transparent",
+    sidebar:       "bg-[#1a1a1a] border-[#2a2a2a]",
+    header:        isDark ? "bg-[#1a1a1a] border-[#2a2a2a]"             : "bg-white border-[#9CA3AF]",
+    headerGlass:   isDark ? {}                                          : { boxShadow: "0 1px 0 #9CA3AF, 0 4px 16px rgba(158,33,123,0.06)" },
+    card: isDark
+      ? "bg-[#1a1a1a] border border-[#2a2a2a] hover:border-[#9E217B]/50 hover:bg-[#1e1e1e]"
+      : "bg-gradient-to-r from-[#f1f5ff] via-[#eef2ff] to-[#f5f3ff] border border-indigo-300 hover:border-[#9E217B]/40 hover:shadow-[0_-4px_16px_2px_rgba(158,33,123,0.2),0_0_24px_6px_rgba(158,33,123,0.12),0_4px_16px_rgba(0,0,0,0.08)]",
+    cardGlass:     isDark ? {}                                          : { boxShadow: "0 1px 2px rgba(0,0,0,0.04), 0 4px 12px rgba(158,33,123,0.07), 0 12px 28px rgba(0,0,0,0.08)" },
+    cardClosing:   isDark ? "bg-yellow-900/10 border-yellow-500/30 hover:border-yellow-400/60" : "bg-amber-50 border-amber-200 hover:border-amber-400/60",
+    tableWrap:     isDark ? "bg-[#1a1a1a] border-[#2a2a2a]"             : "bg-white border border-indigo-300",
+    tableGlass:    isDark ? {}                                          : { boxShadow: "0 1px 2px rgba(0,0,0,0.04), 0 4px 12px rgba(158,33,123,0.06), 0 16px 36px rgba(0,0,0,0.09)" },
+    tableHead:     isDark ? "bg-[#222]"                                 : "bg-[#F1F5F9] border-b border-indigo-300",
+    tableRow:      isDark ? "hover:bg-[#252525]"                        : "hover:bg-[#F8FAFC] border-b border-indigo-200",
+    tableDivide:   isDark ? "divide-[#2a2a2a]"                          : "divide-[#E5E7EB]",
+    tableBorder:   isDark ? "border-[#2a2a2a]"                          : "border-[#D1D5DB]",
+    inputBg:       isDark ? "bg-[#1a1a1a] border-[#333]"                : "bg-white border border-indigo-300",
+    inputInner:    isDark ? "bg-[#121212] border-[#333]"                : "bg-white border border-indigo-300",
+    inputFocus:    isDark ? "focus:border-[#9E217B]"                    : "focus:border-[#9E217B]",
+    settingsBg:    isDark ? "bg-[#222] border-[#2a2a2a]"                : "bg-[#F8FAFC] border border-indigo-300",
+    settingsBgGl:  isDark ? {}                                          : { boxShadow: "inset 0 1px 3px rgba(0,0,0,0.04)" },
+    innerBlock:    isDark ? "bg-[#121212] border-[#333]"                : "bg-white border border-indigo-200",
+    modalCard:     isDark ? "bg-[#1a1a1a] border-[#2a2a2a]"             : "bg-white border border-indigo-300",
+    modalGlass:    isDark ? {}                                          : { boxShadow: "0 2px 4px rgba(0,0,0,0.04), 0 8px 24px rgba(158,33,123,0.08), 0 32px 72px rgba(0,0,0,0.16)" },
+    modalInner:    isDark ? "bg-[#121212]"                              : "bg-[#F8FAFC] border border-indigo-300",
+    modalHeader:   isDark ? "bg-[#151515]"                              : "bg-[#F1F5F9]",
+    dropdown:      isDark ? "bg-[#1a1a1a] border-[#2a2a2a]"             : "bg-white border border-indigo-200",
+    dropdownGlass: isDark ? {}                                          : { boxShadow: "0 2px 4px rgba(0,0,0,0.04), 0 8px 20px rgba(158,33,123,0.08), 0 20px 40px rgba(0,0,0,0.10)" },
+    dropdownItem:  isDark ? "hover:bg-[#222] border-[#222]"             : "hover:bg-[#F8FAFC] border-[#F0F0F0]",
+    text:          isDark ? "text-white"                                : "text-[#1A1A1A]",
+    textMuted:     isDark ? "text-gray-400"                             : "text-[#6B7280]",
+    textFaint:     isDark ? "text-gray-500"                             : "text-[#9CA3AF]",
+    textHeader:    isDark ? "text-xs text-gray-500 uppercase"           : "text-xs text-[#6B7280] uppercase",
+    navActive:     isDark ? "bg-[#9E217B]/20 border-[#9E217B]/60 text-[#d946a8]" : "bg-[#2A2A2A] text-[#9E217B] border-transparent",
+    navInactive:   isDark ? "text-gray-500 hover:text-gray-300 hover:bg-white/5 border-transparent" : "text-[#9CA3AF] hover:bg-[#2A2A2A] hover:text-white border-transparent",
+    navIndicator:  isDark ? "bg-[#9E217B] shadow-[0_0_10px_2px_rgba(158,33,123,0.5)]" : "bg-[#9E217B] shadow-[0_0_8px_rgba(158,33,123,0.4)]",
+    toggleWrap:    isDark ? "bg-[#1C1C2A] border-[#2A2A38] text-yellow-300" : "bg-white border border-indigo-200 text-[#9E217B]",
+    chatArea:      isDark ? "bg-[#0a0a0a]"                              : "bg-[#F8FAFC]",
+    chatBubbleAi:  isDark ? "bg-[#141414] border border-[#1f1f1f] text-gray-200" : "bg-white border border-[#E5E7EB] text-[#1A1A1A] shadow-sm",
+    chatBubbleUser:isDark ? "bg-[#9E217B] text-white"                   : "bg-[#9E217B] text-white",
+    chatInput:     isDark ? "bg-[#111] border-[#222] hover:border-[#333] focus-within:border-[#9E217B]/50" : "bg-white border-[#E5E7EB] hover:border-[#9CA3AF] focus-within:border-[#9E217B]/50",
+    chatInputInner:isDark ? "bg-[#111] border-[#222]"                   : "bg-white border-[#E5E7EB]",
+    chatPanel:     isDark ? "bg-[#1a1a1a] border-[#333]"                : "bg-white border-[#D1D5DB]",
+    chatPanelGl:   isDark ? {}                                          : { boxShadow: "0 1px 2px rgba(0,0,0,0.04), 0 4px 12px rgba(158,33,123,0.06), 0 16px 36px rgba(0,0,0,0.09)" },
+    statGlow1:     isDark ? "bg-[#9E217B]/10"                           : "bg-[#9E217B]/10",
+    statGlow2:     isDark ? "bg-[#d946a8]/10"                           : "bg-[#d946a8]/10",
+    statGlow3:     isDark ? "bg-blue-600/10"                            : "bg-indigo-400/10",
+    statGlow4:     isDark ? "bg-yellow-500/10"                          : "bg-amber-400/10",
+    statGlow5:     isDark ? "bg-green-600/10"                           : "bg-emerald-400/10",
+    accentText:    isDark ? "text-[#d946a8]"                            : "text-[#9E217B]",
+    accentBg:      isDark ? "bg-[#9E217B]/10 text-[#d946a8] border border-[#9E217B]/30" : "bg-[#9E217B]/10 text-[#9E217B] border border-[#9E217B]/30",
+    sectionTitle:  isDark ? "text-[#d946a8]"                            : "text-[#9E217B]",
+    sectionBorder: isDark ? "border-[#9E217B]/20"                       : "border-[#9E217B]/25",
+    btnPrimary:    isDark ? "bg-[#9E217B] hover:bg-[#b8268f] text-white shadow-md" : "bg-[#9E217B] hover:bg-[#8a1d6b] text-white shadow-sm",
+    btnSecondary:  isDark ? "bg-[#00AEEF] hover:bg-[#0099d4] text-white shadow-md" : "bg-[#00AEEF] hover:bg-[#0099d4] text-white shadow-sm",
+    btnDanger:     isDark ? "bg-[#3B1F1F] text-[#F28B82] hover:bg-red-900/40 border border-red-900/30" : "bg-[#9E217B]/10 text-[#9E217B] hover:bg-[#9E217B] hover:text-white border border-[#9E217B]/30",
+    btnWarning:    isDark ? "bg-yellow-600 hover:bg-yellow-500 text-white shadow-md" : "bg-amber-500 hover:bg-amber-400 text-white shadow-sm",
+    btnClosingBadge: isDark ? "bg-yellow-900/20 border border-yellow-500/40 text-yellow-400" : "bg-amber-50 border border-amber-400/60 text-amber-600",
+    logoBg:        isDark ? "bg-[#9E217B] shadow-lg shadow-[#9E217B]/30" : "bg-[#9E217B] shadow-lg shadow-[#9E217B]/30",
+    chartColors:   isDark
+      ? ["#d946a8","#e879b8","#00AEEF","#f97316","#4ade80","#fbbf24","#60a5fa"]
+      : ["#9E217B","#00AEEF","#0077b6","#f97316","#4ade80","#fbbf24","#d946a8"],
+    visitPieColors: ["#9E217B","#00AEEF","#f97316","#4ade80","#fbbf24","#e879b8","#60a5fa","#34d399"],
+    tooltipBg:     isDark ? "#1a1a1a" : "rgba(255,255,255,0.98)",
+    tooltipColor:  isDark ? "#fff" : "#1A1A1A",
+    tooltipBorder: isDark ? "1px solid rgba(158,33,123,0.3)" : "1px solid #E5E7EB",
+    legendColor:   isDark ? "#9ca3af" : "#6B7280",
+    fupDefault:    isDark ? "bg-[#1f0a18] border border-[#9E217B]/30" : "bg-pink-50 border border-pink-200",
+    fupLoan:       isDark ? "bg-blue-900/20 border border-blue-600/40" : "bg-blue-50 border border-blue-200",
+    fupSalesform:  isDark ? "bg-[#222] border border-[#444]" : "bg-white border border-[#D1D5DB]",
+    fupClosing:    isDark ? "bg-yellow-900/20 border border-yellow-600/40" : "bg-amber-50 border border-amber-300",
+    statusRouted:  isDark ? "text-[#d946a8] border-[#9E217B]/30 bg-[#9E217B]/10" : "text-[#9E217B] border-[#9E217B]/30 bg-[#9E217B]/10",
+    statusVisit:   isDark ? "text-orange-400 border-orange-500/30 bg-orange-500/10" : "text-orange-500 border-orange-400/40 bg-orange-50",
+    statusClosing: isDark ? "text-yellow-400 border-yellow-500/40 bg-yellow-500/10" : "text-amber-600 border-amber-400/50 bg-amber-50",
+    select:        isDark ? "bg-[#121212] border-[#333] text-white focus:border-[#9E217B]" : "bg-white border border-indigo-300 text-[#1A1A1A] focus:border-[#9E217B]",
+    selectSmall:   isDark ? "bg-[#222] border-[#333] text-white" : "bg-white border border-indigo-200 text-[#6B7280]",
+    scroll:        isDark ? "scrollbar-dark" : "scrollbar-light",
+  };
+}
 
 // ============================================================================
 // SHARED REAL-TIME DATA HOOK
 // ============================================================================
 function useAdminData() {
-  const [managers, setManagers]       = useState<any[]>([]);
+  const [managers, setManagers]           = useState<any[]>([]);
   const [receptionists, setReceptionists] = useState<any[]>([]);
-  const [allLeads, setAllLeads]       = useState<any[]>([]);
-  const [followUps, setFollowUps]     = useState<any[]>([]);
-  const [isLoading, setIsLoading]     = useState(true);
+  const [allLeads, setAllLeads]           = useState<any[]>([]);
+  const [followUps, setFollowUps]         = useState<any[]>([]);
+  const [isLoading, setIsLoading]         = useState(true);
 
   const fetchAdminData = async () => {
     try {
       let smData: any[] = [];
       const resUsers = await fetch("/api/users/sales-manager");
       if (resUsers.ok) { const j = await resUsers.json(); smData = j.data || []; }
-      else {
-        const alt = await fetch("/api/users/sales-manager");
-        if (alt.ok) { const j = await alt.json(); smData = j.data || []; }
-      }
 
       let recData: any[] = [];
       const resRec = await fetch("/api/users/receptionist");
@@ -52,8 +146,8 @@ function useAdminData() {
       if (resFups.ok) { const j = await resFups.json(); mongoFollowUps = Array.isArray(j.data) ? j.data : []; }
 
       const mergedLeads = pgLeads.map((lead: any) => {
-        const leadFups   = mongoFollowUps.filter((f: any) => String(f.leadId) === String(lead.id));
-        const salesForms = leadFups.filter((f: any) => f.message?.includes("Detailed Salesform Submitted"));
+        const leadFups      = mongoFollowUps.filter((f: any) => String(f.leadId) === String(lead.id));
+        const salesForms    = leadFups.filter((f: any) => f.message?.includes("Detailed Salesform Submitted"));
         const latestFormMsg = salesForms.length > 0 ? salesForms[salesForms.length - 1].message : "";
 
         const extractField = (fieldName: string) => {
@@ -63,17 +157,24 @@ function useAdminData() {
         };
 
         const loanUpdates = leadFups.filter((f: any) => f.message?.includes("🏦 Loan Update:"));
-        let loanStatus = "N/A", loanAmtReq = "N/A", loanAmtApp = "N/A";
+        let loanStatus = "N/A", loanAmtReq = "N/A", loanAmtApp = "N/A", loanRequired = "Pending";
         if (loanUpdates.length > 0) {
           const lm = loanUpdates[loanUpdates.length - 1].message;
-          const ms = lm.match(/• Status: (.*)/);           if (ms) loanStatus  = ms[1].trim();
-          const mr = lm.match(/• Amount Requested: (.*)/); if (mr) loanAmtReq = mr[1].trim();
-          const ma = lm.match(/• Amount Approved: (.*)/);  if (ma) loanAmtApp = ma[1].trim();
+          const ms  = lm.match(/• Status: (.*)/);           if (ms)  loanStatus   = ms[1].trim();
+          const mr  = lm.match(/• Amount Requested: (.*)/); if (mr)  loanAmtReq  = mr[1].trim();
+          const ma  = lm.match(/• Amount Approved: (.*)/);  if (ma)  loanAmtApp  = ma[1].trim();
+          const mlr = lm.match(/• Loan Required: (.*)/);    if (mlr) loanRequired = mlr[1].trim();
         }
 
         const fupsWithDate    = leadFups.filter((f: any) => f.siteVisitDate && f.siteVisitDate.trim() !== "");
         const latestVisitDate = fupsWithDate.length > 0 ? fupsWithDate[fupsWithDate.length - 1].siteVisitDate : null;
         const activeBudget    = extractField("Budget") !== "Pending" ? extractField("Budget") : lead.budget;
+
+        const sfLoanPlanned = extractField("Loan Planned");
+        const derivedLoanPlanned =
+          sfLoanPlanned !== "Pending" ? sfLoanPlanned :
+          loanRequired !== "Pending"  ? loanRequired  :
+          (lead.loan_planned || "Pending");
 
         return {
           ...lead,
@@ -82,9 +183,9 @@ function useAdminData() {
           useType:            extractField("Use Type") !== "Pending" ? extractField("Use Type") : (lead.purpose || "Pending"),
           planningPurchase:   extractField("Planning to Purchase"),
           decisionMaker:      extractField("Decision Maker"),
-          loanPlanned:        extractField("Loan Planned") !== "Pending" ? extractField("Loan Planned") : (lead.loan_planned || "Pending"),
+          loanPlanned:        derivedLoanPlanned,
           leadInterestStatus: extractField("Lead Status"),
-          loanStatus, loanAmtReq, loanAmtApp,
+          loanStatus, loanAmtReq, loanAmtApp, loanRequired,
           source: lead.source, sourceOther: lead.source_other,
           cpName: lead.cp_name, cpCompany: lead.cp_company, cpPhone: lead.cp_phone,
           altPhone: lead.alt_phone, address: lead.address,
@@ -113,27 +214,27 @@ function useAdminData() {
 // ============================================================================
 // HELPER BADGES
 // ============================================================================
-function InterestBadge({ status, size = "md" }: { status: string; size?: "sm" | "md" }) {
+function InterestBadge({ status, size = "md", isDark }: { status: string; size?: "sm"|"md"; isDark?: boolean }) {
   const colorMap: Record<string, string> = {
-    "Interested":     "border-green-500/40 text-green-400 bg-green-500/10",
-    "Not Interested": "border-red-500/40 text-red-400 bg-red-500/10",
-    "Maybe":          "border-yellow-500/40 text-yellow-400 bg-yellow-500/10",
+    "Interested":      isDark ? "border-green-500/40 text-green-400 bg-green-500/10"   : "border-green-300 text-green-700 bg-green-50",
+    "Not Interested":  isDark ? "border-red-500/40 text-red-400 bg-red-500/10"         : "border-red-300 text-red-700 bg-red-50",
+    "Maybe":           isDark ? "border-yellow-500/40 text-yellow-400 bg-yellow-500/10" : "border-yellow-300 text-yellow-700 bg-yellow-50",
   };
-  const cls = colorMap[status] ?? "border-blue-500/30 text-blue-400 bg-blue-500/10";
+  const cls = colorMap[status] ?? (isDark ? "border-[#9E217B]/30 text-[#d946a8] bg-[#9E217B]/10" : "border-[#9E217B]/30 text-[#9E217B] bg-[#9E217B]/10");
   const sz  = size === "sm" ? "text-[9px] px-2 py-0.5" : "text-[10px] px-3 py-1";
   return <span className={`rounded-full font-bold uppercase tracking-wider border flex-shrink-0 ${sz} ${cls}`}>{status}</span>;
 }
 
-function LoanStatusBadge({ status }: { status: string }) {
+function LoanStatusBadge({ status, isDark }: { status: string; isDark?: boolean }) {
   const s = (status || "").toLowerCase();
   if (!s || s === "n/a") return null;
-  let cls = "border-gray-500/30 text-gray-400 bg-gray-500/10";
-  if (s === "approved")    cls = "border-green-500/40 text-green-400 bg-green-500/10";
-  if (s === "rejected")    cls = "border-red-500/40 text-red-400 bg-red-500/10";
-  if (s === "in progress") cls = "border-yellow-500/40 text-yellow-400 bg-yellow-500/10";
+  let cls = isDark ? "border-gray-500/30 text-gray-400 bg-gray-500/10" : "border-gray-300 text-gray-700 bg-gray-50";
+  if (s === "approved")    cls = isDark ? "border-green-500/40 text-green-400 bg-green-500/10"   : "border-green-300 text-green-700 bg-green-50";
+  if (s === "rejected")    cls = isDark ? "border-red-500/40 text-red-400 bg-red-500/10"         : "border-red-300 text-red-700 bg-red-50";
+  if (s === "in progress") cls = isDark ? "border-yellow-500/40 text-yellow-400 bg-yellow-500/10" : "border-yellow-300 text-yellow-700 bg-yellow-50";
   return (
     <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider border flex items-center gap-1 flex-shrink-0 ${cls}`}>
-      <FaUniversity className="text-[7px]" />{status}
+      <FaUniversity className="text-[7px]"/>{status}
     </span>
   );
 }
@@ -145,7 +246,6 @@ const formatDate = (ds: string) => {
   if (!ds || ds === "Pending" || ds === "N/A" || ds === "Completed") return "-";
   try { return new Date(ds).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }); } catch { return ds; }
 };
-
 const maskPhone = (phone: any) => {
   if (!phone || phone === "N/A") return "N/A";
   const c = String(phone).replace(/[^a-zA-Z0-9]/g, "");
@@ -163,6 +263,8 @@ export default function AdminAtlasDashboard() {
   const [user, setUser]                         = useState<any>({ name: "Admin", role: "Admin", email: "", password: "" });
   const [isProfileOpen, setIsProfileOpen]       = useState(false);
   const [showPassword, setShowPassword]         = useState(false);
+  const [isDark, setIsDark]                     = useState(false);
+  const theme = useMemo(() => buildTheme(isDark), [isDark]);
 
   const { managers, receptionists, allLeads, followUps, isLoading, refetch } = useAdminData();
 
@@ -181,7 +283,7 @@ export default function AdminAtlasDashboard() {
               if (liveUser?.password) setUser((prev: any) => ({ ...prev, password: liveUser.password }));
             }
           }
-        } catch { }
+        } catch {}
       };
       fetchLivePassword();
     }
@@ -191,16 +293,34 @@ export default function AdminAtlasDashboard() {
 
   const handleLogout = () => { localStorage.removeItem("crm_user"); router.push("/"); };
 
+  // ── Sidebar menu items ──
+  // "employees" → /dashboard/employees (default tab)
+  // "caller"    → /dashboard/employees?tab=callers (auto-opens Caller Panel)
   const menuItems = [
-    { id: "dashboard",    icon: FaThLarge,      label: "Overview" },
+    { id: "dashboard",    icon: FaThLarge,       label: "Overview" },
     { id: "receptionist", icon: FaClipboardList, label: "Receptionist" },
     { id: "sales",        icon: FaUsers,         label: "Sales Managers" },
     { id: "employees",    icon: FaIdCard,        label: "Add Employee" },
     { id: "caller",       icon: FaPhoneAlt,      label: "Caller Panel" },
   ];
 
+  const handleMenuClick = (itemId: string) => {
+    if (itemId === "employees") {
+      router.push("/dashboard/employees");
+    } else if (itemId === "caller") {
+      // ✅ FIX: redirect to employees page with ?tab=callers so it auto-opens Caller Panel
+      router.push("/dashboard/employees?tab=callers");
+    } else {
+      setActiveView(itemId);
+      setIsSidebarHovered(false);
+    }
+  };
+
   return (
-    <div className="flex h-screen bg-[#0a0a0a] text-gray-200 font-sans overflow-hidden relative">
+    <div
+      className={`flex h-screen font-sans overflow-hidden relative transition-colors duration-300 ${theme.pageWrap}`}
+      style={isDark ? {} : { background: "linear-gradient(135deg, #fdf0f8 0%, #f8fafc 30%, #faf0fb 62%, #f8fafc 78%, #fce8f6 100%)" }}
+    >
       <AnimatePresence>
         {isSidebarHovered && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}
@@ -208,201 +328,233 @@ export default function AdminAtlasDashboard() {
         )}
       </AnimatePresence>
 
-      {/* Sidebar */}
+      {/* ── SIDEBAR ── */}
       <motion.aside
         initial={{ width: "80px" }} animate={{ width: isSidebarHovered ? "240px" : "80px" }} transition={{ duration: 0.2, ease: "easeInOut" }}
         onMouseEnter={() => setIsSidebarHovered(true)} onMouseLeave={() => setIsSidebarHovered(false)}
-        className="fixed left-0 top-0 h-screen bg-[#111111] border-r border-[#222] z-50 flex flex-col py-6 overflow-hidden shadow-2xl"
+        className={`fixed left-0 top-0 h-screen border-r z-50 flex flex-col py-6 overflow-hidden shadow-2xl ${theme.sidebar}`}
       >
         <div className="flex items-center px-5 mb-10 whitespace-nowrap">
-          <div className="w-10 h-10 min-w-[40px] bg-gradient-to-br from-purple-600 to-blue-600 rounded-xl flex items-center justify-center text-xl font-bold text-white shadow-lg">B</div>
+          <div className={`w-10 h-10 min-w-[40px] rounded-xl flex items-center justify-center text-xl font-bold text-white shadow-lg ${theme.logoBg}`}>B</div>
           <motion.span initial={{ opacity: 0 }} animate={{ opacity: isSidebarHovered ? 1 : 0 }} className="ml-4 font-bold text-lg text-white tracking-wide">Bhoomi CRM</motion.span>
         </div>
         <nav className="flex flex-col gap-2 px-3 flex-1">
-          {menuItems.map((item) => (
-            <div key={item.id}
-              onClick={() => {
-                if (item.id === "employees") { router.push("/dashboard/employees"); }
-                else { setActiveView(item.id); setIsSidebarHovered(false); }
-              }}
-              className={`flex items-center px-3 py-3.5 rounded-xl cursor-pointer transition-colors whitespace-nowrap relative group
-                ${activeView === item.id && item.id !== "employees" ? "bg-purple-500/10 text-purple-400" : "text-gray-500 hover:bg-[#1a1a1a] hover:text-gray-300"}`}
-            >
-              {activeView === item.id && item.id !== "employees" && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-purple-500 rounded-r-full" />}
-              <item.icon className="w-5 h-5 min-w-[20px] ml-1" />
-              <motion.span initial={{ opacity: 0 }} animate={{ opacity: isSidebarHovered ? 1 : 0 }}
-                className={`ml-5 font-semibold text-sm ${activeView === item.id && item.id !== "employees" ? "text-purple-300" : ""}`}>
-                {item.label}
-              </motion.span>
-            </div>
-          ))}
+          {menuItems.map((item) => {
+            // Active indicator only applies to internal views (not redirects)
+            const isActive = activeView === item.id && item.id !== "employees" && item.id !== "caller";
+            return (
+              <div
+                key={item.id}
+                onClick={() => handleMenuClick(item.id)}
+                className={`flex items-center px-3 py-3.5 rounded-xl cursor-pointer transition-colors whitespace-nowrap relative group
+                  ${isActive
+                    ? "bg-[#9E217B]/20 text-[#d946a8]"
+                    : "text-gray-400 hover:bg-[#252525] hover:text-gray-200"}`}
+              >
+                {isActive && (
+                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-[#9E217B] rounded-r-full shadow-[0_0_8px_rgba(158,33,123,0.6)]" />
+                )}
+                <item.icon className="w-5 h-5 min-w-[20px] ml-1" />
+                <motion.span
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: isSidebarHovered ? 1 : 0 }}
+                  className={`ml-5 font-semibold text-sm ${isActive ? "text-[#d946a8]" : ""}`}
+                >
+                  {item.label}
+                </motion.span>
+              </div>
+            );
+          })}
         </nav>
       </motion.aside>
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col pl-[80px] h-screen overflow-hidden">
-        <header className="h-16 bg-[#111111]/80 backdrop-blur-md border-b border-[#222] flex items-center justify-between px-8 z-30">
-          <h1 className="text-white font-bold text-lg capitalize tracking-wide flex items-center gap-3">
+      {/* ── MAIN ── */}
+      <div className={`flex-1 flex flex-col pl-[80px] h-screen overflow-hidden ${theme.mainBg}`}>
+        <header className={`h-16 flex items-center justify-between px-8 z-30 transition-colors duration-300 ${theme.header}`} style={theme.headerGlass}>
+          <h1 className={`font-bold text-lg capitalize tracking-wide flex items-center gap-3 ${theme.text}`}>
             {activeView.replace("_", " ")}
-            <span className="bg-[#222] text-gray-400 px-2 py-0.5 rounded text-xs border border-[#333]">Admin</span>
+            <span className={`${theme.settingsBg} ${theme.textMuted} px-2 py-0.5 rounded text-xs border`}>Admin</span>
           </h1>
           <div className="flex items-center gap-6">
-            <FaBell className="text-gray-500 hover:text-white cursor-pointer" />
+            <button onClick={() => setIsDark(!isDark)} aria-label="Toggle theme"
+              className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm ${theme.toggleWrap}`}>
+              {isDark ? <SunIcon /> : <MoonIcon />}
+            </button>
+            <FaBell className={`${theme.textMuted} cursor-pointer transition-colors`} />
             <div className="relative">
               <div onClick={() => setIsProfileOpen(!isProfileOpen)}
-                className="w-9 h-9 rounded-full bg-purple-900/30 text-purple-400 border border-purple-500/50 flex items-center justify-center font-bold text-sm cursor-pointer shadow-sm hover:bg-purple-900/50 transition-colors">
+                className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm cursor-pointer shadow-sm hover:opacity-80 transition-opacity border
+                  ${isDark ? "border-[#9E217B]/40 text-[#d946a8] bg-[#9E217B]/15" : "border-[#9E217B]/40 text-[#9E217B] bg-[#9E217B]/10"}`}>
                 {String(user?.name || "A").charAt(0).toUpperCase()}
               </div>
               {isProfileOpen && (
-                <div className="absolute top-12 right-0 w-64 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl shadow-2xl p-5 z-50 animate-fadeIn">
-                  <div className="mb-4"><h3 className="text-white font-bold text-lg">{user?.name || "Admin"}</h3><p className="text-gray-400 text-sm truncate">{user?.email || "admin@bhoomi.com"}</p></div>
-                  <hr className="border-[#2a2a2a] mb-4" />
+                <div className={`absolute top-12 right-0 w-64 border rounded-xl shadow-2xl p-5 z-50 animate-fadeIn ${theme.dropdown}`} style={theme.dropdownGlass}>
+                  <div className="mb-4">
+                    <h3 className={`font-bold text-lg ${theme.text}`}>{user?.name || "Admin"}</h3>
+                    <p className={`text-sm truncate ${theme.textMuted}`}>{user?.email || "admin@bhoomi.com"}</p>
+                  </div>
+                  <hr className={`mb-4 ${theme.tableBorder}`} />
                   <div className="space-y-4 mb-6 text-sm">
-                    <p className="text-gray-400 flex justify-between items-center">Role: <span className="text-purple-400 font-bold capitalize bg-purple-500/10 px-2 py-0.5 rounded border border-purple-500/30">{user?.role || "Admin"}</span></p>
+                    <p className={`flex justify-between items-center ${theme.textMuted}`}>Role:
+                      <span className={`font-bold capitalize px-2 py-0.5 rounded border ${isDark ? "text-[#d946a8] bg-[#9E217B]/10 border-[#9E217B]/30" : "text-[#9E217B] bg-[#9E217B]/10 border-[#9E217B]/30"}`}>{user?.role || "Admin"}</span>
+                    </p>
                     <div>
-                      <p className="text-gray-400 text-xs mb-1">Password</p>
-                      <div className="flex items-center justify-between bg-[#121212] border border-[#2a2a2a] p-2 rounded-md">
-                        <span className="font-mono text-white tracking-widest text-xs">{showPassword ? (user?.password || "N/A") : "••••••••"}</span>
-                        <button onClick={() => setShowPassword(!showPassword)} className="text-gray-500 hover:text-purple-400 cursor-pointer">
+                      <p className={`text-xs mb-1 ${theme.textMuted}`}>Password</p>
+                      <div className={`flex items-center justify-between border p-2 rounded-md ${theme.innerBlock}`}>
+                        <span className={`font-mono tracking-widest text-xs ${theme.text}`}>{showPassword ? (user?.password || "N/A") : "••••••••"}</span>
+                        <button onClick={() => setShowPassword(!showPassword)} className={`${theme.textMuted} cursor-pointer`}>
                           {showPassword ? <FaEyeSlash /> : <FaEye />}
                         </button>
                       </div>
                     </div>
                   </div>
-                  <button onClick={handleLogout} className="w-full bg-[#3B1F1F] text-[#F28B82] hover:bg-red-900/40 border border-red-900/30 py-2.5 rounded-lg font-semibold transition-colors cursor-pointer">Logout</button>
+                  <button onClick={handleLogout} className={`w-full py-2.5 rounded-lg font-semibold transition-colors cursor-pointer ${theme.btnDanger}`}>Logout</button>
                 </div>
               )}
             </div>
           </div>
         </header>
 
-        <main className="flex-1 overflow-hidden bg-[#0a0a0a]">
-          {activeView === "dashboard"    && <DashboardOverview managers={managers} allLeads={allLeads} isLoading={isLoading} user={user} />}
-          {activeView === "sales"        && <AdminSalesView managers={managers} allLeads={allLeads} followUps={followUps} isLoading={isLoading} adminUser={user} refetch={refetch} />}
-          {activeView === "receptionist" && <ReceptionistView receptionists={receptionists} allLeads={allLeads} managers={managers} isLoading={isLoading} refetch={refetch} />}
-          {activeView === "caller" && <CallerAdminView />}
+        <main className={`flex-1 overflow-hidden transition-colors duration-300 ${theme.mainBg}`}>
+          {activeView === "dashboard"    && <DashboardOverview managers={managers} allLeads={allLeads} isLoading={isLoading} user={user} theme={theme} isDark={isDark} />}
+          {activeView === "sales"        && <AdminSalesView managers={managers} allLeads={allLeads} followUps={followUps} isLoading={isLoading} adminUser={user} refetch={refetch} theme={theme} isDark={isDark} />}
+          {activeView === "receptionist" && <ReceptionistView receptionists={receptionists} allLeads={allLeads} managers={managers} isLoading={isLoading} refetch={refetch} theme={theme} isDark={isDark} />}
         </main>
       </div>
 
-      <style dangerouslySetInnerHTML={{__html: `.custom-scrollbar::-webkit-scrollbar{width:6px;height:6px}.custom-scrollbar::-webkit-scrollbar-track{background:transparent}.custom-scrollbar::-webkit-scrollbar-thumb{background:#3a3a3a;border-radius:10px}.custom-scrollbar::-webkit-scrollbar-thumb:hover{background:#555}@keyframes fadeIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}.animate-fadeIn{animation:fadeIn 0.2s ease-out}`}} />
+      <style dangerouslySetInnerHTML={{__html: `
+        .scrollbar-dark::-webkit-scrollbar{width:6px;height:6px}
+        .scrollbar-dark::-webkit-scrollbar-track{background:transparent}
+        .scrollbar-dark::-webkit-scrollbar-thumb{background:#3a3a3a;border-radius:10px}
+        .scrollbar-dark::-webkit-scrollbar-thumb:hover{background:#555}
+        .scrollbar-light::-webkit-scrollbar{width:6px;height:6px}
+        .scrollbar-light::-webkit-scrollbar-track{background:transparent}
+        .scrollbar-light::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:10px}
+        .scrollbar-light::-webkit-scrollbar-thumb:hover{background:#94a3b8}
+        @keyframes fadeIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+        .animate-fadeIn{animation:fadeIn 0.2s ease-out}
+      `}} />
     </div>
   );
 }
 
 // ============================================================================
-// DASHBOARD ANALYTICS — bar + pie charts for selected manager's leads
+// DASHBOARD ANALYTICS
 // ============================================================================
-function DashboardAnalytics({ leads }: { leads: any[] }) {
+function DashboardAnalytics({ leads, theme, isDark }: { leads: any[]; theme: any; isDark: boolean }) {
   const [pieMode, setPieMode] = useState<"interest"|"loan"|"usetype"|"loanrequired"|"visits">("interest");
   const [barMode, setBarMode] = useState<"weekly"|"source">("weekly");
 
   const interestData = useMemo(() => {
     const c: Record<string,number> = { Interested:0,"Not Interested":0,Maybe:0,Pending:0 };
-    leads.forEach(l => { const s=l.leadInterestStatus; if(s&&s!=="Pending"&&c[s]!==undefined) c[s]++; else c["Pending"]++; });
-    return Object.entries(c).filter(([,v])=>v>0).map(([name,value])=>({name,value}));
-  },[leads]);
+    leads.forEach(l => { const s = l.leadInterestStatus; if (s && s !== "Pending" && c[s] !== undefined) c[s]++; else c["Pending"]++; });
+    return Object.entries(c).filter(([,v]) => v > 0).map(([name, value]) => ({ name, value }));
+  }, [leads]);
 
   const loanPieData = useMemo(() => {
     const c: Record<string,number> = { Approved:0,"In Progress":0,Rejected:0,"N/A":0 };
-    leads.forEach(l => { const s=l.loanStatus; if(s&&c[s]!==undefined) c[s]++; else c["N/A"]++; });
-    return Object.entries(c).filter(([,v])=>v>0).map(([name,value])=>({name,value}));
-  },[leads]);
+    leads.forEach(l => { const s = l.loanStatus; if (s && c[s] !== undefined) c[s]++; else c["N/A"]++; });
+    return Object.entries(c).filter(([,v]) => v > 0).map(([name, value]) => ({ name, value }));
+  }, [leads]);
 
   const useTypeData = useMemo(() => {
     const c: Record<string,number> = {};
-    leads.forEach(l => { const ut=(l.useType&&l.useType!=="Pending")?l.useType:(l.purpose||"Unknown"); c[ut]=(c[ut]||0)+1; });
-    return Object.entries(c).filter(([k])=>k!=="Unknown").map(([name,value])=>({name,value}));
-  },[leads]);
+    leads.forEach(l => { const ut = (l.useType && l.useType !== "Pending") ? l.useType : (l.purpose || "Unknown"); c[ut] = (c[ut] || 0) + 1; });
+    return Object.entries(c).filter(([k]) => k !== "Unknown").map(([name, value]) => ({ name, value }));
+  }, [leads]);
 
   const loanRequiredData = useMemo(() => {
-    const c: Record<string,number> = { Yes:0,No:0,"Not Sure":0,Pending:0 };
-    leads.forEach(l => { const lp=l.loanPlanned; if(lp&&c[lp]!==undefined) c[lp]++; else c["Pending"]++; });
-    return Object.entries(c).filter(([,v])=>v>0).map(([name,value])=>({name,value}));
-  },[leads]);
+    const c: Record<string,number> = { Yes:0, No:0, "Not Sure":0, Pending:0 };
+    leads.forEach(l => {
+      const lp = l.loanPlanned;
+      if (lp && c[lp] !== undefined) c[lp]++;
+      else c["Pending"]++;
+    });
+    return Object.entries(c).filter(([,v]) => v > 0).map(([name, value]) => ({ name, value }));
+  }, [leads]);
 
   const visitData = useMemo(() => {
-    const scheduled = leads.filter(l=>l.mongoVisitDate).length;
-    return [{ name:"Scheduled", value:scheduled },{ name:"Pending", value:leads.length-scheduled }];
-  },[leads]);
+    const scheduled = leads.filter(l => l.mongoVisitDate).length;
+    return [{ name:"Scheduled", value:scheduled }, { name:"Pending", value:leads.length - scheduled }];
+  }, [leads]);
 
   const weeklyData = useMemo(() => {
-    const days   = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+    const days = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
     const counts = [0,0,0,0,0,0,0];
-    const now    = new Date();
+    const now = new Date();
     leads.forEach(l => {
-      if(!l.created_at) return;
+      if (!l.created_at) return;
       const d = new Date(l.created_at);
-      if(Math.floor((now.getTime()-d.getTime())/86400000)<7) counts[d.getDay()]++;
+      if (Math.floor((now.getTime() - d.getTime()) / 86400000) < 7) counts[d.getDay()]++;
     });
-    return days.map((day,i)=>({day,leads:counts[i]}));
-  },[leads]);
+    return days.map((day, i) => ({ day, leads: counts[i] }));
+  }, [leads]);
 
-  const weeklyTotal = weeklyData.reduce((a,b)=>a+b.leads,0);
+  const weeklyTotal = weeklyData.reduce((a, b) => a + b.leads, 0);
 
   const sourceData = useMemo(() => {
     const c: Record<string,number> = {};
-    leads.forEach(l => { const src=l.source||"Unknown"; c[src]=(c[src]||0)+1; });
-    return Object.entries(c).map(([source,count])=>({source,count})).sort((a,b)=>b.count-a.count).slice(0,6);
-  },[leads]);
+    leads.forEach(l => { const src = l.source || "Unknown"; c[src] = (c[src] || 0) + 1; });
+    return Object.entries(c).map(([source, count]) => ({ source, count })).sort((a, b) => b.count - a.count).slice(0, 6);
+  }, [leads]);
 
   const interestColors: Record<string,string> = { Interested:"#4ade80","Not Interested":"#f87171",Maybe:"#fbbf24",Pending:"#6b7280" };
   const loanColors:     Record<string,string> = { Approved:"#4ade80","In Progress":"#fbbf24",Rejected:"#f87171","N/A":"#6b7280" };
-  const useTypeColors:  Record<string,string> = { "Self Use":"#818cf8",Investment:"#34d399","Personal use":"#f87171","N/A":"#6b7280" };
-  const loanReqColors:  Record<string,string> = { Yes:"#60a5fa",No:"#6b7280","Not Sure":"#fbbf24",Pending:"#374151" };
+  const useTypeColors:  Record<string,string> = { "Self Use":"#9E217B",Investment:"#34d399","Personal use":"#f87171","N/A":"#6b7280" };
+  const loanReqColors:  Record<string,string> = { Yes:"#9E217B",No:"#6b7280","Not Sure":"#fbbf24",Pending:"#374151" };
   const visitColors:    Record<string,string> = { Scheduled:"#f97316",Pending:"#374151" };
 
   const pieData   = pieMode==="interest" ? interestData : pieMode==="loan" ? loanPieData : pieMode==="usetype" ? useTypeData : pieMode==="loanrequired" ? loanRequiredData : visitData;
   const pieColors = pieMode==="interest" ? interestColors : pieMode==="loan" ? loanColors : pieMode==="usetype" ? useTypeColors : pieMode==="loanrequired" ? loanReqColors : visitColors;
   const totalLeads = leads.length;
 
-  const BarTip = ({ active, payload, label }: any) => active&&payload?.length
-    ? <div className="bg-[#1a1a1a] border border-[#333] rounded-lg px-3 py-2 text-xs shadow-xl"><p className="text-gray-400">{label||payload[0].name}</p><p className="text-white font-bold">{payload[0].value}</p></div>
+  const BAR_COLORS = theme.chartColors;
+
+  const BarTip = ({ active, payload, label }: any) => active && payload?.length
+    ? <div className="rounded-lg px-3 py-2 text-xs shadow-xl" style={{ backgroundColor: theme.tooltipBg, color: theme.tooltipColor, border: theme.tooltipBorder }}><p className={theme.textMuted}>{label || payload[0].name}</p><p className="font-bold">{payload[0].value}</p></div>
     : null;
 
-  const PieTip = ({ active, payload }: any) => active&&payload?.length
-    ? <div className="bg-[#1a1a1a] border border-[#333] rounded-lg px-3 py-2 text-xs shadow-xl"><p className="text-gray-300 font-bold">{payload[0].name}</p><p className="text-white">{payload[0].value} leads</p></div>
+  const PieTip = ({ active, payload }: any) => active && payload?.length
+    ? <div className="rounded-lg px-3 py-2 text-xs shadow-xl" style={{ backgroundColor: theme.tooltipBg, color: theme.tooltipColor, border: theme.tooltipBorder }}><p className="font-bold mb-1">{payload[0].name}</p><p>{payload[0].value} leads</p></div>
     : null;
-
-  const BAR_COLORS = ["#a855f7","#818cf8","#60a5fa","#34d399","#fbbf24","#f87171","#c084fc"];
-  const SRC_COLORS = ["#a855f7","#60a5fa","#4ade80","#fbbf24","#f87171","#34d399"];
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {/* BAR CHART */}
-      <div className="bg-[#111111] border border-[#222] rounded-2xl p-5 shadow-sm">
+      <div className={`${theme.card} rounded-2xl p-5`} style={theme.cardGlass}>
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h3 className="text-white font-bold text-sm flex items-center gap-2">
-              <FaChartPie className="text-purple-400 text-xs"/>
-              {barMode==="weekly" ? "Leads Added This Week" : "Lead Source Distribution"}
+            <h3 className={`${theme.text} font-bold text-sm flex items-center gap-2`}>
+              <FaChartPie className={`text-[#9E217B] text-xs`}/>
+              {barMode === "weekly" ? "Leads Added This Week" : "Lead Source Distribution"}
             </h3>
-            {barMode==="weekly" && <p className="text-purple-400 text-xs mt-0.5 font-semibold">{weeklyTotal} total this week</p>}
+            {barMode === "weekly" && <p className="text-[#9E217B] text-xs mt-0.5 font-semibold">{weeklyTotal} total this week</p>}
           </div>
-          <select value={barMode} onChange={e=>setBarMode(e.target.value as any)}
-            className="bg-[#1a1a1a] border border-[#333] rounded-lg px-3 py-1.5 text-xs text-white outline-none cursor-pointer focus:border-purple-500 appearance-none">
+          <select value={barMode} onChange={e => setBarMode(e.target.value as any)}
+            className={`${theme.select} rounded-lg px-3 py-1.5 text-xs outline-none cursor-pointer appearance-none`}>
             <option value="weekly">Leads This Week</option>
             <option value="source">Lead Source Distribution</option>
           </select>
         </div>
         <ResponsiveContainer width="100%" height={220}>
-          {barMode==="weekly" ? (
-            <BarChart data={weeklyData} margin={{top:4,right:8,left:-20,bottom:0}}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#2a2a2a"/>
-              <XAxis dataKey="day" tick={{fill:"#9ca3af",fontSize:11}} axisLine={false} tickLine={false}/>
-              <YAxis tick={{fill:"#9ca3af",fontSize:11}} axisLine={false} tickLine={false} allowDecimals={false}/>
+          {barMode === "weekly" ? (
+            <BarChart data={weeklyData} margin={{ top:4, right:8, left:-20, bottom:0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke={isDark ? "#2a2a2a" : "#E5E7EB"}/>
+              <XAxis dataKey="day" tick={{ fill:theme.legendColor, fontSize:11 }} axisLine={false} tickLine={false}/>
+              <YAxis tick={{ fill:theme.legendColor, fontSize:11 }} axisLine={false} tickLine={false} allowDecimals={false}/>
               <RechartsTooltip content={<BarTip/>}/>
               <Bar dataKey="leads" radius={[6,6,0,0]}>
-                {weeklyData.map((_:any,i:number)=><Cell key={i} fill={BAR_COLORS[i%7]}/>)}
+                {weeklyData.map((_: any, i: number) => <Cell key={i} fill={BAR_COLORS[i % BAR_COLORS.length]}/>)}
               </Bar>
             </BarChart>
           ) : (
-            <BarChart data={sourceData} layout="vertical" margin={{top:0,right:16,left:0,bottom:0}}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#2a2a2a" horizontal={false}/>
-              <XAxis type="number" tick={{fill:"#9ca3af",fontSize:11}} axisLine={false} tickLine={false} allowDecimals={false}/>
-              <YAxis type="category" dataKey="source" width={100} tick={{fill:"#9ca3af",fontSize:10}} axisLine={false} tickLine={false}/>
+            <BarChart data={sourceData} layout="vertical" margin={{ top:0, right:16, left:0, bottom:0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke={isDark ? "#2a2a2a" : "#E5E7EB"} horizontal={false}/>
+              <XAxis type="number" tick={{ fill:theme.legendColor, fontSize:11 }} axisLine={false} tickLine={false} allowDecimals={false}/>
+              <YAxis type="category" dataKey="source" width={100} tick={{ fill:theme.legendColor, fontSize:10 }} axisLine={false} tickLine={false}/>
               <RechartsTooltip content={<BarTip/>}/>
               <Bar dataKey="count" radius={[0,6,6,0]}>
-                {sourceData.map((_:any,i:number)=><Cell key={i} fill={SRC_COLORS[i%6]}/>)}
+                {sourceData.map((_: any, i: number) => <Cell key={i} fill={BAR_COLORS[i % BAR_COLORS.length]}/>)}
               </Bar>
             </BarChart>
           )}
@@ -410,18 +562,18 @@ function DashboardAnalytics({ leads }: { leads: any[] }) {
       </div>
 
       {/* PIE CHART */}
-      <div className="bg-[#111111] border border-[#222] rounded-2xl p-5 shadow-sm">
+      <div className={`${theme.card} rounded-2xl p-5`} style={theme.cardGlass}>
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-white font-bold text-sm flex items-center gap-2">
-            <FaChartPie className="text-blue-400 text-xs"/>
-            {pieMode==="interest"     ? "Lead Interest Breakdown"   :
-             pieMode==="loan"         ? "Loan Status Breakdown"      :
-             pieMode==="usetype"      ? "Self-Use vs Investment"      :
-             pieMode==="loanrequired" ? "Loan Required?"              :
-                                        "Visit Scheduled vs Pending"}
+          <h3 className={`${theme.text} font-bold text-sm flex items-center gap-2`}>
+            <FaChartPie className="text-[#00AEEF] text-xs"/>
+            {pieMode==="interest" ? "Lead Interest Breakdown" :
+             pieMode==="loan" ? "Loan Status Breakdown" :
+             pieMode==="usetype" ? "Self-Use vs Investment" :
+             pieMode==="loanrequired" ? "Loan Required?" :
+             "Visit Scheduled vs Pending"}
           </h3>
-          <select value={pieMode} onChange={e=>setPieMode(e.target.value as any)}
-            className="bg-[#1a1a1a] border border-[#333] rounded-lg px-3 py-1.5 text-xs text-white outline-none cursor-pointer focus:border-purple-500 appearance-none">
+          <select value={pieMode} onChange={e => setPieMode(e.target.value as any)}
+            className={`${theme.select} rounded-lg px-3 py-1.5 text-xs outline-none cursor-pointer appearance-none`}>
             <option value="interest">Lead Interest</option>
             <option value="loan">Loan Status</option>
             <option value="usetype">Self-Use vs Investment</option>
@@ -433,26 +585,24 @@ function DashboardAnalytics({ leads }: { leads: any[] }) {
           <ResponsiveContainer width="55%" height={200}>
             <PieChart>
               <Pie data={pieData} cx="50%" cy="50%" innerRadius={55} outerRadius={85} paddingAngle={3} dataKey="value">
-                {pieData.map((entry:any,i:number)=>(
-                  <Cell key={i} fill={pieColors[entry.name]??"#6b7280"}/>
-                ))}
+                {pieData.map((entry: any, i: number) => <Cell key={i} fill={pieColors[entry.name] ?? "#6b7280"}/>)}
               </Pie>
               <RechartsTooltip content={<PieTip/>}/>
             </PieChart>
           </ResponsiveContainer>
           <div className="flex flex-col gap-2 flex-1">
-            {pieData.map((entry:any)=>{
-              const color = pieColors[entry.name]??"#6b7280";
-              const pct   = totalLeads>0 ? Math.round((entry.value/totalLeads)*100) : 0;
+            {pieData.map((entry: any) => {
+              const color = pieColors[entry.name] ?? "#6b7280";
+              const pct   = totalLeads > 0 ? Math.round((entry.value / totalLeads) * 100) : 0;
               return (
                 <div key={entry.name} className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{backgroundColor:color}}/>
-                    <span className="text-[11px] text-gray-400 font-medium">{entry.name}</span>
+                    <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: color }}/>
+                    <span className={`text-[11px] font-medium ${theme.textFaint}`}>{entry.name}</span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <span className="text-[11px] text-white font-bold">{entry.value}</span>
-                    <span className="text-[10px] text-gray-500">({pct}%)</span>
+                    <span className={`text-[11px] font-bold ${theme.text}`}>{entry.value}</span>
+                    <span className={`text-[10px] ${theme.textMuted}`}>({pct}%)</span>
                   </div>
                 </div>
               );
@@ -467,14 +617,14 @@ function DashboardAnalytics({ leads }: { leads: any[] }) {
 // ============================================================================
 // DASHBOARD OVERVIEW
 // ============================================================================
-function DashboardOverview({ managers, allLeads, isLoading, user }: any) {
+function DashboardOverview({ managers, allLeads, isLoading, user, theme, isDark }: any) {
   const [selectedManagerName, setSelectedManagerName] = useState("");
   const [hasAutoSelected, setHasAutoSelected]         = useState(false);
 
   const managerStats = managers.map((m: any) => {
     const mLeads = allLeads.filter((l: any) => l.assigned_to === m.name);
     return {
-      name:       m.name,
+      name:        m.name,
       activeLeads: mLeads.length,
       siteVisits:  mLeads.filter((l: any) => l.status === "Visit Scheduled" || !!l.mongoVisitDate).length,
     };
@@ -489,34 +639,37 @@ function DashboardOverview({ managers, allLeads, isLoading, user }: any) {
 
   const activeManagerLeads = allLeads.filter((l: any) => l.assigned_to === selectedManagerName);
   const visitCount         = activeManagerLeads.filter((l: any) => l.status === "Visit Scheduled" || !!l.mongoVisitDate).length;
-  const pieData            = managerStats.filter((m: any) => m.siteVisits > 0);
-  const PIE_COLORS         = ["#d946ef","#8b5cf6","#3b82f6","#0ea5e9","#10b981","#f59e0b"];
+
+  const pieData      = managerStats.filter((m: any) => m.siteVisits > 0);
+  const VISIT_COLORS = theme.visitPieColors;
 
   return (
-    <div className="h-full flex flex-col p-8 overflow-y-auto custom-scrollbar">
+    <div className={`h-full flex flex-col p-8 overflow-y-auto ${theme.scroll}`}>
       {/* Welcome banner */}
-      <div className="bg-[#111111] border border-[#222] rounded-2xl p-6 mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shadow-sm">
-        <h2 className="text-xl font-bold text-white">Welcome back, {user?.name || "Admin"}!</h2>
-        <p className="text-sm text-gray-400">Here is what's happening with your team today.</p>
+      <div className={`${theme.card} rounded-2xl p-6 mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4`} style={theme.cardGlass}>
+        <h2 className={`text-xl font-bold ${theme.text}`}>Welcome back, {user?.name || "Admin"}!</h2>
+        <p className={`text-sm ${theme.textMuted}`}>Here is what's happening with your team today.</p>
       </div>
 
       {/* Top performers + site visits */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        <div className="lg:col-span-2 bg-[#111111] border border-[#222] rounded-2xl p-6 shadow-sm flex flex-col">
-          <h2 className="text-lg font-bold text-white mb-1 flex items-center gap-2"><FaChartPie className="text-purple-500"/> Top Performers</h2>
-          <p className="text-xs text-gray-500 mb-6">Sales managers ranked by active leads.</p>
+        <div className={`lg:col-span-2 ${theme.card} rounded-2xl p-6 flex flex-col`} style={theme.cardGlass}>
+          <h2 className={`text-lg font-bold mb-1 flex items-center gap-2 ${theme.text}`}>
+            <FaChartPie className="text-[#9E217B]"/> Top Performers
+          </h2>
+          <p className={`text-xs mb-6 ${theme.textFaint}`}>Sales managers ranked by active leads.</p>
           <div className="flex-1 min-h-[280px]">
-            {isLoading ? <div className="h-full flex items-center justify-center text-sm text-gray-500">Loading...</div>
-            : managerStats.length === 0 ? <div className="h-full flex items-center justify-center text-sm text-gray-500">No data</div>
+            {isLoading ? <div className={`h-full flex items-center justify-center text-sm ${theme.textMuted}`}>Loading...</div>
+            : managerStats.length === 0 ? <div className={`h-full flex items-center justify-center text-sm ${theme.textMuted}`}>No data</div>
             : (
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={managerStats} margin={{ top:10,right:10,left:-20,bottom:0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#2a2a2a" vertical={false}/>
-                  <XAxis dataKey="name" stroke="#888" fontSize={11} tickLine={false} axisLine={false}/>
-                  <YAxis stroke="#888" fontSize={11} tickLine={false} axisLine={false} allowDecimals={false}/>
-                  <RechartsTooltip cursor={{ fill:"#222" }} contentStyle={{ backgroundColor:"#1a1a1a",border:"1px solid #333",borderRadius:"8px",color:"#fff" }}/>
+                <BarChart data={managerStats} margin={{ top:10, right:10, left:-20, bottom:0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke={isDark ? "#2a2a2a" : "#E5E7EB"} vertical={false}/>
+                  <XAxis dataKey="name" stroke={theme.legendColor} fontSize={11} tickLine={false} axisLine={false}/>
+                  <YAxis stroke={theme.legendColor} fontSize={11} tickLine={false} axisLine={false} allowDecimals={false}/>
+                  <RechartsTooltip cursor={{ fill: isDark ? "#222" : "#F3F4F6" }} contentStyle={{ backgroundColor: theme.tooltipBg, border: theme.tooltipBorder, borderRadius: "8px", color: theme.tooltipColor }}/>
                   <Bar dataKey="activeLeads" radius={[4,4,0,0]} barSize={45}>
-                    {managerStats.map((_: any, i: number) => <Cell key={i} fill={i===0?"#d946ef":"#8b5cf6"}/>)}
+                    {managerStats.map((_: any, i: number) => <Cell key={i} fill={theme.chartColors[i % theme.chartColors.length]}/>)}
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
@@ -524,37 +677,52 @@ function DashboardOverview({ managers, allLeads, isLoading, user }: any) {
           </div>
         </div>
 
-        <div className="lg:col-span-1 bg-[#111111] border border-[#222] rounded-2xl p-6 shadow-sm flex flex-col">
-          <h2 className="text-lg font-bold text-white mb-1 flex items-center gap-2"><FaCalendarAlt className="text-orange-500"/> Site Visits</h2>
-          <p className="text-xs text-gray-500 mb-6">Upcoming visits by manager.</p>
-          <div className="flex-1 min-h-[280px]">
-            {isLoading ? <div className="h-full flex items-center justify-center text-sm text-gray-500">Loading...</div>
-            : pieData.length === 0 ? <div className="h-full flex flex-col items-center justify-center text-sm text-gray-500"><FaCalendarAlt className="text-3xl mb-3 opacity-20"/>No visits scheduled</div>
+        {/* Site Visits PIE */}
+        <div className={`lg:col-span-1 ${theme.card} rounded-2xl p-6 flex flex-col`} style={theme.cardGlass}>
+          <h2 className={`text-lg font-bold mb-1 flex items-center gap-2 ${theme.text}`}>
+            <FaCalendarAlt className="text-orange-500"/> Site Visits
+          </h2>
+          <p className={`text-xs mb-4 ${theme.textFaint}`}>Upcoming visits by manager.</p>
+          <div className="flex-1 min-h-[240px]">
+            {isLoading ? <div className={`h-full flex items-center justify-center text-sm ${theme.textMuted}`}>Loading...</div>
+            : pieData.length === 0 ? <div className={`h-full flex flex-col items-center justify-center text-sm ${theme.textMuted}`}><FaCalendarAlt className="text-3xl mb-3 opacity-20"/>No visits scheduled</div>
             : (
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie data={pieData} dataKey="siteVisits" nameKey="name" cx="50%" cy="50%" outerRadius={85}
-                    label={({ name, value }) => `${name} (${value})`} labelLine={true} style={{ fontSize:"11px",fill:"#ccc" }}>
-                    {pieData.map((_: any, i: number) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]}/>)}
-                  </Pie>
-                  <RechartsTooltip contentStyle={{ backgroundColor:"#1a1a1a",border:"1px solid #333",borderRadius:"8px",color:"#fff" }}/>
-                </PieChart>
-              </ResponsiveContainer>
+              <div className="flex flex-col h-full">
+                <ResponsiveContainer width="100%" height={180}>
+                  <PieChart>
+                    <Pie data={pieData} dataKey="siteVisits" nameKey="name" cx="50%" cy="50%" outerRadius={80} paddingAngle={3}>
+                      {pieData.map((_: any, i: number) => <Cell key={i} fill={VISIT_COLORS[i % VISIT_COLORS.length]}/>)}
+                    </Pie>
+                    <RechartsTooltip contentStyle={{ backgroundColor: theme.tooltipBg, border: theme.tooltipBorder, borderRadius: "8px", color: theme.tooltipColor }}/>
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="flex flex-col gap-1.5 mt-2 overflow-y-auto max-h-[100px]">
+                  {pieData.map((entry: any, i: number) => (
+                    <div key={entry.name} className="flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: VISIT_COLORS[i % VISIT_COLORS.length] }}/>
+                        <span className={`truncate max-w-[100px] ${theme.textMuted}`}>{entry.name}</span>
+                      </div>
+                      <span className={`font-bold ${theme.text}`}>{entry.siteVisits}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             )}
           </div>
         </div>
       </div>
 
-      {/* Team Performance Table header + dropdown */}
-      <div className="bg-[#111111] border border-[#222] rounded-2xl p-6 mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shadow-sm">
+      {/* Team Performance Table */}
+      <div className={`${theme.card} rounded-2xl p-6 mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4`} style={theme.cardGlass}>
         <div>
-          <h2 className="text-xl font-bold text-white flex items-center gap-2"><FaTable className="text-purple-500"/> Team Performance Table</h2>
-          <p className="text-sm text-gray-500 mt-1">Select a manager to view their real-time data.</p>
+          <h2 className={`text-xl font-bold flex items-center gap-2 ${theme.text}`}><FaTable className="text-[#9E217B]"/> Team Performance Table</h2>
+          <p className={`text-sm mt-1 ${theme.textMuted}`}>Select a manager to view their real-time data.</p>
         </div>
         <div className="w-full sm:w-72 relative">
-          <FaChevronLeft className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs z-10"/>
+          <FaChevronLeft className={`absolute left-3 top-1/2 -translate-y-1/2 text-xs z-10 ${theme.textFaint}`}/>
           <select value={selectedManagerName} onChange={e => setSelectedManagerName(e.target.value)}
-            className="w-full bg-[#1a1a1a] border border-[#333] text-white text-sm font-bold rounded-xl pl-9 pr-4 py-3 outline-none focus:border-purple-500 cursor-pointer shadow-sm appearance-none">
+            className={`w-full text-sm font-bold rounded-xl pl-9 pr-4 py-3 outline-none cursor-pointer appearance-none ${theme.select}`}>
             <option value="" disabled>-- Select Sales Manager --</option>
             {managers.map((m: any) => <option key={m.id||m._id||m.name} value={m.name}>{m.name}</option>)}
           </select>
@@ -562,7 +730,7 @@ function DashboardOverview({ managers, allLeads, isLoading, user }: any) {
       </div>
 
       {!selectedManagerName ? (
-        <div className="flex-1 flex flex-col items-center justify-center text-gray-600 border-2 border-dashed border-[#222] rounded-2xl min-h-[300px]">
+        <div className={`flex-1 flex flex-col items-center justify-center border-2 border-dashed rounded-2xl min-h-[300px] ${theme.textMuted} ${theme.tableBorder}`}>
           <FaTable className="text-4xl mb-4 opacity-20"/>
           <p>Select a manager to view their table.</p>
         </div>
@@ -570,69 +738,83 @@ function DashboardOverview({ managers, allLeads, isLoading, user }: any) {
         <div className="animate-fadeIn space-y-8">
           {/* Stat cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-[#111] border border-[#222] rounded-2xl p-5 shadow-sm"><p className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-1">Total Assigned</p><p className="text-3xl font-black text-white">{activeManagerLeads.length}</p></div>
-            <div className="bg-[#111] border border-[#222] rounded-2xl p-5 shadow-sm"><p className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-1">Site Visits</p><p className="text-3xl font-black text-orange-400">{visitCount}</p></div>
-            <div className="bg-[#111] border border-[#222] rounded-2xl p-5 shadow-sm"><p className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-1">Loans Active</p><p className="text-3xl font-black text-blue-400">{activeManagerLeads.filter((l:any)=>l.loanPlanned==="Yes").length}</p></div>
+            <div className={`${theme.innerBlock} rounded-2xl p-5`} style={theme.settingsBgGl}>
+              <p className={`text-xs font-bold uppercase tracking-wider mb-1 ${theme.textMuted}`}>Total Assigned</p>
+              <p className={`text-3xl font-black ${theme.text}`}>{activeManagerLeads.length}</p>
+            </div>
+            <div className={`${theme.innerBlock} rounded-2xl p-5`} style={theme.settingsBgGl}>
+              <p className={`text-xs font-bold uppercase tracking-wider mb-1 ${theme.textMuted}`}>Site Visits</p>
+              <p className="text-3xl font-black text-orange-500">{visitCount}</p>
+            </div>
+            <div className={`${theme.innerBlock} rounded-2xl p-5`} style={theme.settingsBgGl}>
+              <p className={`text-xs font-bold uppercase tracking-wider mb-1 ${theme.textMuted}`}>Loans Active</p>
+              <p className={`text-3xl font-black ${isDark ? "text-[#d946a8]" : "text-[#9E217B]"}`}>
+                {activeManagerLeads.filter((l: any) => l.loanPlanned === "Yes").length}
+              </p>
+            </div>
           </div>
 
-          {/* ── ANALYTICS CHARTS for selected manager ── */}
+          {/* Analytics Charts */}
           {activeManagerLeads.length > 0 && (
             <div>
               <div className="flex items-center gap-3 mb-4">
-                <FaChartPie className="text-purple-500"/>
-                <h3 className="text-white font-bold text-sm uppercase tracking-wider">Lead Analytics — {selectedManagerName}</h3>
-                <span className="text-xs text-gray-500 bg-[#222] px-2 py-0.5 rounded border border-[#333]">{activeManagerLeads.length} leads</span>
+                <FaChartPie className="text-[#9E217B]"/>
+                <h3 className={`font-bold text-sm uppercase tracking-wider ${theme.text}`}>Lead Analytics — {selectedManagerName}</h3>
+                <span className={`text-xs px-2 py-0.5 rounded border ${theme.settingsBg} ${theme.textMuted}`}>{activeManagerLeads.length} leads</span>
               </div>
-              <DashboardAnalytics leads={activeManagerLeads} />
+              <DashboardAnalytics leads={activeManagerLeads} theme={theme} isDark={isDark} />
             </div>
           )}
 
           {/* Leads table */}
-          <div className="bg-[#111111] rounded-2xl border border-[#222] shadow-sm overflow-hidden">
-            <div className="p-5 border-b border-[#222] flex justify-between items-center bg-[#151515]">
-              <h3 className="font-bold text-white flex items-center gap-2"><FaUsers className="text-purple-500"/> Leads Database ({selectedManagerName})</h3>
-              <span className="text-xs text-gray-500 bg-[#222] px-3 py-1 rounded-full border border-[#333]">Live Sync Active</span>
+          <div className={`${theme.tableWrap} rounded-2xl overflow-hidden`} style={theme.tableGlass}>
+            <div className={`p-5 flex justify-between items-center ${theme.tableHead}`}>
+              <h3 className={`font-bold flex items-center gap-2 ${theme.text}`}><FaUsers className="text-[#9E217B]"/> Leads Database ({selectedManagerName})</h3>
+              <span className={`text-xs px-3 py-1 rounded-full ${theme.btnClosingBadge}`}>Live Sync Active</span>
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm text-gray-400">
-                <thead className="text-xs text-gray-500 uppercase bg-[#1a1a1a]">
+              <table className="w-full text-left text-sm">
+                <thead className={`text-xs uppercase ${theme.tableHead} ${theme.textHeader}`}>
                   <tr>
-                    <th className="px-6 py-4">LEAD NO.</th><th className="px-4 py-4">NAME</th>
-                    <th className="px-4 py-4">PROP. TYPE</th><th className="px-4 py-4">BUDGET</th>
-                    <th className="px-4 py-4">USE TYPE</th><th className="px-4 py-4">LOAN?</th>
-                    <th className="px-4 py-4">LOAN STATUS</th><th className="px-4 py-4">AMT REQ / APP</th>
-                    <th className="px-6 py-4">SITE VISIT</th>
+                    {["LEAD NO.","NAME","PROP. TYPE","BUDGET","USE TYPE","LOAN?","LOAN STATUS","AMT REQ / APP","SITE VISIT"].map(h => (
+                      <th key={h} className="px-4 py-4">{h}</th>
+                    ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#2a2a2a]">
-                  {isLoading ? <tr><td colSpan={9} className="text-center py-8">Syncing...</td></tr>
-                  : activeManagerLeads.length === 0 ? <tr><td colSpan={9} className="text-center py-8">No leads for {selectedManagerName}.</td></tr>
-                  : activeManagerLeads.map((lead: any) => (
-                    <tr key={lead.id} className="hover:bg-[#222] transition-colors">
-                      <td className="px-6 py-4 font-bold text-purple-400">#{lead.id}</td>
-                      <td className="px-4 py-4 text-white font-medium">{lead.name}</td>
-                      <td className="px-4 py-4 text-gray-200">{lead.propType || "Pending"}</td>
-                      <td className="px-4 py-4 text-green-400 font-semibold">{lead.salesBudget}</td>
-                      <td className="px-4 py-4">{lead.useType || "Pending"}</td>
-                      <td className="px-4 py-4">{lead.loanPlanned || "Pending"}</td>
-                      <td className="px-4 py-4">
-                        {lead.loanStatus && lead.loanStatus !== "N/A"
-                          ? <LoanStatusBadge status={lead.loanStatus}/>
-                          : <span className="text-xs italic text-gray-600">N/A</span>}
-                      </td>
-                      <td className="px-4 py-4">
-                        {lead.loanAmtReq && lead.loanAmtReq !== "N/A"
-                          ? <div className="flex flex-col gap-0.5">
-                              <span className="text-[11px] text-orange-400 font-medium">Req: {lead.loanAmtReq}</span>
-                              <span className="text-[11px] text-green-400 font-medium">App: {lead.loanAmtApp !== "N/A" ? lead.loanAmtApp : "—"}</span>
-                            </div>
-                          : <span className="text-xs italic text-gray-600">N/A</span>}
-                      </td>
-                      <td className="px-6 py-4">
-                        {lead.mongoVisitDate ? <span className="text-orange-400 font-medium">{formatDate(lead.mongoVisitDate).split(",")[0]}</span> : <span className="text-xs italic text-gray-600">Pending</span>}
-                      </td>
-                    </tr>
-                  ))}
+                <tbody className={`divide-y ${theme.tableDivide}`}>
+                  {isLoading
+                    ? <tr><td colSpan={9} className={`text-center py-8 ${theme.textMuted}`}>Syncing...</td></tr>
+                    : activeManagerLeads.length === 0
+                      ? <tr><td colSpan={9} className={`text-center py-8 ${theme.textMuted}`}>No leads for {selectedManagerName}.</td></tr>
+                      : activeManagerLeads.map((lead: any) => (
+                          <tr key={lead.id} className={`transition-colors ${theme.tableRow}`}>
+                            <td className={`px-6 py-4 font-bold ${isDark ? "text-[#d946a8]" : "text-[#9E217B]"}`}>#{lead.id}</td>
+                            <td className={`px-4 py-4 font-medium ${theme.text}`}>{lead.name}</td>
+                            <td className={`px-4 py-4 ${theme.textMuted}`}>{lead.propType || "Pending"}</td>
+                            <td className={`px-4 py-4 font-semibold ${isDark ? "text-green-400" : "text-emerald-600"}`}>{lead.salesBudget}</td>
+                            <td className={`px-4 py-4 ${theme.textMuted}`}>{lead.useType || "Pending"}</td>
+                            <td className={`px-4 py-4 ${theme.textMuted}`}>{lead.loanPlanned || "Pending"}</td>
+                            <td className="px-4 py-4">
+                              {lead.loanStatus && lead.loanStatus !== "N/A"
+                                ? <LoanStatusBadge status={lead.loanStatus} isDark={isDark}/>
+                                : <span className={`text-xs italic ${theme.textFaint}`}>N/A</span>}
+                            </td>
+                            <td className="px-4 py-4">
+                              {lead.loanAmtReq && lead.loanAmtReq !== "N/A"
+                                ? <div className="flex flex-col gap-0.5">
+                                    <span className="text-[11px] text-orange-500 font-medium">Req: {lead.loanAmtReq}</span>
+                                    <span className={`text-[11px] font-medium ${isDark ? "text-green-400" : "text-emerald-600"}`}>App: {lead.loanAmtApp !== "N/A" ? lead.loanAmtApp : "—"}</span>
+                                  </div>
+                                : <span className={`text-xs italic ${theme.textFaint}`}>N/A</span>}
+                            </td>
+                            <td className="px-6 py-4">
+                              {lead.mongoVisitDate
+                                ? <span className="text-orange-500 font-medium">{formatDate(lead.mongoVisitDate).split(",")[0]}</span>
+                                : <span className={`text-xs italic ${theme.textFaint}`}>Pending</span>}
+                            </td>
+                          </tr>
+                        ))
+                  }
                 </tbody>
               </table>
             </div>
@@ -644,23 +826,22 @@ function DashboardOverview({ managers, allLeads, isLoading, user }: any) {
 }
 
 // ============================================================================
-// ADMIN SALES VIEW — full rich view with manager sidebar + rich lead cards/detail
+// ADMIN SALES VIEW
 // ============================================================================
-function AdminSalesView({ managers, allLeads, followUps, isLoading, adminUser, refetch }: any) {
-  const [selectedManager, setSelectedManager] = useState<any>(null);
-  const [searchManager, setSearchManager]     = useState("");
-
-  const [subView, setSubView]     = useState<"cards"|"detail">("cards");
-  const [selectedLead, setSelectedLead] = useState<any>(null);
-  const [detailTab, setDetailTab]   = useState<"personal"|"loan">("personal");
-  const [showSalesForm, setShowSalesForm] = useState(false);
-  const [showLoanForm, setShowLoanForm]   = useState(false);
-  const [salesForm, setSalesForm]   = useState({ propertyType:"",location:"",budget:"",useType:"",purchaseDate:"",loanPlanned:"",siteVisit:"",leadStatus:"" });
-  const [loanForm, setLoanForm]     = useState({ loanRequired:"",status:"",bank:"",amountReq:"",amountApp:"",cibil:"",agent:"",agentContact:"",empType:"",income:"",emi:"",docPan:"Pending",docAadhaar:"Pending",docSalary:"Pending",docBank:"Pending",docProperty:"Pending",notes:"" });
-  const [customNote, setCustomNote] = useState("");
-  const followUpEndRef = useRef<HTMLDivElement>(null);
-  const [toastMsg, setToastMsg]     = useState<{title:string;icon:any;color:string}|null>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+function AdminSalesView({ managers, allLeads, followUps, isLoading, adminUser, refetch, theme, isDark }: any) {
+  const [selectedManager, setSelectedManager]     = useState<any>(null);
+  const [searchManager, setSearchManager]         = useState("");
+  const [subView, setSubView]                     = useState<"cards"|"detail">("cards");
+  const [selectedLead, setSelectedLead]           = useState<any>(null);
+  const [detailTab, setDetailTab]                 = useState<"personal"|"loan">("personal");
+  const [showSalesForm, setShowSalesForm]         = useState(false);
+  const [showLoanForm, setShowLoanForm]           = useState(false);
+  const [salesForm, setSalesForm]                 = useState({ propertyType:"",location:"",budget:"",useType:"",purchaseDate:"",loanPlanned:"",siteVisit:"",leadStatus:"" });
+  const [loanForm, setLoanForm]                   = useState({ loanRequired:"",status:"",bank:"",amountReq:"",amountApp:"",cibil:"",agent:"",agentContact:"",empType:"",income:"",emi:"",docPan:"Pending",docAadhaar:"Pending",docSalary:"Pending",docBank:"Pending",docProperty:"Pending",notes:"" });
+  const [customNote, setCustomNote]               = useState("");
+  const followUpEndRef                            = useRef<HTMLDivElement>(null);
+  const [toastMsg, setToastMsg]                   = useState<{title:string;icon:any;color:string}|null>(null);
+  const inputRef                                  = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (selectedLead) {
@@ -670,67 +851,101 @@ function AdminSalesView({ managers, allLeads, followUps, isLoading, adminUser, r
   }, [allLeads]);
 
   useEffect(() => {
-    if (subView === "detail") followUpEndRef.current?.scrollIntoView({ behavior:"smooth" });
+    if (subView === "detail") followUpEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [followUps, subView, selectedLead, detailTab]);
 
-  const filteredManagers   = managers.filter((m: any) => m.name?.toLowerCase().includes(searchManager.toLowerCase()));
-  const activeManagerLeads = selectedManager ? allLeads.filter((l: any) => l.assigned_to === selectedManager.name) : [];
+  const filteredManagers     = managers.filter((m: any) => m.name?.toLowerCase().includes(searchManager.toLowerCase()));
+  const activeManagerLeads   = selectedManager ? allLeads.filter((l: any) => l.assigned_to === selectedManager.name) : [];
   const currentLeadFollowUps = followUps.filter((f: any) => String(f.leadId) === String(selectedLead?.id));
 
   const getLatestLoanDetails = () => {
     if (!selectedLead) return null;
-    let ex: Record<string,any> = { loanRequired:selectedLead.loanPlanned||"N/A",status:"Pending",bankName:"N/A",amountReq:"N/A",amountApp:"N/A",cibil:"N/A",agent:"N/A",agentContact:"N/A",empType:"N/A",income:"N/A",emi:"N/A",docPan:"Pending",docAadhaar:"Pending",docSalary:"Pending",docBank:"Pending",docProperty:"Pending",notes:"N/A" };
+    let ex: Record<string,any> = {
+      loanRequired: selectedLead.loanPlanned || "N/A",
+      status:"Pending", bankName:"N/A", amountReq:"N/A", amountApp:"N/A",
+      cibil:"N/A", agent:"N/A", agentContact:"N/A", empType:"N/A",
+      income:"N/A", emi:"N/A", docPan:"Pending", docAadhaar:"Pending",
+      docSalary:"Pending", docBank:"Pending", docProperty:"Pending", notes:"N/A"
+    };
     const lu = currentLeadFollowUps.filter((f: any) => f.message?.includes("🏦 Loan Update:"));
     if (lu.length > 0) {
-      const msg = lu[lu.length-1].message;
+      const msg = lu[lu.length - 1].message;
       const g = (l: string) => { const m = msg.match(new RegExp(`• ${l}: (.*)`)); return m ? m[1].trim() : "N/A"; };
-      ex = { loanRequired:g("Loan Required"),status:g("Status"),bankName:g("Bank Name"),amountReq:g("Amount Requested"),amountApp:g("Amount Approved"),cibil:g("CIBIL Score"),agent:g("Agent Name"),agentContact:g("Agent Contact"),empType:g("Employment Type"),income:g("Monthly Income"),emi:g("Existing EMIs"),docPan:g("PAN Card"),docAadhaar:g("Aadhaar Card"),docSalary:g("Salary Slips"),docBank:g("Bank Statements"),docProperty:g("Property Docs"),notes:g("Notes") };
+      ex = {
+        loanRequired:  g("Loan Required"),  status:       g("Status"),
+        bankName:      g("Bank Name"),       amountReq:    g("Amount Requested"),
+        amountApp:     g("Amount Approved"), cibil:        g("CIBIL Score"),
+        agent:         g("Agent Name"),      agentContact: g("Agent Contact"),
+        empType:       g("Employment Type"), income:       g("Monthly Income"),
+        emi:           g("Existing EMIs"),   docPan:       g("PAN Card"),
+        docAadhaar:    g("Aadhaar Card"),    docSalary:    g("Salary Slips"),
+        docBank:       g("Bank Statements"), docProperty:  g("Property Docs"),
+        notes:         g("Notes"),
+      };
     }
     return ex;
   };
 
   const getLoanStatusColor = (s: string) => {
-    const sl = (s||"").toLowerCase();
-    if (sl==="approved") return "bg-green-900/20 text-green-400 border-green-500/30";
-    if (sl==="rejected") return "bg-red-900/20 text-red-400 border-red-500/30";
-    if (sl==="in progress") return "bg-yellow-900/20 text-yellow-400 border-yellow-500/30";
-    return "bg-gray-900/20 text-gray-400 border-gray-500/30";
+    const sl = (s || "").toLowerCase();
+    if (sl === "approved")    return isDark ? "bg-green-900/20 text-green-400 border-green-500/30"   : "bg-green-50 text-green-700 border-green-300";
+    if (sl === "rejected")    return isDark ? "bg-red-900/20 text-red-400 border-red-500/30"         : "bg-red-50 text-red-700 border-red-300";
+    if (sl === "in progress") return isDark ? "bg-yellow-900/20 text-yellow-400 border-yellow-500/30" : "bg-yellow-50 text-yellow-700 border-yellow-300";
+    return isDark ? "bg-gray-900/20 text-gray-400 border-gray-500/30" : "bg-gray-50 text-gray-700 border-gray-300";
   };
 
   const prefillSalesForm = () => {
     if (!selectedLead) return;
     const sf = currentLeadFollowUps.filter((f: any) => f.message?.includes("Detailed Salesform Submitted"));
     if (sf.length === 0) return;
-    const msg = sf[sf.length-1].message;
-    const g = (label: string) => { const m = msg.match(new RegExp(`• ${label}: (.*)`)); return m&&m[1].trim()!=="N/A"?m[1].trim():""; };
-    setSalesForm({ propertyType:g("Property Type"),location:g("Location"),budget:g("Budget"),useType:g("Use Type"),purchaseDate:g("Planning to Purchase"),loanPlanned:g("Loan Planned"),leadStatus:g("Lead Status"),siteVisit:"" });
+    const msg = sf[sf.length - 1].message;
+    const g = (label: string) => { const m = msg.match(new RegExp(`• ${label}: (.*)`)); return m && m[1].trim() !== "N/A" ? m[1].trim() : ""; };
+    setSalesForm({ propertyType:g("Property Type"), location:g("Location"), budget:g("Budget"), useType:g("Use Type"), purchaseDate:g("Planning to Purchase"), loanPlanned:g("Loan Planned"), leadStatus:g("Lead Status"), siteVisit:"" });
   };
 
   const prefillLoanForm = () => {
     const cur = getLatestLoanDetails();
     if (!cur) return;
-    setLoanForm({ loanRequired:cur.loanRequired!=="N/A"?cur.loanRequired:"",status:cur.status!=="Pending"?cur.status:"",bank:cur.bankName!=="N/A"?cur.bankName:"",amountReq:cur.amountReq!=="N/A"?cur.amountReq:"",amountApp:cur.amountApp!=="N/A"?cur.amountApp:"",cibil:cur.cibil!=="N/A"?cur.cibil:"",agent:cur.agent!=="N/A"?cur.agent:"",agentContact:cur.agentContact!=="N/A"?cur.agentContact:"",empType:cur.empType!=="N/A"?cur.empType:"",income:cur.income!=="N/A"?cur.income:"",emi:cur.emi!=="N/A"?cur.emi:"",docPan:cur.docPan!=="N/A"?cur.docPan:"Pending",docAadhaar:cur.docAadhaar!=="N/A"?cur.docAadhaar:"Pending",docSalary:cur.docSalary!=="N/A"?cur.docSalary:"Pending",docBank:cur.docBank!=="N/A"?cur.docBank:"Pending",docProperty:cur.docProperty!=="N/A"?cur.docProperty:"Pending",notes:cur.notes!=="N/A"?cur.notes:"" });
+    setLoanForm({
+      loanRequired: cur.loanRequired !== "N/A" ? cur.loanRequired : "",
+      status:       cur.status !== "Pending"   ? cur.status : "",
+      bank:         cur.bankName !== "N/A"     ? cur.bankName : "",
+      amountReq:    cur.amountReq !== "N/A"    ? cur.amountReq : "",
+      amountApp:    cur.amountApp !== "N/A"    ? cur.amountApp : "",
+      cibil:        cur.cibil !== "N/A"        ? cur.cibil : "",
+      agent:        cur.agent !== "N/A"        ? cur.agent : "",
+      agentContact: cur.agentContact !== "N/A" ? cur.agentContact : "",
+      empType:      cur.empType !== "N/A"      ? cur.empType : "",
+      income:       cur.income !== "N/A"       ? cur.income : "",
+      emi:          cur.emi !== "N/A"          ? cur.emi : "",
+      docPan:       cur.docPan !== "N/A"       ? cur.docPan : "Pending",
+      docAadhaar:   cur.docAadhaar !== "N/A"   ? cur.docAadhaar : "Pending",
+      docSalary:    cur.docSalary !== "N/A"    ? cur.docSalary : "Pending",
+      docBank:      cur.docBank !== "N/A"      ? cur.docBank : "Pending",
+      docProperty:  cur.docProperty !== "N/A"  ? cur.docProperty : "Pending",
+      notes:        cur.notes !== "N/A"        ? cur.notes : "",
+    });
   };
 
   const handleSendCustomNote = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!customNote.trim() || !selectedLead) return;
-    const nm = { leadId:String(selectedLead.id),salesManagerName:adminUser.name,createdBy:"admin",message:customNote,siteVisitDate:null,createdAt:new Date().toISOString() };
+    const nm = { leadId:String(selectedLead.id), salesManagerName:adminUser.name, createdBy:"admin", message:customNote, siteVisitDate:null, createdAt:new Date().toISOString() };
     setCustomNote("");
-    try { await fetch("/api/followups",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(nm)}); refetch(); } catch {}
+    try { await fetch("/api/followups", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(nm) }); refetch(); } catch {}
   };
 
   const handleSalesFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!selectedLead) return;
-    const msg = "📝 Detailed Salesform Submitted:\n• Property Type: "+(salesForm.propertyType||"N/A")+"\n• Location: "+(salesForm.location||"N/A")+"\n• Budget: "+(salesForm.budget||"N/A")+"\n• Use Type: "+(salesForm.useType||"N/A")+"\n• Planning to Purchase: "+(salesForm.purchaseDate||"N/A")+"\n• Loan Planned: "+(salesForm.loanPlanned||"N/A")+"\n• Lead Status: "+(salesForm.leadStatus||"N/A")+"\n• Site Visit Requested: "+(salesForm.siteVisit?formatDate(salesForm.siteVisit):"No");
-    const nm = { leadId:String(selectedLead.id),salesManagerName:adminUser.name,createdBy:"admin",message:msg,siteVisitDate:salesForm.siteVisit||null,createdAt:new Date().toISOString() };
-    const ns = salesForm.siteVisit?"Visit Scheduled":selectedLead.status;
+    const msg = `📝 Detailed Salesform Submitted:\n• Property Type: ${salesForm.propertyType||"N/A"}\n• Location: ${salesForm.location||"N/A"}\n• Budget: ${salesForm.budget||"N/A"}\n• Use Type: ${salesForm.useType||"N/A"}\n• Planning to Purchase: ${salesForm.purchaseDate||"N/A"}\n• Loan Planned: ${salesForm.loanPlanned||"N/A"}\n• Lead Status: ${salesForm.leadStatus||"N/A"}\n• Site Visit Requested: ${salesForm.siteVisit ? formatDate(salesForm.siteVisit) : "No"}`;
+    const nm = { leadId:String(selectedLead.id), salesManagerName:adminUser.name, createdBy:"admin", message:msg, siteVisitDate:salesForm.siteVisit||null, createdAt:new Date().toISOString() };
+    const ns = salesForm.siteVisit ? "Visit Scheduled" : selectedLead.status;
     setShowSalesForm(false);
-    setSalesForm({propertyType:"",location:"",budget:"",useType:"",purchaseDate:"",loanPlanned:"",siteVisit:"",leadStatus:""});
+    setSalesForm({ propertyType:"",location:"",budget:"",useType:"",purchaseDate:"",loanPlanned:"",siteVisit:"",leadStatus:"" });
     try {
-      await fetch("/api/followups",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(nm)});
-      await fetch(`/api/walkin_enquiries/${selectedLead.id}`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:selectedLead.name,status:ns})});
+      await fetch("/api/followups", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(nm) });
+      await fetch(`/api/walkin_enquiries/${selectedLead.id}`, { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ name:selectedLead.name, status:ns }) });
       refetch();
     } catch {}
   };
@@ -738,15 +953,15 @@ function AdminSalesView({ managers, allLeads, followUps, isLoading, adminUser, r
   const handleLoanFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!selectedLead) return;
-    const msg = "🏦 Loan Update:\n• Loan Required: "+(loanForm.loanRequired||"N/A")+"\n• Status: "+(loanForm.status||"N/A")+"\n• Bank Name: "+(loanForm.bank||"N/A")+"\n• Amount Requested: "+(loanForm.amountReq||"N/A")+"\n• Amount Approved: "+(loanForm.amountApp||"N/A")+"\n• CIBIL Score: "+(loanForm.cibil||"N/A")+"\n• Agent Name: "+(loanForm.agent||"N/A")+"\n• Agent Contact: "+(loanForm.agentContact||"N/A")+"\n• Employment Type: "+(loanForm.empType||"N/A")+"\n• Monthly Income: "+(loanForm.income||"N/A")+"\n• Existing EMIs: "+(loanForm.emi||"N/A")+"\n• PAN Card: "+(loanForm.docPan||"Pending")+"\n• Aadhaar Card: "+(loanForm.docAadhaar||"Pending")+"\n• Salary Slips: "+(loanForm.docSalary||"Pending")+"\n• Bank Statements: "+(loanForm.docBank||"Pending")+"\n• Property Docs: "+(loanForm.docProperty||"Pending")+"\n• Notes: "+(loanForm.notes||"N/A");
-    const nm = { leadId:String(selectedLead.id),salesManagerName:adminUser.name,createdBy:"admin",message:msg,siteVisitDate:null,createdAt:new Date().toISOString() };
-    const dbp = { leadId:String(selectedLead.id),salesManagerName:adminUser.name,...loanForm };
+    const msg = `🏦 Loan Update:\n• Loan Required: ${loanForm.loanRequired||"N/A"}\n• Status: ${loanForm.status||"N/A"}\n• Bank Name: ${loanForm.bank||"N/A"}\n• Amount Requested: ${loanForm.amountReq||"N/A"}\n• Amount Approved: ${loanForm.amountApp||"N/A"}\n• CIBIL Score: ${loanForm.cibil||"N/A"}\n• Agent Name: ${loanForm.agent||"N/A"}\n• Agent Contact: ${loanForm.agentContact||"N/A"}\n• Employment Type: ${loanForm.empType||"N/A"}\n• Monthly Income: ${loanForm.income||"N/A"}\n• Existing EMIs: ${loanForm.emi||"N/A"}\n• PAN Card: ${loanForm.docPan||"Pending"}\n• Aadhaar Card: ${loanForm.docAadhaar||"Pending"}\n• Salary Slips: ${loanForm.docSalary||"Pending"}\n• Bank Statements: ${loanForm.docBank||"Pending"}\n• Property Docs: ${loanForm.docProperty||"Pending"}\n• Notes: ${loanForm.notes||"N/A"}`;
+    const nm  = { leadId:String(selectedLead.id), salesManagerName:adminUser.name, createdBy:"admin", message:msg, siteVisitDate:null, createdAt:new Date().toISOString() };
+    const dbp = { leadId:String(selectedLead.id), salesManagerName:adminUser.name, ...loanForm };
     setShowLoanForm(false);
-    setToastMsg({title:`Loan Data Synced for ${selectedLead.name}`,icon:<FaCheckCircle/>,color:"blue"});
-    setTimeout(()=>setToastMsg(null),3000);
+    setToastMsg({ title:`Loan Data Synced for ${selectedLead.name}`, icon:<FaCheckCircle/>, color:"blue" });
+    setTimeout(() => setToastMsg(null), 3000);
     try {
-      await fetch("/api/followups",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(nm)});
-      await fetch("/api/loan/update",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(dbp)}).catch(()=>{});
+      await fetch("/api/followups", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(nm) });
+      await fetch("/api/loan/update", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(dbp) }).catch(() => {});
       refetch();
     } catch {}
   };
@@ -754,42 +969,44 @@ function AdminSalesView({ managers, allLeads, followUps, isLoading, adminUser, r
   return (
     <div className="flex h-full">
       {toastMsg && (
-        <div className={`fixed top-6 left-1/2 transform -translate-x-1/2 z-[100] bg-${toastMsg.color}-600 border border-${toastMsg.color}-400 text-white px-6 py-3 rounded-xl shadow-lg flex items-center gap-4 animate-fadeIn`}>
+        <div className={`fixed top-6 left-1/2 transform -translate-x-1/2 z-[100] px-6 py-3 rounded-xl shadow-lg flex items-center gap-4 animate-fadeIn ${toastMsg.color === "green" ? "bg-green-600 border-green-400 text-white" : "bg-[#9E217B] border-[#b8268f] text-white"}`}>
           <div className="text-lg">{toastMsg.icon}</div>
           <span className="text-sm font-bold">{toastMsg.title}</span>
         </div>
       )}
 
-      {/* ── MANAGER SIDEBAR ── */}
-      <div className="w-72 border-r border-[#222] bg-[#111111] flex flex-col h-full flex-shrink-0 z-20 shadow-xl">
-        <div className="p-5 border-b border-[#222]">
+      {/* Manager Sidebar */}
+      <div className={`w-72 border-r flex flex-col h-full flex-shrink-0 z-20 shadow-xl ${theme.innerBlock}`}>
+        <div className={`p-5 border-b ${theme.tableBorder}`}>
           <div className="relative">
-            <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs"/>
-            <input type="text" placeholder="Search Managers..." value={searchManager} onChange={e=>setSearchManager(e.target.value)}
-              className="w-full bg-[#1a1a1a] border border-[#333] rounded-lg pl-9 pr-4 py-2 text-sm text-white focus:border-purple-500 outline-none transition-colors"/>
+            <FaSearch className={`absolute left-3 top-1/2 -translate-y-1/2 text-xs ${theme.textFaint}`}/>
+            <input type="text" placeholder="Search Managers..." value={searchManager} onChange={e => setSearchManager(e.target.value)}
+              className={`w-full rounded-lg pl-9 pr-4 py-2 text-sm outline-none transition-colors ${theme.inputInner} ${theme.text} ${theme.inputFocus}`}/>
           </div>
         </div>
-        <div className="flex-1 overflow-y-auto custom-scrollbar">
-          {isLoading ? <div className="p-8 text-center text-gray-500 text-sm">Loading managers...</div>
-          : filteredManagers.length === 0 ? <div className="p-8 text-center text-gray-500 text-sm">No managers found.</div>
+        <div className={`flex-1 overflow-y-auto ${theme.scroll}`}>
+          {isLoading ? <div className={`p-8 text-center text-sm ${theme.textMuted}`}>Loading managers...</div>
+          : filteredManagers.length === 0 ? <div className={`p-8 text-center text-sm ${theme.textMuted}`}>No managers found.</div>
           : filteredManagers.map((manager: any) => {
             const isSelected = selectedManager?.id === manager.id || selectedManager?.name === manager.name;
             const count = allLeads.filter((l: any) => l.assigned_to === manager.name).length;
             return (
               <div key={manager.id||manager._id||manager.name}
                 onClick={() => { setSelectedManager(manager); setSubView("cards"); setSelectedLead(null); }}
-                className={`p-4 flex items-center gap-4 cursor-pointer transition-all border-b border-[#1a1a1a]
-                  ${isSelected ? "bg-[#1a1a1a] border-l-4 border-l-purple-500" : "hover:bg-[#151515] border-l-4 border-l-transparent"}`}
+                className={`p-4 flex items-center gap-4 cursor-pointer transition-all border-b ${theme.tableBorder}
+                  ${isSelected
+                    ? isDark ? "border-l-4 border-l-[#9E217B] bg-[#9E217B]/10" : "border-l-4 border-l-[#9E217B] bg-pink-50"
+                    : "hover:opacity-80 border-l-4 border-l-transparent"}`}
               >
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-white shadow-sm flex-shrink-0 ${isSelected ? "bg-purple-600" : "bg-[#333] text-gray-400"}`}>
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-white shadow-sm flex-shrink-0 ${isSelected ? "bg-[#9E217B]" : isDark ? "bg-[#333] text-gray-400" : "bg-gray-400"}`}>
                   {manager.name?.charAt(0).toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex justify-between items-center mb-1">
-                    <h3 className="font-bold text-gray-200 truncate text-sm">{manager.name}</h3>
-                    <span className="text-[10px] text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded-full font-bold">{count} leads</span>
+                    <h3 className={`font-bold truncate text-sm ${theme.text}`}>{manager.name}</h3>
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${isDark ? "text-[#d946a8] bg-[#9E217B]/10" : "text-[#9E217B] bg-pink-100"}`}>{count} leads</span>
                   </div>
-                  <p className="text-xs text-gray-500 truncate capitalize">{manager.role?.replace("_"," ")}</p>
+                  <p className={`text-xs truncate capitalize ${theme.textFaint}`}>{manager.role?.replace("_", " ")}</p>
                 </div>
               </div>
             );
@@ -797,44 +1014,43 @@ function AdminSalesView({ managers, allLeads, followUps, isLoading, adminUser, r
         </div>
       </div>
 
-      {/* ── RIGHT PANEL ── */}
-      <div className="flex-1 flex flex-col h-full bg-[#0a0a0a] overflow-hidden">
+      {/* Right Panel */}
+      <div className="flex-1 flex flex-col h-full overflow-hidden">
         {!selectedManager ? (
-          <div className="h-full flex flex-col items-center justify-center text-gray-600">
+          <div className={`h-full flex flex-col items-center justify-center ${theme.textMuted}`}>
             <FaIdCard className="text-4xl mb-4 opacity-20"/>
             <p>Select a sales manager from the left sidebar.</p>
           </div>
         ) : (
           <div className="flex-1 flex flex-col h-full overflow-hidden">
-
-            {/* Header */}
-            <div className="p-5 border-b border-[#222] bg-[#111111] flex justify-between items-center shadow-sm z-10 flex-shrink-0 gap-4">
+            {/* Sub-header */}
+            <div className={`p-5 border-b flex justify-between items-center shadow-sm z-10 flex-shrink-0 gap-4 ${theme.header}`} style={theme.headerGlass}>
               <div>
-                <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                  <FaUsers className="text-purple-500"/> {selectedManager.name}'s Leads
+                <h2 className={`text-lg font-bold flex items-center gap-2 ${theme.text}`}>
+                  <FaUsers className={isDark ? "text-[#d946a8]" : "text-[#9E217B]"}/> {selectedManager.name}'s Leads
                 </h2>
-                <p className="text-xs text-gray-500 mt-1">{activeManagerLeads.length} total leads · Live sync active</p>
+                <p className={`text-xs mt-1 ${theme.textFaint}`}>{activeManagerLeads.length} total leads · Live sync active</p>
               </div>
               {subView === "cards" && (
-                <div className="flex gap-2 text-xs text-gray-500">
-                  <span className="bg-green-500/10 border border-green-500/30 text-green-400 px-3 py-1 rounded-full">
-                    {activeManagerLeads.filter((l: any)=>l.leadInterestStatus==="Interested").length} Interested
+                <div className={`flex gap-2 text-xs ${theme.textFaint}`}>
+                  <span className={`px-3 py-1 rounded-full border ${isDark ? "bg-green-500/10 border-green-500/30 text-green-400" : "bg-green-50 border-green-200 text-green-600"}`}>
+                    {activeManagerLeads.filter((l: any) => l.leadInterestStatus === "Interested").length} Interested
                   </span>
-                  <span className="bg-blue-500/10 border border-blue-500/30 text-blue-400 px-3 py-1 rounded-full">
-                    {activeManagerLeads.filter((l: any)=>l.loanPlanned==="Yes").length} Loans
+                  <span className={`px-3 py-1 rounded-full border ${isDark ? "bg-[#9E217B]/10 border-[#9E217B]/30 text-[#d946a8]" : "bg-pink-50 border-pink-200 text-[#9E217B]"}`}>
+                    {activeManagerLeads.filter((l: any) => l.loanPlanned === "Yes").length} Loans
                   </span>
-                  <span className="bg-orange-500/10 border border-orange-500/30 text-orange-400 px-3 py-1 rounded-full">
-                    {activeManagerLeads.filter((l: any)=>l.mongoVisitDate).length} Visits
+                  <span className={`px-3 py-1 rounded-full border ${isDark ? "bg-orange-500/10 border-orange-500/30 text-orange-400" : "bg-orange-50 border-orange-200 text-orange-600"}`}>
+                    {activeManagerLeads.filter((l: any) => l.mongoVisitDate).length} Visits
                   </span>
                 </div>
               )}
             </div>
 
-            {/* ── CARDS VIEW ── */}
+            {/* Cards view */}
             {subView === "cards" && (
-              <div className="flex-1 overflow-y-auto custom-scrollbar p-6">
+              <div className={`flex-1 overflow-y-auto p-6 ${theme.scroll}`}>
                 {activeManagerLeads.length === 0 ? (
-                  <p className="text-gray-500 text-sm">No leads assigned yet.</p>
+                  <p className={`text-sm ${theme.textMuted}`}>No leads assigned yet.</p>
                 ) : (
                   <div className="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-6">
                     {activeManagerLeads.map((lead: any) => {
@@ -842,48 +1058,52 @@ function AdminSalesView({ managers, allLeads, followUps, isLoading, adminUser, r
                       const loanSt   = lead.loanStatus && lead.loanStatus !== "N/A" ? lead.loanStatus : null;
                       return (
                         <div key={lead.id}
-                          className="rounded-2xl p-6 border shadow-sm transition-all group flex flex-col justify-between cursor-pointer bg-[#1a1a1a] border-[#2a2a2a] hover:border-purple-500/50 hover:bg-[#1e1e1e]"
+                          className={`rounded-2xl p-6 transition-all group flex flex-col justify-between cursor-pointer ${theme.card}`}
+                          style={theme.cardGlass}
                           onClick={() => { setSelectedLead(lead); setSubView("detail"); }}
                         >
                           <div>
-                            <div className="flex justify-between items-start mb-5 pb-4 border-b border-[#2a2a2a]">
-                              <h3 className="text-xl font-bold transition-colors line-clamp-1 pr-2 text-white group-hover:text-purple-400">
-                                <span className="mr-2 text-purple-500">#{lead.id}</span>{lead.name}
+                            <div className={`flex justify-between items-start mb-5 pb-4 border-b ${theme.tableBorder}`}>
+                              <h3 className={`text-xl font-bold transition-colors line-clamp-1 pr-2 group-hover:text-[#9E217B] ${theme.text}`}>
+                                <span className={`mr-2 ${isDark ? "text-[#d946a8]" : "text-[#9E217B]"}`}>#{lead.id}</span>{lead.name}
                               </h3>
                               {interest
-                                ? <InterestBadge status={interest}/>
-                                : <span className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border border-blue-500/30 text-blue-400 bg-blue-500/10 flex-shrink-0">{lead.status||"ROUTED"}</span>
-                              }
+                                ? <InterestBadge status={interest} isDark={isDark}/>
+                                : <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border flex-shrink-0 ${theme.statusRouted}`}>{lead.status || "ROUTED"}</span>}
                             </div>
-
                             <div className="space-y-3 mb-5">
                               <div className="flex justify-between items-center">
-                                <div><p className="text-xs text-gray-400 font-medium">Budget</p><p className="text-sm font-semibold text-green-400">{lead.salesBudget}</p></div>
+                                <div>
+                                  <p className={`text-xs font-medium ${theme.textMuted}`}>Budget</p>
+                                  <p className={`text-sm font-semibold ${isDark ? "text-green-400" : "text-emerald-600"}`}>{lead.salesBudget}</p>
+                                </div>
                                 <div className="flex flex-col items-end gap-1">
-                                  {loanSt ? <LoanStatusBadge status={loanSt}/>
-                                    : lead.loanPlanned==="Yes" && <div className="bg-blue-900/20 border border-blue-500/30 px-2 py-1 rounded text-blue-400 text-[10px] font-bold uppercase flex items-center gap-1"><FaUniversity/> Loan Active</div>}
+                                  {loanSt ? <LoanStatusBadge status={loanSt} isDark={isDark}/>
+                                    : lead.loanPlanned === "Yes" && (
+                                      <div className={`px-2 py-1 rounded text-[10px] font-bold uppercase flex items-center gap-1 border ${isDark ? "bg-[#9E217B]/10 border-[#9E217B]/30 text-[#d946a8]" : "bg-pink-50 border-pink-200 text-[#9E217B]"}`}>
+                                        <FaUniversity/> Loan Active
+                                      </div>
+                                    )}
                                 </div>
                               </div>
-
-                              {lead.propType && lead.propType!=="Pending" && <div><p className="text-xs text-gray-400 font-medium">Property</p><p className="text-sm font-medium text-white">{lead.propType}</p></div>}
-
-                              <div className="p-3 rounded-lg border flex flex-col gap-1.5 bg-[#222] border-[#2a2a2a]">
-                                <p className="text-xs text-gray-400 flex items-center gap-2"><FaPhoneAlt className="text-gray-500 w-3 h-3"/> <span className="font-mono text-gray-200">{maskPhone(lead.phone)}</span></p>
+                              {lead.propType && lead.propType !== "Pending" && (
+                                <div><p className={`text-xs font-medium ${theme.textMuted}`}>Property</p><p className={`text-sm font-medium ${theme.text}`}>{lead.propType}</p></div>
+                              )}
+                              <div className={`p-3 rounded-lg border flex flex-col gap-1.5 ${theme.innerBlock}`}>
+                                <p className={`text-xs flex items-center gap-2 ${theme.textMuted}`}><FaPhoneAlt className="w-3 h-3"/> <span className={`font-mono ${theme.text}`}>{maskPhone(lead.phone)}</span></p>
                               </div>
-
                               {(lead.mongoVisitDate || interest) && (
                                 <div className="flex items-center justify-between gap-2">
-                                  {lead.mongoVisitDate && <div className="flex items-center gap-1.5 text-xs font-semibold text-orange-400"><FaCalendarAlt className="text-[10px]"/>{formatDate(lead.mongoVisitDate).split(",")[0]}</div>}
-                                  {interest && !lead.mongoVisitDate && <InterestBadge status={interest} size="sm"/>}
+                                  {lead.mongoVisitDate && <div className="flex items-center gap-1.5 text-xs font-semibold text-orange-500"><FaCalendarAlt className="text-[10px]"/>{formatDate(lead.mongoVisitDate).split(",")[0]}</div>}
+                                  {interest && !lead.mongoVisitDate && <InterestBadge status={interest} size="sm" isDark={isDark}/>}
                                 </div>
                               )}
                             </div>
                           </div>
-
-                          <div className="pt-4 border-t mt-auto border-[#2a2a2a]">
+                          <div className={`pt-4 border-t mt-auto ${theme.tableBorder}`}>
                             <div className="flex justify-between items-center gap-2">
-                              <p className="text-gray-500 text-[10px]">{formatDate(lead.created_at).split(",")[0]}</p>
-                              <span className="text-[10px] font-bold text-gray-500 group-hover:text-purple-400 transition-colors uppercase tracking-widest">Details →</span>
+                              <p className={`text-[10px] ${theme.textFaint}`}>{formatDate(lead.created_at).split(",")[0]}</p>
+                              <span className={`text-[10px] font-bold group-hover:text-[#9E217B] transition-colors uppercase tracking-widest ${theme.textMuted}`}>Details →</span>
                             </div>
                           </div>
                         </div>
@@ -894,32 +1114,32 @@ function AdminSalesView({ managers, allLeads, followUps, isLoading, adminUser, r
               </div>
             )}
 
-            {/* ── DETAIL VIEW ── */}
+            {/* Detail view */}
             {subView === "detail" && selectedLead && (
-              <div className="flex-1 overflow-y-auto custom-scrollbar p-6">
+              <div className={`flex-1 overflow-y-auto p-6 ${theme.scroll}`}>
                 <div className="animate-fadeIn max-w-[1200px] mx-auto flex flex-col h-full">
-
-                  <div className="flex items-center justify-between mb-4 rounded-2xl border p-4 sm:p-5 shadow-xl flex-shrink-0 bg-[#1a1a1a] border-[#2a2a2a]">
+                  {/* Detail header */}
+                  <div className={`flex items-center justify-between mb-4 rounded-2xl border p-4 sm:p-5 shadow-xl flex-shrink-0 ${theme.card}`} style={theme.cardGlass}>
                     <div className="flex items-center gap-4">
                       <button onClick={() => { setSubView("cards"); setShowSalesForm(false); setShowLoanForm(false); }}
-                        className="w-10 h-10 flex items-center justify-center bg-[#222] hover:bg-[#333] border border-[#444] rounded-lg text-gray-400 transition-colors">
+                        className={`w-10 h-10 flex items-center justify-center border rounded-lg transition-colors cursor-pointer ${theme.innerBlock} ${theme.textMuted}`}>
                         <FaChevronLeft className="text-sm"/>
                       </button>
-                      <h1 className="text-xl md:text-2xl font-bold text-white flex items-center gap-3">
-                        <span className="text-purple-500">#{selectedLead.id}</span>
+                      <h1 className={`text-xl md:text-2xl font-bold flex items-center gap-3 ${theme.text}`}>
+                        <span className={isDark ? "text-[#d946a8]" : "text-[#9E217B]"}>#{selectedLead.id}</span>
                         <span>{selectedLead.name}</span>
-                        <span className="text-xs text-gray-500 border border-[#333] bg-[#222] px-2 py-0.5 rounded-full">{selectedLead.assigned_to}</span>
+                        <span className={`text-xs px-2 py-0.5 rounded-full border ${theme.settingsBg} ${theme.textFaint}`}>{selectedLead.assigned_to}</span>
                       </h1>
                     </div>
                     <div className="flex gap-3">
                       {!showSalesForm && !showLoanForm && (
                         <>
                           <button onClick={() => { prefillSalesForm(); setShowSalesForm(true); setShowLoanForm(false); }}
-                            className="bg-purple-600 hover:bg-purple-500 text-white font-bold px-4 py-2 rounded-lg text-sm flex items-center gap-2 transition-colors cursor-pointer shadow-lg shadow-purple-600/20">
+                            className={`${theme.btnPrimary} px-4 py-2 rounded-lg text-sm flex items-center gap-2 transition-colors cursor-pointer`}>
                             <FaFileInvoice/> Fill Salesform
                           </button>
                           <button onClick={() => { prefillLoanForm(); setShowLoanForm(true); setShowSalesForm(false); }}
-                            className="bg-blue-600 hover:bg-blue-500 text-white font-bold px-4 py-2 rounded-lg text-sm flex items-center gap-2 transition-colors cursor-pointer shadow-lg shadow-blue-600/20">
+                            className={`${theme.btnSecondary} px-4 py-2 rounded-lg text-sm flex items-center gap-2 transition-colors cursor-pointer`}>
                             <FaUniversity/> Track Loan
                           </button>
                         </>
@@ -927,75 +1147,85 @@ function AdminSalesView({ managers, allLeads, followUps, isLoading, adminUser, r
                     </div>
                   </div>
 
-                  <div className="flex flex-col lg:flex-row gap-6 flex-1 min-h-0 pb-2" style={{minHeight:"500px"}}>
-                    {/* LEFT PANEL */}
+                  <div className="flex flex-col lg:flex-row gap-6 flex-1 min-h-0 pb-2" style={{ minHeight:"500px" }}>
+                    {/* Left panel */}
                     <div className="w-full lg:w-[45%] flex flex-col gap-4 h-full pb-2">
-
                       {showSalesForm ? (
-                        <div className="bg-[#1a1a1a] rounded-xl border border-[#333] p-5 shadow-xl flex-1 overflow-y-auto custom-scrollbar flex flex-col">
-                          <div className="flex justify-between items-center mb-4 border-b border-[#333] pb-3">
-                            <div><h3 className="text-lg font-bold text-white">Sales Data Form</h3><p className="text-xs text-purple-400 mt-0.5">Admin override — Lead #{selectedLead.id}</p></div>
-                            <button type="button" onClick={() => setShowSalesForm(false)} className="text-gray-400 hover:text-white p-1"><FaTimes/></button>
+                        <div className={`rounded-xl border p-5 shadow-xl flex-1 overflow-y-auto flex flex-col ${theme.modalCard} ${theme.scroll}`} style={theme.modalGlass}>
+                          <div className={`flex justify-between items-center mb-4 border-b pb-3 ${theme.tableBorder}`}>
+                            <div>
+                              <h3 className={`text-lg font-bold ${theme.text}`}>Sales Data Form</h3>
+                              <p className={`text-xs mt-0.5 ${theme.accentText}`}>Admin override — Lead #{selectedLead.id}</p>
+                            </div>
+                            <button type="button" onClick={() => setShowSalesForm(false)} className={`p-1 ${theme.textMuted}`}><FaTimes/></button>
                           </div>
                           <form onSubmit={handleSalesFormSubmit} className="flex flex-col gap-4 flex-1">
-                            <div><label className="text-xs text-gray-400 mb-1 block">Property Type?</label><input type="text" placeholder="e.g. 1BHK, 2BHK" value={salesForm.propertyType} onChange={e=>setSalesForm({...salesForm,propertyType:e.target.value})} className="w-full bg-[#121212] border border-[#333] rounded-lg px-4 py-2 text-sm text-white focus:border-purple-500 outline-none"/></div>
-                            <div><label className="text-xs text-gray-400 mb-1 block">Preferred Location?</label><input type="text" placeholder="e.g. Dombivali, Kalyan" value={salesForm.location} onChange={e=>setSalesForm({...salesForm,location:e.target.value})} className="w-full bg-[#121212] border border-[#333] rounded-lg px-4 py-2 text-sm text-white focus:border-purple-500 outline-none"/></div>
-                            <div><label className="text-xs text-gray-400 mb-1 block">Approximate Budget?</label><input type="text" placeholder="e.g. 5 cr" value={salesForm.budget} onChange={e=>setSalesForm({...salesForm,budget:e.target.value})} className="w-full bg-[#121212] border border-[#333] rounded-lg px-4 py-2 text-sm text-white focus:border-purple-500 outline-none"/></div>
+                            {[
+                              { label:"Property Type?", key:"propertyType", ph:"e.g. 1BHK, 2BHK" },
+                              { label:"Preferred Location?", key:"location", ph:"e.g. Dombivali, Kalyan" },
+                              { label:"Approximate Budget?", key:"budget", ph:"e.g. 5 cr" },
+                            ].map(f => (
+                              <div key={f.key}><label className={`text-xs mb-1 block ${theme.textMuted}`}>{f.label}</label>
+                                <input type="text" placeholder={f.ph} value={(salesForm as any)[f.key]} onChange={e => setSalesForm({ ...salesForm, [f.key]: e.target.value })} className={`w-full rounded-lg px-4 py-2 text-sm outline-none ${theme.inputInner} ${theme.text} ${theme.inputFocus}`}/>
+                              </div>
+                            ))}
                             <div className="grid grid-cols-2 gap-3">
-                              <div><label className="text-xs text-gray-400 mb-1 block">Self-use or Investment?</label>
-                                <select value={salesForm.useType} onChange={e=>setSalesForm({...salesForm,useType:e.target.value})} className="w-full bg-[#121212] border border-[#333] rounded-lg px-4 py-2 text-sm text-white focus:border-purple-500 outline-none">
-                                  <option value="">Select</option><option value="Self Use">Self Use</option><option value="Investment">Investment</option>
+                              <div><label className={`text-xs mb-1 block ${theme.textMuted}`}>Self-use or Investment?</label>
+                                <select value={salesForm.useType} onChange={e => setSalesForm({ ...salesForm, useType:e.target.value })} className={`w-full rounded-lg px-4 py-2 text-sm outline-none ${theme.select}`}>
+                                  <option value="">Select</option><option>Self Use</option><option>Investment</option>
                                 </select>
                               </div>
-                              <div><label className="text-xs text-gray-400 mb-1 block">Planning to Purchase?</label>
-                                <select value={salesForm.purchaseDate} onChange={e=>setSalesForm({...salesForm,purchaseDate:e.target.value})} className="w-full bg-[#121212] border border-[#333] rounded-lg px-4 py-2 text-sm text-white focus:border-purple-500 outline-none">
-                                  <option value="">Select</option><option value="Immediate">Immediate</option><option value="Next 3 Months">Next 3 Months</option>
+                              <div><label className={`text-xs mb-1 block ${theme.textMuted}`}>Planning to Purchase?</label>
+                                <select value={salesForm.purchaseDate} onChange={e => setSalesForm({ ...salesForm, purchaseDate:e.target.value })} className={`w-full rounded-lg px-4 py-2 text-sm outline-none ${theme.select}`}>
+                                  <option value="">Select</option><option>Immediate</option><option>Next 3 Months</option>
                                 </select>
                               </div>
                             </div>
-                            <div className="border-t border-[#333] pt-3 mt-1">
-                              <label className="block text-xs text-purple-400 font-bold mb-1.5">Lead Interest Status *</label>
-                              <select required value={salesForm.leadStatus} onChange={e=>setSalesForm({...salesForm,leadStatus:e.target.value})} className="w-full bg-[#121212] border border-purple-500/30 rounded-lg px-4 py-2 text-sm text-white focus:border-purple-500 outline-none cursor-pointer">
+                            <div className={`border-t pt-3 mt-1 ${theme.tableBorder}`}>
+                              <label className={`block text-xs font-bold mb-1.5 ${theme.accentText}`}>Lead Interest Status *</label>
+                              <select required value={salesForm.leadStatus} onChange={e => setSalesForm({ ...salesForm, leadStatus:e.target.value })} className={`w-full rounded-lg px-4 py-2 text-sm outline-none cursor-pointer ${theme.select}`}>
                                 <option value="" disabled>Select Status</option>
-                                <option value="Interested">Interested</option><option value="Not Interested">Not Interested</option><option value="Maybe">Maybe</option>
+                                <option>Interested</option><option>Not Interested</option><option>Maybe</option>
                               </select>
                             </div>
-                            <div className="border-t border-[#333] pt-3 mt-1">
-                              <label className="block text-xs text-blue-400 font-bold mb-1.5">Loan Planned?</label>
-                              <select required value={salesForm.loanPlanned} onChange={e=>setSalesForm({...salesForm,loanPlanned:e.target.value})} className="w-full bg-[#121212] border border-blue-500/30 rounded-lg px-4 py-2 text-sm text-white focus:border-blue-500 outline-none cursor-pointer">
-                                <option value="" disabled>Select Option</option><option value="Yes">Yes</option><option value="No">No</option><option value="Not Sure">Not Sure</option>
+                            <div className={`border-t pt-3 mt-1 ${theme.tableBorder}`}>
+                              <label className={`block text-xs font-bold mb-1.5 ${isDark ? "text-[#d946a8]" : "text-[#9E217B]"}`}>Loan Planned?</label>
+                              <select required value={salesForm.loanPlanned} onChange={e => setSalesForm({ ...salesForm, loanPlanned:e.target.value })} className={`w-full rounded-lg px-4 py-2 text-sm outline-none cursor-pointer ${theme.select}`}>
+                                <option value="" disabled>Select Option</option><option>Yes</option><option>No</option><option>Not Sure</option>
                               </select>
                             </div>
-                            <div className="mt-2 border-t border-[#333] pt-3">
-                              <label className="text-xs text-orange-400 font-bold mb-1.5 block">Schedule a Site Visit?</label>
-                              <input ref={inputRef} type="datetime-local" value={salesForm.siteVisit} onChange={e=>setSalesForm({...salesForm,siteVisit:e.target.value})} onClick={()=>inputRef.current?.showPicker()} className="w-full bg-[#121212] border border-[#333] rounded-lg px-4 py-2.5 text-sm text-white focus:border-orange-500 outline-none"/>
+                            <div className={`mt-2 border-t pt-3 ${theme.tableBorder}`}>
+                              <label className="text-xs text-orange-500 font-bold mb-1.5 block">Schedule a Site Visit?</label>
+                              <input ref={inputRef} type="datetime-local" value={salesForm.siteVisit} onChange={e => setSalesForm({ ...salesForm, siteVisit:e.target.value })} onClick={() => inputRef.current?.showPicker()} className={`w-full rounded-lg px-4 py-2.5 text-sm outline-none ${theme.inputInner} ${theme.text} focus:border-orange-500`}/>
                             </div>
-                            <button type="submit" className="mt-auto w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-3.5 rounded-xl shadow-md transition-colors flex-shrink-0">Submit Salesform</button>
+                            <button type="submit" className={`mt-auto w-full font-bold py-3.5 rounded-xl transition-colors flex-shrink-0 ${theme.btnPrimary}`}>Submit Salesform</button>
                           </form>
                         </div>
 
                       ) : showLoanForm ? (
-                        <div className="bg-[#1a1a1a] rounded-xl border border-[#333] p-5 shadow-xl flex-1 overflow-y-auto custom-scrollbar flex flex-col animate-fadeIn">
-                          <div className="flex justify-between items-center mb-4 border-b border-[#333] pb-3 flex-shrink-0">
-                            <div><h3 className="text-lg font-bold text-blue-400 flex items-center gap-2"><FaUniversity/> Loan Tracking Workflow</h3><p className="text-xs text-gray-400 mt-0.5">For Lead #{selectedLead.id}</p></div>
-                            <button type="button" onClick={()=>setShowLoanForm(false)} className="text-gray-400 hover:text-white p-1"><FaTimes/></button>
+                        <div className={`rounded-xl border p-5 shadow-xl flex-1 overflow-y-auto flex flex-col animate-fadeIn ${theme.modalCard} ${theme.scroll}`} style={theme.modalGlass}>
+                          <div className={`flex justify-between items-center mb-4 border-b pb-3 flex-shrink-0 ${theme.tableBorder}`}>
+                            <div>
+                              <h3 className={`text-lg font-bold flex items-center gap-2 ${isDark ? "text-[#d946a8]" : "text-[#9E217B]"}`}><FaUniversity/> Loan Tracking Workflow</h3>
+                              <p className={`text-xs mt-0.5 ${theme.textFaint}`}>For Lead #{selectedLead.id}</p>
+                            </div>
+                            <button type="button" onClick={() => setShowLoanForm(false)} className={`p-1 ${theme.textMuted}`}><FaTimes/></button>
                           </div>
                           <form onSubmit={handleLoanFormSubmit} className="flex flex-col gap-5 flex-1">
                             <div>
-                              <h4 className="text-xs font-bold text-blue-500 uppercase tracking-wider mb-3">1. Loan Decision</h4>
+                              <h4 className={`text-xs font-bold uppercase tracking-wider mb-3 ${isDark ? "text-[#d946a8]" : "text-[#9E217B]"}`}>1. Loan Decision</h4>
                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                <div><label className="text-xs text-gray-400 mb-1 block">Loan Required? *</label>
-                                  <select required value={loanForm.loanRequired} onChange={e=>setLoanForm({...loanForm,loanRequired:e.target.value})} className="w-full bg-[#121212] border border-[#333] rounded-lg px-3 py-2.5 text-sm text-white focus:border-blue-500 outline-none cursor-pointer">
-                                    <option value="">Select</option><option value="Yes">Yes</option><option value="No">No</option><option value="Not Sure">Not Sure</option>
+                                <div><label className={`text-xs mb-1 block ${theme.textMuted}`}>Loan Required? *</label>
+                                  <select required value={loanForm.loanRequired} onChange={e => setLoanForm({ ...loanForm, loanRequired:e.target.value })} className={`w-full rounded-lg px-3 py-2.5 text-sm outline-none cursor-pointer ${theme.select}`}>
+                                    <option value="">Select</option><option>Yes</option><option>No</option><option>Not Sure</option>
                                   </select>
                                 </div>
-                                <div><label className="text-xs text-gray-400 mb-1 block">Loan Status *</label>
-                                  <select required value={loanForm.status} onChange={e=>setLoanForm({...loanForm,status:e.target.value})} className="w-full bg-[#121212] border border-[#333] rounded-lg px-3 py-2.5 text-sm text-white focus:border-blue-500 outline-none cursor-pointer">
-                                    <option value="">Select Status</option>
-                                    <option value="Approved">Approved</option><option value="In Progress">In Progress</option><option value="Rejected">Rejected</option>
+                                <div><label className={`text-xs mb-1 block ${theme.textMuted}`}>Loan Status *</label>
+                                  <select required value={loanForm.status} onChange={e => setLoanForm({ ...loanForm, status:e.target.value })} className={`w-full rounded-lg px-3 py-2.5 text-sm outline-none cursor-pointer ${theme.select}`}>
+                                    <option value="">Select Status</option><option>Approved</option><option>In Progress</option><option>Rejected</option>
                                   </select>
                                   {loanForm.status && (
-                                    <p className={`text-[10px] mt-1.5 font-semibold ${loanForm.status==="Approved"?"text-green-400":loanForm.status==="Rejected"?"text-red-400":"text-yellow-400"}`}>
+                                    <p className={`text-[10px] mt-1.5 font-semibold ${loanForm.status==="Approved"?"text-green-500":loanForm.status==="Rejected"?"text-red-500":isDark?"text-yellow-400":"text-yellow-600"}`}>
                                       {loanForm.status==="Approved"&&"✅ Loan cleared — schedule closing meeting"}
                                       {loanForm.status==="In Progress"&&"📄 Follow up on pending documents"}
                                       {loanForm.status==="Rejected"&&"❌ Loan rejected — suggest co-applicant or other bank"}
@@ -1004,38 +1234,37 @@ function AdminSalesView({ managers, allLeads, followUps, isLoading, adminUser, r
                                 </div>
                               </div>
                             </div>
-                            <div className="border-t border-[#333] pt-4">
-                              <h4 className="text-xs font-bold text-blue-500 uppercase tracking-wider mb-3">2. Bank & Loan Details</h4>
+                            <div className={`border-t pt-4 ${theme.tableBorder}`}>
+                              <h4 className={`text-xs font-bold uppercase tracking-wider mb-3 ${isDark ? "text-[#d946a8]" : "text-[#9E217B]"}`}>2. Bank & Loan Details</h4>
                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                <div><label className="text-xs text-gray-400 mb-1 block">Bank Name</label><input type="text" value={loanForm.bank} onChange={e=>setLoanForm({...loanForm,bank:e.target.value})} className="w-full bg-[#121212] border border-[#333] rounded-lg px-3 py-2 text-sm text-white focus:border-blue-500 outline-none" placeholder="e.g. HDFC"/></div>
-                                <div><label className="text-xs text-gray-400 mb-1 block">Amount Required</label><input type="text" value={loanForm.amountReq} onChange={e=>setLoanForm({...loanForm,amountReq:e.target.value})} className="w-full bg-[#121212] border border-[#333] rounded-lg px-3 py-2 text-sm text-white focus:border-blue-500 outline-none" placeholder="e.g. 60L"/></div>
-                                <div><label className="text-xs text-gray-400 mb-1 block">Amount Approved</label><input type="text" value={loanForm.amountApp} onChange={e=>setLoanForm({...loanForm,amountApp:e.target.value})} className="w-full bg-[#121212] border border-[#333] rounded-lg px-3 py-2 text-sm text-white focus:border-blue-500 outline-none" placeholder="e.g. 55L"/></div>
-                                <div><label className="text-xs text-gray-400 mb-1 block">CIBIL Score</label><input type="text" value={loanForm.cibil} onChange={e=>setLoanForm({...loanForm,cibil:e.target.value})} className="w-full bg-[#121212] border border-[#333] rounded-lg px-3 py-2 text-sm text-white focus:border-blue-500 outline-none" placeholder="e.g. 750"/></div>
-                                <div><label className="text-xs text-gray-400 mb-1 block">Agent Name</label><input type="text" value={loanForm.agent} onChange={e=>setLoanForm({...loanForm,agent:e.target.value})} className="w-full bg-[#121212] border border-[#333] rounded-lg px-3 py-2 text-sm text-white focus:border-blue-500 outline-none" placeholder="Agent Name"/></div>
-                                <div><label className="text-xs text-gray-400 mb-1 block">Agent Contact</label><input type="tel" value={loanForm.agentContact} onChange={e=>setLoanForm({...loanForm,agentContact:e.target.value})} className="w-full bg-[#121212] border border-[#333] rounded-lg px-3 py-2 text-sm text-white focus:border-blue-500 outline-none" placeholder="Agent Phone"/></div>
+                                {[{label:"Bank Name",k:"bank",ph:"e.g. HDFC"},{label:"Amount Required",k:"amountReq",ph:"e.g. 60L"},{label:"Amount Approved",k:"amountApp",ph:"e.g. 55L"},{label:"CIBIL Score",k:"cibil",ph:"e.g. 750"},{label:"Agent Name",k:"agent",ph:"Agent Name"},{label:"Agent Contact",k:"agentContact",ph:"Agent Phone",tel:true}].map(f => (
+                                  <div key={f.k}><label className={`text-xs mb-1 block ${theme.textMuted}`}>{f.label}</label>
+                                    <input type={f.tel?"tel":"text"} value={(loanForm as any)[f.k]} onChange={e => setLoanForm({ ...loanForm, [f.k]:e.target.value })} className={`w-full rounded-lg px-3 py-2 text-sm outline-none ${theme.inputInner} ${theme.text} ${theme.inputFocus}`} placeholder={f.ph}/>
+                                  </div>
+                                ))}
                               </div>
                             </div>
-                            <div className="border-t border-[#333] pt-4">
-                              <h4 className="text-xs font-bold text-blue-500 uppercase tracking-wider mb-3">3. Financial Qualification</h4>
+                            <div className={`border-t pt-4 ${theme.tableBorder}`}>
+                              <h4 className={`text-xs font-bold uppercase tracking-wider mb-3 ${isDark ? "text-[#d946a8]" : "text-[#9E217B]"}`}>3. Financial Qualification</h4>
                               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                                <div><label className="text-xs text-gray-400 mb-1 block">Employment</label>
-                                  <select value={loanForm.empType} onChange={e=>setLoanForm({...loanForm,empType:e.target.value})} className="w-full bg-[#121212] border border-[#333] rounded-lg px-3 py-2.5 text-sm text-white focus:border-blue-500 outline-none cursor-pointer">
-                                    <option value="">Select</option><option value="Salaried">Salaried</option><option value="Self-employed">Self-employed</option>
+                                <div><label className={`text-xs mb-1 block ${theme.textMuted}`}>Employment</label>
+                                  <select value={loanForm.empType} onChange={e => setLoanForm({ ...loanForm, empType:e.target.value })} className={`w-full rounded-lg px-3 py-2.5 text-sm outline-none cursor-pointer ${theme.select}`}>
+                                    <option value="">Select</option><option>Salaried</option><option>Self-employed</option>
                                   </select>
                                 </div>
-                                <div><label className="text-xs text-gray-400 mb-1 block">Monthly Income</label><input type="text" value={loanForm.income} onChange={e=>setLoanForm({...loanForm,income:e.target.value})} className="w-full bg-[#121212] border border-[#333] rounded-lg px-3 py-2 text-sm text-white focus:border-blue-500 outline-none" placeholder="e.g. 1L"/></div>
-                                <div><label className="text-xs text-gray-400 mb-1 block">Existing EMIs</label><input type="text" value={loanForm.emi} onChange={e=>setLoanForm({...loanForm,emi:e.target.value})} className="w-full bg-[#121212] border border-[#333] rounded-lg px-3 py-2 text-sm text-white focus:border-blue-500 outline-none" placeholder="e.g. 15k"/></div>
+                                <div><label className={`text-xs mb-1 block ${theme.textMuted}`}>Monthly Income</label><input type="text" value={loanForm.income} onChange={e => setLoanForm({ ...loanForm, income:e.target.value })} className={`w-full rounded-lg px-3 py-2 text-sm outline-none ${theme.inputInner} ${theme.text} ${theme.inputFocus}`} placeholder="e.g. 1L"/></div>
+                                <div><label className={`text-xs mb-1 block ${theme.textMuted}`}>Existing EMIs</label><input type="text" value={loanForm.emi} onChange={e => setLoanForm({ ...loanForm, emi:e.target.value })} className={`w-full rounded-lg px-3 py-2 text-sm outline-none ${theme.inputInner} ${theme.text} ${theme.inputFocus}`} placeholder="e.g. 15k"/></div>
                               </div>
                             </div>
-                            <div className="border-t border-[#333] pt-4">
-                              <h4 className="text-xs font-bold text-blue-500 uppercase tracking-wider mb-3 flex items-center gap-1"><FaFileAlt/> 4. Document Checklist</h4>
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-[#181818] p-3 rounded-lg border border-[#2a2a2a]">
-                                {["docPan","docAadhaar","docSalary","docBank","docProperty"].map(docKey=>{
-                                  const label=docKey==="docPan"?"PAN Card":docKey==="docAadhaar"?"Aadhaar Card":docKey==="docSalary"?"Salary Slips / ITR":docKey==="docBank"?"Bank Statements":"Property Documents";
-                                  return(
-                                    <div key={docKey} className="flex items-center justify-between bg-[#121212] border border-[#333] p-2 rounded-lg">
-                                      <span className="text-xs text-gray-300 font-medium">{label}</span>
-                                      <select value={(loanForm as any)[docKey]} onChange={e=>setLoanForm({...loanForm,[docKey]:e.target.value})} className={`text-xs font-bold bg-transparent outline-none cursor-pointer ${(loanForm as any)[docKey]==="Uploaded"?"text-green-400":"text-gray-500"}`}>
+                            <div className={`border-t pt-4 ${theme.tableBorder}`}>
+                              <h4 className={`text-xs font-bold uppercase tracking-wider mb-3 flex items-center gap-1 ${isDark ? "text-[#d946a8]" : "text-[#9E217B]"}`}><FaFileAlt/> 4. Document Checklist</h4>
+                              <div className={`grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 rounded-lg border ${theme.modalInner}`}>
+                                {["docPan","docAadhaar","docSalary","docBank","docProperty"].map(docKey => {
+                                  const label = docKey==="docPan"?"PAN Card":docKey==="docAadhaar"?"Aadhaar Card":docKey==="docSalary"?"Salary Slips / ITR":docKey==="docBank"?"Bank Statements":"Property Documents";
+                                  return (
+                                    <div key={docKey} className={`flex items-center justify-between border p-2 rounded-lg ${theme.innerBlock}`}>
+                                      <span className={`text-xs font-medium ${theme.textMuted}`}>{label}</span>
+                                      <select value={(loanForm as any)[docKey]} onChange={e => setLoanForm({ ...loanForm, [docKey]:e.target.value })} className={`text-xs font-bold bg-transparent outline-none cursor-pointer ${(loanForm as any)[docKey]==="Uploaded"?"text-green-500":theme.textMuted}`}>
                                         <option value="Pending">Pending</option><option value="Uploaded">Uploaded</option>
                                       </select>
                                     </div>
@@ -1043,86 +1272,83 @@ function AdminSalesView({ managers, allLeads, followUps, isLoading, adminUser, r
                                 })}
                               </div>
                             </div>
-                            <div className="border-t border-[#333] pt-4">
-                              <h4 className="text-xs font-bold text-blue-500 uppercase tracking-wider mb-3">5. Notes / Remarks</h4>
-                              <textarea value={loanForm.notes} onChange={e=>setLoanForm({...loanForm,notes:e.target.value})} className="w-full bg-[#121212] border border-[#333] rounded-lg px-4 py-2.5 text-sm text-white focus:border-blue-500 outline-none resize-none h-20 custom-scrollbar" placeholder="Bank feedback, CIBIL issues, Internal notes..."/>
+                            <div className={`border-t pt-4 ${theme.tableBorder}`}>
+                              <h4 className={`text-xs font-bold uppercase tracking-wider mb-3 ${isDark ? "text-[#d946a8]" : "text-[#9E217B]"}`}>5. Notes / Remarks</h4>
+                              <textarea value={loanForm.notes} onChange={e => setLoanForm({ ...loanForm, notes:e.target.value })} className={`w-full rounded-lg px-4 py-2.5 text-sm outline-none resize-none h-20 ${theme.inputInner} ${theme.text} ${theme.scroll} ${theme.inputFocus}`} placeholder="Bank feedback, CIBIL issues, Internal notes..."/>
                             </div>
-                            <button type="submit" className="mt-4 flex-shrink-0 w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3.5 rounded-xl shadow-md transition-colors cursor-pointer">Save Loan Tracker Update</button>
+                            <button type="submit" className={`mt-4 flex-shrink-0 w-full font-bold py-3.5 rounded-xl shadow-md transition-colors cursor-pointer ${theme.btnSecondary}`}>Save Loan Tracker Update</button>
                           </form>
                         </div>
 
                       ) : (
                         <div className="flex flex-col h-full animate-fadeIn">
-                          <div className="flex items-center gap-2 mb-4 bg-[#1a1a1a] border border-[#2a2a2a] p-1.5 rounded-xl flex-shrink-0">
-                            <button onClick={()=>setDetailTab("personal")} className={`flex-1 py-2 text-sm font-bold rounded-lg transition-colors cursor-pointer ${detailTab==="personal"?"bg-purple-600 text-white shadow-md":"text-gray-400 hover:text-white hover:bg-[#222]"}`}>Personal Information</button>
-                            <button onClick={()=>setDetailTab("loan")} className={`flex-1 py-2 text-sm font-bold rounded-lg transition-colors cursor-pointer ${detailTab==="loan"?"bg-blue-600 text-white shadow-md":"text-gray-400 hover:text-white hover:bg-[#222]"}`}>Loan Tracking</button>
+                          <div className={`flex items-center gap-2 mb-4 border p-1.5 rounded-xl flex-shrink-0 ${theme.card}`}>
+                            <button onClick={() => setDetailTab("personal")} className={`flex-1 py-2 text-sm font-bold rounded-lg transition-colors cursor-pointer ${detailTab==="personal" ? theme.btnPrimary : `${theme.textMuted} hover:opacity-80`}`}>Personal Information</button>
+                            <button onClick={() => setDetailTab("loan")} className={`flex-1 py-2 text-sm font-bold rounded-lg transition-colors cursor-pointer ${detailTab==="loan" ? theme.btnSecondary : `${theme.textMuted} hover:opacity-80`}`}>Loan Tracking</button>
                           </div>
-
-                          <div className="flex-1 overflow-y-auto custom-scrollbar bg-[#1a1a1a] border border-[#333] rounded-xl p-5 shadow-lg">
-                            {detailTab==="personal" ? (
+                          <div className={`flex-1 overflow-y-auto border rounded-xl p-5 shadow-lg ${theme.modalCard} ${theme.scroll}`}>
+                            {detailTab === "personal" ? (
                               <div>
                                 <div className="grid grid-cols-2 gap-y-6 gap-x-4 text-sm">
-                                  <div><p className="text-xs text-gray-500 font-medium mb-1">Email</p><p className="text-white font-semibold">{selectedLead.email!=="N/A"?selectedLead.email:"Not Provided"}</p></div>
-                                  <div><p className="text-xs text-gray-500 font-medium mb-1 flex items-center gap-1"><FaPhoneAlt className="text-[10px]"/> Phone</p><p className="font-mono text-white font-semibold">{selectedLead.phone}</p></div>
-                                  <div><p className="text-xs text-gray-500 font-medium mb-1 flex items-center gap-1"><FaPhoneAlt className="text-[10px] text-gray-600"/> Alt Phone</p><p className="font-mono text-white font-semibold">{selectedLead.altPhone&&selectedLead.altPhone!=="N/A"?selectedLead.altPhone:"Not Provided"}</p></div>
-                                  <div><p className="text-xs text-gray-500 font-medium mb-1">Lead Interest</p>
-                                    {selectedLead.leadInterestStatus&&selectedLead.leadInterestStatus!=="Pending"?<InterestBadge status={selectedLead.leadInterestStatus}/>:<p className="text-white font-semibold">Pending</p>}
+                                  <div><p className={`text-xs font-medium mb-1 ${theme.textMuted}`}>Email</p><p className={`font-semibold ${theme.text}`}>{selectedLead.email!=="N/A"?selectedLead.email:"Not Provided"}</p></div>
+                                  <div><p className={`text-xs font-medium mb-1 flex items-center gap-1 ${theme.textMuted}`}><FaPhoneAlt className="text-[10px]"/> Phone</p><p className={`font-mono font-semibold ${theme.text}`}>{selectedLead.phone}</p></div>
+                                  <div><p className={`text-xs font-medium mb-1 ${theme.textMuted}`}>Alt Phone</p><p className={`font-mono font-semibold ${theme.text}`}>{selectedLead.altPhone&&selectedLead.altPhone!=="N/A"?selectedLead.altPhone:"Not Provided"}</p></div>
+                                  <div><p className={`text-xs font-medium mb-1 ${theme.textMuted}`}>Lead Interest</p>
+                                    {selectedLead.leadInterestStatus&&selectedLead.leadInterestStatus!=="Pending"?<InterestBadge status={selectedLead.leadInterestStatus} isDark={isDark}/>:<p className={`font-semibold ${theme.text}`}>Pending</p>}
                                   </div>
-                                  <div className="col-span-2">
-                                    <p className="text-xs text-gray-500 font-medium mb-1">Loan Status</p>
-                                    {selectedLead.loanStatus&&selectedLead.loanStatus!=="N/A"?<div className="w-fit"><LoanStatusBadge status={selectedLead.loanStatus}/></div>:<p className="text-white font-semibold">N/A</p>}
+                                  <div className="col-span-2"><p className={`text-xs font-medium mb-1 ${theme.textMuted}`}>Loan Status</p>
+                                    {selectedLead.loanStatus&&selectedLead.loanStatus!=="N/A"?<div className="w-fit"><LoanStatusBadge status={selectedLead.loanStatus} isDark={isDark}/></div>:<p className={`font-semibold ${theme.text}`}>N/A</p>}
                                   </div>
-                                  <div className="col-span-2"><p className="text-xs text-gray-500 font-medium mb-1">Residential Address</p><p className="text-white font-semibold">{selectedLead.address&&selectedLead.address!=="N/A"?selectedLead.address:"Not Provided"}</p></div>
-                                  <div><p className="text-xs text-gray-500 font-medium mb-1">Budget</p><p className="text-green-400 font-bold">{selectedLead.salesBudget!=="Pending"?selectedLead.salesBudget:selectedLead.budget}</p></div>
-                                  <div><p className="text-xs text-gray-500 font-medium mb-1">Property Type</p><p className="text-white font-semibold">{selectedLead.propType||"Pending"}</p></div>
-                                  <div><p className="text-xs text-gray-500 font-medium mb-1">Type of Use</p><p className="text-white font-semibold">{selectedLead.useType!=="Pending"?selectedLead.useType:(selectedLead.purpose||"N/A")}</p></div>
-                                  <div><p className="text-xs text-gray-500 font-medium mb-1">Planning to Buy?</p><p className="text-white font-semibold">{selectedLead.planningPurchase||"Pending"}</p></div>
-                                  <div><p className="text-xs text-gray-500 font-medium mb-1">Loan Required?</p><p className="text-white font-semibold">{getLatestLoanDetails()?.loanRequired}</p></div>
-                                  <div><p className="text-xs text-gray-500 font-medium mb-1">Status</p><p className="text-purple-400 font-semibold">{selectedLead.status||"Routed"}</p></div>
-                                  <div className="col-span-2 bg-[#222] p-4 rounded-xl border border-blue-900/20"><p className="text-xs text-blue-400 font-bold uppercase tracking-wider mb-1">📍 Site Visit Date</p><p className="text-lg font-black text-white">{selectedLead.mongoVisitDate?formatDate(selectedLead.mongoVisitDate):"Not Scheduled"}</p></div>
+                                  <div className="col-span-2"><p className={`text-xs font-medium mb-1 ${theme.textMuted}`}>Residential Address</p><p className={`font-semibold ${theme.text}`}>{selectedLead.address&&selectedLead.address!=="N/A"?selectedLead.address:"Not Provided"}</p></div>
+                                  <div><p className={`text-xs font-medium mb-1 ${theme.textMuted}`}>Budget</p><p className="text-green-500 font-bold">{selectedLead.salesBudget!=="Pending"?selectedLead.salesBudget:selectedLead.budget}</p></div>
+                                  <div><p className={`text-xs font-medium mb-1 ${theme.textMuted}`}>Property Type</p><p className={`font-semibold ${theme.text}`}>{selectedLead.propType||"Pending"}</p></div>
+                                  <div><p className={`text-xs font-medium mb-1 ${theme.textMuted}`}>Type of Use</p><p className={`font-semibold ${theme.text}`}>{selectedLead.useType!=="Pending"?selectedLead.useType:(selectedLead.purpose||"N/A")}</p></div>
+                                  <div><p className={`text-xs font-medium mb-1 ${theme.textMuted}`}>Planning to Buy?</p><p className={`font-semibold ${theme.text}`}>{selectedLead.planningPurchase||"Pending"}</p></div>
+                                  <div><p className={`text-xs font-medium mb-1 ${theme.textMuted}`}>Loan Required?</p><p className={`font-semibold ${theme.text}`}>{getLatestLoanDetails()?.loanRequired}</p></div>
+                                  <div><p className={`text-xs font-medium mb-1 ${theme.textMuted}`}>Status</p><p className={`font-semibold ${theme.accentText}`}>{selectedLead.status||"Routed"}</p></div>
+                                  <div className={`col-span-2 p-4 rounded-xl border ${isDark?"border-[#9E217B]/20":"border-[#9E217B]/20"} ${theme.settingsBg}`}>
+                                    <p className={`text-xs font-bold uppercase tracking-wider mb-1 ${isDark?"text-[#d946a8]":"text-[#9E217B]"}`}>📍 Site Visit Date</p>
+                                    <p className={`text-lg font-black ${theme.text}`}>{selectedLead.mongoVisitDate?formatDate(selectedLead.mongoVisitDate):"Not Scheduled"}</p>
+                                  </div>
                                 </div>
-                                <div className="mt-6 bg-[#222] border border-[#333] rounded-xl p-4">
-                                  <h3 className="text-xs text-purple-400 font-bold uppercase tracking-wider mb-3 border-b border-[#333] pb-2">Channel Partner Data</h3>
+                                <div className={`mt-6 border rounded-xl p-4 ${theme.settingsBg}`}>
+                                  <h3 className={`text-xs font-bold uppercase tracking-wider mb-3 border-b pb-2 ${theme.accentText} ${theme.tableBorder}`}>Channel Partner Data</h3>
                                   <div className="grid grid-cols-2 gap-4">
-                                    <div><p className="text-xs text-gray-500 font-medium mb-1">Primary Source</p><p className="text-white font-medium text-sm">{selectedLead.source||"N/A"}</p></div>
-                                    {selectedLead.source==="Others"&&(<div><p className="text-xs text-gray-500 font-medium mb-1">Specified Name</p><p className="text-white font-medium text-sm">{selectedLead.sourceOther}</p></div>)}
+                                    <div><p className={`text-xs font-medium mb-1 ${theme.textMuted}`}>Primary Source</p><p className={`font-medium text-sm ${theme.text}`}>{selectedLead.source||"N/A"}</p></div>
+                                    {selectedLead.source==="Others"&&(<div><p className={`text-xs font-medium mb-1 ${theme.textMuted}`}>Specified Name</p><p className={`font-medium text-sm ${theme.text}`}>{selectedLead.sourceOther}</p></div>)}
                                   </div>
                                   {selectedLead.source==="Channel Partner"&&(
-                                    <div className="mt-4 pt-4 border-t border-[#333] grid grid-cols-1 sm:grid-cols-3 gap-4">
-                                      <div><p className="text-xs text-gray-500 font-medium mb-1">CP Name</p><p className="text-white font-medium text-sm">{selectedLead.cpName||"N/A"}</p></div>
-                                      <div><p className="text-xs text-gray-500 font-medium mb-1">CP Company</p><p className="text-white font-medium text-sm">{selectedLead.cpCompany||"N/A"}</p></div>
-                                      <div><p className="text-xs text-gray-500 font-medium mb-1">CP Phone</p><p className="text-white font-medium text-sm">{selectedLead.cpPhone||"N/A"}</p></div>
+                                    <div className={`mt-4 pt-4 border-t grid grid-cols-1 sm:grid-cols-3 gap-4 ${theme.tableBorder}`}>
+                                      {[{label:"CP Name",val:selectedLead.cpName},{label:"CP Company",val:selectedLead.cpCompany},{label:"CP Phone",val:selectedLead.cpPhone}].map(({label,val}) => (
+                                        <div key={label}><p className={`text-xs font-medium mb-1 ${theme.textMuted}`}>{label}</p><p className={`font-medium text-sm ${theme.text}`}>{val||"N/A"}</p></div>
+                                      ))}
                                     </div>
                                   )}
                                 </div>
                               </div>
                             ) : (
                               <div>
-                                {(()=>{
-                                  const curLoan: any = getLatestLoanDetails()||{};
-                                  const sColor = getLoanStatusColor(curLoan?.status||"");
-                                  const isHighProb = curLoan?.status?.toLowerCase()==="approved" && selectedLead.mongoVisitDate;
+                                {(() => {
+                                  const curLoan: any = getLatestLoanDetails() || {};
+                                  const sColor = getLoanStatusColor(curLoan?.status || "");
+                                  const isHighProb = curLoan?.status?.toLowerCase() === "approved" && selectedLead.mongoVisitDate;
                                   return (
                                     <>
-                                      <h3 className="text-sm font-bold text-blue-400 border-b border-[#333] pb-2 mb-6 uppercase flex items-center gap-2"><FaUniversity/> Deal Loan Overview</h3>
-                                      {isHighProb&&<div className="mb-6 bg-gradient-to-r from-orange-500/20 to-red-500/20 border border-orange-500/50 p-3 rounded-lg flex items-center justify-center gap-2 text-orange-400 font-bold tracking-wide shadow-md">🚀 HIGH PROBABILITY DEAL (Visit Done + Loan Approved)</div>}
+                                      <h3 className={`text-sm font-bold border-b pb-2 mb-6 uppercase flex items-center gap-2 ${isDark?"text-[#d946a8]":"text-[#9E217B]"} ${theme.tableBorder}`}><FaUniversity/> Deal Loan Overview</h3>
+                                      {isHighProb && <div className="mb-6 bg-gradient-to-r from-orange-500/10 to-red-500/10 border border-orange-500/30 p-3 rounded-lg flex items-center justify-center gap-2 text-orange-500 font-bold tracking-wide shadow-md">🚀 HIGH PROBABILITY DEAL (Visit Done + Loan Approved)</div>}
                                       <div className="grid grid-cols-2 gap-y-5 gap-x-4 text-sm">
-                                        <div><p className="text-xs text-gray-500 font-medium mb-1">Loan Required?</p><p className="text-white font-semibold">{curLoan?.loanRequired}</p></div>
-                                        <div><p className="text-xs text-gray-500 font-medium mb-1">Current Status</p><p className={`font-bold px-2 py-0.5 rounded inline-block border ${sColor}`}>{curLoan?.status}</p></div>
-                                        <div><p className="text-xs text-gray-500 font-medium mb-1">Amount Requested</p><p className="text-orange-400 font-semibold">{curLoan?.amountReq}</p></div>
-                                        <div><p className="text-xs text-gray-500 font-medium mb-1">Amount Approved</p><p className="text-green-400 font-semibold">{curLoan?.amountApp}</p></div>
-                                        <div><p className="text-xs text-gray-500 font-medium mb-1">Bank Name</p><p className="text-white font-semibold">{curLoan?.bankName}</p></div>
-                                        <div><p className="text-xs text-gray-500 font-medium mb-1">CIBIL Score</p><p className="text-white font-semibold">{curLoan?.cibil}</p></div>
-                                        <div><p className="text-xs text-gray-500 font-medium mb-1">Agent Name</p><p className="text-white font-semibold">{curLoan?.agent}</p></div>
-                                        <div><p className="text-xs text-gray-500 font-medium mb-1">Agent Contact</p><p className="text-white font-semibold">{curLoan?.agentContact}</p></div>
-                                        <div><p className="text-xs text-gray-500 font-medium mb-1">Emp Type</p><p className="text-white font-semibold">{curLoan?.empType}</p></div>
-                                        <div><p className="text-xs text-gray-500 font-medium mb-1">Monthly Income</p><p className="text-white font-semibold">{curLoan?.income}</p></div>
-                                        <div><p className="text-xs text-gray-500 font-medium mb-1">Existing EMIs</p><p className="text-white font-semibold">{curLoan?.emi}</p></div>
-                                        <div className="col-span-2 mb-2"><p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Document Status</p></div>
-                                        {[{label:"PAN Card",val:curLoan?.docPan},{label:"Aadhaar",val:curLoan?.docAadhaar},{label:"Salary/ITR",val:curLoan?.docSalary},{label:"Bank Stmt",val:curLoan?.docBank},{label:"Property Docs",val:curLoan?.docProperty}].map((doc,i)=>(
-                                          <div key={i} className="flex items-center justify-between bg-[#121212] border border-[#333] p-2 rounded-lg col-span-1">
-                                            <span className="text-xs text-gray-400">{doc.label}</span>
-                                            {doc.val==="Uploaded"?<FaCheck className="text-green-500 text-xs"/>:<FaClock className="text-gray-500 text-xs"/>}
+                                        <div><p className={`text-xs font-medium mb-1 ${theme.textMuted}`}>Loan Required?</p><p className={`font-semibold ${theme.text}`}>{curLoan?.loanRequired}</p></div>
+                                        <div><p className={`text-xs font-medium mb-1 ${theme.textMuted}`}>Current Status</p><p className={`font-bold px-2 py-0.5 rounded inline-block border ${sColor}`}>{curLoan?.status}</p></div>
+                                        <div><p className={`text-xs font-medium mb-1 ${theme.textMuted}`}>Amount Requested</p><p className="text-orange-500 font-semibold">{curLoan?.amountReq}</p></div>
+                                        <div><p className={`text-xs font-medium mb-1 ${theme.textMuted}`}>Amount Approved</p><p className="text-green-500 font-semibold">{curLoan?.amountApp}</p></div>
+                                        {[{label:"Bank Name",val:curLoan?.bankName},{label:"CIBIL Score",val:curLoan?.cibil},{label:"Agent Name",val:curLoan?.agent},{label:"Agent Contact",val:curLoan?.agentContact},{label:"Emp Type",val:curLoan?.empType},{label:"Monthly Income",val:curLoan?.income},{label:"Existing EMIs",val:curLoan?.emi}].map(f => (
+                                          <div key={f.label}><p className={`text-xs font-medium mb-1 ${theme.textMuted}`}>{f.label}</p><p className={`font-semibold ${theme.text}`}>{f.val}</p></div>
+                                        ))}
+                                        <div className="col-span-2 mb-2"><p className={`text-xs font-bold uppercase tracking-widest ${theme.textMuted}`}>Document Status</p></div>
+                                        {[{label:"PAN Card",val:curLoan?.docPan},{label:"Aadhaar",val:curLoan?.docAadhaar},{label:"Salary/ITR",val:curLoan?.docSalary},{label:"Bank Stmt",val:curLoan?.docBank},{label:"Property Docs",val:curLoan?.docProperty}].map((doc, i) => (
+                                          <div key={i} className={`flex items-center justify-between border p-2 rounded-lg col-span-1 ${theme.innerBlock}`}>
+                                            <span className={`text-xs ${theme.textMuted}`}>{doc.label}</span>
+                                            {doc.val==="Uploaded"?<FaCheck className="text-green-500 text-xs"/>:<FaClock className={`${theme.textFaint} text-xs`}/>}
                                           </div>
                                         ))}
                                       </div>
@@ -1132,49 +1358,58 @@ function AdminSalesView({ managers, allLeads, followUps, isLoading, adminUser, r
                               </div>
                             )}
                           </div>
-
                           <div className="grid grid-cols-2 gap-3 mt-4 flex-shrink-0">
-                            <button className="bg-blue-600/10 border border-blue-500/30 hover:bg-blue-600 text-blue-400 hover:text-white flex flex-col items-center justify-center py-3 rounded-xl transition-all cursor-pointer gap-1"><FaMicrophone className="text-lg"/><span className="font-bold text-[10px]">Browser Call</span></button>
-                            <button className="bg-green-600/10 border border-green-500/30 hover:bg-green-600 text-green-400 hover:text-white flex flex-col items-center justify-center py-3 rounded-xl transition-all cursor-pointer gap-1"><FaWhatsapp className="text-xl"/><span className="font-bold text-[10px]">WhatsApp</span></button>
+                            <button className={`border flex flex-col items-center justify-center py-3 rounded-xl transition-all cursor-pointer gap-1 ${isDark?"bg-[#9E217B]/10 border-[#9E217B]/30 hover:bg-[#9E217B] text-[#d946a8] hover:text-white":"bg-[#9E217B]/10 border-[#9E217B]/30 hover:bg-[#9E217B] text-[#9E217B] hover:text-white"}`}>
+                              <FaMicrophone className="text-lg"/><span className="font-bold text-[10px]">Browser Call</span>
+                            </button>
+                            <button className="bg-green-50 dark:bg-green-600/10 border border-green-200 dark:border-green-500/30 hover:bg-green-100 dark:hover:bg-green-600 text-green-600 dark:text-green-400 flex flex-col items-center justify-center py-3 rounded-xl transition-all cursor-pointer gap-1">
+                              <FaWhatsapp className="text-xl"/><span className="font-bold text-[10px]">WhatsApp</span>
+                            </button>
                           </div>
                         </div>
                       )}
                     </div>
 
-                    {/* RIGHT PANEL: FOLLOW-UPS */}
-                    <div className="w-full lg:w-[55%] flex flex-col bg-[#1a1a1a] border border-[#333] rounded-2xl overflow-hidden shadow-2xl h-full min-h-0">
-                      <div className="flex-1 p-6 overflow-y-auto custom-scrollbar flex flex-col gap-6 bg-[#181818]">
+                    {/* Right panel: follow-ups */}
+                    <div className={`w-full lg:w-[55%] flex flex-col border rounded-2xl overflow-hidden shadow-2xl h-full min-h-0 ${theme.chatPanel}`} style={theme.chatPanelGl}>
+                      <div className={`flex-1 p-6 overflow-y-auto flex flex-col gap-6 ${theme.chatArea} ${theme.scroll}`}>
                         <div className="flex justify-start">
-                          <div className="bg-[#222] border border-[#333] rounded-2xl rounded-tl-none p-4 max-w-[85%] shadow-md">
-                            <div className="flex justify-between items-center mb-2 gap-6"><span className="font-bold text-sm text-purple-400">System (Front Desk)</span><span className="text-[10px] text-gray-500">{formatDate(selectedLead.created_at)}</span></div>
-                            <p className="text-sm text-gray-300 leading-relaxed">Lead assigned to {selectedLead.assigned_to}. Action required.</p>
+                          <div className={`border rounded-2xl rounded-tl-none p-4 max-w-[85%] shadow-md ${theme.fupDefault}`}>
+                            <div className="flex justify-between items-center mb-2 gap-6">
+                              <span className={`font-bold text-sm ${theme.accentText}`}>System (Front Desk)</span>
+                              <span className={`text-[10px] ${theme.textFaint}`}>{formatDate(selectedLead.created_at)}</span>
+                            </div>
+                            <p className={`text-sm leading-relaxed ${theme.text}`}>Lead assigned to {selectedLead.assigned_to}. Action required.</p>
                           </div>
                         </div>
                         {currentLeadFollowUps.map((msg: any, idx: number) => {
-                          const isLoan = msg.message.includes("🏦 Loan Update");
-                          const isSF   = msg.message.includes("📝 Detailed Salesform Submitted");
-                          const isAdmin= msg.createdBy === "admin";
-                          let bg = "bg-[#2a2135] border border-[#4c1d95]";
-                          if (isLoan) bg = "bg-blue-900/20 border border-blue-600/40";
-                          else if (isSF) bg = "bg-[#222] border border-[#444]";
-                          else if (isAdmin) bg = "bg-purple-900/30 border border-purple-500/30";
+                          const isLoan  = msg.message.includes("🏦 Loan Update");
+                          const isSF    = msg.message.includes("📝 Detailed Salesform Submitted");
+                          const isAdmin = msg.createdBy === "admin";
+                          let bg = theme.fupDefault;
+                          if (isLoan) bg = theme.fupLoan;
+                          else if (isSF) bg = theme.fupSalesform;
+                          else if (isAdmin) bg = theme.fupClosing;
                           return (
                             <div key={idx} className="flex justify-start">
                               <div className={`rounded-2xl rounded-tl-none p-4 max-w-[85%] shadow-lg ${bg}`}>
                                 <div className="flex justify-between items-center mb-3 gap-6">
-                                  <span className="font-bold text-sm text-white">{msg.createdBy==="admin"?`${msg.salesManagerName||"Admin"} (Admin)`:msg.salesManagerName}</span>
-                                  <span className="text-[10px] text-gray-400">{formatDate(msg.createdAt)}</span>
+                                  <span className={`font-bold text-sm ${theme.text}`}>{msg.createdBy==="admin"?`${msg.salesManagerName||"Admin"} (Admin)`:msg.salesManagerName}</span>
+                                  <span className={`text-[10px] ${theme.textFaint}`}>{formatDate(msg.createdAt)}</span>
                                 </div>
-                                <p className="text-sm text-gray-200 whitespace-pre-wrap leading-relaxed">{msg.message}</p>
+                                <p className={`text-sm whitespace-pre-wrap leading-relaxed ${theme.text}`}>{msg.message}</p>
                               </div>
                             </div>
                           );
                         })}
                         <div ref={followUpEndRef}/>
                       </div>
-                      <form onSubmit={handleSendCustomNote} className="p-4 bg-[#1a1a1a] border-t border-[#333] flex gap-3 items-center flex-shrink-0">
-                        <input type="text" value={customNote} onChange={e=>setCustomNote(e.target.value)} placeholder="Add admin note..." className="flex-1 bg-[#121212] border border-[#333] rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-purple-500 transition-colors shadow-inner"/>
-                        <button type="submit" className="w-12 h-12 bg-purple-600 hover:bg-purple-500 text-white rounded-xl flex items-center justify-center cursor-pointer transition-colors shadow-lg"><FaPaperPlane className="text-sm ml-[-2px]"/></button>
+                      <form onSubmit={handleSendCustomNote} className={`p-4 border-t flex gap-3 items-center flex-shrink-0 ${theme.chatInputInner}`}>
+                        <input type="text" value={customNote} onChange={e => setCustomNote(e.target.value)} placeholder="Add admin note..."
+                          className={`flex-1 border rounded-xl px-4 py-3 text-sm outline-none transition-colors shadow-inner ${theme.inputInner} ${theme.text} ${theme.inputFocus}`}/>
+                        <button type="submit" className={`w-12 h-12 text-white rounded-xl flex items-center justify-center cursor-pointer transition-colors shadow-lg ${isDark?"bg-[#9E217B] hover:bg-[#b8268f]":"bg-[#9E217B] hover:bg-[#8a1d6b]"}`}>
+                          <FaPaperPlane className="text-sm ml-[-2px]"/>
+                        </button>
                       </form>
                     </div>
                   </div>
@@ -1188,373 +1423,48 @@ function AdminSalesView({ managers, allLeads, followUps, isLoading, adminUser, r
   );
 }
 
-// ─────────────────────────────────────────────────────────────
-// ADDITIONS TO admin/page.tsx
-// ─────────────────────────────────────────────────────────────
-//
-// CHANGE 1: Add "caller" to menuItems array
-// Find this array and add the caller item:
-//
-//   const menuItems = [
-//     { id: "dashboard",    icon: FaThLarge,      label: "Overview" },
-//     { id: "receptionist", icon: FaClipboardList, label: "Receptionist" },
-//     { id: "sales",        icon: FaUsers,         label: "Sales Managers" },
-//     { id: "employees",    icon: FaIdCard,        label: "Add Employee" },
-//     // ADD THIS LINE:
-//     { id: "caller",       icon: FaPhoneAlt,      label: "Caller Panel" },
-//   ];
-//
-// CHANGE 2: Add caller view render in main section
-// Find:
-//   {activeView === "receptionist" && <ReceptionistView ... />}
-// Add after it:
-//   {activeView === "caller" && <CallerAdminView />}
-//
-// ─────────────────────────────────────────────────────────────
-// PASTE THIS ENTIRE COMPONENT at the bottom of admin/page.tsx
-// ─────────────────────────────────────────────────────────────
-
-function CallerAdminView() {
-  const [callerLeads, setCallerLeads]   = useState<any[]>([]);
-  const [batches, setBatches]           = useState<string[]>([]);
-  const [selectedBatch, setSelectedBatch] = useState<string>("all");
-  const [isLoading, setIsLoading]       = useState(true);
-  const [searchTerm, setSearchTerm]     = useState("");
-  const [selectedLead, setSelectedLead] = useState<any>(null);
-  const [subView, setSubView]           = useState<"table" | "detail">("table");
-
-  // Fetch caller leads
-  const fetchLeads = async () => {
-    try {
-      setIsLoading(true);
-      const url = selectedBatch !== "all"
-        ? `/api/caller-leads?batch=${selectedBatch}`
-        : "/api/caller-leads";
-      const res = await fetch(url);
-      if (res.ok) {
-        const json = await res.json();
-        const leads = json.leads || [];
-        setCallerLeads(leads);
-
-        // Build unique batch list from batch_name
-        const uniqueBatches = Array.from(
-          new Set(leads.map((l: any) => l.batch_name).filter(Boolean))
-        ) as string[];
-        setBatches(uniqueBatches);
-      }
-    } catch (e) {
-      console.error("Failed to fetch caller leads:", e);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => { fetchLeads(); }, [selectedBatch]);
-
-  const filtered = callerLeads.filter(l =>
-    !searchTerm ||
-    l.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    l.contact_no?.includes(searchTerm) ||
-    String(l.id).includes(searchTerm) ||
-    (l.assign_manager || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (l.channel_partner || "").toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  // Stats
-  const interested    = callerLeads.filter(l => l.interest_status === "Interested").length;
-  const notInterested = callerLeads.filter(l => l.interest_status === "Not Interested").length;
-  const saved         = callerLeads.filter(l => l.status === "saved").length;
-  const pending       = callerLeads.filter(l => !l.interest_status).length;
-
-  const interestBadge = (status?: string) => {
-    if (!status) return <span className="text-[10px] text-gray-600 italic">—</span>;
-    const map: Record<string, string> = {
-      "Interested":     "text-green-400 bg-green-500/10 border-green-500/30",
-      "Not Interested": "text-red-400 bg-red-500/10 border-red-500/30",
-      "Maybe":          "text-yellow-400 bg-yellow-500/10 border-yellow-500/30",
-    };
-    return (
-      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${map[status] ?? "text-gray-400 bg-gray-500/10 border-gray-500/30"}`}>
-        {status}
-      </span>
-    );
-  };
-
-  // ── DETAIL VIEW ──────────────────────────────────────────────
-  if (subView === "detail" && selectedLead) {
-    const followUps: any[] = selectedLead.follow_ups || [];
-    return (
-      <div className="h-full flex flex-col p-8 overflow-y-auto custom-scrollbar animate-fadeIn">
-        {/* Header */}
-        <div className="flex items-center gap-4 mb-6 bg-[#111111] border border-[#222] rounded-2xl p-5 shadow-sm">
-          <button
-            onClick={() => { setSubView("table"); setSelectedLead(null); }}
-            className="w-10 h-10 flex items-center justify-center bg-[#1a1a1a] hover:bg-[#222] border border-[#333] rounded-lg text-gray-400 transition-colors cursor-pointer"
-          >
-            <FaChevronLeft className="text-sm"/>
-          </button>
-          <div>
-            <h1 className="text-xl font-bold text-white flex items-center gap-3">
-              <span className="text-purple-400">#{selectedLead.id}</span>
-              {selectedLead.name}
-            </h1>
-            <p className="text-xs text-gray-500 mt-0.5">
-              Uploaded from: <span className="text-gray-400">{selectedLead.batch_name || "Unknown file"}</span>
-            </p>
-          </div>
-          <div className="ml-auto">
-            {interestBadge(selectedLead.interest_status)}
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Lead Info */}
-          <div className="bg-[#111111] border border-[#222] rounded-2xl p-6 shadow-sm">
-            <h3 className="text-xs font-bold text-purple-400 uppercase tracking-wider mb-4 border-b border-[#222] pb-2">
-              Lead Information
-            </h3>
-            <div className="space-y-3 text-sm">
-              {[
-                { label: "Contact No.",     value: selectedLead.contact_no },
-                { label: "Email",           value: selectedLead.email },
-                { label: "Source",          value: selectedLead.source },
-                { label: "Channel Partner", value: selectedLead.channel_partner },
-                { label: "Assign Manager",  value: selectedLead.assign_manager },
-                { label: "Budget",          value: selectedLead.budget },
-                { label: "Location",        value: selectedLead.location },
-                { label: "Sr No.",          value: selectedLead.sr_no },
-                { label: "Form No.",        value: selectedLead.form_no },
-                { label: "Lead Date",       value: selectedLead.lead_date },
-                { label: "Status",          value: selectedLead.status },
-              ].map(({ label, value }) => (
-                <div key={label} className="flex justify-between items-start">
-                  <p className="text-gray-500 text-xs">{label}</p>
-                  <p className="text-white font-medium text-right max-w-[55%] break-words">
-                    {value || "—"}
-                  </p>
-                </div>
-              ))}
-              <div className="flex justify-between items-center pt-1">
-                <p className="text-gray-500 text-xs">Interest Status</p>
-                {interestBadge(selectedLead.interest_status)}
-              </div>
-            </div>
-
-            {/* Feedback */}
-            {selectedLead.feedback && (
-              <div className="mt-4 bg-yellow-500/5 border border-yellow-500/20 rounded-xl p-3">
-                <p className="text-[10px] text-yellow-400 font-bold uppercase tracking-wider mb-1">Caller Feedback</p>
-                <p className="text-sm text-gray-300">{selectedLead.feedback}</p>
-              </div>
-            )}
-
-            {/* Site Visit */}
-            {selectedLead.site_visit_date && (
-              <div className="mt-4 bg-orange-500/10 border border-orange-500/30 rounded-xl p-3 text-center">
-                <p className="text-[10px] text-orange-400 font-bold mb-1">Site Visit Scheduled</p>
-                <p className="text-white font-bold">{formatDate(selectedLead.site_visit_date)}</p>
-              </div>
-            )}
-          </div>
-
-          {/* Follow-ups */}
-          <div className="bg-[#111111] border border-[#222] rounded-2xl overflow-hidden shadow-sm flex flex-col" style={{minHeight: "400px"}}>
-            <div className="p-4 border-b border-[#222] bg-[#151515]">
-              <h3 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                <FaComments className="text-purple-400"/> Follow-up Timeline
-              </h3>
-            </div>
-            <div className="flex-1 overflow-y-auto custom-scrollbar p-5 flex flex-col gap-4 bg-[#0a0a0a]">
-              <div className="flex justify-start">
-                <div className="bg-[#1a1a1a] border border-[#222] rounded-2xl rounded-tl-none p-4 max-w-[85%]">
-                  <div className="flex justify-between items-center mb-2 gap-4">
-                    <span className="font-bold text-xs text-purple-400">System</span>
-                    <span className="text-[10px] text-gray-500">{formatDate(selectedLead.created_at)}</span>
-                  </div>
-                  <p className="text-sm text-gray-300">Lead uploaded to Caller Panel.</p>
-                </div>
-              </div>
-
-              {followUps.length === 0 ? (
-                <div className="flex-1 flex flex-col items-center justify-center text-gray-700 py-6">
-                  <FaComments className="text-3xl mb-3 opacity-20"/>
-                  <p className="text-sm">No follow-ups yet.</p>
-                </div>
-              ) : (
-                followUps.map((fup: any, idx: number) => (
-                  <div key={idx} className="flex justify-start">
-                    <div className="bg-[#2a2135] border border-[#4c1d95] rounded-2xl rounded-tl-none p-4 max-w-[85%]">
-                      <div className="flex justify-between items-center mb-2 gap-4">
-                        <span className="font-bold text-xs text-white">{fup.created_by_name || "Caller"}</span>
-                        <span className="text-[10px] text-gray-400">{formatDate(fup.created_at)}</span>
-                      </div>
-                      <p className="text-sm text-gray-200 whitespace-pre-wrap">{fup.message}</p>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // ── TABLE VIEW ───────────────────────────────────────────────
-  return (
-    <div className="h-full flex flex-col p-8 overflow-y-auto custom-scrollbar">
-
-      {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        {[
-          { label: "Total Leads",    value: callerLeads.length, color: "text-white",       bg: "bg-purple-500/10 border-purple-500/20" },
-          { label: "Saved",          value: saved,              color: "text-purple-400",  bg: "bg-purple-500/10 border-purple-500/20" },
-          { label: "Interested",     value: interested,         color: "text-green-400",   bg: "bg-green-500/10 border-green-500/20"   },
-          { label: "Not Interested", value: notInterested,      color: "text-red-400",     bg: "bg-red-500/10 border-red-500/20"       },
-        ].map(s => (
-          <div key={s.label} className={`rounded-2xl p-5 border ${s.bg}`}>
-            <p className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-2">{s.label}</p>
-            <p className={`text-3xl font-black ${s.color}`}>{s.value}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* Table Controls */}
-      <div className="bg-[#111111] border border-[#222] rounded-2xl overflow-hidden shadow-sm">
-        <div className="p-4 border-b border-[#222] bg-[#151515] flex flex-wrap justify-between items-center gap-3">
-          <h3 className="font-bold text-white flex items-center gap-2 text-sm">
-            <FaPhoneAlt className="text-purple-400"/> Caller Leads Database
-          </h3>
-
-          <div className="flex items-center gap-3 flex-wrap">
-            {/* Excel file dropdown */}
-            <select
-              value={selectedBatch}
-              onChange={e => setSelectedBatch(e.target.value)}
-              className="bg-[#1a1a1a] border border-[#333] rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-purple-500 cursor-pointer"
-            >
-              <option value="all">All Uploads</option>
-              {batches.map(b => (
-                <option key={b} value={b}>{b}</option>
-              ))}
-            </select>
-
-            {/* Search */}
-            <div className="relative">
-              <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs"/>
-              <input
-                type="text"
-                placeholder="Search leads..."
-                value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
-                className="bg-[#1a1a1a] border border-[#333] rounded-lg pl-9 pr-4 py-2 text-sm text-white focus:border-purple-500 outline-none w-48 transition-colors"
-              />
-            </div>
-
-            <span className="text-[10px] text-gray-500 bg-[#222] px-2 py-0.5 rounded border border-[#333]">
-              {filtered.length} of {callerLeads.length} leads
-            </span>
-
-            <button
-              onClick={fetchLeads}
-              className="text-purple-400 text-xs font-bold bg-purple-500/10 border border-purple-500/20 px-3 py-2 rounded-lg hover:bg-purple-500/20 transition-colors cursor-pointer"
-            >
-              ↻ Refresh
-            </button>
-          </div>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm text-gray-400">
-            <thead className="text-[11px] uppercase bg-[#1a1a1a] text-gray-500">
-              <tr>
-                <th className="px-4 py-3 border-b border-[#222] whitespace-nowrap">#</th>
-                <th className="px-4 py-3 border-b border-[#222] whitespace-nowrap">Name</th>
-                <th className="px-4 py-3 border-b border-[#222] whitespace-nowrap">Contact No.</th>
-                <th className="px-4 py-3 border-b border-[#222] whitespace-nowrap">Source</th>
-                <th className="px-4 py-3 border-b border-[#222] whitespace-nowrap">Channel Partner</th>
-                <th className="px-4 py-3 border-b border-[#222] whitespace-nowrap">Assign Manager</th>
-                <th className="px-4 py-3 border-b border-[#222] whitespace-nowrap">Feedback</th>
-                <th className="px-4 py-3 border-b border-[#222] whitespace-nowrap">Interest</th>
-                <th className="px-4 py-3 border-b border-[#222] whitespace-nowrap">Excel File</th>
-                <th className="px-4 py-3 border-b border-[#222] whitespace-nowrap">Uploaded On</th>
-                <th className="px-4 py-3 border-b border-[#222] whitespace-nowrap text-center">Action</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#1a1a1a]">
-              {isLoading ? (
-                <tr><td colSpan={11} className="px-4 py-8 text-center text-gray-600">Loading caller leads...</td></tr>
-              ) : filtered.length === 0 ? (
-                <tr><td colSpan={11} className="px-4 py-8 text-center text-gray-600">No leads found.</td></tr>
-              ) : filtered.map((lead: any) => (
-                <tr key={lead.id} className="hover:bg-[#1a1a1a] transition-colors group">
-                  <td className="px-4 py-3 font-mono text-purple-400 font-bold">#{lead.id}</td>
-                  <td className="px-4 py-3 text-white font-semibold whitespace-nowrap">{lead.name}</td>
-                  <td className="px-4 py-3 font-mono text-sm">{lead.contact_no || "—"}</td>
-                  <td className="px-4 py-3 text-gray-300">{lead.source || "—"}</td>
-                  <td className="px-4 py-3 text-gray-300 whitespace-nowrap">{lead.channel_partner || "—"}</td>
-                  <td className="px-4 py-3 text-gray-300 whitespace-nowrap">{lead.assign_manager || "—"}</td>
-                  <td className="px-4 py-3 max-w-[160px]">
-                    {lead.feedback
-                      ? <span className="text-xs text-yellow-300 bg-yellow-500/10 border border-yellow-500/20 rounded-lg px-2 py-1 inline-block truncate max-w-[140px]" title={lead.feedback}>{lead.feedback}</span>
-                      : <span className="text-gray-600 text-xs italic">—</span>}
-                  </td>
-                  <td className="px-4 py-3">{interestBadge(lead.interest_status)}</td>
-                  <td className="px-4 py-3 text-[11px] text-blue-400 whitespace-nowrap">{lead.batch_name || "—"}</td>
-                  <td className="px-4 py-3 text-[11px] text-gray-500 whitespace-nowrap">{formatDate(lead.created_at).split(",")[0]}</td>
-                  <td className="px-4 py-3 text-center">
-                    <button
-                      onClick={() => { setSelectedLead(lead); setSubView("detail"); }}
-                      className="text-gray-500 hover:text-purple-400 transition-colors cursor-pointer text-xs flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-purple-500/10 border border-transparent hover:border-purple-500/20 mx-auto"
-                    >
-                      <FaEye className="text-[10px]"/> View
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // ============================================================================
-// RECEPTIONIST MODULE (unchanged)
+// RECEPTIONIST VIEW
 // ============================================================================
-function ReceptionistView({ receptionists, allLeads, isLoading, refetch }: any) {
+function ReceptionistView({ receptionists, allLeads, isLoading, refetch, theme, isDark }: any) {
   const [selectedReceptionist, setSelectedReceptionist] = useState<any>(null);
-  const [searchRecep, setSearchRecep]   = useState("");
-  const [subView, setSubView]           = useState<"cards"|"detail">("cards");
+  const [searchRecep, setSearchRecep] = useState("");
+  const [subView, setSubView]         = useState<"cards"|"detail">("cards");
   const [selectedLead, setSelectedLead] = useState<any>(null);
-  const filteredRecep  = receptionists.filter((r: any) => r.name?.toLowerCase().includes(searchRecep.toLowerCase()));
+  const filteredRecep     = receptionists.filter((r: any) => r.name?.toLowerCase().includes(searchRecep.toLowerCase()));
   const receptionistLeads = allLeads;
 
   return (
     <div className="flex h-full">
-      <div className="w-80 border-r border-[#222] bg-[#111111] flex flex-col h-full flex-shrink-0 z-20 shadow-xl">
-        <div className="p-5 border-b border-[#222]">
+      <div className={`w-80 border-r flex flex-col h-full flex-shrink-0 z-20 shadow-xl ${theme.innerBlock}`}>
+        <div className={`p-5 border-b ${theme.tableBorder}`}>
           <div className="relative">
-            <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs"/>
-            <input type="text" placeholder="Search Receptionists..." value={searchRecep} onChange={e=>setSearchRecep(e.target.value)} className="w-full bg-[#1a1a1a] border border-[#333] rounded-lg pl-9 pr-4 py-2 text-sm text-white focus:border-pink-500 outline-none transition-colors"/>
+            <FaSearch className={`absolute left-3 top-1/2 -translate-y-1/2 text-xs ${theme.textFaint}`}/>
+            <input type="text" placeholder="Search Receptionists..." value={searchRecep} onChange={e => setSearchRecep(e.target.value)}
+              className={`w-full rounded-lg pl-9 pr-4 py-2 text-sm outline-none transition-colors ${theme.inputInner} ${theme.text} ${theme.inputFocus}`}/>
           </div>
         </div>
-        <div className="flex-1 overflow-y-auto custom-scrollbar">
-          {isLoading ? <div className="p-8 text-center text-gray-500 text-sm">Loading staff...</div>
-          : filteredRecep.length === 0 ? <div className="p-8 text-center text-gray-500 text-sm">No receptionists found.</div>
+        <div className={`flex-1 overflow-y-auto ${theme.scroll}`}>
+          {isLoading ? <div className={`p-8 text-center text-sm ${theme.textMuted}`}>Loading staff...</div>
+          : filteredRecep.length === 0 ? <div className={`p-8 text-center text-sm ${theme.textMuted}`}>No receptionists found.</div>
           : filteredRecep.map((recep: any) => {
             const isSelected = selectedReceptionist?.id === recep.id;
             return (
-              <div key={recep.id||recep.name||recep._id} onClick={() => { setSelectedReceptionist(recep); setSubView("cards"); }}
-                className={`p-4 flex items-center gap-4 cursor-pointer transition-all border-b border-[#1a1a1a] ${isSelected?"bg-[#1a1a1a] border-l-4 border-l-pink-500":"hover:bg-[#151515] border-l-4 border-l-transparent"}`}>
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-white shadow-sm flex-shrink-0 ${isSelected?"bg-pink-600":"bg-[#333] text-gray-400"}`}>{recep.name?.charAt(0).toUpperCase()}</div>
+              <div key={recep.id||recep.name||recep._id}
+                onClick={() => { setSelectedReceptionist(recep); setSubView("cards"); }}
+                className={`p-4 flex items-center gap-4 cursor-pointer transition-all border-b ${theme.tableBorder}
+                  ${isSelected
+                    ? isDark ? "border-l-4 border-l-[#9E217B] bg-[#9E217B]/10" : "border-l-4 border-l-[#9E217B] bg-pink-50"
+                    : "hover:opacity-80 border-l-4 border-l-transparent"}`}>
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-white shadow-sm flex-shrink-0 ${isSelected ? "bg-[#9E217B]" : isDark ? "bg-[#333] text-gray-400" : "bg-gray-400"}`}>
+                  {recep.name?.charAt(0).toUpperCase()}
+                </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex justify-between items-center mb-1">
-                    <h3 className="font-bold text-gray-200 truncate text-sm">{recep.name}</h3>
-                    <span className="text-[10px] text-pink-400 bg-pink-500/10 px-2 py-0.5 rounded-full font-bold">{allLeads.length} logged</span>
+                    <h3 className={`font-bold truncate text-sm ${theme.text}`}>{recep.name}</h3>
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${isDark ? "text-[#d946a8] bg-[#9E217B]/10" : "text-[#9E217B] bg-pink-100"}`}>{allLeads.length} logged</span>
                   </div>
-                  <p className="text-xs text-gray-500 truncate capitalize">{recep.role?.replace("_"," ")}</p>
+                  <p className={`text-xs truncate capitalize ${theme.textFaint}`}>{recep.role?.replace("_", " ")}</p>
                 </div>
               </div>
             );
@@ -1562,50 +1472,55 @@ function ReceptionistView({ receptionists, allLeads, isLoading, refetch }: any) 
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col h-full bg-[#0a0a0a] relative">
-        <div className="p-5 border-b border-[#222] bg-[#111111] flex justify-between items-center shadow-sm z-10 flex-shrink-0 gap-4">
+      <div className="flex-1 flex flex-col h-full relative overflow-hidden">
+        <div className={`p-5 border-b flex justify-between items-center shadow-sm z-10 flex-shrink-0 gap-4 ${theme.header}`} style={theme.headerGlass}>
           <div>
-            <h2 className="text-lg font-bold text-white flex items-center gap-2"><FaClipboardList className="text-pink-500"/>
+            <h2 className={`text-lg font-bold flex items-center gap-2 ${theme.text}`}>
+              <FaClipboardList className={isDark ? "text-[#d946a8]" : "text-[#9E217B]"}/>
               {selectedReceptionist ? `${selectedReceptionist.name}'s Logged Enquiries` : "Select a Receptionist"}
             </h2>
-            <p className="text-xs text-gray-500 mt-1">Review walk-in forms registered by this desk.</p>
+            <p className={`text-xs mt-1 ${theme.textFaint}`}>Review walk-in forms registered by this desk.</p>
           </div>
         </div>
-        <div className="flex-1 overflow-y-auto custom-scrollbar p-6">
+        <div className={`flex-1 overflow-y-auto p-6 ${theme.scroll}`}>
           {!selectedReceptionist ? (
-            <div className="h-full flex flex-col items-center justify-center text-gray-600"><FaClipboardList className="text-4xl mb-4 opacity-20"/><p>Select a receptionist from the left to view their logged data.</p></div>
+            <div className={`h-full flex flex-col items-center justify-center ${theme.textMuted}`}>
+              <FaClipboardList className="text-4xl mb-4 opacity-20"/>
+              <p>Select a receptionist from the left to view their logged data.</p>
+            </div>
           ) : subView === "cards" ? (
             <div className="animate-fadeIn grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-6">
-              {receptionistLeads.length === 0 ? <p className="text-gray-500 text-sm">No forms logged yet.</p>
+              {receptionistLeads.length === 0 ? <p className={`text-sm ${theme.textMuted}`}>No forms logged yet.</p>
               : receptionistLeads.map((lead: any) => {
                 const statusColors: any = {
-                  "Completed": { text:"text-green-500",border:"border-green-500/30",bg:"bg-green-500/10" },
-                  "Visit Scheduled": { text:"text-yellow-500",border:"border-yellow-500/30",bg:"bg-yellow-500/10" },
-                  "Routed": { text:"text-blue-400",border:"border-blue-500/30",bg:"bg-blue-500/10" }
+                  "Completed": { text:isDark?"text-green-500":"text-green-700",border:isDark?"border-green-500/30":"border-green-300",bg:isDark?"bg-green-500/10":"bg-green-50" },
+                  "Visit Scheduled": { text:isDark?"text-yellow-500":"text-yellow-700",border:isDark?"border-yellow-500/30":"border-yellow-300",bg:isDark?"bg-yellow-500/10":"bg-yellow-50" },
+                  "Routed": { text:isDark?"text-[#d946a8]":"text-[#9E217B]",border:isDark?"border-[#9E217B]/30":"border-pink-300",bg:isDark?"bg-[#9E217B]/10":"bg-pink-50" },
                 };
                 const leadStatus = lead.status || "Routed";
-                const colorSet = statusColors[leadStatus] || statusColors["Routed"];
+                const colorSet   = statusColors[leadStatus] || statusColors["Routed"];
                 return (
-                  <div key={lead.id} onClick={() => { setSelectedLead(lead); setSubView("detail"); }}
-                    className="bg-[#111] border border-[#222] rounded-2xl p-6 shadow-sm flex flex-col justify-between hover:border-pink-500/50 transition-colors cursor-pointer">
+                  <div key={lead.id}
+                    onClick={() => { setSelectedLead(lead); setSubView("detail"); }}
+                    className={`rounded-2xl p-6 shadow-sm flex flex-col justify-between transition-colors cursor-pointer ${theme.card}`} style={theme.cardGlass}>
                     <div>
-                      <div className="flex justify-between items-start mb-5 pb-4 border-b border-[#222]">
-                        <h3 className="text-lg font-bold text-white line-clamp-1 pr-2"><span className="mr-2 text-purple-500">#{lead.id}</span>{lead.name}</h3>
+                      <div className={`flex justify-between items-start mb-5 pb-4 border-b ${theme.tableBorder}`}>
+                        <h3 className={`text-lg font-bold line-clamp-1 pr-2 ${theme.text}`}><span className={`mr-2 ${theme.accentText}`}>#{lead.id}</span>{lead.name}</h3>
                         <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${colorSet.border} ${colorSet.text} ${colorSet.bg}`}>{leadStatus}</span>
                       </div>
                       <div className="space-y-4 mb-6">
-                        <div><p className="text-xs text-gray-500 font-medium">Estimated Budget</p><p className="text-sm font-semibold text-white">{lead.salesBudget||lead.budget||"N/A"}</p></div>
-                        <div className="bg-[#151515] p-3 rounded-lg border border-[#222] flex flex-col gap-2">
-                          <p className="text-xs text-gray-400 flex items-center gap-2"><FaPhoneAlt className="text-gray-500 w-3 h-3"/> Primary: <span className="font-mono text-gray-200">{maskPhone(lead.phone)}</span></p>
+                        <div><p className={`text-xs font-medium ${theme.textMuted}`}>Estimated Budget</p><p className={`text-sm font-semibold ${theme.text}`}>{lead.salesBudget||lead.budget||"N/A"}</p></div>
+                        <div className={`p-3 rounded-lg border flex flex-col gap-2 ${theme.innerBlock}`}>
+                          <p className={`text-xs flex items-center gap-2 ${theme.textMuted}`}><FaPhoneAlt className="w-3 h-3"/> Primary: <span className={`font-mono ${theme.text}`}>{maskPhone(lead.phone)}</span></p>
                         </div>
                       </div>
                     </div>
-                    <div className="pt-4 border-t border-[#222] flex justify-between items-center text-sm mt-auto">
+                    <div className={`pt-4 border-t flex justify-between items-center text-sm mt-auto ${theme.tableBorder}`}>
                       <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-purple-600 to-blue-500 text-white flex items-center justify-center text-[10px] font-bold">{String(lead.assigned_to||"U").charAt(0).toUpperCase()}</div>
-                        <p className="text-xs text-gray-400">Assigned: <span className="font-semibold text-white">{lead.assigned_to||"Unassigned"}</span></p>
+                        <div className={`w-6 h-6 rounded-full text-white flex items-center justify-center text-[10px] font-bold bg-[#9E217B]`}>{String(lead.assigned_to||"U").charAt(0).toUpperCase()}</div>
+                        <p className={`text-xs ${theme.textMuted}`}>Assigned: <span className={`font-semibold ${theme.text}`}>{lead.assigned_to||"Unassigned"}</span></p>
                       </div>
-                      <p className="text-[10px] text-gray-600">{formatDate(lead.created_at)}</p>
+                      <p className={`text-[10px] ${theme.textFaint}`}>{formatDate(lead.created_at)}</p>
                     </div>
                   </div>
                 );
@@ -1613,26 +1528,33 @@ function ReceptionistView({ receptionists, allLeads, isLoading, refetch }: any) 
             </div>
           ) : subView === "detail" && selectedLead && (
             <div className="animate-fadeIn max-w-[1200px] mx-auto">
-              <div className="flex items-center gap-4 mb-6 bg-[#1a1a1a] rounded-2xl border border-[#2a2a2a] p-5 shadow-xl">
-                <button onClick={() => setSubView("cards")} className="w-10 h-10 flex items-center justify-center bg-[#222] hover:bg-[#333] border border-[#444] rounded-lg text-gray-400 transition-colors cursor-pointer"><FaChevronLeft className="text-sm"/></button>
+              <div className={`flex items-center gap-4 mb-6 rounded-2xl border p-5 shadow-xl ${theme.card}`} style={theme.cardGlass}>
+                <button onClick={() => setSubView("cards")} className={`w-10 h-10 flex items-center justify-center border rounded-lg transition-colors cursor-pointer ${theme.innerBlock} ${theme.textMuted}`}><FaChevronLeft className="text-sm"/></button>
                 <div>
-                  <h1 className="text-2xl font-bold text-white flex items-center gap-3"><span className="text-pink-500">#{selectedLead.id}</span><span>{selectedLead.name}</span><span className="text-xs font-normal border border-[#333] bg-[#222] px-2 py-0.5 rounded-full">{selectedLead.status}</span></h1>
-                  <p className="text-xs mt-1 text-gray-500">Logged by: {selectedReceptionist.name} on {formatDate(selectedLead.created_at)}</p>
+                  <h1 className={`text-2xl font-bold flex items-center gap-3 ${theme.text}`}>
+                    <span className={isDark?"text-[#d946a8]":"text-[#9E217B]"}>#{selectedLead.id}</span>
+                    <span>{selectedLead.name}</span>
+                    <span className={`text-xs font-normal border px-2 py-0.5 rounded-full ${theme.settingsBg}`}>{selectedLead.status}</span>
+                  </h1>
+                  <p className={`text-xs mt-1 ${theme.textMuted}`}>Logged by: {selectedReceptionist.name} on {formatDate(selectedLead.created_at)}</p>
                 </div>
               </div>
-              <div className="bg-[#1a1a1a] rounded-2xl border border-[#2a2a2a] p-8 shadow-xl">
-                <h3 className="text-sm font-bold text-gray-400 border-b border-[#2a2a2a] pb-2 mb-6 uppercase tracking-widest">Lead Captured Data</h3>
+              <div className={`rounded-2xl border p-8 shadow-xl ${theme.card}`} style={theme.cardGlass}>
+                <h3 className={`text-sm font-bold border-b pb-2 mb-6 uppercase tracking-widest ${theme.textMuted} ${theme.tableBorder}`}>Lead Captured Data</h3>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-y-8 gap-x-6">
-                  <div><p className="text-xs text-gray-500 mb-1">Email</p><p className="text-white font-medium">{selectedLead.email!=="N/A"?selectedLead.email:"N/A"}</p></div>
-                  <div><p className="text-xs text-gray-500 mb-1">Phone</p><p className="font-mono text-white font-medium">{selectedLead.phone}</p></div>
-                  <div><p className="text-xs text-gray-500 mb-1">Alt Phone</p><p className="font-mono text-white font-medium">{selectedLead.alt_phone&&selectedLead.alt_phone!=="N/A"?selectedLead.alt_phone:"Not Provided"}</p></div>
-                  <div><p className="text-xs text-gray-500 mb-1">Occupation</p><p className="text-white font-medium">{selectedLead.occupation||"N/A"}</p></div>
-                  <div className="col-span-2"><p className="text-xs text-gray-500 mb-1">Organization / Address</p><p className="text-white font-medium">{selectedLead.organization} / {selectedLead.address}</p></div>
-                  <div><p className="text-xs text-gray-500 mb-1">Budget</p><p className="text-green-400 font-bold">{selectedLead.budget||"N/A"}</p></div>
-                  <div><p className="text-xs text-gray-500 mb-1">Configuration</p><p className="text-white font-medium">{selectedLead.configuration||"N/A"}</p></div>
-                  <div><p className="text-xs text-gray-500 mb-1">Purpose</p><p className="text-white font-medium">{selectedLead.purpose||"N/A"}</p></div>
-                  <div><p className="text-xs text-gray-500 mb-1">Source</p><p className="text-white font-medium">{selectedLead.source||"N/A"}</p></div>
-                  <div className="col-span-2"><p className="text-xs text-pink-500 mb-1 font-bold">Assigned Sales Manager</p><p className="text-white font-bold">{selectedLead.assigned_to||"N/A"}</p></div>
+                  <div><p className={`text-xs mb-1 ${theme.textMuted}`}>Email</p><p className={`font-medium ${theme.text}`}>{selectedLead.email!=="N/A"?selectedLead.email:"N/A"}</p></div>
+                  <div><p className={`text-xs mb-1 ${theme.textMuted}`}>Phone</p><p className={`font-mono font-medium ${theme.text}`}>{selectedLead.phone}</p></div>
+                  <div><p className={`text-xs mb-1 ${theme.textMuted}`}>Alt Phone</p><p className={`font-mono font-medium ${theme.text}`}>{selectedLead.alt_phone&&selectedLead.alt_phone!=="N/A"?selectedLead.alt_phone:"Not Provided"}</p></div>
+                  <div><p className={`text-xs mb-1 ${theme.textMuted}`}>Occupation</p><p className={`font-medium ${theme.text}`}>{selectedLead.occupation||"N/A"}</p></div>
+                  <div className="col-span-2"><p className={`text-xs mb-1 ${theme.textMuted}`}>Organization / Address</p><p className={`font-medium ${theme.text}`}>{selectedLead.organization} / {selectedLead.address}</p></div>
+                  <div><p className={`text-xs mb-1 ${theme.textMuted}`}>Budget</p><p className="text-green-500 font-bold">{selectedLead.budget||"N/A"}</p></div>
+                  <div><p className={`text-xs mb-1 ${theme.textMuted}`}>Configuration</p><p className={`font-medium ${theme.text}`}>{selectedLead.configuration||"N/A"}</p></div>
+                  <div><p className={`text-xs mb-1 ${theme.textMuted}`}>Purpose</p><p className={`font-medium ${theme.text}`}>{selectedLead.purpose||"N/A"}</p></div>
+                  <div><p className={`text-xs mb-1 ${theme.textMuted}`}>Source</p><p className={`font-medium ${theme.text}`}>{selectedLead.source||"N/A"}</p></div>
+                  <div className="col-span-2">
+                    <p className={`text-xs mb-1 font-bold ${isDark?"text-[#d946a8]":"text-[#9E217B]"}`}>Assigned Sales Manager</p>
+                    <p className={`font-bold ${theme.text}`}>{selectedLead.assigned_to||"N/A"}</p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1640,5 +1562,14 @@ function ReceptionistView({ receptionists, allLeads, isLoading, refetch }: any) 
         </div>
       </div>
     </div>
+  );
+}
+
+// ── FaEye import needed for profile panel ──
+function FaEye({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 576 512" fill="currentColor" width="1em" height="1em">
+      <path d="M572.52 241.4C518.29 135.59 410.93 64 288 64S57.68 135.64 3.48 241.41a32.35 32.35 0 0 0 0 29.19C57.71 376.41 165.07 448 288 448s230.32-71.64 284.52-177.41a32.35 32.35 0 0 0 0-29.19zM288 400a144 144 0 1 1 144-144 143.93 143.93 0 0 1-144 144zm0-240a95.31 95.31 0 0 0-25.31 3.79 47.85 47.85 0 0 1-66.9 66.9A95.78 95.78 0 1 0 288 160z"/>
+    </svg>
   );
 }
