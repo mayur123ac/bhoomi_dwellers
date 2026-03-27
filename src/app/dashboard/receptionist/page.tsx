@@ -24,6 +24,10 @@ const NAV_ITEMS = [
   { id: "assistant", icon: <FaRobot className="w-5 h-5" />,         title: "CRM AI Assistant" },
 ];
 
+const LEAD_SOURCES = [
+  "Advertisement", "Referral", "Exhibition", "Channel Partner", "Website", "Call Center", "Others"
+];
+
 const SunIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <circle cx="12" cy="12" r="5"/>
@@ -71,7 +75,7 @@ export default function ReceptionistDashboard() {
     modalBlock:    isDark ? "bg-[#14141B] border-[#1E1E2A]"            : "bg-white border-[#9CA3AF]",
     modalBlockGl:  isDark ? {}                                         : { boxShadow: "0 1px 2px rgba(0,0,0,0.03), 0 3px 8px rgba(0,174,239,0.05)" },
     modalInput:    isDark ? "bg-[#14141B] border-[#2A2A35]"            : "bg-white border-[#9CA3AF]",
-    text:          isDark ? "text-white"                               : "text-[#1A1A1A]",
+    text:          isDark ? "text-white"                               : "text-[#9E217B]",
     textMuted:     isDark ? "text-[#888899]"                           : "text-[#6B7280]",
     textFaint:     isDark ? "text-[#55556A]"                           : "text-[#9CA3AF]",
     textHeader:    isDark ? "text-xs text-[#B0B0C4]"                   : "text-xs text-[#6B7280]",
@@ -102,8 +106,8 @@ export default function ReceptionistDashboard() {
     
     selectSmall:   isDark ? "bg-[#1A1A28] border-[#2A2A35] text-white" : "bg-white border-[#D1D5DB] text-[#6B7280]",
     chartColors:   isDark
-      ? ["#d946ef", "#8b5cf6", "#3b82f6", "#0ea5e9", "#6b7280", "#f59e0b"]
-      : ["#00AEEF", "#9E217B", "#0077b6", "#d4006e", "#9CA3AF", "#f59e0b"],
+      ? ["#d946ef", "#8b5cf6", "#3b82f6", "#0ea5e9", "#6b7280", "#f59e0b", "#10b981"]
+      : ["#00AEEF", "#9E217B", "#0077b6", "#d4006e", "#9CA3AF", "#f59e0b", "#10b981"],
     tooltipBg:     isDark ? "#1a1a1a" : "rgba(255,255,255,0.98)",
     tooltipColor:  isDark ? "#fff" : "#1A1A1A",
     tooltipBorder: isDark ? "1px solid rgba(158,33,123,0.3)" : "1px solid #E5E7EB",
@@ -137,6 +141,7 @@ export default function ReceptionistDashboard() {
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // ── Dashboard chart/card state ──
   // Card 1: Room Configuration chart mode
@@ -150,6 +155,10 @@ export default function ReceptionistDashboard() {
   // Card 3: Sales Manager
   const [card3Mode, setCard3Mode] = useState<"today"|"monthly"|"3months"|"6months"|"yearly"|"inception">("today");
   const [card3Month, setCard3Month] = useState(new Date().getMonth());
+
+  // Card 4: Lead Sources
+  const [card4Mode, setCard4Mode] = useState<"today"|"monthly"|"3months"|"6months"|"yearly"|"inception">("monthly");
+  const [card4Month, setCard4Month] = useState(new Date().getMonth());
 
   const tableSentinelRef = useRef<HTMLDivElement>(null);
   const cardsSentinelRef = useRef<HTMLDivElement>(null);
@@ -289,6 +298,9 @@ export default function ReceptionistDashboard() {
 
   const handleEnquirySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+
     const newEntry = {
       name: enquiryForm.fullName, phone: enquiryForm.mobile,
       alt_phone: enquiryForm.altMobile || null, email: enquiryForm.email || "N/A",
@@ -304,6 +316,7 @@ export default function ReceptionistDashboard() {
       loan_planned: enquiryForm.loanPlanned || "Pending",
       assignedTo: enquiryForm.assignedTo, status: "Routed",
     };
+
     try {
       const res = await fetch("/api/walkin_enquiries", {
         method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(newEntry),
@@ -313,8 +326,14 @@ export default function ReceptionistDashboard() {
         setIsEnquiryModalOpen(false);
         setEnquiryForm({ fullName: "", mobile: "", altMobile: "", email: "", address: "", occupation: "", organization: "", budget: "", configuration: "", purpose: "", source: "", assignedTo: "", siteVisitDate: "", appxPurchaseDate: "", loanPlanned: "", sourceOther: "", cpDetails: { name: "", company: "", phone: "" } });
         initialLoad();
-      } else { alert("Server Error. Ensure you updated the schema in PostgreSQL!"); }
-    } catch { alert("Network Error while submitting form."); }
+      } else {
+        alert("Server Error. Ensure you updated the schema in PostgreSQL!");
+      }
+    } catch {
+      alert("Network Error while submitting form.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const maskPhoneNumber = (phone: any) => {
@@ -557,6 +576,44 @@ export default function ReceptionistDashboard() {
     downloadCSV(formatted, `Sales_Manager_Activity_${card3Mode}.csv`);
   };
 
+  // ── Card 4: Lead Sources Computations & Export ──
+  const sourceDataFiltered = useMemo(() => {
+    let filtered = enquiries;
+    if (card4Mode === "today") filtered = enquiries.filter(e => e.created_at && new Date(e.created_at) >= todayStart);
+    else if (card4Mode === "monthly") filtered = enquiries.filter(e => { if (!e.created_at) return false; const d = new Date(e.created_at); return d.getMonth() === card4Month && d.getFullYear() === now.getFullYear(); });
+    else if (card4Mode === "3months") filtered = enquiries.filter(e => e.created_at && new Date(e.created_at) >= threeMonthsAgo);
+    else if (card4Mode === "6months") filtered = enquiries.filter(e => e.created_at && new Date(e.created_at) >= sixMonthsAgo);
+    else if (card4Mode === "yearly") filtered = enquiries.filter(e => e.created_at && new Date(e.created_at) >= yearStart);
+
+    const counts: Record<string, number> = {};
+    LEAD_SOURCES.forEach(s => counts[s] = 0);
+
+    filtered.forEach(e => {
+      const s = String(e.source || "Others").trim();
+      if (counts[s] !== undefined) {
+        counts[s]++;
+      } else {
+        counts["Others"] = (counts["Others"] || 0) + 1;
+      }
+    });
+
+    return LEAD_SOURCES.map((name, i) => ({
+      name,
+      count: counts[name],
+      color: t.chartColors[i % t.chartColors.length]
+    })).filter(d => d.count > 0).sort((a, b) => b.count - a.count);
+  }, [enquiries, card4Mode, card4Month, todayStart, threeMonthsAgo, sixMonthsAgo, yearStart, t.chartColors]);
+
+  const isSourceChartEmpty = sourceDataFiltered.length === 0;
+
+  const handleExportCard4 = () => {
+    const formatted = sourceDataFiltered.map(s => ({
+      "Lead Source": s.name,
+      "Total Enquiries": s.count
+    }));
+    downloadCSV(formatted, `Lead_Sources_${card4Mode}.csv`);
+  };
+
   // ── Main Table Export Handler ──
   const handleExportMainTable = () => {
     const formatted = receptionistLeads.map(e => ({
@@ -787,11 +844,11 @@ export default function ReceptionistDashboard() {
           {activeTab === "overview" && (
             <div className="animate-fadeIn pb-10">
 
-              {/* ── 3-COLUMN DASHBOARD GRID ── */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+              {/* ── 4-COLUMN DASHBOARD GRID ── */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
 
                 {/* ══════════════════════════════════════════════════
-                    CARD 1: Room Configuration — BAR CHART with period dropdown
+                    CARD 1: Room Configuration — PIE CHART with period dropdown
                 ══════════════════════════════════════════════════ */}
                 <div className={`rounded-2xl p-6 border flex flex-col ${t.card}`} style={t.cardGlass}>
                   <div className="flex items-center justify-between mb-3">
@@ -825,6 +882,7 @@ export default function ReceptionistDashboard() {
                       </select>
                     </div>
                   </div>
+                  
                   <p className={`text-[10px] font-semibold mb-3 ${t.accentText}`}>
                     {chartMode1 === "today" && `Today — ${now.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}`}
                     {chartMode1 === "monthly" && `${MONTH_NAMES[configChartMonth]} ${now.getFullYear()}`}
@@ -843,63 +901,145 @@ export default function ReceptionistDashboard() {
                   ) : (
                     <div className="w-full h-[230px]">
                       <ResponsiveContainer width="100%" height="100%">
-                        {chartMode1 === "today" || chartMode1 === "monthly" || chartMode1 === "inception" ? (
-                          <BarChart 
-                            data={chartMode1 === "today" ? configTodayBarData : chartMode1 === "monthly" ? configMonthlyBarData : configInceptionBarData} 
-                            margin={{ top: 4, right: 4, left: -24, bottom: 0 }}
-                          >
-                            <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
-                            <XAxis dataKey="name" tick={{ fill: axisColor, fontSize: 9 }} axisLine={false} tickLine={false} />
-                            <YAxis tick={{ fill: axisColor, fontSize: 10 }} axisLine={false} tickLine={false} allowDecimals={false} />
-                            <Tooltip content={<CustomTooltip />} />
-                            <Bar dataKey="count" name="Units" radius={[5, 5, 0, 0]}>
-                              {(chartMode1 === "today" ? configTodayBarData : chartMode1 === "monthly" ? configMonthlyBarData : configInceptionBarData).map((entry, i) => (
-                                <Cell key={i} fill={entry.color || t.chartColors[i % t.chartColors.length]} />
-                              ))}
-                            </Bar>
-                          </BarChart>
-                        ) : (
-                          <BarChart 
-                            data={
-                              chartMode1 === "3months" ? config3MonthBarData : 
-                              chartMode1 === "6months" ? config6MonthBarData : 
-                              configYearlyBarData
-                            } 
-                            margin={{ top: 4, right: 4, left: -24, bottom: 0 }}
-                          >
-                            <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
-                            <XAxis dataKey="month" tick={{ fill: axisColor, fontSize: 10 }} axisLine={false} tickLine={false} />
-                            <YAxis tick={{ fill: axisColor, fontSize: 10 }} axisLine={false} tickLine={false} allowDecimals={false} />
-                            <Tooltip content={<CustomTooltip />} />
-                            {chartMode1 === "yearly" && (
-                              <Legend wrapperStyle={{ fontSize: "10px", color: t.legendColor }} />
-                            )}
-                            {CONFIG_KEYS.map((key, i) => (
-                              <Bar 
-                                key={key} 
-                                dataKey={key} 
-                                stackId="a" 
-                                fill={t.chartColors[i % t.chartColors.length]} 
-                                radius={i === CONFIG_KEYS.length - 1 ? [4, 4, 0, 0] : [0, 0, 0, 0]} 
+                        {(() => {
+                          let pieData = [];
+                          if (chartMode1 === "today") pieData = configTodayBarData;
+                          else if (chartMode1 === "monthly") pieData = configMonthlyBarData;
+                          else if (chartMode1 === "inception") pieData = configInceptionBarData;
+                          else {
+                            const sourceData = chartMode1 === "3months" ? config3MonthBarData : 
+                                              chartMode1 === "6months" ? config6MonthBarData : 
+                                              configYearlyBarData;
+                            
+                            pieData = CONFIG_KEYS.map((key, i) => {
+                              const total = sourceData.reduce((sum, item) => sum + (item[key] || 0), 0);
+                              return { name: key, count: total, color: t.chartColors[i % t.chartColors.length] };
+                            }).filter(d => d.count > 0);
+                          }
+
+                          return (
+                            <PieChart>
+                              <Pie
+                                data={pieData}
+                                dataKey="count"
+                                nameKey="name"
+                                cx="50%"
+                                cy="50%"
+                                innerRadius={55}
+                                outerRadius={85}
+                                paddingAngle={2}
+                                stroke="none"
+                              >
+                                {pieData.map((entry, index) => (
+                                  <Cell key={`cell-${index}`} fill={entry.color} />
+                                ))}
+                              </Pie>
+                              <Tooltip content={<CustomTooltip />} />
+                              <Legend 
+                                verticalAlign="bottom" 
+                                align="center" 
+                                wrapperStyle={{ fontSize: "10px", color: t.legendColor, paddingTop: "10px" }} 
                               />
-                            ))}
-                          </BarChart>
-                        )}
+                            </PieChart>
+                          );
+                        })()}
                       </ResponsiveContainer>
                     </div>
                   )}
                 </div>
 
                 {/* ══════════════════════════════════════════════════
-                    CARD 2: Enquiry Details — with Today option added
+                    CARD 4: Lead Sources — PIE CHART
+                ══════════════════════════════════════════════════ */}
+                <div className={`rounded-2xl p-6 border flex flex-col ${t.card}`} style={t.cardGlass}>
+                  <div className="flex items-center justify-between mb-3">
+                    <div>
+                      <h2 className={`text-base font-bold ${t.text}`}>Lead Sources</h2>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button onClick={handleExportCard4} className={`p-1.5 border rounded-md ${t.exportBtn}`} title="Export to Excel (CSV)">
+                        <FaDownload size={12} />
+                      </button>
+                      {card4Mode === "monthly" && (
+                        <select
+                          value={card4Month}
+                          onChange={e => setCard4Month(Number(e.target.value))}
+                          className={`text-[10px] rounded px-1.5 py-1 outline-none cursor-pointer border ${t.selectSmall}`}
+                        >
+                          {MONTH_NAMES.map((m, idx) => <option key={idx} value={idx}>{m}</option>)}
+                        </select>
+                      )}
+                      <select
+                        value={card4Mode}
+                        onChange={e => setCard4Mode(e.target.value as any)}
+                        className={`text-xs rounded-lg px-2 py-1.5 outline-none cursor-pointer border ${t.selectSmall}`}
+                      >
+                        <option value="today">Today</option>
+                        <option value="monthly">Monthly</option>
+                        <option value="3months">Last 3 Months</option>
+                        <option value="6months">Last 6 Months</option>
+                        <option value="yearly">Yearly</option>
+                        <option value="inception">Inception</option>
+                      </select>
+                    </div>
+                  </div>
+                  
+                  <p className={`text-[10px] font-semibold mb-3 ${t.accentText}`}>
+                    {card4Mode === "today" && `Today — ${now.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}`}
+                    {card4Mode === "monthly" && `${MONTH_NAMES[card4Month]} ${now.getFullYear()}`}
+                    {card4Mode === "3months" && "Last 3 Months"}
+                    {card4Mode === "6months" && "Last 6 Months"}
+                    {card4Mode === "yearly" && `Year ${now.getFullYear()}`}
+                    {card4Mode === "inception" && "All Time (Since Inception)"}
+                  </p>
+
+                  {isFetchingEnquiries ? (
+                    <div className={`flex-1 flex items-center justify-center text-sm ${t.textMuted} min-h-[230px]`}>Calculating chart data...</div>
+                  ) : isSourceChartEmpty ? (
+                    <div className={`w-full h-[230px] mt-2 flex flex-col items-center justify-center rounded-xl border-2 border-dashed transition-colors ${isDark ? "border-[#2A2A35] bg-[#121218]/50" : "border-gray-200 bg-gray-50/50"}`}>
+                      <span className={`text-sm font-medium ${t.textMuted}`}>No data available</span>
+                    </div>
+                  ) : (
+                    <div className="w-full h-[230px]">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={sourceDataFiltered}
+                            dataKey="count"
+                            nameKey="name"
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={55}
+                            outerRadius={85}
+                            paddingAngle={2}
+                            stroke="none"
+                          >
+                            {sourceDataFiltered.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.color} />
+                            ))}
+                          </Pie>
+                          <Tooltip content={<CustomTooltip />} />
+                          <Legend 
+                            verticalAlign="bottom" 
+                            align="center" 
+                            wrapperStyle={{ fontSize: "10px", color: t.legendColor, paddingTop: "10px" }} 
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                  )}
+                </div>
+
+                {/* ══════════════════════════════════════════════════
+                    CARD 2: Enquiry Details — All Magenta Theme
                 ══════════════════════════════════════════════════ */}
                 <div className={`rounded-2xl p-6 border flex flex-col gap-4 ${t.card}`} style={t.cardGlass}>
                   <div className="flex items-center justify-between">
                     <div>
-                      <h2 className={`text-base font-bold ${t.text}`}>Enquiry Details</h2>
+                      <h2 className={`text-base font-bold ${isDark ? "text-[#d4006e]" : "text-[#9E217B]"}`}>Enquiry Details</h2>
                     </div>
                     <div className="flex items-center gap-2">
-                      <button onClick={handleExportCard2} className={`p-1.5 border rounded-md ${t.exportBtn}`} title="Export to Excel (CSV)">
+                      <button onClick={handleExportCard2} className={`p-1.5 border rounded-md transition-colors ${isDark ? "border-[#9E217B]/30 text-[#d4006e] hover:bg-[#9E217B]/20" : "border-[#9E217B]/30 text-[#9E217B] hover:bg-[#9E217B]/10"}`} title="Export to Excel (CSV)">
                         <FaDownload size={12} />
                       </button>
                       <select
@@ -919,15 +1059,15 @@ export default function ReceptionistDashboard() {
 
                   {/* ── TODAY ── */}
                   {card2Mode === "today" && (
-                    <div className={`rounded-xl p-5 border flex-1 flex flex-col ${t.settingsBg}`} style={t.settingsBgGl}>
+                    <div className={`rounded-xl p-5 border flex-1 flex flex-col ${isDark ? "bg-[#9E217B]/5 border-[#9E217B]/20" : "bg-[#9E217B]/5 border-[#9E217B]/20"}`}>
                       <div className="flex items-center justify-between mb-4">
                         <p className={`text-xs font-bold uppercase tracking-wider ${t.textFaint}`}>Enquiries Today</p>
-                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs ${isDark ? "bg-[#9E217B]/20 text-[#d4006e]" : "bg-[#00AEEF]/10 text-[#00AEEF]"}`}>
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs ${isDark ? "bg-[#9E217B]/20 text-[#d4006e]" : "bg-[#9E217B]/10 text-[#9E217B]"}`}>
                           <FaCalendarAlt />
                         </div>
                       </div>
-                      <p className={`text-7xl font-black leading-none ${t.text}`}>{isFetchingEnquiries ? "…" : enquiriesToday}</p>
-                      <p className={`text-sm mt-4 font-medium ${t.accentText}`}>
+                      <p className={`text-7xl font-black leading-none ${isDark ? "text-[#d4006e]" : "text-[#9E217B]"}`}>{isFetchingEnquiries ? "…" : enquiriesToday}</p>
+                      <p className={`text-sm mt-4 font-medium ${isDark ? "text-[#d4006e]" : "text-[#9E217B]"}`}>
                         Enquiries on {now.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
                       </p>
                     </div>
@@ -935,7 +1075,7 @@ export default function ReceptionistDashboard() {
 
                   {/* ── MONTHLY ── */}
                   {card2Mode === "monthly" && (
-                    <div className={`rounded-xl p-5 border flex-1 flex flex-col ${t.settingsBg}`} style={t.settingsBgGl}>
+                    <div className={`rounded-xl p-5 border flex-1 flex flex-col ${isDark ? "bg-[#9E217B]/5 border-[#9E217B]/20" : "bg-[#9E217B]/5 border-[#9E217B]/20"}`}>
                       <div className="flex items-center justify-between mb-4">
                         <p className={`text-xs font-bold uppercase tracking-wider ${t.textFaint}`}>Monthly Enquiries</p>
                         <select
@@ -946,69 +1086,68 @@ export default function ReceptionistDashboard() {
                           {MONTH_NAMES.map((m, idx) => <option key={idx} value={idx}>{m}</option>)}
                         </select>
                       </div>
-                      <p className={`text-7xl font-black leading-none ${t.text}`}>{isFetchingEnquiries ? "…" : monthlyEnquiriesSelected}</p>
-                      <p className={`text-sm mt-4 font-medium ${t.accentText}`}>Enquiries in {MONTH_NAMES[selectedMonthCard]} {now.getFullYear()}</p>
+                      <p className={`text-7xl font-black leading-none ${isDark ? "text-[#d4006e]" : "text-[#9E217B]"}`}>{isFetchingEnquiries ? "…" : monthlyEnquiriesSelected}</p>
+                      <p className={`text-sm mt-4 font-medium ${isDark ? "text-[#d4006e]" : "text-[#9E217B]"}`}>Enquiries in {MONTH_NAMES[selectedMonthCard]} {now.getFullYear()}</p>
                     </div>
                   )}
 
                   {/* ── LAST 3 MONTHS ── */}
                   {card2Mode === "3months" && (
-                    <div className={`rounded-xl p-5 border flex-1 flex flex-col ${t.settingsBg}`} style={t.settingsBgGl}>
+                    <div className={`rounded-xl p-5 border flex-1 flex flex-col ${isDark ? "bg-[#9E217B]/5 border-[#9E217B]/20" : "bg-[#9E217B]/5 border-[#9E217B]/20"}`}>
                       <div className="flex items-center justify-between mb-4">
                         <p className={`text-xs font-bold uppercase tracking-wider ${t.textFaint}`}>Last 3 Months</p>
-                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isDark ? "bg-[#9E217B]/20 text-[#d4006e]" : "bg-[#00AEEF]/10 text-[#00AEEF]"}`}>
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isDark ? "bg-[#9E217B]/20 text-[#d4006e]" : "bg-[#9E217B]/10 text-[#9E217B]"}`}>
                           <FaCalendarAlt className="text-xs" />
                         </div>
                       </div>
-                      <p className={`text-7xl font-black leading-none ${t.text}`}>{isFetchingEnquiries ? "…" : enquiries3Months}</p>
-                      <p className={`text-sm mt-4 font-medium ${t.accentText}`}>Enquiries over this period</p>
+                      <p className={`text-7xl font-black leading-none ${isDark ? "text-[#d4006e]" : "text-[#9E217B]"}`}>{isFetchingEnquiries ? "…" : enquiries3Months}</p>
+                      <p className={`text-sm mt-4 font-medium ${isDark ? "text-[#d4006e]" : "text-[#9E217B]"}`}>Enquiries over this period</p>
                     </div>
                   )}
 
                   {/* ── LAST 6 MONTHS ── */}
                   {card2Mode === "6months" && (
-                    <div className={`rounded-xl p-5 border flex-1 flex flex-col ${t.settingsBg}`} style={t.settingsBgGl}>
+                    <div className={`rounded-xl p-5 border flex-1 flex flex-col ${isDark ? "bg-[#9E217B]/5 border-[#9E217B]/20" : "bg-[#9E217B]/5 border-[#9E217B]/20"}`}>
                       <div className="flex items-center justify-between mb-4">
                         <p className={`text-xs font-bold uppercase tracking-wider ${t.textFaint}`}>Last 6 Months</p>
-                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isDark ? "bg-blue-500/20 text-blue-400" : "bg-[#9E217B]/10 text-[#9E217B]"}`}>
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isDark ? "bg-[#9E217B]/20 text-[#d4006e]" : "bg-[#9E217B]/10 text-[#9E217B]"}`}>
                           <FaCalendarAlt className="text-xs" />
                         </div>
                       </div>
-                      <p className={`text-7xl font-black leading-none ${isDark ? "text-blue-400" : "text-[#9E217B]"}`}>{isFetchingEnquiries ? "…" : enquiries6Months}</p>
-                      <p className={`text-sm mt-4 font-medium ${isDark ? "text-blue-400" : "text-[#9E217B]"}`}>Enquiries tracked</p>
+                      <p className={`text-7xl font-black leading-none ${isDark ? "text-[#d4006e]" : "text-[#9E217B]"}`}>{isFetchingEnquiries ? "…" : enquiries6Months}</p>
+                      <p className={`text-sm mt-4 font-medium ${isDark ? "text-[#d4006e]" : "text-[#9E217B]"}`}>Enquiries tracked</p>
                     </div>
                   )}
 
                   {/* ── YEARLY ── */}
                   {card2Mode === "yearly" && (
-                    <div className={`rounded-xl p-5 border flex-1 flex flex-col ${t.settingsBg}`} style={t.settingsBgGl}>
+                    <div className={`rounded-xl p-5 border flex-1 flex flex-col ${isDark ? "bg-[#9E217B]/5 border-[#9E217B]/20" : "bg-[#9E217B]/5 border-[#9E217B]/20"}`}>
                       <div className="flex items-center justify-between mb-4">
                         <p className={`text-xs font-bold uppercase tracking-wider ${t.textFaint}`}>Yearly ({now.getFullYear()})</p>
-                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isDark ? "bg-green-500/20 text-green-400" : "bg-emerald-50 text-emerald-600"}`}>
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isDark ? "bg-[#9E217B]/20 text-[#d4006e]" : "bg-[#9E217B]/10 text-[#9E217B]"}`}>
                           <FaCalendarAlt className="text-xs" />
                         </div>
                       </div>
-                      <p className={`text-7xl font-black leading-none ${isDark ? "text-green-400" : "text-emerald-600"}`}>{isFetchingEnquiries ? "…" : enquiriesYear}</p>
-                      <p className={`text-sm mt-4 font-medium ${isDark ? "text-green-400" : "text-emerald-600"}`}>Enquiries in {now.getFullYear()}</p>
+                      <p className={`text-7xl font-black leading-none ${isDark ? "text-[#d4006e]" : "text-[#9E217B]"}`}>{isFetchingEnquiries ? "…" : enquiriesYear}</p>
+                      <p className={`text-sm mt-4 font-medium ${isDark ? "text-[#d4006e]" : "text-[#9E217B]"}`}>Enquiries in {now.getFullYear()}</p>
                     </div>
                   )}
 
                   {/* ── ALL TIME ── */}
                   {card2Mode === "alltime" && (
-                    <div className={`rounded-xl p-5 border flex-1 flex flex-col ${isDark ? "bg-[#9E217B]/10 border-[#9E217B]/30" : "bg-[#00AEEF]/10 border-[#00AEEF]/20"}`}>
+                    <div className={`rounded-xl p-5 border flex-1 flex flex-col ${isDark ? "bg-[#9E217B]/10 border-[#9E217B]/30" : "bg-[#9E217B]/10 border-[#9E217B]/20"}`}>
                       <div className="flex items-center justify-between mb-4">
                         <p className={`text-xs font-bold uppercase tracking-wider ${t.textFaint}`}>Total (All Time)</p>
-                        <span className={`text-lg font-black ${t.accentText}`}>▲</span>
+                        <span className={`text-lg font-black ${isDark ? "text-[#d4006e]" : "text-[#9E217B]"}`}>▲</span>
                       </div>
-                      <p className={`text-7xl font-black leading-none ${t.accentText}`}>{isFetchingEnquiries ? "…" : totalCount}</p>
-                      <p className={`text-sm mt-4 font-medium ${t.accentText}`}>Total enquiries captured</p>
+                      <p className={`text-7xl font-black leading-none ${isDark ? "text-[#d4006e]" : "text-[#9E217B]"}`}>{isFetchingEnquiries ? "…" : totalCount}</p>
+                      <p className={`text-sm mt-4 font-medium ${isDark ? "text-[#d4006e]" : "text-[#9E217B]"}`}>Total enquiries captured</p>
                     </div>
                   )}
                 </div>
 
                 {/* ══════════════════════════════════════════════════
                     CARD 3: Sales Manager Activity
-                    — Channel Partner removed, period dropdown added
                 ══════════════════════════════════════════════════ */}
                 <div className={`rounded-2xl p-6 border flex flex-col ${t.card}`} style={t.cardGlass}>
                   <div className="flex items-center justify-between mb-2">
@@ -1516,9 +1655,13 @@ export default function ReceptionistDashboard() {
                     className={`px-6 py-2.5 rounded-lg font-bold cursor-pointer transition-colors ${t.textMuted} ${isDark ? "hover:bg-red-500/10 hover:text-red-500" : "hover:bg-[#9E217B]/10 hover:text-[#9E217B]"}`}>
                     Cancel
                   </button>
-                  <button form="enquiryForm" type="submit"
-                    className={`px-8 py-2.5 rounded-lg font-bold transition-colors cursor-pointer ${t.btnPrimary} ${isDark ? "shadow-[0_0_15px_rgba(158,33,123,0.3)]" : "shadow-[0_0_12px_rgba(0,174,239,0.25)]"}`}>
-                    Submit
+                  <button
+                    form="enquiryForm"
+                    type="submit"
+                    disabled={isSubmitting}
+                    className={`px-8 py-2.5 rounded-lg font-bold transition-colors ${isSubmitting ? "opacity-50 cursor-not-allowed" : "cursor-pointer"} ${t.btnPrimary} ${isDark ? "shadow-[0_0_15px_rgba(158,33,123,0.3)]" : "shadow-[0_0_12px_rgba(0,174,239,0.25)]"}`}
+                  >
+                    {isSubmitting ? "Submitting..." : "Submit"}
                   </button>
                 </div>
               </div>
