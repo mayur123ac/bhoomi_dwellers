@@ -81,7 +81,7 @@ export default function ReceptionistDashboard() {
     textHeader:    isDark ? "text-xs text-[#B0B0C4]"                   : "text-xs text-[#6B7280]",
     
     // ======== MAGENTA ACCENTS FOR EVERYTHING ========
-    navActive:     isDark ? "bg-[#1A1A28] text-white"                  : "bg-[#2A2A2A] text-[#00AEEF]",
+    navActive:     isDark ? "bg-[#1A1A28] text-white"                  : "bg-[#2A2A2A] text-[#9E217B]",
     navInactive:   isDark ? "text-[#888899] hover:bg-[#1A1A28] hover:text-white" : "text-[#9CA3AF] hover:bg-[#2A2A2A] hover:text-white",
     navIndicator:  isDark ? "bg-[#9E217B] shadow-[0_0_10px_2px_rgba(158,33,123,0.5)]" : "bg-[#9E217B] shadow-[0_0_8px_rgba(158,33,123,0.4)]",
     navIndicatorMobile: isDark ? "bg-[#9E217B] shadow-[0_0_10px_2px_rgba(158,33,123,0.5)]" : "bg-[#9E217B] shadow-[0_0_8px_rgba(158,33,123,0.35)]",
