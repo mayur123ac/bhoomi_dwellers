@@ -2,19 +2,21 @@
 import { NextResponse } from "next/server";
 import { query } from "@/lib/db";
 
+// GET: Fetch all follow-up messages
 export async function GET() {
   try {
     const messages = await query(
       `SELECT * FROM follow_ups ORDER BY created_at ASC`
     );
 
+    // Return same shape as old MongoDB response so frontend needs no changes
     const mapped = messages.map(m => ({
       _id:              String(m.id),
       leadId:           String(m.lead_id),
       salesManagerName: m.created_by_name || "",
       createdBy:        m.created_by_name || "sales",
       message:          m.message,
-      siteVisitDate:    m.site_visit_date || null,  // ✅ correct column name
+      siteVisitDate:    m.site_visit_date || null,
       createdAt:        m.created_at,
     }));
 
@@ -29,6 +31,7 @@ export async function GET() {
   }
 }
 
+// POST: Save a new follow-up message
 export async function POST(req: Request) {
   try {
     const body = await req.json();
@@ -44,17 +47,18 @@ export async function POST(req: Request) {
     const rows = await query(
       `INSERT INTO follow_ups (lead_id, message, created_by_name, site_visit_date)
        VALUES ($1, $2, $3, $4)
-       RETURNING *`,                                // ✅ correct column name
+       RETURNING *`,
       [
         String(leadId),
         message,
         salesManagerName || createdBy || "sales",
-        siteVisitDate || null,
+        siteVisitDate    || null,
       ]
     );
 
     const m = rows[0];
 
+    // Return same shape as old MongoDB response
     return NextResponse.json({
       success: true,
       data: {
@@ -63,7 +67,7 @@ export async function POST(req: Request) {
         salesManagerName: m.created_by_name || "",
         createdBy:        m.created_by_name || "sales",
         message:          m.message,
-        siteVisitDate:    m.site_visit_date || null,  // ✅ correct column name
+        siteVisitDate:    m.site_visit_date || null,
         createdAt:        m.created_at,
       },
     }, { status: 201 });
