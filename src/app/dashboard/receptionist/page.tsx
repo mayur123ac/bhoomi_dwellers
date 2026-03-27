@@ -4,11 +4,11 @@ import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
   FaThLarge, FaCog, FaBell, FaTimes, FaClipboardList,
-  FaChevronLeft, FaRobot, FaPaperPlane, FaCalendarAlt, FaEye, FaEyeSlash, FaPhoneAlt, FaUserCircle, FaBriefcase, FaSearch
+  FaChevronLeft, FaRobot, FaPaperPlane, FaCalendarAlt, FaEye, FaEyeSlash, FaPhoneAlt, FaUserCircle, FaBriefcase, FaSearch, FaDownload
 } from "react-icons/fa";
 import {
   PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend,
-  BarChart, Bar, XAxis, YAxis, CartesianGrid
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, LineChart, Line
 } from "recharts";
 
 const PAGE_SIZE = 20;
@@ -49,8 +49,14 @@ export default function ReceptionistDashboard() {
     sidebar:       isDark ? "bg-[#121218] border-[#2A2A35]"            : "bg-[#1A1A1A] border-[#2A2A2A]",
     header:        isDark ? "bg-[#121218] border-[#2A2A35]"            : "bg-white border-[#9CA3AF]",
     headerGlass:   isDark ? {}                                         : { boxShadow: "0 1px 0 #9CA3AF, 0 4px 16px rgba(0,174,239,0.06)" },
-    card:          isDark ? "bg-[#121218] border-[#2A2A35] hover:shadow-[0_0_24px_4px_rgba(99,102,241,0.25)]" : "bg-gradient-to-r from-[#f1f5ff] via-[#eef2ff] to-[#f5f3ff] border border-indigo-100 rounded-2xl p-6 shadow-sm hover:shadow-[0_-4px_16px_2px_rgba(99,102,241,0.2),0_0_24px_6px_rgba(99,102,241,0.12),0_4px_16px_rgba(0,0,0,0.08)] transition-all duration-300 border-[#9CA3AF]",
-    cardGlass:     isDark ? {}                                         : { boxShadow: "0 1px 2px rgba(0,0,0,0.04), 0 4px 12px rgba(0,174,239,0.07), 0 12px 28px rgba(0,0,0,0.08)" },
+    
+    // ======== MAGENTA GLOWS INTEGRATED HERE ========
+    card:          isDark 
+      ? "bg-[#121218] border-[#2A2A35] hover:border-[#9E217B]/50 hover:shadow-[0_0_24px_4px_rgba(158,33,123,0.35)] transition-all duration-300" 
+      : "bg-gradient-to-r from-[#f1f5ff] via-[#eef2ff] to-[#f5f3ff] border-[#9CA3AF] shadow-[0_4px_16px_rgba(0,174,239,0.06)] hover:border-[#9E217B] hover:shadow-[0_0_30px_8px_rgba(158,33,123,0.45)] transition-all duration-300",
+    
+    cardGlass:     {}, 
+    
     tableWrap:     isDark ? "bg-[#121218] border-[#2A2A35]"            : "bg-white border-[#9CA3AF]",
     tableGlass:    isDark ? {}                                         : { boxShadow: "0 1px 2px rgba(0,0,0,0.04), 0 4px 12px rgba(158,33,123,0.06), 0 16px 36px rgba(0,0,0,0.09)" },
     tableHead:     isDark ? "bg-[#1A1A28]"                             : "bg-[#F1F5F9]",
@@ -69,10 +75,12 @@ export default function ReceptionistDashboard() {
     textMuted:     isDark ? "text-[#888899]"                           : "text-[#6B7280]",
     textFaint:     isDark ? "text-[#55556A]"                           : "text-[#9CA3AF]",
     textHeader:    isDark ? "text-xs text-[#B0B0C4]"                   : "text-xs text-[#6B7280]",
+    
+    // ======== MAGENTA ACCENTS FOR EVERYTHING ========
     navActive:     isDark ? "bg-[#1A1A28] text-white"                  : "bg-[#2A2A2A] text-[#00AEEF]",
     navInactive:   isDark ? "text-[#888899] hover:bg-[#1A1A28] hover:text-white" : "text-[#9CA3AF] hover:bg-[#2A2A2A] hover:text-white",
-    navIndicator:  isDark ? "bg-purple-500 shadow-[0_0_10px_2px_rgba(168,85,247,0.5)]" : "bg-[#9E217B] shadow-[0_0_8px_rgba(158,33,123,0.4)]",
-    navIndicatorMobile: isDark ? "bg-purple-500 shadow-[0_0_10px_2px_rgba(168,85,247,0.5)]" : "bg-[#9E217B] shadow-[0_0_8px_rgba(158,33,123,0.35)]",
+    navIndicator:  isDark ? "bg-[#9E217B] shadow-[0_0_10px_2px_rgba(158,33,123,0.5)]" : "bg-[#9E217B] shadow-[0_0_8px_rgba(158,33,123,0.4)]",
+    navIndicatorMobile: isDark ? "bg-[#9E217B] shadow-[0_0_10px_2px_rgba(158,33,123,0.5)]" : "bg-[#9E217B] shadow-[0_0_8px_rgba(158,33,123,0.35)]",
     toggleWrap:    isDark ? "bg-[#1C1C2A] border-[#2A2A38] text-yellow-300" : "bg-[#F1F5F9] border-[#9CA3AF] text-[#1A1A1A]",
     dropdown:      isDark ? "bg-[#121218] border-[#2A2A35]"            : "bg-white border-[#9CA3AF]",
     dropdownGlass: isDark ? {}                                         : { boxShadow: "0 2px 4px rgba(0,0,0,0.04), 0 8px 20px rgba(0,174,239,0.08), 0 20px 40px rgba(0,0,0,0.10)" },
@@ -83,23 +91,25 @@ export default function ReceptionistDashboard() {
     chatPanelGl:   isDark ? {}                                         : { boxShadow: "0 1px 2px rgba(0,0,0,0.04), 0 4px 12px rgba(158,33,123,0.06), 0 16px 36px rgba(0,0,0,0.09)" },
     settingsBg:    isDark ? "bg-[#0A0A0F] border-[#2A2A35]"            : "bg-[#F8FAFC] border-[#9CA3AF]",
     settingsBgGl:  isDark ? {}                                         : { boxShadow: "inset 0 1px 3px rgba(0,0,0,0.04)" },
-    statGlow1:     isDark ? "bg-purple-600/10"                         : "bg-[#00AEEF]/10",
-    statGlow2:     isDark ? "bg-blue-600/10"                           : "bg-[#9E217B]/10",
-    accentText:    isDark ? "text-purple-500"                          : "text-[#00AEEF]",
-    accentBg:      isDark ? "bg-purple-500/10 text-purple-500 border border-purple-500/30" : "bg-[#00AEEF]/10 text-[#00AEEF] border border-[#00AEEF]/30",
-    sectionTitle:  isDark ? "text-purple-500"                          : "text-[#9E217B]",
-    sectionBorder: isDark ? "border-purple-500/20"                     : "border-[#9E217B]/25",
-    btnPrimary:    isDark ? "bg-purple-600 hover:bg-purple-500 text-white shadow-md" : "bg-[#00AEEF] hover:bg-[#0099d4] text-white shadow-sm",
+    
+    accentText:    isDark ? "text-[#d4006e]"                           : "text-[#00AEEF]",
+    accentBg:      isDark ? "bg-[#9E217B]/10 text-[#d4006e] border border-[#9E217B]/30" : "bg-[#00AEEF]/10 text-[#00AEEF] border border-[#00AEEF]/30",
+    sectionTitle:  isDark ? "text-[#d4006e]"                           : "text-[#9E217B]",
+    sectionBorder: isDark ? "border-[#9E217B]/20"                      : "border-[#9E217B]/25",
+    btnPrimary:    isDark ? "bg-[#9E217B] hover:bg-[#7a1a5e] text-white shadow-md" : "bg-[#00AEEF] hover:bg-[#0099d4] text-white shadow-sm",
     btnDanger:     isDark ? "bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white border border-red-500/30" : "bg-[#9E217B]/10 text-[#9E217B] hover:bg-[#9E217B] hover:text-white border border-[#9E217B]/30",
-    logoBg:        isDark ? "bg-purple-600 shadow-lg shadow-purple-600/30" : "bg-[#9E217B] shadow-lg shadow-[#9E217B]-600/30",
+    logoBg:        isDark ? "bg-[#9E217B] shadow-lg shadow-[#9E217B]/30" : "bg-[#9E217B] shadow-lg shadow-[#9E217B]/30",
+    
     selectSmall:   isDark ? "bg-[#1A1A28] border-[#2A2A35] text-white" : "bg-white border-[#D1D5DB] text-[#6B7280]",
     chartColors:   isDark
       ? ["#d946ef", "#8b5cf6", "#3b82f6", "#0ea5e9", "#6b7280", "#f59e0b"]
       : ["#00AEEF", "#9E217B", "#0077b6", "#d4006e", "#9CA3AF", "#f59e0b"],
     tooltipBg:     isDark ? "#1a1a1a" : "rgba(255,255,255,0.98)",
     tooltipColor:  isDark ? "#fff" : "#1A1A1A",
-    tooltipBorder: isDark ? "1px solid rgba(150,100,255,0.3)" : "1px solid #E5E7EB",
+    tooltipBorder: isDark ? "1px solid rgba(158,33,123,0.3)" : "1px solid #E5E7EB",
     legendColor:   isDark ? "#9ca3af" : "#6B7280",
+    
+    exportBtn:     isDark ? "border-[#2A2A35] hover:border-[#9E217B] hover:text-[#d4006e] text-[#888899]" : "border-[#9CA3AF] hover:border-[#9E217B] hover:text-[#9E217B] text-[#6B7280]",
   };
 
   // ================= STATE =================
@@ -128,11 +138,18 @@ export default function ReceptionistDashboard() {
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
 
-  // ── Dashboard chart state ──
-  const [chartMode1, setChartMode1] = useState<"config"|"monthlyBar"|"source"|"purpose">("config");
+  // ── Dashboard chart/card state ──
+  // Card 1: Room Configuration chart mode
+  const [chartMode1, setChartMode1] = useState<"today"|"monthly"|"3months"|"6months"|"yearly"|"inception">("today");
+  const [configChartMonth, setConfigChartMonth] = useState(new Date().getMonth());
+
+  // Card 2: Enquiry Details
+  const [card2Mode, setCard2Mode] = useState<"today"|"monthly"|"3months"|"6months"|"yearly"|"alltime">("monthly");
   const [selectedMonthCard, setSelectedMonthCard] = useState(new Date().getMonth());
-  const [card3Mode, setCard3Mode] = useState<"managers"|"channelPartner">("managers");
-  const [card2Mode, setCard2Mode] = useState<"monthly"|"3months"|"6months"|"yearly"|"alltime">("monthly");
+
+  // Card 3: Sales Manager
+  const [card3Mode, setCard3Mode] = useState<"today"|"monthly"|"3months"|"6months"|"yearly"|"inception">("today");
+  const [card3Month, setCard3Month] = useState(new Date().getMonth());
 
   const tableSentinelRef = useRef<HTMLDivElement>(null);
   const cardsSentinelRef = useRef<HTMLDivElement>(null);
@@ -144,6 +161,13 @@ export default function ReceptionistDashboard() {
     siteVisitDate: "", appxPurchaseDate: "", loanPlanned: "", sourceOther: "",
     cpDetails: { name: "", company: "", phone: "" }
   });
+
+  // ================= DATE CONSTANTS (must be before all useMemos) =================
+  const now = new Date();
+  const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
+  const threeMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+  const sixMonthsAgo   = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+  const yearStart      = new Date(now.getFullYear(), 0, 1);
 
   // ================= EFFECTS =================
   useEffect(() => {
@@ -213,8 +237,8 @@ export default function ReceptionistDashboard() {
         assignedTo: item.assigned_to || "Unassigned",
         altPhone: item.alt_phone,
         date: formatDate(item.created_at),
+        status: item.status || "Routed"
       }));
-      // ── Deduplicate by id ──
       setEnquiries((prev) => {
         const base = append ? prev : [];
         const merged = [...base, ...formatted];
@@ -270,9 +294,7 @@ export default function ReceptionistDashboard() {
       alt_phone: enquiryForm.altMobile || null, email: enquiryForm.email || "N/A",
       address: enquiryForm.address || "N/A", occupation: enquiryForm.occupation || "N/A",
       organization: enquiryForm.organization || "N/A",
-      // ── Budget is now a free-text field ──
       budget: enquiryForm.budget || "Pending",
-      // ── Configuration now includes 1 RK and 4 BHK ──
       configuration: enquiryForm.configuration || "N/A",
       purpose: enquiryForm.purpose || "N/A",
       source: enquiryForm.source, source_other: enquiryForm.source === "Others" ? enquiryForm.sourceOther : null,
@@ -330,107 +352,236 @@ export default function ReceptionistDashboard() {
       e.phone?.includes(searchRecep)
   );
 
+  // ================= CSV EXPORT UTILITY =================
+  const downloadCSV = (data: any[], filename: string) => {
+    if (!data || data.length === 0) {
+      alert("No data available to export for this selection.");
+      return;
+    }
+    const headers = Object.keys(data[0]);
+    const csvRows = data.map(row => 
+      headers.map(fieldName => JSON.stringify(row[fieldName] ?? "")).join(",")
+    );
+    const csvString = [headers.join(","), ...csvRows].join("\r\n");
+    const blob = new Blob([csvString], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute("download", filename);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   // ================= CHART DATA COMPUTATIONS =================
 
-  // ── Card 1: Chart 1 – Room Configuration Pie ──
-  const configChartData = useMemo(() => {
-    const cc: Record<string, number> = { "1 RK": 0, "1 BHK": 0, "2 BHK": 0, "3 BHK": 0, "4 BHK": 0, "4+ BHK": 0, "Other": 0 };
-    enquiries.forEach((item) => {
+  const CONFIG_KEYS = ["1 RK", "1 BHK", "2 BHK", "3 BHK", "4 BHK", "4+ BHK", "Other"];
+
+  // ── Card 1: Room Configuration BAR CHART — filtered by period ──
+
+  // Today config bar data
+  const configTodayBarData = useMemo(() => {
+    const filtered = enquiries.filter(e => e.created_at && new Date(e.created_at) >= todayStart);
+    const cc: Record<string, number> = {};
+    CONFIG_KEYS.forEach(k => cc[k] = 0);
+    filtered.forEach(item => {
       const c = String(item.configuration || "").trim();
       if (cc[c] !== undefined) cc[c]++; else cc["Other"]++;
     });
-    const colors = t.chartColors;
-    return [
-      { name: "1 RK",   value: cc["1 RK"],   color: colors[5] },
-      { name: "1 BHK",  value: cc["1 BHK"],  color: colors[0] },
-      { name: "2 BHK",  value: cc["2 BHK"],  color: colors[1] },
-      { name: "3 BHK",  value: cc["3 BHK"],  color: colors[2] },
-      { name: "4 BHK",  value: cc["4 BHK"],  color: colors[3] },
-      { name: "4+ BHK", value: cc["4+ BHK"], color: "#f97316" },
-      { name: "Other",  value: cc["Other"],  color: colors[4] },
-    ].filter((d) => d.value > 0);
-  }, [enquiries, isDark]);
+    return CONFIG_KEYS.map((name, i) => ({ name: name === "Other" ? "Other" : name, count: cc[name], color: t.chartColors[i % t.chartColors.length] })).filter(d => d.count > 0);
+  }, [enquiries, todayStart, t.chartColors]);
 
-  // ── Card 1: Chart 2 – Monthly Enquiries Bar ──
-  const monthlyBarData = useMemo(() => {
-    return MONTH_NAMES.map((month, idx) => {
-      const count = enquiries.filter(e => {
-        if (!e.created_at) return false;
-        const d = new Date(e.created_at);
-        return d.getMonth() === idx && d.getFullYear() === new Date().getFullYear();
-      }).length;
-      return { month: month.slice(0, 3), count };
-    });
-  }, [enquiries]);
-
-  // ── Card 1: Chart 3 – Source Bar ──
-  const sourceBarData = useMemo(() => {
-    const c: Record<string, number> = {};
-    enquiries.forEach(e => {
-      const src = e.source || "Unknown";
-      c[src] = (c[src] || 0) + 1;
-    });
-    return Object.entries(c).map(([source, count]) => ({ source, count })).sort((a, b) => b.count - a.count);
-  }, [enquiries]);
-
-  // ── Card 1: Chart 4 – Purpose Pie ──
-  const purposePieData = useMemo(() => {
-    const c: Record<string, number> = {};
-    enquiries.forEach(e => {
-      const p = e.purpose || "Not Specified";
-      if (p !== "N/A") c[p] = (c[p] || 0) + 1;
-    });
-    const colors = t.chartColors;
-    return Object.entries(c).map(([name, value], i) => ({ name, value, color: colors[i % colors.length] }));
-  }, [enquiries, isDark]);
-
-  // ── Card 2: Monthly enquiries ──
-  const monthlyEnquiriesSelected = useMemo(() => {
-    return enquiries.filter(e => {
+  // Monthly config bar data
+  const configMonthlyBarData = useMemo(() => {
+    const filtered = enquiries.filter(e => {
       if (!e.created_at) return false;
       const d = new Date(e.created_at);
-      return d.getMonth() === selectedMonthCard && d.getFullYear() === new Date().getFullYear();
-    }).length;
-  }, [enquiries, selectedMonthCard]);
+      return d.getMonth() === configChartMonth && d.getFullYear() === now.getFullYear();
+    });
+    const cc: Record<string, number> = {};
+    CONFIG_KEYS.forEach(k => cc[k] = 0);
+    filtered.forEach(item => {
+      const c = String(item.configuration || "").trim();
+      if (cc[c] !== undefined) cc[c]++; else cc["Other"]++;
+    });
+    return CONFIG_KEYS.map((name, i) => ({ name: name === "Other" ? "Other" : name, count: cc[name], color: t.chartColors[i % t.chartColors.length] })).filter(d => d.count > 0);
+  }, [enquiries, configChartMonth, isDark]);
 
-  const now = new Date();
-  const threeMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 2, 1);
-  const sixMonthsAgo   = new Date(now.getFullYear(), now.getMonth() - 5, 1);
-  const yearStart      = new Date(now.getFullYear(), 0, 1);
+  // 3-month config bar data (Stacked)
+  const config3MonthBarData = useMemo(() => {
+    const months = [2, 1, 0].map(offset => {
+      const d = new Date(now.getFullYear(), now.getMonth() - offset, 1);
+      return { month: MONTH_NAMES[d.getMonth()].slice(0, 3), monthIdx: d.getMonth(), year: d.getFullYear() };
+    });
+    return months.map(({ month, monthIdx, year }) => {
+      const filtered = enquiries.filter(e => {
+        if (!e.created_at) return false;
+        const d = new Date(e.created_at);
+        return d.getMonth() === monthIdx && d.getFullYear() === year;
+      });
+      const entry: Record<string, any> = { month };
+      CONFIG_KEYS.forEach(k => {
+        entry[k] = filtered.filter(e => {
+          const c = String(e.configuration || "").trim();
+          return k === "Other" ? !CONFIG_KEYS.slice(0, -1).includes(c) : c === k;
+        }).length;
+      });
+      return entry;
+    });
+  }, [enquiries]);
 
+  // 6-month config bar data (Stacked)
+  const config6MonthBarData = useMemo(() => {
+    const months = [5, 4, 3, 2, 1, 0].map(offset => {
+      const d = new Date(now.getFullYear(), now.getMonth() - offset, 1);
+      return { month: MONTH_NAMES[d.getMonth()].slice(0, 3), monthIdx: d.getMonth(), year: d.getFullYear() };
+    });
+    return months.map(({ month, monthIdx, year }) => {
+      const filtered = enquiries.filter(e => {
+        if (!e.created_at) return false;
+        const d = new Date(e.created_at);
+        return d.getMonth() === monthIdx && d.getFullYear() === year;
+      });
+      const entry: Record<string, any> = { month };
+      CONFIG_KEYS.forEach(k => {
+        entry[k] = filtered.filter(e => {
+          const c = String(e.configuration || "").trim();
+          return k === "Other" ? !CONFIG_KEYS.slice(0, -1).includes(c) : c === k;
+        }).length;
+      });
+      return entry;
+    });
+  }, [enquiries]);
+
+  // Yearly config bar data (Stacked)
+  const configYearlyBarData = useMemo(() => {
+    return MONTH_NAMES.map((month, idx) => {
+      const filtered = enquiries.filter(e => {
+        if (!e.created_at) return false;
+        const d = new Date(e.created_at);
+        return d.getMonth() === idx && d.getFullYear() === now.getFullYear();
+      });
+      const entry: Record<string, any> = { month: month.slice(0, 3) };
+      CONFIG_KEYS.forEach(k => {
+        entry[k] = filtered.filter(e => {
+          const c = String(e.configuration || "").trim();
+          return k === "Other" ? !CONFIG_KEYS.slice(0, -1).includes(c) : c === k;
+        }).length;
+      });
+      return entry;
+    });
+  }, [enquiries]);
+
+  // Inception config bar data (All Time)
+  const configInceptionBarData = useMemo(() => {
+    const cc: Record<string, number> = {};
+    CONFIG_KEYS.forEach(k => cc[k] = 0);
+    enquiries.forEach(item => {
+      const c = String(item.configuration || "").trim();
+      if (cc[c] !== undefined) cc[c]++; else cc["Other"]++;
+    });
+    return CONFIG_KEYS.map((name, i) => ({ name: name === "Other" ? "Other" : name, count: cc[name], color: t.chartColors[i % t.chartColors.length] })).filter(d => d.count > 0);
+  }, [enquiries, t.chartColors]);
+
+  // ── Card 1 Export Handler ──
+  const handleExportCard1 = () => {
+    let exportData: any[] = [];
+    if (chartMode1 === "today") exportData = configTodayBarData;
+    else if (chartMode1 === "monthly") exportData = configMonthlyBarData;
+    else if (chartMode1 === "inception") exportData = configInceptionBarData;
+    else if (chartMode1 === "3months") exportData = config3MonthBarData;
+    else if (chartMode1 === "6months") exportData = config6MonthBarData;
+    else if (chartMode1 === "yearly") exportData = configYearlyBarData;
+
+    const formatted = exportData.map(item => {
+      const { color, monthIdx, year, ...rest } = item;
+      return rest;
+    });
+    downloadCSV(formatted, `Room_Configurations_${chartMode1}.csv`);
+  };
+
+
+  // ── Card 2: Enquiry counts & Export ──
+  const enquiriesToday = useMemo(() => enquiries.filter(e => e.created_at && new Date(e.created_at) >= todayStart).length, [enquiries]);
+  const monthlyEnquiriesSelected = useMemo(() => { return enquiries.filter(e => { if (!e.created_at) return false; const d = new Date(e.created_at); return d.getMonth() === selectedMonthCard && d.getFullYear() === now.getFullYear(); }).length; }, [enquiries, selectedMonthCard]);
   const enquiries3Months = useMemo(() => enquiries.filter(e => e.created_at && new Date(e.created_at) >= threeMonthsAgo).length, [enquiries]);
   const enquiries6Months = useMemo(() => enquiries.filter(e => e.created_at && new Date(e.created_at) >= sixMonthsAgo).length, [enquiries]);
   const enquiriesYear    = useMemo(() => enquiries.filter(e => e.created_at && new Date(e.created_at) >= yearStart).length, [enquiries]);
 
-  // ── Card 3: Sales Manager Table ──
-  const managerLeadCounts = useMemo(() => {
+  // ── Card 2 Export Handler ──
+  const handleExportCard2 = () => {
+    let filtered = enquiries;
+    if (card2Mode === "today") filtered = enquiries.filter(e => e.created_at && new Date(e.created_at) >= todayStart);
+    else if (card2Mode === "monthly") filtered = enquiries.filter(e => e.created_at && new Date(e.created_at).getMonth() === selectedMonthCard && new Date(e.created_at).getFullYear() === now.getFullYear());
+    else if (card2Mode === "3months") filtered = enquiries.filter(e => e.created_at && new Date(e.created_at) >= threeMonthsAgo);
+    else if (card2Mode === "6months") filtered = enquiries.filter(e => e.created_at && new Date(e.created_at) >= sixMonthsAgo);
+    else if (card2Mode === "yearly") filtered = enquiries.filter(e => e.created_at && new Date(e.created_at) >= yearStart);
+    // "alltime" uses all enquiries
+
+    const formatted = filtered.map(e => ({
+      "Lead No": e.id,
+      "Client Name": e.name,
+      "Budget": e.budget || "N/A",
+      "Configuration": e.configuration || "N/A",
+      "Purpose": e.purpose || "N/A",
+      "Source": e.source || "N/A",
+      "Date": e.date,
+      "Assigned To": e.assignedTo || "Unassigned"
+    }));
+    downloadCSV(formatted, `Enquiries_Details_${card2Mode}.csv`);
+  };
+
+
+  // ── Card 3: Sales Manager filtered counts & Export ──
+  const managerLeadCountsFiltered = useMemo(() => {
     const c: Record<string, number> = {};
-    enquiries.forEach(e => {
+    let filtered = enquiries;
+    if (card3Mode === "today") filtered = enquiries.filter(e => e.created_at && new Date(e.created_at) >= todayStart);
+    else if (card3Mode === "monthly") filtered = enquiries.filter(e => { if (!e.created_at) return false; const d = new Date(e.created_at); return d.getMonth() === card3Month && d.getFullYear() === now.getFullYear(); });
+    else if (card3Mode === "3months") filtered = enquiries.filter(e => e.created_at && new Date(e.created_at) >= threeMonthsAgo);
+    else if (card3Mode === "6months") filtered = enquiries.filter(e => e.created_at && new Date(e.created_at) >= sixMonthsAgo);
+    else if (card3Mode === "yearly") filtered = enquiries.filter(e => e.created_at && new Date(e.created_at) >= yearStart);
+
+    filtered.forEach(e => {
       const m = e.assignedTo || "Unassigned";
       c[m] = (c[m] || 0) + 1;
     });
     return Object.entries(c).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count);
-  }, [enquiries]);
+  }, [enquiries, card3Mode, card3Month, todayStart, threeMonthsAgo, sixMonthsAgo, yearStart]);
 
-  // ── Card 3: Channel Partner Table ──
-  const channelPartnerLeads = useMemo(() => {
-    return enquiries.filter(e => e.source === "Channel Partner" && (e.cp_name || e.cp_company || e.cp_phone));
-  }, [enquiries]);
+  // ── Card 3 Export Handler ──
+  const handleExportCard3 = () => {
+    const formatted = managerLeadCountsFiltered.map(m => ({
+      "Sales Manager": m.name,
+      "Total Enquiries Assigned": m.count
+    }));
+    downloadCSV(formatted, `Sales_Manager_Activity_${card3Mode}.csv`);
+  };
+
+  // ── Main Table Export Handler ──
+  const handleExportMainTable = () => {
+    const formatted = receptionistLeads.map(e => ({
+      "Lead No": e.id,
+      "Client Name": e.name,
+      "CP Company": e.cp_company || "N/A",
+      "Budget": e.budget || "N/A",
+      "Phone": e.phone || "N/A",
+      "Alt Phone": e.altPhone || "N/A",
+      "Date Created": e.date,
+      "Sales Manager": e.assignedTo || "Unassigned"
+    }));
+    downloadCSV(formatted, `Front_Desk_Log_Export.csv`);
+  };
+
 
   const axisColor = isDark ? "#9ca3af" : "#6B7280";
   const gridColor = isDark ? "#2a2a2a" : "#E5E7EB";
 
   const CustomTooltip = ({ active, payload, label }: any) => active && payload?.length
     ? <div style={{ background: t.tooltipBg, border: t.tooltipBorder, borderRadius: 8, padding: "8px 12px", color: t.tooltipColor, fontSize: 12, boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}>
-        <p style={{ color: t.legendColor }}>{label || payload[0]?.name}</p>
-        <p style={{ fontWeight: 700 }}>{payload[0]?.value}</p>
-      </div>
-    : null;
-
-  const PieTooltip = ({ active, payload }: any) => active && payload?.length
-    ? <div style={{ background: t.tooltipBg, border: t.tooltipBorder, borderRadius: 8, padding: "8px 12px", color: t.tooltipColor, fontSize: 12 }}>
-        <p style={{ fontWeight: 700 }}>{payload[0]?.name}</p>
-        <p style={{ color: t.legendColor }}>{payload[0]?.value} leads</p>
+        <p style={{ color: t.legendColor, marginBottom: 4 }}>{label}</p>
+        {payload.map((p: any, i: number) => (
+          <p key={i} style={{ fontWeight: 700, color: p.fill || p.color }}>{p.name}: {p.value}</p>
+        ))}
       </div>
     : null;
 
@@ -440,7 +591,7 @@ export default function ReceptionistDashboard() {
         <div className={`flex items-center justify-center gap-3 text-sm ${t.textMuted}`}>
           <div className="flex gap-1">
             {[0, 150, 300].map((d) => (
-              <span key={d} className={`w-2 h-2 rounded-full animate-bounce ${isDark ? "bg-purple-500" : "bg-[#00AEEF]"}`} style={{ animationDelay: `${d}ms` }} />
+              <span key={d} className={`w-2 h-2 rounded-full animate-bounce ${isDark ? "bg-[#9E217B]" : "bg-[#00AEEF]"}`} style={{ animationDelay: `${d}ms` }} />
             ))}
           </div>
           Loading more entries…
@@ -453,12 +604,20 @@ export default function ReceptionistDashboard() {
     <div className={`col-span-full flex items-center justify-center gap-3 text-sm py-8 ${t.textMuted}`}>
       <div className="flex gap-1">
         {[0, 150, 300].map((d) => (
-          <span key={d} className={`w-2 h-2 rounded-full animate-bounce ${isDark ? "bg-purple-500" : "bg-[#00AEEF]"}`} style={{ animationDelay: `${d}ms` }} />
+          <span key={d} className={`w-2 h-2 rounded-full animate-bounce ${isDark ? "bg-[#9E217B]" : "bg-[#00AEEF]"}`} style={{ animationDelay: `${d}ms` }} />
         ))}
       </div>
       Loading more entries…
     </div>
   );
+
+  const isConfigChartEmpty = (() => {
+    if (chartMode1 === "today") return configTodayBarData.length === 0;
+    if (chartMode1 === "monthly") return configMonthlyBarData.length === 0;
+    if (chartMode1 === "inception") return configInceptionBarData.length === 0;
+    const data = chartMode1 === "3months" ? config3MonthBarData : chartMode1 === "6months" ? config6MonthBarData : configYearlyBarData;
+    return !data.some((d: any) => CONFIG_KEYS.some((k) => d[k] > 0));
+  })();
 
   // ─────────────────────────────────────────────────────────────────────────
   return (
@@ -500,7 +659,7 @@ export default function ReceptionistDashboard() {
               {isDark ? <SunIcon /> : <MoonIcon />}
             </button>
             <button onClick={() => setIsNotificationsOpen(!isNotificationsOpen)} className={`${t.textMuted} transition-colors relative`}
-              style={{ color: isNotificationsOpen ? (isDark ? "#a78bfa" : "#00AEEF") : undefined }}>
+              style={{ color: isNotificationsOpen ? (isDark ? "#d4006e" : "#00AEEF") : undefined }}>
               <FaBell className="w-5 h-5" />
             </button>
             {isNotificationsOpen && (
@@ -510,7 +669,7 @@ export default function ReceptionistDashboard() {
               </div>
             )}
             <div onClick={() => setIsProfileOpen(!isProfileOpen)}
-              className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm cursor-pointer shadow-md hover:scale-105 transition-transform ${isDark ? "border border-purple-500/40 text-purple-500 bg-purple-500/15" : "border border-[#00AEEF]/40 text-[#00AEEF] bg-[#00AEEF]/10"}`}>
+              className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm cursor-pointer shadow-md hover:scale-105 transition-transform ${isDark ? "border border-[#9E217B]/40 text-[#d4006e] bg-[#9E217B]/15" : "border border-[#00AEEF]/40 text-[#00AEEF] bg-[#00AEEF]/10"}`}>
               {String(user?.name || "U").charAt(0).toUpperCase()}
             </div>
             {isProfileOpen && (
@@ -523,7 +682,7 @@ export default function ReceptionistDashboard() {
                 <div className={`space-y-4 mb-6 text-sm ${t.text}`}>
                   <p className={`flex justify-between items-center ${t.textMuted}`}>
                     Role:
-                    <span className={`font-bold capitalize px-2 py-0.5 rounded text-xs ${isDark ? "text-purple-500 bg-purple-500/10" : "text-[#00AEEF] bg-[#00AEEF]/10"}`}>{user?.role || "Employee"}</span>
+                    <span className={`font-bold capitalize px-2 py-0.5 rounded text-xs ${isDark ? "text-[#d4006e] bg-[#9E217B]/10" : "text-[#00AEEF] bg-[#00AEEF]/10"}`}>{user?.role || "Employee"}</span>
                   </p>
                   <div>
                     <p className={`text-xs mb-1 ${t.textFaint}`}>Password</p>
@@ -549,12 +708,12 @@ export default function ReceptionistDashboard() {
             <div className="animate-fadeIn max-w-4xl mx-auto">
               <h1 className={`text-3xl font-bold mb-8 ${t.text}`}>Settings & Profile</h1>
               <div className="w-full lg:w-2/3 grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className={`rounded-2xl p-8 border shadow-sm flex flex-col items-center justify-center ${t.card}`} style={t.cardGlass}>
+                <div className={`rounded-2xl p-8 border flex flex-col items-center justify-center ${t.card}`} style={t.cardGlass}>
                   <FaCalendarAlt className={`text-5xl mb-4 ${t.accentText}`} />
                   <h2 className={`text-3xl lg:text-4xl font-black tracking-tight mb-2 ${t.text}`}>{currentTime.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}</h2>
                   <p className={`font-medium text-sm lg:text-lg ${t.textMuted}`}>{currentTime.toLocaleDateString("en-IN", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</p>
                 </div>
-                <div className={`rounded-2xl p-8 border shadow-sm ${t.card}`} style={t.cardGlass}>
+                <div className={`rounded-2xl p-8 border ${t.card}`} style={t.cardGlass}>
                   <h3 className={`text-lg font-bold border-b pb-2 mb-6 uppercase tracking-wider ${t.sectionTitle} ${t.tableBorder}`}>Account Details</h3>
                   <div className="space-y-6">
                     <div><p className={`text-xs font-medium mb-1 ${t.textFaint}`}>Full Name</p><p className={`font-semibold text-lg ${t.text}`}>{user?.name || "User"}</p></div>
@@ -578,7 +737,7 @@ export default function ReceptionistDashboard() {
           {activeTab === "assistant" && (
             <div className="animate-fadeIn max-w-4xl mx-auto h-[80vh] flex flex-col pb-4">
               <div className="flex items-center gap-4 mb-6">
-                <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-2xl ${isDark ? "bg-purple-500/20 text-purple-500" : "bg-[#00AEEF]/10 text-[#00AEEF]"}`}><FaRobot /></div>
+                <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-2xl ${isDark ? "bg-[#9E217B]/20 text-[#d4006e]" : "bg-[#00AEEF]/10 text-[#00AEEF]"}`}><FaRobot /></div>
                 <div>
                   <h1 className={`text-2xl font-bold ${t.text}`}>CRM AI Assistant</h1>
                   <p className={`text-sm ${t.textMuted}`}>Ask questions about your data or retrieve specific client details.</p>
@@ -589,7 +748,7 @@ export default function ReceptionistDashboard() {
                   {chatMessages.map((msg, idx) => (
                     <div key={idx} className={`flex ${msg.sender === "user" ? "justify-end" : "justify-start"}`}>
                       <div className={`flex gap-3 max-w-[85%] ${msg.sender === "user" ? "flex-row-reverse" : "flex-row"}`}>
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${msg.sender === "user" ? (isDark ? "bg-blue-600 text-white" : "bg-[#00AEEF] text-white") : (isDark ? "bg-purple-600 text-white" : "bg-[#9E217B] text-white")}`}>
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${msg.sender === "user" ? (isDark ? "bg-blue-600 text-white" : "bg-[#00AEEF] text-white") : (isDark ? "bg-[#9E217B] text-white" : "bg-[#9E217B] text-white")}`}>
                           {msg.sender === "user" ? <FaUserCircle className="text-lg" /> : <FaRobot className="text-lg" />}
                         </div>
                         <div className={`p-4 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap ${msg.sender === "user" ? (isDark ? "bg-blue-600 text-white rounded-tr-none" : "bg-[#00AEEF] text-white rounded-tr-none") : `${t.chatBubbleAi} rounded-tl-none`}`}>{msg.text}</div>
@@ -602,7 +761,7 @@ export default function ReceptionistDashboard() {
                   <input type="text" value={chatInput} onChange={(e) => setChatInput(e.target.value)}
                     placeholder="Type a client's name or ask a question..."
                     className={`flex-1 rounded-xl p-4 text-sm outline-none transition-colors border ${t.chatInput} ${t.text}`} />
-                  <button type="submit" className={`w-14 h-14 text-white rounded-xl flex items-center justify-center transition-colors shadow-lg cursor-pointer ${isDark ? "bg-purple-600 hover:bg-purple-500" : "bg-[#00AEEF] hover:bg-[#0099d4]"}`}><FaPaperPlane className="text-sm ml-[-2px]" /></button>
+                  <button type="submit" className={`w-14 h-14 text-white rounded-xl flex items-center justify-center transition-colors shadow-lg cursor-pointer ${isDark ? "bg-[#9E217B] hover:bg-[#7a1a5e]" : "bg-[#00AEEF] hover:bg-[#0099d4]"}`}><FaPaperPlane className="text-sm ml-[-2px]" /></button>
                 </form>
               </div>
             </div>
@@ -613,7 +772,7 @@ export default function ReceptionistDashboard() {
             <div className="flex justify-between items-center mb-8">
               <h1 className={`text-xl md:text-3xl font-bold flex items-center flex-wrap gap-2 md:gap-3 ${t.text}`}>
                 Hi, {String(user?.name || "User").split(" ")[0]}
-                <span className={`text-xs md:text-sm font-medium px-2 py-0.5 md:px-3 md:py-1 rounded-full capitalize ${isDark ? "text-purple-700 bg-white/70 border border-purple-300 backdrop-blur-sm" : "text-[#9E217B] bg-[#9E217B]/10 border border-[#9E217B]/20"}`}>{user?.role || "Employee"}</span>
+                <span className={`text-xs md:text-sm font-medium px-2 py-0.5 md:px-3 md:py-1 rounded-full capitalize ${isDark ? "text-[#9E217B] bg-white/80 border border-[#9E217B]/40 backdrop-blur-sm" : "text-[#9E217B] bg-[#9E217B]/10 border border-[#9E217B]/20"}`}>{user?.role || "Employee"}</span>
               </h1>
               <button onClick={initialLoad} className={`text-white text-xs md:text-sm font-semibold flex items-center gap-1 md:gap-2 px-3 py-1.5 md:px-4 md:py-2 rounded-lg transition-all shadow-sm ${t.btnPrimary}`}>
                 <span className="md:hidden">↻ Sync</span>
@@ -631,119 +790,148 @@ export default function ReceptionistDashboard() {
               {/* ── 3-COLUMN DASHBOARD GRID ── */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
 
-                {/* ── CARD 1: Charts with dropdown ── */}
-                <div className={`rounded-2xl p-6 border shadow-sm flex flex-col ${t.card}`} style={t.cardGlass}>
+                {/* ══════════════════════════════════════════════════
+                    CARD 1: Room Configuration — BAR CHART with period dropdown
+                ══════════════════════════════════════════════════ */}
+                <div className={`rounded-2xl p-6 border flex flex-col ${t.card}`} style={t.cardGlass}>
                   <div className="flex items-center justify-between mb-3">
                     <div>
-                      <h2 className={`text-base font-bold ${t.text}`}>
-                        {chartMode1 === "config" ? "Room Configurations" :
-                         chartMode1 === "monthlyBar" ? "Monthly Enquiries" :
-                         chartMode1 === "source" ? "Lead Sources" : "Purpose Breakdown"}
-                      </h2>
-                      <p className={`text-xs mt-0.5 ${t.textFaint}`}>{enquiries.length} of {totalCount} records</p>
+                      <h2 className={`text-base font-bold ${t.text}`}>Room Configurations</h2>
                     </div>
-                    <select
-                      value={chartMode1}
-                      onChange={e => setChartMode1(e.target.value as any)}
-                      className={`text-xs rounded-lg px-2 py-1.5 outline-none cursor-pointer border ${t.selectSmall}`}
-                    >
-                      <option value="config">Room Config</option>
-                      <option value="monthlyBar">Total Enquiries</option>
-                      <option value="source">Source Bar</option>
-                      <option value="purpose">Purpose Pie</option>
-                    </select>
+                    <div className="flex items-center gap-2">
+                      <button onClick={handleExportCard1} className={`p-1.5 border rounded-md ${t.exportBtn}`} title="Export to Excel (CSV)">
+                        <FaDownload size={12} />
+                      </button>
+                      {chartMode1 === "monthly" && (
+                        <select
+                          value={configChartMonth}
+                          onChange={e => setConfigChartMonth(Number(e.target.value))}
+                          className={`text-[10px] rounded px-1.5 py-1 outline-none cursor-pointer border ${t.selectSmall}`}
+                        >
+                          {MONTH_NAMES.map((m, idx) => <option key={idx} value={idx}>{m}</option>)}
+                        </select>
+                      )}
+                      <select
+                        value={chartMode1}
+                        onChange={e => setChartMode1(e.target.value as any)}
+                        className={`text-xs rounded-lg px-2 py-1.5 outline-none cursor-pointer border ${t.selectSmall}`}
+                      >
+                        <option value="today">Today</option>
+                        <option value="monthly">Monthly</option>
+                        <option value="3months">Last 3 Months</option>
+                        <option value="6months">Last 6 Months</option>
+                        <option value="yearly">Yearly</option>
+                        <option value="inception">Inception</option>
+                      </select>
+                    </div>
                   </div>
+                  <p className={`text-[10px] font-semibold mb-3 ${t.accentText}`}>
+                    {chartMode1 === "today" && `Today — ${now.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}`}
+                    {chartMode1 === "monthly" && `${MONTH_NAMES[configChartMonth]} ${now.getFullYear()}`}
+                    {chartMode1 === "3months" && "Last 3 Months"}
+                    {chartMode1 === "6months" && "Last 6 Months"}
+                    {chartMode1 === "yearly" && `Year ${now.getFullYear()}`}
+                    {chartMode1 === "inception" && "All Time (Since Inception)"}
+                  </p>
 
                   {isFetchingEnquiries ? (
-                    <div className={`flex-1 flex items-center justify-center text-sm ${t.textMuted}`}>Calculating chart data...</div>
-                  ) : chartMode1 === "config" ? (
-                    configChartData.length === 0 ? (
-                      <div className={`flex-1 flex items-center justify-center text-sm ${t.textMuted}`}>No data yet</div>
-                    ) : (
-                      <div className="w-full h-[220px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <PieChart>
-                            <Pie isAnimationActive={false} data={configChartData} cx="50%" cy="50%" innerRadius="45%" outerRadius="75%" paddingAngle={4} dataKey="value" stroke="none">
-                              {configChartData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
-                            </Pie>
-                            <Tooltip content={<PieTooltip />} />
-                            <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{ fontSize: "11px", paddingTop: "16px", color: t.legendColor }} />
-                          </PieChart>
-                        </ResponsiveContainer>
-                      </div>
-                    )
-                  ) : chartMode1 === "monthlyBar" ? (
-                    <div className="w-full h-[220px]">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={monthlyBarData} margin={{ top: 4, right: 4, left: -24, bottom: 0 }}>
-                          <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
-                          <XAxis dataKey="month" tick={{ fill: axisColor, fontSize: 10 }} axisLine={false} tickLine={false} />
-                          <YAxis tick={{ fill: axisColor, fontSize: 10 }} axisLine={false} tickLine={false} allowDecimals={false} />
-                          <Tooltip content={<CustomTooltip />} />
-                          <Bar dataKey="count" name="Enquiries" radius={[5, 5, 0, 0]}>
-                            {monthlyBarData.map((_, i) => <Cell key={i} fill={t.chartColors[i % t.chartColors.length]} />)}
-                          </Bar>
-                        </BarChart>
-                      </ResponsiveContainer>
+                    <div className={`flex-1 flex items-center justify-center text-sm ${t.textMuted} min-h-[230px]`}>Calculating chart data...</div>
+                  ) : isConfigChartEmpty ? (
+                    <div className={`w-full h-[230px] mt-2 flex flex-col items-center justify-center rounded-xl border-2 border-dashed transition-colors ${isDark ? "border-[#2A2A35] bg-[#121218]/50" : "border-gray-200 bg-gray-50/50"}`}>
+                      <span className={`text-sm font-medium ${t.textMuted}`}>No data available</span>
                     </div>
-                  ) : chartMode1 === "source" ? (
-                    sourceBarData.length === 0 ? (
-                      <div className={`flex-1 flex items-center justify-center text-sm ${t.textMuted}`}>No source data</div>
-                    ) : (
-                      <div className="w-full h-[220px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <BarChart data={sourceBarData} layout="vertical" margin={{ top: 0, right: 8, left: 0, bottom: 0 }}>
-                            <CartesianGrid strokeDasharray="3 3" stroke={gridColor} horizontal={false} />
-                            <XAxis type="number" tick={{ fill: axisColor, fontSize: 10 }} axisLine={false} tickLine={false} allowDecimals={false} />
-                            <YAxis type="category" dataKey="source" width={90} tick={{ fill: axisColor, fontSize: 9 }} axisLine={false} tickLine={false} />
+                  ) : (
+                    <div className="w-full h-[230px]">
+                      <ResponsiveContainer width="100%" height="100%">
+                        {chartMode1 === "today" || chartMode1 === "monthly" || chartMode1 === "inception" ? (
+                          <BarChart 
+                            data={chartMode1 === "today" ? configTodayBarData : chartMode1 === "monthly" ? configMonthlyBarData : configInceptionBarData} 
+                            margin={{ top: 4, right: 4, left: -24, bottom: 0 }}
+                          >
+                            <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
+                            <XAxis dataKey="name" tick={{ fill: axisColor, fontSize: 9 }} axisLine={false} tickLine={false} />
+                            <YAxis tick={{ fill: axisColor, fontSize: 10 }} axisLine={false} tickLine={false} allowDecimals={false} />
                             <Tooltip content={<CustomTooltip />} />
-                            <Bar dataKey="count" radius={[0, 5, 5, 0]}>
-                              {sourceBarData.map((_, i) => <Cell key={i} fill={t.chartColors[i % t.chartColors.length]} />)}
+                            <Bar dataKey="count" name="Units" radius={[5, 5, 0, 0]}>
+                              {(chartMode1 === "today" ? configTodayBarData : chartMode1 === "monthly" ? configMonthlyBarData : configInceptionBarData).map((entry, i) => (
+                                <Cell key={i} fill={entry.color || t.chartColors[i % t.chartColors.length]} />
+                              ))}
                             </Bar>
                           </BarChart>
-                        </ResponsiveContainer>
-                      </div>
-                    )
-                  ) : (
-                    purposePieData.length === 0 ? (
-                      <div className={`flex-1 flex items-center justify-center text-sm ${t.textMuted}`}>No purpose data</div>
-                    ) : (
-                      <div className="w-full h-[220px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <PieChart>
-                            <Pie isAnimationActive={false} data={purposePieData} cx="50%" cy="50%" innerRadius="40%" outerRadius="70%" paddingAngle={4} dataKey="value" stroke="none">
-                              {purposePieData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
-                            </Pie>
-                            <Tooltip content={<PieTooltip />} />
-                            <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{ fontSize: "11px", paddingTop: "12px", color: t.legendColor }} />
-                          </PieChart>
-                        </ResponsiveContainer>
-                      </div>
-                    )
+                        ) : (
+                          <BarChart 
+                            data={
+                              chartMode1 === "3months" ? config3MonthBarData : 
+                              chartMode1 === "6months" ? config6MonthBarData : 
+                              configYearlyBarData
+                            } 
+                            margin={{ top: 4, right: 4, left: -24, bottom: 0 }}
+                          >
+                            <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
+                            <XAxis dataKey="month" tick={{ fill: axisColor, fontSize: 10 }} axisLine={false} tickLine={false} />
+                            <YAxis tick={{ fill: axisColor, fontSize: 10 }} axisLine={false} tickLine={false} allowDecimals={false} />
+                            <Tooltip content={<CustomTooltip />} />
+                            {chartMode1 === "yearly" && (
+                              <Legend wrapperStyle={{ fontSize: "10px", color: t.legendColor }} />
+                            )}
+                            {CONFIG_KEYS.map((key, i) => (
+                              <Bar 
+                                key={key} 
+                                dataKey={key} 
+                                stackId="a" 
+                                fill={t.chartColors[i % t.chartColors.length]} 
+                                radius={i === CONFIG_KEYS.length - 1 ? [4, 4, 0, 0] : [0, 0, 0, 0]} 
+                              />
+                            ))}
+                          </BarChart>
+                        )}
+                      </ResponsiveContainer>
+                    </div>
                   )}
                 </div>
 
-              {/* ── CARD 2: Enquiry Details ── */}
-                <div className={`rounded-2xl p-6 border shadow-sm flex flex-col gap-4 ${t.card}`} style={t.cardGlass}>
-
-                  {/* Header row */}
+                {/* ══════════════════════════════════════════════════
+                    CARD 2: Enquiry Details — with Today option added
+                ══════════════════════════════════════════════════ */}
+                <div className={`rounded-2xl p-6 border flex flex-col gap-4 ${t.card}`} style={t.cardGlass}>
                   <div className="flex items-center justify-between">
                     <div>
                       <h2 className={`text-base font-bold ${t.text}`}>Enquiry Details</h2>
-                      <p className={`text-xs mt-0.5 ${t.textFaint}`}>{enquiries.length} of {totalCount} records</p>
                     </div>
-                    <select
-                      value={card2Mode}
-                      onChange={e => setCard2Mode(e.target.value as any)}
-                      className={`text-xs rounded-lg px-2 py-1.5 outline-none cursor-pointer border ${t.selectSmall}`}
-                    >
-                      <option value="monthly">Monthly Enquiries</option>
-                      <option value="3months">Last 3 Months</option>
-                      <option value="6months">Last 6 Months</option>
-                      <option value="yearly">Yearly</option>
-                      <option value="alltime">Total All Time</option>
-                    </select>
+                    <div className="flex items-center gap-2">
+                      <button onClick={handleExportCard2} className={`p-1.5 border rounded-md ${t.exportBtn}`} title="Export to Excel (CSV)">
+                        <FaDownload size={12} />
+                      </button>
+                      <select
+                        value={card2Mode}
+                        onChange={e => setCard2Mode(e.target.value as any)}
+                        className={`text-xs rounded-lg px-2 py-1.5 outline-none cursor-pointer border ${t.selectSmall}`}
+                      >
+                        <option value="today">Enquiries Today</option>
+                        <option value="monthly">Monthly Enquiries</option>
+                        <option value="3months">Last 3 Months</option>
+                        <option value="6months">Last 6 Months</option>
+                        <option value="yearly">Yearly</option>
+                        <option value="alltime">Total All Time</option>
+                      </select>
+                    </div>
                   </div>
+
+                  {/* ── TODAY ── */}
+                  {card2Mode === "today" && (
+                    <div className={`rounded-xl p-5 border flex-1 flex flex-col ${t.settingsBg}`} style={t.settingsBgGl}>
+                      <div className="flex items-center justify-between mb-4">
+                        <p className={`text-xs font-bold uppercase tracking-wider ${t.textFaint}`}>Enquiries Today</p>
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs ${isDark ? "bg-[#9E217B]/20 text-[#d4006e]" : "bg-[#00AEEF]/10 text-[#00AEEF]"}`}>
+                          <FaCalendarAlt />
+                        </div>
+                      </div>
+                      <p className={`text-7xl font-black leading-none ${t.text}`}>{isFetchingEnquiries ? "…" : enquiriesToday}</p>
+                      <p className={`text-sm mt-4 font-medium ${t.accentText}`}>
+                        Enquiries on {now.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+                      </p>
+                    </div>
+                  )}
 
                   {/* ── MONTHLY ── */}
                   {card2Mode === "monthly" && (
@@ -759,7 +947,7 @@ export default function ReceptionistDashboard() {
                         </select>
                       </div>
                       <p className={`text-7xl font-black leading-none ${t.text}`}>{isFetchingEnquiries ? "…" : monthlyEnquiriesSelected}</p>
-                      <p className={`text-sm mt-4 font-medium ${t.accentText}`}>enquiries in {MONTH_NAMES[selectedMonthCard]} {new Date().getFullYear()}</p>
+                      <p className={`text-sm mt-4 font-medium ${t.accentText}`}>Enquiries in {MONTH_NAMES[selectedMonthCard]} {now.getFullYear()}</p>
                     </div>
                   )}
 
@@ -768,12 +956,12 @@ export default function ReceptionistDashboard() {
                     <div className={`rounded-xl p-5 border flex-1 flex flex-col ${t.settingsBg}`} style={t.settingsBgGl}>
                       <div className="flex items-center justify-between mb-4">
                         <p className={`text-xs font-bold uppercase tracking-wider ${t.textFaint}`}>Last 3 Months</p>
-                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isDark ? "bg-purple-500/20 text-purple-400" : "bg-[#00AEEF]/10 text-[#00AEEF]"}`}>
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isDark ? "bg-[#9E217B]/20 text-[#d4006e]" : "bg-[#00AEEF]/10 text-[#00AEEF]"}`}>
                           <FaCalendarAlt className="text-xs" />
                         </div>
                       </div>
                       <p className={`text-7xl font-black leading-none ${t.text}`}>{isFetchingEnquiries ? "…" : enquiries3Months}</p>
-                      <p className={`text-sm mt-4 font-medium ${t.accentText}`}>enquiries in the last 3 months</p>
+                      <p className={`text-sm mt-4 font-medium ${t.accentText}`}>Enquiries over this period</p>
                     </div>
                   )}
 
@@ -787,7 +975,7 @@ export default function ReceptionistDashboard() {
                         </div>
                       </div>
                       <p className={`text-7xl font-black leading-none ${isDark ? "text-blue-400" : "text-[#9E217B]"}`}>{isFetchingEnquiries ? "…" : enquiries6Months}</p>
-                      <p className={`text-sm mt-4 font-medium ${isDark ? "text-blue-400" : "text-[#9E217B]"}`}>enquiries in the last 6 months</p>
+                      <p className={`text-sm mt-4 font-medium ${isDark ? "text-blue-400" : "text-[#9E217B]"}`}>Enquiries tracked</p>
                     </div>
                   )}
 
@@ -795,108 +983,121 @@ export default function ReceptionistDashboard() {
                   {card2Mode === "yearly" && (
                     <div className={`rounded-xl p-5 border flex-1 flex flex-col ${t.settingsBg}`} style={t.settingsBgGl}>
                       <div className="flex items-center justify-between mb-4">
-                        <p className={`text-xs font-bold uppercase tracking-wider ${t.textFaint}`}>Yearly ({new Date().getFullYear()})</p>
+                        <p className={`text-xs font-bold uppercase tracking-wider ${t.textFaint}`}>Yearly ({now.getFullYear()})</p>
                         <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isDark ? "bg-green-500/20 text-green-400" : "bg-emerald-50 text-emerald-600"}`}>
                           <FaCalendarAlt className="text-xs" />
                         </div>
                       </div>
                       <p className={`text-7xl font-black leading-none ${isDark ? "text-green-400" : "text-emerald-600"}`}>{isFetchingEnquiries ? "…" : enquiriesYear}</p>
-                      <p className={`text-sm mt-4 font-medium ${isDark ? "text-green-400" : "text-emerald-600"}`}>enquiries in {new Date().getFullYear()}</p>
+                      <p className={`text-sm mt-4 font-medium ${isDark ? "text-green-400" : "text-emerald-600"}`}>Enquiries in {now.getFullYear()}</p>
                     </div>
                   )}
 
                   {/* ── ALL TIME ── */}
                   {card2Mode === "alltime" && (
-                    <div className={`rounded-xl p-5 border flex-1 flex flex-col ${isDark ? "bg-purple-600/10 border-purple-500/30" : "bg-[#00AEEF]/10 border-[#00AEEF]/20"}`}>
+                    <div className={`rounded-xl p-5 border flex-1 flex flex-col ${isDark ? "bg-[#9E217B]/10 border-[#9E217B]/30" : "bg-[#00AEEF]/10 border-[#00AEEF]/20"}`}>
                       <div className="flex items-center justify-between mb-4">
                         <p className={`text-xs font-bold uppercase tracking-wider ${t.textFaint}`}>Total (All Time)</p>
                         <span className={`text-lg font-black ${t.accentText}`}>▲</span>
                       </div>
                       <p className={`text-7xl font-black leading-none ${t.accentText}`}>{isFetchingEnquiries ? "…" : totalCount}</p>
-                      <p className={`text-sm mt-4 font-medium ${t.accentText}`}>total enquiries recorded</p>
+                      <p className={`text-sm mt-4 font-medium ${t.accentText}`}>Total enquiries captured</p>
                     </div>
                   )}
-
                 </div>
 
-                {/* ── CARD 3: Sales Manager Table / Channel Partner Table ── */}
-                <div className={`rounded-2xl p-6 border shadow-sm flex flex-col ${t.card}`} style={t.cardGlass}>
-                  <div className="flex items-center justify-between mb-4">
+                {/* ══════════════════════════════════════════════════
+                    CARD 3: Sales Manager Activity
+                    — Channel Partner removed, period dropdown added
+                ══════════════════════════════════════════════════ */}
+                <div className={`rounded-2xl p-6 border flex flex-col ${t.card}`} style={t.cardGlass}>
+                  <div className="flex items-center justify-between mb-2">
                     <div>
-                      <h2 className={`text-base font-bold ${t.text}`}>
-                        {card3Mode === "managers" ? "Sales Manager Activity" : "Channel Partner Leads"}
-                      </h2>
-                      <p className={`text-xs mt-0.5 ${t.textFaint}`}>
-                        {card3Mode === "managers" ? `${managerLeadCounts.length} managers` : `${channelPartnerLeads.length} leads via CP`}
-                      </p>
+                      <h2 className={`text-base font-bold ${t.text}`}>Sales Manager Activity</h2>
                     </div>
-                    <select
-                      value={card3Mode}
-                      onChange={e => setCard3Mode(e.target.value as any)}
-                      className={`text-xs rounded-lg px-2 py-1.5 outline-none cursor-pointer border ${t.selectSmall}`}
-                    >
-                      <option value="managers">Manager Table</option>
-                      <option value="channelPartner">Channel Partner</option>
-                    </select>
+                    <div className="flex items-center gap-2">
+                      <button onClick={handleExportCard3} className={`p-1.5 border rounded-md ${t.exportBtn}`} title="Export to Excel (CSV)">
+                        <FaDownload size={12} />
+                      </button>
+                      {card3Mode === "monthly" && (
+                        <select
+                          value={card3Month}
+                          onChange={e => setCard3Month(Number(e.target.value))}
+                          className={`text-[10px] rounded px-1.5 py-1 outline-none cursor-pointer border ${t.selectSmall}`}
+                        >
+                          {MONTH_NAMES.map((m, idx) => <option key={idx} value={idx}>{m}</option>)}
+                        </select>
+                      )}
+                      <select
+                        value={card3Mode}
+                        onChange={e => setCard3Mode(e.target.value as any)}
+                        className={`text-xs rounded-lg px-2 py-1.5 outline-none cursor-pointer border ${t.selectSmall}`}
+                      >
+                        <option value="today">Today</option>
+                        <option value="monthly">Monthly</option>
+                        <option value="3months">Last 3 Months</option>
+                        <option value="6months">Last 6 Months</option>
+                        <option value="yearly">Yearly</option>
+                        <option value="inception">Inception</option>
+                      </select>
+                    </div>
                   </div>
 
-                  <div className="flex-1 overflow-y-auto custom-scrollbar">
-                    {card3Mode === "managers" ? (
-                      <table className="w-full text-sm">
-                        <thead>
-                          <tr className={`border-b ${t.tableBorder}`}>
-                            <th className={`text-left py-2 px-1 text-xs font-bold uppercase tracking-wider ${t.textFaint}`}>Sales Manager</th>
-                            <th className={`text-right py-2 px-1 text-xs font-bold uppercase tracking-wider ${t.textFaint}`}>Enquiries</th>
-                          </tr>
-                        </thead>
-                        <tbody className={`divide-y ${t.tableDivide}`}>
-                          {isFetchingEnquiries ? (
-                            <tr><td colSpan={2} className={`text-center py-4 text-xs ${t.textMuted}`}>Loading...</td></tr>
-                          ) : managerLeadCounts.length === 0 ? (
-                            <tr><td colSpan={2} className={`text-center py-4 text-xs ${t.textMuted}`}>No data</td></tr>
-                          ) : managerLeadCounts.map((row, i) => (
-                            <tr key={i} className={`transition-colors ${t.tableRow}`}>
-                              <td className={`py-2.5 px-1 font-semibold text-xs ${t.text}`}>
-                                <div className="flex items-center gap-2">
-                                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white ${isDark ? "bg-purple-600" : "bg-[#9E217B]"}`}>
-                                    {String(row.name).charAt(0).toUpperCase()}
-                                  </div>
-                                  <span className="truncate max-w-[100px]">{row.name}</span>
-                                </div>
-                              </td>
-                              <td className={`py-2.5 px-1 text-right font-black text-sm ${t.accentText}`}>{row.count}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    ) : (
-                      <div className="space-y-2">
+                  {/* Period label */}
+                  <p className={`text-[10px] font-semibold mb-3 flex items-center justify-between ${t.accentText}`}>
+                    <span>
+                      {card3Mode === "today" && `Today — ${now.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}`}
+                      {card3Mode === "monthly" && `${MONTH_NAMES[card3Month]} ${now.getFullYear()}`}
+                      {card3Mode === "3months" && "Last 3 Months"}
+                      {card3Mode === "6months" && "Last 6 Months"}
+                      {card3Mode === "yearly" && `Year ${now.getFullYear()}`}
+                      {card3Mode === "inception" && "All Time (Since Inception)"}
+                    </span>
+                    <span className={t.textFaint}>{managerLeadCountsFiltered.length} managers</span>
+                  </p>
+
+                  <div className="flex-1 overflow-y-auto custom-scrollbar max-h-[250px] pr-2">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className={`border-b ${t.tableBorder}`}>
+                          <th className={`text-left py-2 px-1 text-xs font-bold uppercase tracking-wider ${t.textFaint}`}>Sales Manager</th>
+                          <th className={`text-right py-2 px-1 text-xs font-bold uppercase tracking-wider ${t.textFaint}`}>Enquiries</th>
+                        </tr>
+                      </thead>
+                      <tbody className={`divide-y ${t.tableDivide}`}>
                         {isFetchingEnquiries ? (
-                          <p className={`text-center py-4 text-xs ${t.textMuted}`}>Loading...</p>
-                        ) : channelPartnerLeads.length === 0 ? (
-                          <p className={`text-center py-4 text-xs ${t.textMuted}`}>No channel partner leads</p>
-                        ) : channelPartnerLeads.map((lead, i) => (
-                          <div key={i} className={`rounded-lg p-3 border ${t.settingsBg}`} style={t.settingsBgGl}>
-                            <p className={`font-bold text-xs mb-1 ${t.text}`}>#{lead.id} — {lead.name}</p>
-                            <p className={`text-[11px] ${t.textMuted}`}>
-                              <span className="font-medium">Company:</span> {lead.cp_company || "N/A"}
-                            </p>
-                            <p className={`text-[11px] font-mono ${t.textFaint}`}>
-                              <span className="font-medium not-italic">Contact:</span> {maskPhoneNumber(lead.cp_phone) || "N/A"}
-                            </p>
-                          </div>
+                          <tr><td colSpan={2} className={`text-center py-4 text-xs ${t.textMuted}`}>Loading...</td></tr>
+                        ) : managerLeadCountsFiltered.length === 0 ? (
+                          <tr><td colSpan={2} className={`text-center py-4 text-xs ${t.textMuted}`}>No data for this period</td></tr>
+                        ) : managerLeadCountsFiltered.map((row, i) => (
+                          <tr key={i} className={`transition-colors ${t.tableRow}`}>
+                            <td className={`py-2.5 px-1 font-semibold text-xs ${t.text}`}>
+                              <div className="flex items-center gap-2">
+                                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white ${isDark ? "bg-[#9E217B]" : "bg-[#9E217B]"}`}>
+                                  {String(row.name).charAt(0).toUpperCase()}
+                                </div>
+                                <span className="truncate max-w-[100px]">{row.name}</span>
+                              </div>
+                            </td>
+                            <td className={`py-2.5 px-1 text-right font-black text-sm ${t.accentText}`}>{row.count}</td>
+                          </tr>
                         ))}
-                      </div>
-                    )}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               </div>
 
               {/* ── FRONT DESK LOG TABLE ── */}
-              <div className={`rounded-2xl border shadow-sm overflow-hidden ${t.tableWrap}`} style={t.tableGlass}>
+              <div className={`rounded-2xl border overflow-hidden ${t.tableWrap}`} style={t.tableGlass}>
                 <div className={`p-4 md:p-6 border-b flex justify-between items-center ${t.tableBorder}`}>
                   <div>
-                    <h2 className={`text-base md:text-lg font-bold ${t.text}`}>Front Desk Log</h2>
+                    <h2 className={`text-base md:text-lg font-bold flex items-center gap-3 ${t.text}`}>
+                      Front Desk Log 
+                      <button onClick={handleExportMainTable} className={`p-1.5 border rounded-md ${t.exportBtn}`} title="Export Table to Excel (CSV)">
+                        <FaDownload size={12} />
+                      </button>
+                    </h2>
                     <p className={`text-xs mt-0.5 ${t.textFaint}`}>{receptionistLeads.length} shown · {totalCount} total</p>
                   </div>
                   <div className="flex gap-4 items-center">
@@ -918,7 +1119,6 @@ export default function ReceptionistDashboard() {
                   <table className="w-full text-left border-collapse whitespace-nowrap">
                     <thead>
                       <tr className={t.tableHead}>
-                        {/* ── Email removed, CP Company added ── */}
                         {["Lead No.", "Client Name", "CP Company", "Budget", "Phone", "Alt. Phone", "Date Created", "Sales Manager"].map((h) => (
                           <th key={h} className={`px-3 py-3 md:p-4 font-bold uppercase tracking-wider border-b ${t.textHeader} ${t.tableBorder}`}>{h}</th>
                         ))}
@@ -934,7 +1134,6 @@ export default function ReceptionistDashboard() {
                           <tr key={enquiry.id} className={`transition-colors cursor-pointer ${t.tableRow}`} onClick={() => { setSelectedEnquiry(enquiry); setActiveTab("detail"); }}>
                             <td className={`px-3 py-3 md:p-4 text-xs md:text-sm font-bold ${t.accentText}`}>#{enquiry.id}</td>
                             <td className={`px-3 py-3 md:p-4 text-xs md:text-sm font-semibold ${t.text}`}>{enquiry.name}</td>
-                            {/* ── CP Company column ── */}
                             <td className={`px-3 py-3 md:p-4 text-[10px] md:text-sm truncate max-w-[100px] md:max-w-[140px] ${t.textMuted}`}>
                               {enquiry.cp_company ? enquiry.cp_company : <span className="italic text-[10px]">—</span>}
                             </td>
@@ -968,10 +1167,7 @@ export default function ReceptionistDashboard() {
               <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
                 <div>
                   <h2 className={`text-xl font-bold ${t.text}`}>Recent Enquiries</h2>
-                  <p className={`text-xs mt-0.5 ${t.textFaint}`}>
-                    {receptionistLeads.length} shown · {totalCount} total
-                    {hasMore && <span className={t.accentText}> · scroll for more</span>}
-                  </p>
+                  {hasMore && <p className={`text-xs mt-0.5 ${t.accentText}`}>· scroll for more</p>}
                 </div>
                 <div className="flex gap-4 items-center">
                   <div className="relative">
@@ -996,11 +1192,11 @@ export default function ReceptionistDashboard() {
                   {receptionistLeads.map((enquiry: any, index: number) => (
                     <div key={enquiry.id ?? index}
                       onClick={() => { setSelectedEnquiry(enquiry); setActiveTab("detail"); }}
-                      className={`rounded-2xl p-6 border shadow-sm cursor-pointer group flex flex-col justify-between transition-all ${t.card} ${isDark ? "hover:border-purple-500/50" : "hover:border-[#00AEEF]/40"}`}
+                      className={`rounded-2xl p-6 border cursor-pointer group flex flex-col justify-between transition-all ${t.card}`}
                       style={t.cardGlass}>
                       <div>
                         <div className={`flex justify-between items-start mb-6 border-b pb-4 ${t.tableBorder}`}>
-                          <h3 className={`text-xl font-bold transition-colors flex items-center gap-2 ${t.text} ${isDark ? "group-hover:text-purple-500" : "group-hover:text-[#00AEEF]"}`}>
+                          <h3 className={`text-xl font-bold transition-colors flex items-center gap-2 ${t.text} ${isDark ? "group-hover:text-[#d4006e]" : "group-hover:text-[#9E217B]"}`}>
                             <span className={`flex-shrink-0 ${t.accentText}`}>#{enquiry.id}</span>
                             <span className="line-clamp-1">{enquiry.name}</span>
                           </h3>
@@ -1029,7 +1225,7 @@ export default function ReceptionistDashboard() {
                       </div>
                       <div className={`pt-4 border-t flex justify-between items-center text-sm mt-auto ${t.tableBorder}`}>
                         <div className="flex items-center gap-2">
-                          <div className={`w-6 h-6 rounded-full text-white flex items-center justify-center text-xs font-bold ${isDark ? "bg-gradient-to-tr from-purple-600 to-blue-500" : "bg-gradient-to-tr from-[#00AEEF] to-[#9E217B]"}`}>
+                          <div className={`w-6 h-6 rounded-full text-white flex items-center justify-center text-xs font-bold ${isDark ? "bg-gradient-to-tr from-[#9E217B] to-[#d4006e]" : "bg-gradient-to-tr from-[#00AEEF] to-[#9E217B]"}`}>
                             {String(enquiry.assignedTo || "U").charAt(0).toUpperCase()}
                           </div>
                           <p className={`text-xs ${t.textMuted}`}>Assigned: <span className={`font-semibold ${t.text}`}>{enquiry.assignedTo || "Unassigned"}</span></p>
@@ -1074,7 +1270,7 @@ export default function ReceptionistDashboard() {
                 </div>
               </div>
               <div className={`rounded-2xl border p-6 md:p-8 ${t.card}`} style={t.cardGlass}>
-                <div className={`rounded-xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8 text-white ${isDark ? "bg-gradient-to-r from-purple-600 to-indigo-600" : "bg-gradient-to-r from-[#00AEEF] to-[#9E217B]"}`}>
+                <div className={`rounded-xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8 text-white ${isDark ? "bg-gradient-to-r from-[#9E217B] to-[#7a1a5e]" : "bg-gradient-to-r from-[#00AEEF] to-[#9E217B]"}`}>
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 rounded-full border border-white/30 bg-white/20 flex items-center justify-center font-bold text-xl">
                       {String(selectedEnquiry.assignedTo || "U").charAt(0).toUpperCase()}
@@ -1160,7 +1356,6 @@ export default function ReceptionistDashboard() {
           {isEnquiryModalOpen && (
             <div className="fixed inset-0 bg-black/70 z-[100] flex justify-center items-center p-4 sm:p-6 animate-fadeIn" style={{ backdropFilter: "blur(6px)" }}>
               <div className={`rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl border ${t.modalCard}`} style={t.modalGlass}>
-                {/* Modal Header */}
                 <div className={`p-4 md:p-6 border-b flex justify-between items-center ${t.modalHeader} ${t.tableBorder}`}>
                   <div>
                     <h2 className={`text-lg md:text-xl font-bold flex items-center gap-2 ${t.text}`}>
@@ -1173,8 +1368,6 @@ export default function ReceptionistDashboard() {
 
                 <div className={`p-4 md:p-6 overflow-y-auto custom-scrollbar flex-1 ${t.modalInner}`}>
                   <form id="enquiryForm" onSubmit={handleEnquirySubmit} className="space-y-6 md:space-y-8">
-
-                    {/* Block 1 - Personal */}
                     <div className={`p-5 md:p-6 rounded-xl border ${t.modalBlock}`} style={t.modalBlockGl}>
                       <h3 className={`text-sm font-bold mb-4 md:mb-5 uppercase tracking-wider border-b pb-2 ${t.sectionTitle} ${t.sectionBorder}`}>Personal Information</h3>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
@@ -1234,33 +1427,22 @@ export default function ReceptionistDashboard() {
                       </div>
                     </div>
 
-                    {/* Block 2 - Requirements */}
                     <div className={`p-5 md:p-6 rounded-xl border ${t.modalBlock}`} style={t.modalBlockGl}>
                       <h3 className={`text-sm font-bold mb-4 md:mb-5 uppercase tracking-wider border-b pb-2 ${t.sectionTitle} ${t.sectionBorder}`}>Requirement & Timeline</h3>
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-5">
-
-                        {/* ── Budget: FREE TEXT FIELD (no dropdown) ── */}
                         <div>
                           <label className={`block text-xs mb-1.5 font-medium pl-2 ${t.textMuted}`}>Budget *</label>
-                          <input
-                            type="text"
-                            required
-                            value={enquiryForm.budget}
+                          <input type="text" required value={enquiryForm.budget}
                             onChange={(e) => setEnquiryForm({ ...enquiryForm, budget: e.target.value })}
                             className={`w-full rounded-lg p-3 text-sm outline-none transition-colors border ${t.modalInput} ${t.text}`}
-                            style={isDark ? {} : { outlineColor: "#00AEEF" }}
-                            placeholder="e.g. 80 Lakhs, 1.5 Cr"
-                          />
+                            style={isDark ? {} : { outlineColor: "#00AEEF" }} placeholder="e.g. 80 Lakhs, 1.5 Cr" />
                           <p className={`text-[10px] mt-1 pl-2 ${t.textFaint}`}>Enter exact amount e.g. 50 Lakhs, 2 Cr</p>
                         </div>
-
-                        {/* ── Configuration: now includes 1 RK and 4 BHK ── */}
                         <div>
                           <label className={`block text-xs mb-1.5 font-medium pl-2 ${t.textMuted}`}>Configuration (BHK)</label>
                           <select value={enquiryForm.configuration} onChange={(e) => setEnquiryForm({ ...enquiryForm, configuration: e.target.value })}
                             className={`w-full rounded-lg p-3 text-sm outline-none transition-colors border cursor-pointer ${t.modalInput} ${t.text}`}>
                             <option value="" disabled>Select…</option>
-                            {/* ── Added 1 RK and 4 BHK ── */}
                             <option value="1 RK">1 RK</option>
                             <option value="1 BHK">1 BHK</option>
                             <option value="2 BHK">2 BHK</option>
@@ -1269,8 +1451,6 @@ export default function ReceptionistDashboard() {
                             <option value="4+ BHK">4+ BHK</option>
                           </select>
                         </div>
-
-                        {/* Purpose */}
                         <div>
                           <label className={`block text-xs mb-1.5 font-medium pl-2 ${t.textMuted}`}>Purpose</label>
                           <select value={enquiryForm.purpose} onChange={(e) => setEnquiryForm({ ...enquiryForm, purpose: e.target.value })}
@@ -1282,9 +1462,8 @@ export default function ReceptionistDashboard() {
                       </div>
                     </div>
 
-                    {/* Block 3 - Routing */}
-                    <div className={`p-5 md:p-6 rounded-xl border ${isDark ? "border-green-500/20" : "border-[#00AEEF]/20"} ${t.modalBlock}`} style={t.modalBlockGl}>
-                      <h3 className={`text-sm font-bold mb-4 md:mb-5 uppercase tracking-wider border-b pb-2 ${isDark ? "text-green-500 border-green-500/20" : "text-[#00AEEF] border-[#00AEEF]/20"}`}>Routing & Source</h3>
+                    <div className={`p-5 md:p-6 rounded-xl border ${isDark ? "border-[#9E217B]/20" : "border-[#00AEEF]/20"} ${t.modalBlock}`} style={t.modalBlockGl}>
+                      <h3 className={`text-sm font-bold mb-4 md:mb-5 uppercase tracking-wider border-b pb-2 ${isDark ? "text-[#d4006e] border-[#9E217B]/20" : "text-[#00AEEF] border-[#00AEEF]/20"}`}>Routing & Source</h3>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
                         <div>
                           <label className={`block text-xs mb-1.5 font-medium pl-2 ${t.textMuted}`}>Source *</label>
@@ -1295,9 +1474,9 @@ export default function ReceptionistDashboard() {
                           </select>
                         </div>
                         <div>
-                          <label className={`block text-xs mb-1.5 font-medium pl-2 font-bold ${isDark ? "text-green-500" : "text-[#00AEEF]"}`}>Assign to Sales Manager *</label>
+                          <label className={`block text-xs mb-1.5 font-medium pl-2 font-bold ${isDark ? "text-[#d4006e]" : "text-[#00AEEF]"}`}>Assign to Sales Manager *</label>
                           <select required value={enquiryForm.assignedTo} onChange={(e) => setEnquiryForm({ ...enquiryForm, assignedTo: e.target.value })}
-                            className={`w-full rounded-lg p-3 text-sm outline-none transition-colors cursor-pointer border-2 ${isDark ? "bg-[#14141B] border-green-500/50 focus:border-green-500" : "bg-white border-[#00AEEF]/50 focus:border-[#00AEEF]"} ${t.text}`}>
+                            className={`w-full rounded-lg p-3 text-sm outline-none transition-colors cursor-pointer border-2 ${isDark ? "bg-[#14141B] border-[#9E217B]/50 focus:border-[#d4006e]" : "bg-white border-[#00AEEF]/50 focus:border-[#00AEEF]"} ${t.text}`}>
                             <option value="" disabled>-- Select Manager --</option>
                             {isFetchingManagers ? <option disabled>Loading…</option> : salesManagers.length > 0 ? salesManagers.map((m, idx) => <option key={idx} value={m.name}>{m.name}</option>) : <option disabled>No Managers in DB</option>}
                           </select>
@@ -1306,7 +1485,7 @@ export default function ReceptionistDashboard() {
                           <div className="sm:col-span-2 mt-2">
                             <label className={`block text-xs mb-1.5 font-medium pl-2 ${t.textMuted}`}>Specify Source *</label>
                             <input required type="text" value={enquiryForm.sourceOther} onChange={(e) => setEnquiryForm({ ...enquiryForm, sourceOther: e.target.value })}
-                              className={`w-full rounded-lg p-3 text-sm outline-none transition-colors border ${isDark ? "border-purple-500/50" : "border-[#00AEEF]/50"} ${t.modalInput} ${t.text}`}
+                              className={`w-full rounded-lg p-3 text-sm outline-none transition-colors border ${isDark ? "border-[#9E217B]/50" : "border-[#00AEEF]/50"} ${t.modalInput} ${t.text}`}
                               placeholder="Please specify the lead source" />
                           </div>
                         )}
@@ -1332,14 +1511,13 @@ export default function ReceptionistDashboard() {
                   </form>
                 </div>
 
-                {/* Modal Footer */}
                 <div className={`p-4 md:p-6 border-t flex flex-col md:flex-row justify-end gap-3 md:gap-4 ${t.modalHeader} ${t.tableBorder}`}>
                   <button onClick={() => setIsEnquiryModalOpen(false)} type="button"
                     className={`px-6 py-2.5 rounded-lg font-bold cursor-pointer transition-colors ${t.textMuted} ${isDark ? "hover:bg-red-500/10 hover:text-red-500" : "hover:bg-[#9E217B]/10 hover:text-[#9E217B]"}`}>
                     Cancel
                   </button>
                   <button form="enquiryForm" type="submit"
-                    className={`px-8 py-2.5 rounded-lg font-bold transition-colors cursor-pointer ${t.btnPrimary} ${isDark ? "shadow-[0_0_15px_rgba(168,85,247,0.3)]" : "shadow-[0_0_12px_rgba(0,174,239,0.25)]"}`}>
+                    className={`px-8 py-2.5 rounded-lg font-bold transition-colors cursor-pointer ${t.btnPrimary} ${isDark ? "shadow-[0_0_15px_rgba(158,33,123,0.3)]" : "shadow-[0_0_12px_rgba(0,174,239,0.25)]"}`}>
                     Submit
                   </button>
                 </div>
@@ -1369,8 +1547,8 @@ export default function ReceptionistDashboard() {
       <style dangerouslySetInnerHTML={{ __html: `
         .custom-scrollbar::-webkit-scrollbar { width: 5px; height: 5px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(120,80,220,0.3); border-radius: 10px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(150,100,240,0.5); }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(158,33,123,0.4); border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(158,33,123,0.6); }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
         .animate-fadeIn { animation: fadeIn 0.2s ease-out; }
         @keyframes bounce { 0%,100% { transform:translateY(0) } 50% { transform:translateY(-6px) } }

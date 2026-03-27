@@ -1012,7 +1012,8 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
                                   </div>
                                 )}
                                 <div className={`p-3 rounded-lg border flex flex-col gap-1.5 ${t.settingsBg}`} style={t.settingsBgGl}>
-                                  <p className={`text-xs flex items-center gap-2 ${t.textMuted}`}><FaPhoneAlt className="w-3 h-3"/><span className={`font-mono ${t.text}`}>{maskPhone(lead.phone)}</span></p>
+                                  <p className={`text-xs flex items-center gap-2 ${t.textMuted}`}><FaPhoneAlt className="w-3 h-3"/><span>Ph No.</span><span className={`font-mono ${t.text}`}>{maskPhone(lead.phone)}</span></p>
+                                  <p className={`text-xs flex items-center gap-2 ${t.textMuted}`}><FaPhoneAlt className="w-3 h-3"/><span>Alt No.</span><span className={`font-mono ${t.text}`}>{maskPhone(lead.altPhone)}</span></p>
                                 </div>
                                 {(lead.mongoVisitDate || interest) && (
                                   <div className="flex items-center justify-between gap-2">
