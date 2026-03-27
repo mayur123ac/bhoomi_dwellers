@@ -1,3 +1,4 @@
+// sales manager
 "use client";
 
 import { useEffect, useState, useRef, useMemo } from "react";
@@ -100,7 +101,7 @@ function buildTheme(isDark: boolean) {
     textHeader:    isDark ? "text-xs text-gray-500 uppercase"           : "text-xs text-[#6B7280] uppercase",
 
     // ── Navigation (sidebar stays dark, active uses same purple/magenta pattern) ──
-    navActive:     isDark ? "bg-purple-900/20 border-purple-800 text-purple-400" : "bg-[#2A2A2A] text-[#00AEEF] border-transparent",
+    navActive:     isDark ? "bg-purple-900/20 border-purple-800 text-purple-400" : "bg-[#9E217B]/20 text-[#d946a8] border-transparent",
     navInactive:   isDark ? "text-gray-500 hover:text-gray-300 hover:bg-white/5 border-transparent" : "text-[#9CA3AF] hover:bg-[#2A2A2A] hover:text-white border-transparent",
     navIndicator:  isDark ? "bg-purple-500 shadow-[0_0_10px_2px_rgba(168,85,247,0.5)]" : "bg-[#9E217B] shadow-[0_0_8px_rgba(158,33,123,0.4)]",
 
@@ -110,7 +111,7 @@ function buildTheme(isDark: boolean) {
     // ── Chat ──
     chatArea:      isDark ? "bg-[#0a0a0a]"                              : "bg-[#F8FAFC]",
     chatBubbleAi:  isDark ? "bg-[#141414] border border-[#1f1f1f] text-gray-200" : "bg-white border border-[#E5E7EB] text-[#1A1A1A] shadow-sm",
-    chatBubbleUser:isDark ? "bg-purple-600 text-white"                  : "bg-[#00AEEF] text-white",
+    chatBubbleUser:isDark ? "bg-purple-600 text-white"                  : "bg-[#9E217B] text-white",
     chatInput:     isDark ? "bg-[#111] border-[#222] hover:border-[#333] focus-within:border-purple-500/50" : "bg-white border-[#E5E7EB] hover:border-[#9CA3AF] focus-within:border-[#00AEEF]/50",
     chatInputInner:isDark ? "bg-[#111] border-[#222]"                   : "bg-white border-[#E5E7EB]",
     chatPanel:     isDark ? "bg-[#1a1a1a] border-[#333]"                : "bg-white border-[#D1D5DB]",
@@ -130,7 +131,7 @@ function buildTheme(isDark: boolean) {
     sectionBorder: isDark ? "border-purple-500/20"                      : "border-[#9E217B]/25",
 
     // ── Buttons ──
-    btnPrimary:    isDark ? "bg-purple-600 hover:bg-purple-500 text-white shadow-md" : "bg-[#00AEEF] hover:bg-[#0099d4] text-white shadow-sm",
+    btnPrimary:    isDark ? "bg-purple-600 hover:bg-purple-500 text-white shadow-md" : "bg-[#9E217B] hover:bg-[#0099d4] text-white shadow-sm",
     btnSecondary:  isDark ? "bg-blue-600 hover:bg-blue-500 text-white shadow-md" : "bg-[#9E217B] hover:bg-[#8a1d6b] text-white shadow-sm",
     btnDanger:     isDark ? "bg-[#3B1F1F] text-[#F28B82] hover:bg-red-900/40 border border-red-900/30" : "bg-[#9E217B]/10 text-[#9E217B] hover:bg-[#9E217B] hover:text-white border border-[#9E217B]/30",
     btnWarning:    isDark ? "bg-yellow-600 hover:bg-yellow-500 text-white shadow-md" : "bg-amber-500 hover:bg-amber-400 text-white shadow-sm",
@@ -352,10 +353,10 @@ export default function SalesDashboard() {
               <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-colors border ${activeView === view || (view === "forms" && activeView === "detail") ? t.navActive : t.navInactive}`}>{icon}</div>
             </div>
           ))}
-          <div onClick={() => setActiveView("settings")} className="group relative flex justify-center cursor-pointer w-full mt-auto" title="Settings">
+          {/* <div onClick={() => setActiveView("settings")} className="group relative flex justify-center cursor-pointer w-full mt-auto" title="Settings">
             {activeView === "settings" && <div className={`absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 rounded-r ${t.navIndicator}`} />}
             <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-colors border ${activeView === "settings" ? t.navActive : t.navInactive}`}><FaCog className="w-6 h-6" /></div>
-          </div>
+          </div> */}
         </nav>
       </aside>
 
@@ -493,7 +494,7 @@ export default function SalesDashboard() {
                 className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm cursor-pointer shadow-md hover:scale-105 transition-transform ${
                   isDark
                     ? "border border-purple-500/40 text-purple-400 bg-purple-500/15"
-                    : "border border-[#00AEEF]/40 text-[#00AEEF] bg-[#00AEEF]/10"
+                    : "border border-[#00AEEF]/40 bg-[#9E217B]/20 text-[#d946a8]"
                 }`}
               >
                 <FaUserCircle className="text-lg"/>
@@ -815,7 +816,7 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
     <div className={`col-span-full flex items-center justify-center gap-3 text-sm py-10 ${t.textMuted}`}>
       <div className="flex gap-1.5">
         {[0,150,300].map(d => (
-          <span key={d} className={`w-2 h-2 rounded-full animate-bounce ${isDark ? "bg-purple-500" : "bg-[#00AEEF]"}`} style={{animationDelay:`${d}ms`}}/>
+          <span key={d} className={`w-2 h-2 rounded-full animate-bounce ${isDark ? "bg-purple-500" : "bg-[#9E217B]"}`} style={{animationDelay:`${d}ms`}}/>
         ))}
       </div>
       Loading more leads…

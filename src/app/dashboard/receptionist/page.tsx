@@ -1,23 +1,29 @@
 "use client";
 
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
   FaThLarge, FaCog, FaBell, FaTimes, FaClipboardList,
   FaChevronLeft, FaRobot, FaPaperPlane, FaCalendarAlt, FaEye, FaEyeSlash, FaPhoneAlt, FaUserCircle, FaBriefcase, FaSearch
 } from "react-icons/fa";
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import {
+  PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid
+} from "recharts";
 
 const PAGE_SIZE = 20;
 
-// ─── NAV ITEMS CONSTANT ───────────────────────────────────────────────────────
+const MONTH_NAMES = [
+  "January","February","March","April","May","June",
+  "July","August","September","October","November","December"
+];
+
 const NAV_ITEMS = [
   { id: "overview",  icon: <FaThLarge className="w-5 h-5" />,       title: "Dashboard" },
   { id: "forms",     icon: <FaClipboardList className="w-5 h-5" />, title: "Forms List" },
   { id: "assistant", icon: <FaRobot className="w-5 h-5" />,         title: "CRM AI Assistant" },
 ];
 
-// ─── SUN/MOON ICONS ───────────────────────────────────────────────────────────
 const SunIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <circle cx="12" cy="12" r="5"/>
@@ -37,37 +43,21 @@ export default function ReceptionistDashboard() {
   const router = useRouter();
   const [isDark, setIsDark] = useState(false);
 
-  // ── Theme tokens ──────────────────────────────────────────────────────────
   const t = {
-    // ── Page & Layout ──
     pageWrap:      isDark ? "bg-[#0A0A0F] text-white"                  : "text-[#1A1A1A]",
     mainBg:        isDark ? "bg-[#0A0A0F]"                             : "bg-transparent",
-
-    // ── Sidebar ──
     sidebar:       isDark ? "bg-[#121218] border-[#2A2A35]"            : "bg-[#1A1A1A] border-[#2A2A2A]",
-    sidebarGlass:  isDark ? {}                                         : {},
-
-    // ── Header ──
     header:        isDark ? "bg-[#121218] border-[#2A2A35]"            : "bg-white border-[#9CA3AF]",
     headerGlass:   isDark ? {}                                         : { boxShadow: "0 1px 0 #9CA3AF, 0 4px 16px rgba(0,174,239,0.06)" },
-
-    // ── Cards ──
-    card:          isDark ? "bg-[#121218] border-[#2A2A35] hover:shadow-[0_0_24px_4px_rgba(99,102,241,0.25)]"           : "bg-gradient-to-r from-[#f1f5ff] via-[#eef2ff] to-[#f5f3ff] border border-indigo-100 rounded-2xl p-6 shadow-sm hover:shadow-[0_-4px_16px_2px_rgba(99,102,241,0.2),0_0_24px_6px_rgba(99,102,241,0.12),0_4px_16px_rgba(0,0,0,0.08)] transition-all duration-300 border-[#9CA3AF] ",
+    card:          isDark ? "bg-[#121218] border-[#2A2A35] hover:shadow-[0_0_24px_4px_rgba(99,102,241,0.25)]" : "bg-gradient-to-r from-[#f1f5ff] via-[#eef2ff] to-[#f5f3ff] border border-indigo-100 rounded-2xl p-6 shadow-sm hover:shadow-[0_-4px_16px_2px_rgba(99,102,241,0.2),0_0_24px_6px_rgba(99,102,241,0.12),0_4px_16px_rgba(0,0,0,0.08)] transition-all duration-300 border-[#9CA3AF]",
     cardGlass:     isDark ? {}                                         : { boxShadow: "0 1px 2px rgba(0,0,0,0.04), 0 4px 12px rgba(0,174,239,0.07), 0 12px 28px rgba(0,0,0,0.08)" },
-
-    // ── Tables ──
     tableWrap:     isDark ? "bg-[#121218] border-[#2A2A35]"            : "bg-white border-[#9CA3AF]",
     tableGlass:    isDark ? {}                                         : { boxShadow: "0 1px 2px rgba(0,0,0,0.04), 0 4px 12px rgba(158,33,123,0.06), 0 16px 36px rgba(0,0,0,0.09)" },
     tableHead:     isDark ? "bg-[#1A1A28]"                             : "bg-[#F1F5F9]",
     tableRow:      isDark ? "hover:bg-[#1C1C2A]"                       : "hover:bg-[#F8FAFC]",
     tableDivide:   isDark ? "divide-[#1E1E2A]"                         : "divide-[#9CA3AF]",
     tableBorder:   isDark ? "border-[#2A2A35]"                         : "border-[#9CA3AF]",
-
-    // ── Inputs ──
     inputBg:       isDark ? "bg-[#14141B] border-[#2A2A35]"            : "bg-white border-[#9CA3AF]",
-    inputGlass:    isDark ? {}                                         : {},
-
-    // ── Modals ──
     modalCard:     isDark ? "bg-[#121218] border-[#2A2A35]"            : "bg-white border-[#9CA3AF]",
     modalGlass:    isDark ? {}                                         : { boxShadow: "0 2px 4px rgba(0,0,0,0.04), 0 8px 24px rgba(0,174,239,0.08), 0 32px 72px rgba(0,0,0,0.16)" },
     modalInner:    isDark ? "bg-[#0A0A0F]"                             : "bg-[#F8FAFC]",
@@ -75,71 +65,44 @@ export default function ReceptionistDashboard() {
     modalBlock:    isDark ? "bg-[#14141B] border-[#1E1E2A]"            : "bg-white border-[#9CA3AF]",
     modalBlockGl:  isDark ? {}                                         : { boxShadow: "0 1px 2px rgba(0,0,0,0.03), 0 3px 8px rgba(0,174,239,0.05)" },
     modalInput:    isDark ? "bg-[#14141B] border-[#2A2A35]"            : "bg-white border-[#9CA3AF]",
-
-    // ── Typography ──
     text:          isDark ? "text-white"                               : "text-[#1A1A1A]",
     textMuted:     isDark ? "text-[#888899]"                           : "text-[#6B7280]",
     textFaint:     isDark ? "text-[#55556A]"                           : "text-[#9CA3AF]",
     textHeader:    isDark ? "text-xs text-[#B0B0C4]"                   : "text-xs text-[#6B7280]",
-
-    // ── Navigation (sidebar active uses Deep Magenta indicator + Electric Blue text in light) ──
     navActive:     isDark ? "bg-[#1A1A28] text-white"                  : "bg-[#2A2A2A] text-[#00AEEF]",
     navInactive:   isDark ? "text-[#888899] hover:bg-[#1A1A28] hover:text-white" : "text-[#9CA3AF] hover:bg-[#2A2A2A] hover:text-white",
     navIndicator:  isDark ? "bg-purple-500 shadow-[0_0_10px_2px_rgba(168,85,247,0.5)]" : "bg-[#9E217B] shadow-[0_0_8px_rgba(158,33,123,0.4)]",
     navIndicatorMobile: isDark ? "bg-purple-500 shadow-[0_0_10px_2px_rgba(168,85,247,0.5)]" : "bg-[#9E217B] shadow-[0_0_8px_rgba(158,33,123,0.35)]",
-
-    // ── Theme Toggle ──
     toggleWrap:    isDark ? "bg-[#1C1C2A] border-[#2A2A38] text-yellow-300" : "bg-[#F1F5F9] border-[#9CA3AF] text-[#1A1A1A]",
-
-    // ── Dropdowns ──
     dropdown:      isDark ? "bg-[#121218] border-[#2A2A35]"            : "bg-white border-[#9CA3AF]",
     dropdownGlass: isDark ? {}                                         : { boxShadow: "0 2px 4px rgba(0,0,0,0.04), 0 8px 20px rgba(0,174,239,0.08), 0 20px 40px rgba(0,0,0,0.10)" },
-
-    // ── Chat ──
     chatArea:      isDark ? "bg-[#0A0A0F]"                             : "bg-[#F8FAFC]",
     chatBubbleAi:  isDark ? "bg-[#1A1A28] text-white border border-[#2A2A35]" : "bg-white text-[#1A1A1A] border border-[#9CA3AF] shadow-sm",
     chatInput:     isDark ? "bg-[#14141B] border-[#2A2A35]"            : "bg-white border-[#9CA3AF]",
-    chatInputGl:   isDark ? {}                                         : {},
     chatPanel:     isDark ? "bg-[#121218] border-[#2A2A35]"            : "bg-white border-[#9CA3AF]",
     chatPanelGl:   isDark ? {}                                         : { boxShadow: "0 1px 2px rgba(0,0,0,0.04), 0 4px 12px rgba(158,33,123,0.06), 0 16px 36px rgba(0,0,0,0.09)" },
-
-    // ── Settings / Inner Blocks ──
     settingsBg:    isDark ? "bg-[#0A0A0F] border-[#2A2A35]"            : "bg-[#F8FAFC] border-[#9CA3AF]",
     settingsBgGl:  isDark ? {}                                         : { boxShadow: "inset 0 1px 3px rgba(0,0,0,0.04)" },
-
-    // ── Scroll ──
-    scroll:        isDark ? "scrollbar-dark"                           : "scrollbar-light",
-
-    // ── Stat glow orbs ──
     statGlow1:     isDark ? "bg-purple-600/10"                         : "bg-[#00AEEF]/10",
     statGlow2:     isDark ? "bg-blue-600/10"                           : "bg-[#9E217B]/10",
-
-    // ── Brand accent (section titles, lead IDs, assigned badges) ──
     accentText:    isDark ? "text-purple-500"                          : "text-[#00AEEF]",
     accentBg:      isDark ? "bg-purple-500/10 text-purple-500 border border-purple-500/30" : "bg-[#00AEEF]/10 text-[#00AEEF] border border-[#00AEEF]/30",
     sectionTitle:  isDark ? "text-purple-500"                          : "text-[#9E217B]",
     sectionBorder: isDark ? "border-purple-500/20"                     : "border-[#9E217B]/25",
-
-    // ── Buttons ──
     btnPrimary:    isDark ? "bg-purple-600 hover:bg-purple-500 text-white shadow-md" : "bg-[#00AEEF] hover:bg-[#0099d4] text-white shadow-sm",
     btnDanger:     isDark ? "bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white border border-red-500/30" : "bg-[#9E217B]/10 text-[#9E217B] hover:bg-[#9E217B] hover:text-white border border-[#9E217B]/30",
-
-    // ── Logo ──
     logoBg:        isDark ? "bg-purple-600 shadow-lg shadow-purple-600/30" : "bg-[#9E217B] shadow-lg shadow-[#9E217B]-600/30",
-
-    // ── Chart colors ──
+    selectSmall:   isDark ? "bg-[#1A1A28] border-[#2A2A35] text-white" : "bg-white border-[#D1D5DB] text-[#6B7280]",
     chartColors:   isDark
-      ? ["#d946ef", "#8b5cf6", "#3b82f6", "#0ea5e9", "#6b7280"]
-      : ["#00AEEF", "#9E217B", "#0077b6", "#d4006e", "#9CA3AF"],
-
-    // ── Pie tooltip ──
+      ? ["#d946ef", "#8b5cf6", "#3b82f6", "#0ea5e9", "#6b7280", "#f59e0b"]
+      : ["#00AEEF", "#9E217B", "#0077b6", "#d4006e", "#9CA3AF", "#f59e0b"],
     tooltipBg:     isDark ? "#1a1a1a" : "rgba(255,255,255,0.98)",
     tooltipColor:  isDark ? "#fff" : "#1A1A1A",
     tooltipBorder: isDark ? "1px solid rgba(150,100,255,0.3)" : "1px solid #E5E7EB",
     legendColor:   isDark ? "#9ca3af" : "#6B7280",
   };
 
-  // ================= STATE MANAGEMENT =================
+  // ================= STATE =================
   const [user, setUser] = useState({ name: "Loading...", role: "Receptionist", email: "", password: "" });
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
@@ -159,12 +122,17 @@ export default function ReceptionistDashboard() {
   const [isFetchingManagers, setIsFetchingManagers] = useState(true);
   const [enquiries, setEnquiries] = useState<any[]>([]);
   const [isFetchingEnquiries, setIsFetchingEnquiries] = useState(true);
-  const [chartData, setChartData] = useState<any[]>([]);
   const [searchRecep, setSearchRecep] = useState("");
   const [totalCount, setTotalCount] = useState(0);
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+
+  // ── Dashboard chart state ──
+  const [chartMode1, setChartMode1] = useState<"config"|"monthlyBar"|"source"|"purpose">("config");
+  const [selectedMonthCard, setSelectedMonthCard] = useState(new Date().getMonth());
+  const [card3Mode, setCard3Mode] = useState<"managers"|"channelPartner">("managers");
+  const [card2Mode, setCard2Mode] = useState<"monthly"|"3months"|"6months"|"yearly"|"alltime">("monthly");
 
   const tableSentinelRef = useRef<HTMLDivElement>(null);
   const cardsSentinelRef = useRef<HTMLDivElement>(null);
@@ -233,24 +201,6 @@ export default function ReceptionistDashboard() {
     } catch { return "Invalid Date"; }
   };
 
-  const rebuildChart = (allEnquiries: any[]) => {
-    const cc: Record<string, number> = { "1 BHK": 0, "2 BHK": 0, "3 BHK": 0, "4+ BHK": 0, "Other": 0 };
-    allEnquiries.forEach((item) => {
-      const c = String(item.configuration || "").trim();
-      if (cc[c] !== undefined) cc[c]++; else cc["Other"]++;
-    });
-    const colors = t.chartColors;
-    setChartData(
-      [
-        { name: "1 BHK",  value: cc["1 BHK"],  color: colors[0] },
-        { name: "2 BHK",  value: cc["2 BHK"],  color: colors[1] },
-        { name: "3 BHK",  value: cc["3 BHK"],  color: colors[2] },
-        { name: "4+ BHK", value: cc["4+ BHK"], color: colors[3] },
-        { name: "Other",  value: cc["Other"],  color: colors[4] },
-      ].filter((d) => d.value > 0)
-    );
-  };
-
   const fetchPage = async (currentOffset: number, append: boolean) => {
     try {
       const res = await fetch(`/api/walkin_enquiries?limit=${PAGE_SIZE}&offset=${currentOffset}`);
@@ -264,10 +214,18 @@ export default function ReceptionistDashboard() {
         altPhone: item.alt_phone,
         date: formatDate(item.created_at),
       }));
+      // ── Deduplicate by id ──
       setEnquiries((prev) => {
-        const next = append ? [...prev, ...formatted] : formatted;
-        rebuildChart(next);
-        return next;
+        const base = append ? prev : [];
+        const merged = [...base, ...formatted];
+        const seen = new Set<string>();
+        const deduped = merged.filter(e => {
+          const key = String(e.id);
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
+        return deduped;
       });
       setTotalCount(total);
       setHasMore(formatted.length === PAGE_SIZE && (currentOffset + PAGE_SIZE) < total);
@@ -311,8 +269,12 @@ export default function ReceptionistDashboard() {
       name: enquiryForm.fullName, phone: enquiryForm.mobile,
       alt_phone: enquiryForm.altMobile || null, email: enquiryForm.email || "N/A",
       address: enquiryForm.address || "N/A", occupation: enquiryForm.occupation || "N/A",
-      organization: enquiryForm.organization || "N/A", budget: enquiryForm.budget || "Pending",
-      configuration: enquiryForm.configuration || "N/A", purpose: enquiryForm.purpose || "N/A",
+      organization: enquiryForm.organization || "N/A",
+      // ── Budget is now a free-text field ──
+      budget: enquiryForm.budget || "Pending",
+      // ── Configuration now includes 1 RK and 4 BHK ──
+      configuration: enquiryForm.configuration || "N/A",
+      purpose: enquiryForm.purpose || "N/A",
       source: enquiryForm.source, source_other: enquiryForm.source === "Others" ? enquiryForm.sourceOther : null,
       cp_name: enquiryForm.source === "Channel Partner" ? enquiryForm.cpDetails.name : null,
       cp_company: enquiryForm.source === "Channel Partner" ? enquiryForm.cpDetails.company : null,
@@ -368,6 +330,110 @@ export default function ReceptionistDashboard() {
       e.phone?.includes(searchRecep)
   );
 
+  // ================= CHART DATA COMPUTATIONS =================
+
+  // ── Card 1: Chart 1 – Room Configuration Pie ──
+  const configChartData = useMemo(() => {
+    const cc: Record<string, number> = { "1 RK": 0, "1 BHK": 0, "2 BHK": 0, "3 BHK": 0, "4 BHK": 0, "4+ BHK": 0, "Other": 0 };
+    enquiries.forEach((item) => {
+      const c = String(item.configuration || "").trim();
+      if (cc[c] !== undefined) cc[c]++; else cc["Other"]++;
+    });
+    const colors = t.chartColors;
+    return [
+      { name: "1 RK",   value: cc["1 RK"],   color: colors[5] },
+      { name: "1 BHK",  value: cc["1 BHK"],  color: colors[0] },
+      { name: "2 BHK",  value: cc["2 BHK"],  color: colors[1] },
+      { name: "3 BHK",  value: cc["3 BHK"],  color: colors[2] },
+      { name: "4 BHK",  value: cc["4 BHK"],  color: colors[3] },
+      { name: "4+ BHK", value: cc["4+ BHK"], color: "#f97316" },
+      { name: "Other",  value: cc["Other"],  color: colors[4] },
+    ].filter((d) => d.value > 0);
+  }, [enquiries, isDark]);
+
+  // ── Card 1: Chart 2 – Monthly Enquiries Bar ──
+  const monthlyBarData = useMemo(() => {
+    return MONTH_NAMES.map((month, idx) => {
+      const count = enquiries.filter(e => {
+        if (!e.created_at) return false;
+        const d = new Date(e.created_at);
+        return d.getMonth() === idx && d.getFullYear() === new Date().getFullYear();
+      }).length;
+      return { month: month.slice(0, 3), count };
+    });
+  }, [enquiries]);
+
+  // ── Card 1: Chart 3 – Source Bar ──
+  const sourceBarData = useMemo(() => {
+    const c: Record<string, number> = {};
+    enquiries.forEach(e => {
+      const src = e.source || "Unknown";
+      c[src] = (c[src] || 0) + 1;
+    });
+    return Object.entries(c).map(([source, count]) => ({ source, count })).sort((a, b) => b.count - a.count);
+  }, [enquiries]);
+
+  // ── Card 1: Chart 4 – Purpose Pie ──
+  const purposePieData = useMemo(() => {
+    const c: Record<string, number> = {};
+    enquiries.forEach(e => {
+      const p = e.purpose || "Not Specified";
+      if (p !== "N/A") c[p] = (c[p] || 0) + 1;
+    });
+    const colors = t.chartColors;
+    return Object.entries(c).map(([name, value], i) => ({ name, value, color: colors[i % colors.length] }));
+  }, [enquiries, isDark]);
+
+  // ── Card 2: Monthly enquiries ──
+  const monthlyEnquiriesSelected = useMemo(() => {
+    return enquiries.filter(e => {
+      if (!e.created_at) return false;
+      const d = new Date(e.created_at);
+      return d.getMonth() === selectedMonthCard && d.getFullYear() === new Date().getFullYear();
+    }).length;
+  }, [enquiries, selectedMonthCard]);
+
+  const now = new Date();
+  const threeMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+  const sixMonthsAgo   = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+  const yearStart      = new Date(now.getFullYear(), 0, 1);
+
+  const enquiries3Months = useMemo(() => enquiries.filter(e => e.created_at && new Date(e.created_at) >= threeMonthsAgo).length, [enquiries]);
+  const enquiries6Months = useMemo(() => enquiries.filter(e => e.created_at && new Date(e.created_at) >= sixMonthsAgo).length, [enquiries]);
+  const enquiriesYear    = useMemo(() => enquiries.filter(e => e.created_at && new Date(e.created_at) >= yearStart).length, [enquiries]);
+
+  // ── Card 3: Sales Manager Table ──
+  const managerLeadCounts = useMemo(() => {
+    const c: Record<string, number> = {};
+    enquiries.forEach(e => {
+      const m = e.assignedTo || "Unassigned";
+      c[m] = (c[m] || 0) + 1;
+    });
+    return Object.entries(c).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count);
+  }, [enquiries]);
+
+  // ── Card 3: Channel Partner Table ──
+  const channelPartnerLeads = useMemo(() => {
+    return enquiries.filter(e => e.source === "Channel Partner" && (e.cp_name || e.cp_company || e.cp_phone));
+  }, [enquiries]);
+
+  const axisColor = isDark ? "#9ca3af" : "#6B7280";
+  const gridColor = isDark ? "#2a2a2a" : "#E5E7EB";
+
+  const CustomTooltip = ({ active, payload, label }: any) => active && payload?.length
+    ? <div style={{ background: t.tooltipBg, border: t.tooltipBorder, borderRadius: 8, padding: "8px 12px", color: t.tooltipColor, fontSize: 12, boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}>
+        <p style={{ color: t.legendColor }}>{label || payload[0]?.name}</p>
+        <p style={{ fontWeight: 700 }}>{payload[0]?.value}</p>
+      </div>
+    : null;
+
+  const PieTooltip = ({ active, payload }: any) => active && payload?.length
+    ? <div style={{ background: t.tooltipBg, border: t.tooltipBorder, borderRadius: 8, padding: "8px 12px", color: t.tooltipColor, fontSize: 12 }}>
+        <p style={{ fontWeight: 700 }}>{payload[0]?.name}</p>
+        <p style={{ color: t.legendColor }}>{payload[0]?.value} leads</p>
+      </div>
+    : null;
+
   const LoaderRow = () => (
     <tr>
       <td colSpan={8} className="p-6 text-center">
@@ -394,9 +460,6 @@ export default function ReceptionistDashboard() {
     </div>
   );
 
-  // ─── shared input class ────────────────────────────────────────────────────
-  const inputCls = `w-full ${t.inputBg} ${t.text} rounded-lg p-3 text-sm focus:border-[${isDark ? "#8b5cf6" : "#00AEEF"}] outline-none transition-colors`;
-
   // ─────────────────────────────────────────────────────────────────────────
   return (
     <div
@@ -405,15 +468,9 @@ export default function ReceptionistDashboard() {
         background: "linear-gradient(135deg, #e8f6fd 0%, #f8fafc 30%, #faf0fb 62%, #f8fafc 78%, #e6fafe 100%)",
       }}
     >
-
-      {/* ================= LEFT SIDEBAR (DESKTOP) ================= */}
-      <aside
-        className={`hidden md:flex w-20 border-r flex-col items-center py-6 flex-shrink-0 z-40 shadow-sm ${t.sidebar}`}
-        style={t.sidebarGlass}
-      >
-        {/* Logo */}
+      {/* ===== SIDEBAR (DESKTOP) ===== */}
+      <aside className={`hidden md:flex w-20 border-r flex-col items-center py-6 flex-shrink-0 z-40 shadow-sm ${t.sidebar}`}>
         <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xl font-bold text-white mb-10 cursor-pointer ${t.logoBg}`}>B</div>
-
         <nav className="flex flex-col space-y-6 w-full items-center">
           {NAV_ITEMS.map(({ id, icon, title }) => {
             const active = activeTab === id || (id === "forms" && activeTab === "detail");
@@ -431,34 +488,19 @@ export default function ReceptionistDashboard() {
         </nav>
       </aside>
 
-      {/* ================= MAIN CONTENT AREA ================= */}
+      {/* ===== MAIN CONTENT ===== */}
       <div className="flex-1 flex flex-col overflow-hidden relative">
 
         {/* HEADER */}
-        <header
-          className={`h-16 border-b flex items-center justify-between px-6 flex-shrink-0 z-30 ${t.header}`}
-          style={t.headerGlass}
-        >
-          <h1 className={`font-bold flex items-center text-sm md:text-base tracking-wide ${t.text}`}>
-            BhoomiDwellersCRM
-          </h1>
-
+        <header className={`h-16 border-b flex items-center justify-between px-6 flex-shrink-0 z-30 ${t.header}`} style={t.headerGlass}>
+          <h1 className={`font-bold flex items-center text-sm md:text-base tracking-wide ${t.text}`}>BhoomiDwellersCRM</h1>
           <div className="flex items-center space-x-4 relative">
-            {/* ── Theme Toggle ── */}
-            <button
-              onClick={() => setIsDark(!isDark)}
-              aria-label="Toggle theme"
-              className={`w-9 h-9 rounded-xl border flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm ${t.toggleWrap}`}
-            >
+            <button onClick={() => setIsDark(!isDark)} aria-label="Toggle theme"
+              className={`w-9 h-9 rounded-xl border flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm ${t.toggleWrap}`}>
               {isDark ? <SunIcon /> : <MoonIcon />}
             </button>
-
-            {/* Bell */}
-            <button
-              onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
-              className={`${t.textMuted} transition-colors relative`}
-              style={{ color: isNotificationsOpen ? (isDark ? "#a78bfa" : "#00AEEF") : undefined }}
-            >
+            <button onClick={() => setIsNotificationsOpen(!isNotificationsOpen)} className={`${t.textMuted} transition-colors relative`}
+              style={{ color: isNotificationsOpen ? (isDark ? "#a78bfa" : "#00AEEF") : undefined }}>
               <FaBell className="w-5 h-5" />
             </button>
             {isNotificationsOpen && (
@@ -467,16 +509,8 @@ export default function ReceptionistDashboard() {
                 <p className={`text-xs italic ${t.textFaint}`}>All caught up! No recent notifications.</p>
               </div>
             )}
-
-            {/* Avatar */}
-            <div
-              onClick={() => setIsProfileOpen(!isProfileOpen)}
-              className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm cursor-pointer shadow-md hover:scale-105 transition-transform ${
-                isDark
-                  ? "border border-purple-500/40 text-purple-500 bg-purple-500/15"
-                  : "border border-[#00AEEF]/40 text-[#00AEEF] bg-[#00AEEF]/10"
-              }`}
-            >
+            <div onClick={() => setIsProfileOpen(!isProfileOpen)}
+              className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm cursor-pointer shadow-md hover:scale-105 transition-transform ${isDark ? "border border-purple-500/40 text-purple-500 bg-purple-500/15" : "border border-[#00AEEF]/40 text-[#00AEEF] bg-[#00AEEF]/10"}`}>
               {String(user?.name || "U").charAt(0).toUpperCase()}
             </div>
             {isProfileOpen && (
@@ -489,9 +523,7 @@ export default function ReceptionistDashboard() {
                 <div className={`space-y-4 mb-6 text-sm ${t.text}`}>
                   <p className={`flex justify-between items-center ${t.textMuted}`}>
                     Role:
-                    <span className={`font-bold capitalize px-2 py-0.5 rounded text-xs ${
-                      isDark ? "text-purple-500 bg-purple-500/10" : "text-[#00AEEF] bg-[#00AEEF]/10"
-                    }`}>{user?.role || "Employee"}</span>
+                    <span className={`font-bold capitalize px-2 py-0.5 rounded text-xs ${isDark ? "text-purple-500 bg-purple-500/10" : "text-[#00AEEF] bg-[#00AEEF]/10"}`}>{user?.role || "Employee"}</span>
                   </p>
                   <div>
                     <p className={`text-xs mb-1 ${t.textFaint}`}>Password</p>
@@ -546,9 +578,7 @@ export default function ReceptionistDashboard() {
           {activeTab === "assistant" && (
             <div className="animate-fadeIn max-w-4xl mx-auto h-[80vh] flex flex-col pb-4">
               <div className="flex items-center gap-4 mb-6">
-                <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-2xl ${
-                  isDark ? "bg-purple-500/20 text-purple-500" : "bg-[#00AEEF]/10 text-[#00AEEF]"
-                }`}><FaRobot /></div>
+                <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-2xl ${isDark ? "bg-purple-500/20 text-purple-500" : "bg-[#00AEEF]/10 text-[#00AEEF]"}`}><FaRobot /></div>
                 <div>
                   <h1 className={`text-2xl font-bold ${t.text}`}>CRM AI Assistant</h1>
                   <p className={`text-sm ${t.textMuted}`}>Ask questions about your data or retrieve specific client details.</p>
@@ -559,33 +589,20 @@ export default function ReceptionistDashboard() {
                   {chatMessages.map((msg, idx) => (
                     <div key={idx} className={`flex ${msg.sender === "user" ? "justify-end" : "justify-start"}`}>
                       <div className={`flex gap-3 max-w-[85%] ${msg.sender === "user" ? "flex-row-reverse" : "flex-row"}`}>
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                          msg.sender === "user"
-                            ? isDark ? "bg-blue-600 text-white" : "bg-[#00AEEF] text-white"
-                            : isDark ? "bg-purple-600 text-white" : "bg-[#9E217B] text-white"
-                        }`}>
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${msg.sender === "user" ? (isDark ? "bg-blue-600 text-white" : "bg-[#00AEEF] text-white") : (isDark ? "bg-purple-600 text-white" : "bg-[#9E217B] text-white")}`}>
                           {msg.sender === "user" ? <FaUserCircle className="text-lg" /> : <FaRobot className="text-lg" />}
                         </div>
-                        <div className={`p-4 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap ${
-                          msg.sender === "user"
-                            ? isDark ? "bg-blue-600 text-white rounded-tr-none" : "bg-[#00AEEF] text-white rounded-tr-none"
-                            : `${t.chatBubbleAi} rounded-tl-none`
-                        }`}>{msg.text}</div>
+                        <div className={`p-4 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap ${msg.sender === "user" ? (isDark ? "bg-blue-600 text-white rounded-tr-none" : "bg-[#00AEEF] text-white rounded-tr-none") : `${t.chatBubbleAi} rounded-tl-none`}`}>{msg.text}</div>
                       </div>
                     </div>
                   ))}
                   <div ref={chatEndRef} />
                 </div>
                 <form onSubmit={handleChatSubmit} className={`p-4 border-t flex gap-3 ${t.header}`} style={t.headerGlass}>
-                  <input
-                    type="text" value={chatInput} onChange={(e) => setChatInput(e.target.value)}
+                  <input type="text" value={chatInput} onChange={(e) => setChatInput(e.target.value)}
                     placeholder="Type a client's name or ask a question..."
-                    className={`flex-1 rounded-xl p-4 text-sm outline-none transition-colors border ${t.chatInput} ${t.text}`}
-                    style={{ ...(isDark ? {} : {}), ...(isDark ? {} : { outlineColor: "#00AEEF" }) }}
-                  />
-                  <button type="submit" className={`w-14 h-14 text-white rounded-xl flex items-center justify-center transition-colors shadow-lg cursor-pointer ${
-                    isDark ? "bg-purple-600 hover:bg-purple-500" : "bg-[#00AEEF] hover:bg-[#0099d4]"
-                  }`}><FaPaperPlane className="text-sm ml-[-2px]" /></button>
+                    className={`flex-1 rounded-xl p-4 text-sm outline-none transition-colors border ${t.chatInput} ${t.text}`} />
+                  <button type="submit" className={`w-14 h-14 text-white rounded-xl flex items-center justify-center transition-colors shadow-lg cursor-pointer ${isDark ? "bg-purple-600 hover:bg-purple-500" : "bg-[#00AEEF] hover:bg-[#0099d4]"}`}><FaPaperPlane className="text-sm ml-[-2px]" /></button>
                 </form>
               </div>
             </div>
@@ -596,16 +613,9 @@ export default function ReceptionistDashboard() {
             <div className="flex justify-between items-center mb-8">
               <h1 className={`text-xl md:text-3xl font-bold flex items-center flex-wrap gap-2 md:gap-3 ${t.text}`}>
                 Hi, {String(user?.name || "User").split(" ")[0]}
-                <span className={`text-xs md:text-sm font-medium px-2 py-0.5 md:px-3 md:py-1 rounded-full capitalize ${
-                  isDark
-                    ? "text-purple-700 bg-white/70 border border-purple-300 backdrop-blur-sm"
-                    : "text-[#9E217B] bg-[#9E217B]/10 border border-[#9E217B]/20"
-                }`}>{user?.role || "Employee"}</span>
+                <span className={`text-xs md:text-sm font-medium px-2 py-0.5 md:px-3 md:py-1 rounded-full capitalize ${isDark ? "text-purple-700 bg-white/70 border border-purple-300 backdrop-blur-sm" : "text-[#9E217B] bg-[#9E217B]/10 border border-[#9E217B]/20"}`}>{user?.role || "Employee"}</span>
               </h1>
-              <button
-                onClick={initialLoad}
-                className={`text-white text-xs md:text-sm font-semibold flex items-center gap-1 md:gap-2 px-3 py-1.5 md:px-4 md:py-2 rounded-lg transition-all shadow-sm ${t.btnPrimary}`}
-              >
+              <button onClick={initialLoad} className={`text-white text-xs md:text-sm font-semibold flex items-center gap-1 md:gap-2 px-3 py-1.5 md:px-4 md:py-2 rounded-lg transition-all shadow-sm ${t.btnPrimary}`}>
                 <span className="md:hidden">↻ Sync</span>
                 <span className="hidden md:inline">↻ Refresh Live Data</span>
               </button>
@@ -617,80 +627,290 @@ export default function ReceptionistDashboard() {
           {/* ================================================================= */}
           {activeTab === "overview" && (
             <div className="animate-fadeIn pb-10">
-              <div className="flex flex-col lg:flex-row gap-6 mb-8">
 
-                {/* PIE CHART CARD */}
-                <div className={`w-full lg:w-1/3 rounded-2xl p-6 border shadow-sm flex flex-col items-center ${t.card}`} style={t.cardGlass}>
-                  <h2 className={`text-lg font-bold mb-1 self-start ${t.text}`}>Room Configurations</h2>
-                  <p className={`text-xs self-start mb-6 ${t.textFaint}`}>From {enquiries.length} loaded of {totalCount} total records</p>
+              {/* ── 3-COLUMN DASHBOARD GRID ── */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+
+                {/* ── CARD 1: Charts with dropdown ── */}
+                <div className={`rounded-2xl p-6 border shadow-sm flex flex-col ${t.card}`} style={t.cardGlass}>
+                  <div className="flex items-center justify-between mb-3">
+                    <div>
+                      <h2 className={`text-base font-bold ${t.text}`}>
+                        {chartMode1 === "config" ? "Room Configurations" :
+                         chartMode1 === "monthlyBar" ? "Monthly Enquiries" :
+                         chartMode1 === "source" ? "Lead Sources" : "Purpose Breakdown"}
+                      </h2>
+                      <p className={`text-xs mt-0.5 ${t.textFaint}`}>{enquiries.length} of {totalCount} records</p>
+                    </div>
+                    <select
+                      value={chartMode1}
+                      onChange={e => setChartMode1(e.target.value as any)}
+                      className={`text-xs rounded-lg px-2 py-1.5 outline-none cursor-pointer border ${t.selectSmall}`}
+                    >
+                      <option value="config">Room Config</option>
+                      <option value="monthlyBar">Total Enquiries</option>
+                      <option value="source">Source Bar</option>
+                      <option value="purpose">Purpose Pie</option>
+                    </select>
+                  </div>
+
                   {isFetchingEnquiries ? (
                     <div className={`flex-1 flex items-center justify-center text-sm ${t.textMuted}`}>Calculating chart data...</div>
-                  ) : chartData.length === 0 ? (
-                    <div className={`flex-1 flex items-center justify-center text-sm ${t.textMuted}`}>Not enough data to calculate</div>
-                  ) : (
+                  ) : chartMode1 === "config" ? (
+                    configChartData.length === 0 ? (
+                      <div className={`flex-1 flex items-center justify-center text-sm ${t.textMuted}`}>No data yet</div>
+                    ) : (
+                      <div className="w-full h-[220px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie isAnimationActive={false} data={configChartData} cx="50%" cy="50%" innerRadius="45%" outerRadius="75%" paddingAngle={4} dataKey="value" stroke="none">
+                              {configChartData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
+                            </Pie>
+                            <Tooltip content={<PieTooltip />} />
+                            <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{ fontSize: "11px", paddingTop: "16px", color: t.legendColor }} />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      </div>
+                    )
+                  ) : chartMode1 === "monthlyBar" ? (
                     <div className="w-full h-[220px]">
                       <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                          <Pie isAnimationActive={false} data={chartData} cx="50%" cy="50%" innerRadius="50%" outerRadius="80%" paddingAngle={5} dataKey="value" stroke="none">
-                            {chartData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
-                          </Pie>
-                          <Tooltip
-                            contentStyle={{
-                              backgroundColor: t.tooltipBg,
-                              border: t.tooltipBorder,
-                              borderRadius: "8px",
-                              color: t.tooltipColor,
-                              boxShadow: "0 4px 12px rgba(0,0,0,0.1)"
-                            }}
-                            itemStyle={{ color: t.tooltipColor }}
-                          />
-                          <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{ fontSize: "12px", paddingTop: "20px", color: t.legendColor }} />
-                        </PieChart>
+                        <BarChart data={monthlyBarData} margin={{ top: 4, right: 4, left: -24, bottom: 0 }}>
+                          <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
+                          <XAxis dataKey="month" tick={{ fill: axisColor, fontSize: 10 }} axisLine={false} tickLine={false} />
+                          <YAxis tick={{ fill: axisColor, fontSize: 10 }} axisLine={false} tickLine={false} allowDecimals={false} />
+                          <Tooltip content={<CustomTooltip />} />
+                          <Bar dataKey="count" name="Enquiries" radius={[5, 5, 0, 0]}>
+                            {monthlyBarData.map((_, i) => <Cell key={i} fill={t.chartColors[i % t.chartColors.length]} />)}
+                          </Bar>
+                        </BarChart>
                       </ResponsiveContainer>
                     </div>
+                  ) : chartMode1 === "source" ? (
+                    sourceBarData.length === 0 ? (
+                      <div className={`flex-1 flex items-center justify-center text-sm ${t.textMuted}`}>No source data</div>
+                    ) : (
+                      <div className="w-full h-[220px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={sourceBarData} layout="vertical" margin={{ top: 0, right: 8, left: 0, bottom: 0 }}>
+                            <CartesianGrid strokeDasharray="3 3" stroke={gridColor} horizontal={false} />
+                            <XAxis type="number" tick={{ fill: axisColor, fontSize: 10 }} axisLine={false} tickLine={false} allowDecimals={false} />
+                            <YAxis type="category" dataKey="source" width={90} tick={{ fill: axisColor, fontSize: 9 }} axisLine={false} tickLine={false} />
+                            <Tooltip content={<CustomTooltip />} />
+                            <Bar dataKey="count" radius={[0, 5, 5, 0]}>
+                              {sourceBarData.map((_, i) => <Cell key={i} fill={t.chartColors[i % t.chartColors.length]} />)}
+                            </Bar>
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                    )
+                  ) : (
+                    purposePieData.length === 0 ? (
+                      <div className={`flex-1 flex items-center justify-center text-sm ${t.textMuted}`}>No purpose data</div>
+                    ) : (
+                      <div className="w-full h-[220px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie isAnimationActive={false} data={purposePieData} cx="50%" cy="50%" innerRadius="40%" outerRadius="70%" paddingAngle={4} dataKey="value" stroke="none">
+                              {purposePieData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
+                            </Pie>
+                            <Tooltip content={<PieTooltip />} />
+                            <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{ fontSize: "11px", paddingTop: "12px", color: t.legendColor }} />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      </div>
+                    )
                   )}
                 </div>
 
-                {/* STAT CARDS */}
-                <div className="w-full lg:w-2/3 grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className={`rounded-2xl p-6 md:p-8 border shadow-sm flex flex-col justify-center relative overflow-hidden ${t.card}`} style={t.cardGlass}>
-                    <div className={`absolute -right-10 -top-10 w-40 h-40 rounded-full blur-3xl pointer-events-none ${t.statGlow1}`} />
-                    <p className={`text-sm font-medium mb-2 ${t.textMuted}`}>Total Walk-ins Logged</p>
-                    <p className={`text-4xl md:text-5xl font-black mb-2 ${t.text}`}>{isFetchingEnquiries ? "…" : totalCount}</p>
-                    <p className={`text-xs font-bold flex items-center gap-1 ${isDark ? "text-green-600" : "text-[#00AEEF]"}`}>▲ Syncing Live</p>
+              {/* ── CARD 2: Enquiry Details ── */}
+                <div className={`rounded-2xl p-6 border shadow-sm flex flex-col gap-4 ${t.card}`} style={t.cardGlass}>
+
+                  {/* Header row */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h2 className={`text-base font-bold ${t.text}`}>Enquiry Details</h2>
+                      <p className={`text-xs mt-0.5 ${t.textFaint}`}>{enquiries.length} of {totalCount} records</p>
+                    </div>
+                    <select
+                      value={card2Mode}
+                      onChange={e => setCard2Mode(e.target.value as any)}
+                      className={`text-xs rounded-lg px-2 py-1.5 outline-none cursor-pointer border ${t.selectSmall}`}
+                    >
+                      <option value="monthly">Monthly Enquiries</option>
+                      <option value="3months">Last 3 Months</option>
+                      <option value="6months">Last 6 Months</option>
+                      <option value="yearly">Yearly</option>
+                      <option value="alltime">Total All Time</option>
+                    </select>
                   </div>
-                  <div className={`rounded-2xl p-6 md:p-8 border shadow-sm flex flex-col justify-center relative overflow-hidden ${t.card}`} style={t.cardGlass}>
-                    <div className={`absolute -right-10 -top-10 w-40 h-40 rounded-full blur-3xl pointer-events-none ${t.statGlow2}`} />
-                    <p className={`text-sm font-medium mb-2 ${t.textMuted}`}>Most Recent Walk-in</p>
-                    <p className={`text-lg md:text-xl font-bold mb-1 truncate ${t.text}`}>{enquiries.length > 0 ? enquiries[0].name : "N/A"}</p>
-                    <p className={`text-xs font-semibold ${t.accentText}`}>Assigned to: {enquiries.length > 0 ? enquiries[0].assignedTo : "N/A"}</p>
+
+                  {/* ── MONTHLY ── */}
+                  {card2Mode === "monthly" && (
+                    <div className={`rounded-xl p-5 border flex-1 flex flex-col ${t.settingsBg}`} style={t.settingsBgGl}>
+                      <div className="flex items-center justify-between mb-4">
+                        <p className={`text-xs font-bold uppercase tracking-wider ${t.textFaint}`}>Monthly Enquiries</p>
+                        <select
+                          value={selectedMonthCard}
+                          onChange={e => setSelectedMonthCard(Number(e.target.value))}
+                          className={`text-[10px] rounded px-1.5 py-0.5 outline-none cursor-pointer border ${t.selectSmall}`}
+                        >
+                          {MONTH_NAMES.map((m, idx) => <option key={idx} value={idx}>{m}</option>)}
+                        </select>
+                      </div>
+                      <p className={`text-7xl font-black leading-none ${t.text}`}>{isFetchingEnquiries ? "…" : monthlyEnquiriesSelected}</p>
+                      <p className={`text-sm mt-4 font-medium ${t.accentText}`}>enquiries in {MONTH_NAMES[selectedMonthCard]} {new Date().getFullYear()}</p>
+                    </div>
+                  )}
+
+                  {/* ── LAST 3 MONTHS ── */}
+                  {card2Mode === "3months" && (
+                    <div className={`rounded-xl p-5 border flex-1 flex flex-col ${t.settingsBg}`} style={t.settingsBgGl}>
+                      <div className="flex items-center justify-between mb-4">
+                        <p className={`text-xs font-bold uppercase tracking-wider ${t.textFaint}`}>Last 3 Months</p>
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isDark ? "bg-purple-500/20 text-purple-400" : "bg-[#00AEEF]/10 text-[#00AEEF]"}`}>
+                          <FaCalendarAlt className="text-xs" />
+                        </div>
+                      </div>
+                      <p className={`text-7xl font-black leading-none ${t.text}`}>{isFetchingEnquiries ? "…" : enquiries3Months}</p>
+                      <p className={`text-sm mt-4 font-medium ${t.accentText}`}>enquiries in the last 3 months</p>
+                    </div>
+                  )}
+
+                  {/* ── LAST 6 MONTHS ── */}
+                  {card2Mode === "6months" && (
+                    <div className={`rounded-xl p-5 border flex-1 flex flex-col ${t.settingsBg}`} style={t.settingsBgGl}>
+                      <div className="flex items-center justify-between mb-4">
+                        <p className={`text-xs font-bold uppercase tracking-wider ${t.textFaint}`}>Last 6 Months</p>
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isDark ? "bg-blue-500/20 text-blue-400" : "bg-[#9E217B]/10 text-[#9E217B]"}`}>
+                          <FaCalendarAlt className="text-xs" />
+                        </div>
+                      </div>
+                      <p className={`text-7xl font-black leading-none ${isDark ? "text-blue-400" : "text-[#9E217B]"}`}>{isFetchingEnquiries ? "…" : enquiries6Months}</p>
+                      <p className={`text-sm mt-4 font-medium ${isDark ? "text-blue-400" : "text-[#9E217B]"}`}>enquiries in the last 6 months</p>
+                    </div>
+                  )}
+
+                  {/* ── YEARLY ── */}
+                  {card2Mode === "yearly" && (
+                    <div className={`rounded-xl p-5 border flex-1 flex flex-col ${t.settingsBg}`} style={t.settingsBgGl}>
+                      <div className="flex items-center justify-between mb-4">
+                        <p className={`text-xs font-bold uppercase tracking-wider ${t.textFaint}`}>Yearly ({new Date().getFullYear()})</p>
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isDark ? "bg-green-500/20 text-green-400" : "bg-emerald-50 text-emerald-600"}`}>
+                          <FaCalendarAlt className="text-xs" />
+                        </div>
+                      </div>
+                      <p className={`text-7xl font-black leading-none ${isDark ? "text-green-400" : "text-emerald-600"}`}>{isFetchingEnquiries ? "…" : enquiriesYear}</p>
+                      <p className={`text-sm mt-4 font-medium ${isDark ? "text-green-400" : "text-emerald-600"}`}>enquiries in {new Date().getFullYear()}</p>
+                    </div>
+                  )}
+
+                  {/* ── ALL TIME ── */}
+                  {card2Mode === "alltime" && (
+                    <div className={`rounded-xl p-5 border flex-1 flex flex-col ${isDark ? "bg-purple-600/10 border-purple-500/30" : "bg-[#00AEEF]/10 border-[#00AEEF]/20"}`}>
+                      <div className="flex items-center justify-between mb-4">
+                        <p className={`text-xs font-bold uppercase tracking-wider ${t.textFaint}`}>Total (All Time)</p>
+                        <span className={`text-lg font-black ${t.accentText}`}>▲</span>
+                      </div>
+                      <p className={`text-7xl font-black leading-none ${t.accentText}`}>{isFetchingEnquiries ? "…" : totalCount}</p>
+                      <p className={`text-sm mt-4 font-medium ${t.accentText}`}>total enquiries recorded</p>
+                    </div>
+                  )}
+
+                </div>
+
+                {/* ── CARD 3: Sales Manager Table / Channel Partner Table ── */}
+                <div className={`rounded-2xl p-6 border shadow-sm flex flex-col ${t.card}`} style={t.cardGlass}>
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h2 className={`text-base font-bold ${t.text}`}>
+                        {card3Mode === "managers" ? "Sales Manager Activity" : "Channel Partner Leads"}
+                      </h2>
+                      <p className={`text-xs mt-0.5 ${t.textFaint}`}>
+                        {card3Mode === "managers" ? `${managerLeadCounts.length} managers` : `${channelPartnerLeads.length} leads via CP`}
+                      </p>
+                    </div>
+                    <select
+                      value={card3Mode}
+                      onChange={e => setCard3Mode(e.target.value as any)}
+                      className={`text-xs rounded-lg px-2 py-1.5 outline-none cursor-pointer border ${t.selectSmall}`}
+                    >
+                      <option value="managers">Manager Table</option>
+                      <option value="channelPartner">Channel Partner</option>
+                    </select>
+                  </div>
+
+                  <div className="flex-1 overflow-y-auto custom-scrollbar">
+                    {card3Mode === "managers" ? (
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className={`border-b ${t.tableBorder}`}>
+                            <th className={`text-left py-2 px-1 text-xs font-bold uppercase tracking-wider ${t.textFaint}`}>Sales Manager</th>
+                            <th className={`text-right py-2 px-1 text-xs font-bold uppercase tracking-wider ${t.textFaint}`}>Enquiries</th>
+                          </tr>
+                        </thead>
+                        <tbody className={`divide-y ${t.tableDivide}`}>
+                          {isFetchingEnquiries ? (
+                            <tr><td colSpan={2} className={`text-center py-4 text-xs ${t.textMuted}`}>Loading...</td></tr>
+                          ) : managerLeadCounts.length === 0 ? (
+                            <tr><td colSpan={2} className={`text-center py-4 text-xs ${t.textMuted}`}>No data</td></tr>
+                          ) : managerLeadCounts.map((row, i) => (
+                            <tr key={i} className={`transition-colors ${t.tableRow}`}>
+                              <td className={`py-2.5 px-1 font-semibold text-xs ${t.text}`}>
+                                <div className="flex items-center gap-2">
+                                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white ${isDark ? "bg-purple-600" : "bg-[#9E217B]"}`}>
+                                    {String(row.name).charAt(0).toUpperCase()}
+                                  </div>
+                                  <span className="truncate max-w-[100px]">{row.name}</span>
+                                </div>
+                              </td>
+                              <td className={`py-2.5 px-1 text-right font-black text-sm ${t.accentText}`}>{row.count}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    ) : (
+                      <div className="space-y-2">
+                        {isFetchingEnquiries ? (
+                          <p className={`text-center py-4 text-xs ${t.textMuted}`}>Loading...</p>
+                        ) : channelPartnerLeads.length === 0 ? (
+                          <p className={`text-center py-4 text-xs ${t.textMuted}`}>No channel partner leads</p>
+                        ) : channelPartnerLeads.map((lead, i) => (
+                          <div key={i} className={`rounded-lg p-3 border ${t.settingsBg}`} style={t.settingsBgGl}>
+                            <p className={`font-bold text-xs mb-1 ${t.text}`}>#{lead.id} — {lead.name}</p>
+                            <p className={`text-[11px] ${t.textMuted}`}>
+                              <span className="font-medium">Company:</span> {lead.cp_company || "N/A"}
+                            </p>
+                            <p className={`text-[11px] font-mono ${t.textFaint}`}>
+                              <span className="font-medium not-italic">Contact:</span> {maskPhoneNumber(lead.cp_phone) || "N/A"}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
 
-              {/* TABLE */}
+              {/* ── FRONT DESK LOG TABLE ── */}
               <div className={`rounded-2xl border shadow-sm overflow-hidden ${t.tableWrap}`} style={t.tableGlass}>
                 <div className={`p-4 md:p-6 border-b flex justify-between items-center ${t.tableBorder}`}>
                   <div>
                     <h2 className={`text-base md:text-lg font-bold ${t.text}`}>Front Desk Log</h2>
-                    <p className={`text-xs mt-0.5 ${t.textFaint}`}>
-                      {receptionistLeads.length} shown · {totalCount} total
-                    </p>
+                    <p className={`text-xs mt-0.5 ${t.textFaint}`}>{receptionistLeads.length} shown · {totalCount} total</p>
                   </div>
                   <div className="flex gap-4 items-center">
                     <div className="relative hidden md:block">
                       <FaSearch className={`absolute left-3 top-1/2 -translate-y-1/2 text-xs ${t.textFaint}`} />
-                      <input
-                        type="text" placeholder="Search leads..." value={searchRecep}
+                      <input type="text" placeholder="Search leads..." value={searchRecep}
                         onChange={(e) => setSearchRecep(e.target.value)}
                         className={`rounded-lg pl-9 pr-4 py-2 text-sm outline-none w-48 transition-colors border ${t.inputBg} ${t.text}`}
-                        style={isDark ? {} : { outlineColor: "#00AEEF" }}
-                      />
+                        style={isDark ? {} : { outlineColor: "#00AEEF" }} />
                     </div>
-                    <button
-                      onClick={() => setIsEnquiryModalOpen(true)}
-                      className={`font-bold py-1.5 px-3 md:py-2 md:px-4 rounded-lg transition-colors text-xs flex items-center gap-2 cursor-pointer ${t.btnPrimary}`}
-                    >+ New Entry</button>
+                    <button onClick={() => setIsEnquiryModalOpen(true)}
+                      className={`font-bold py-1.5 px-3 md:py-2 md:px-4 rounded-lg transition-colors text-xs flex items-center gap-2 cursor-pointer ${t.btnPrimary}`}>
+                      + New Entry
+                    </button>
                   </div>
                 </div>
 
@@ -698,7 +918,8 @@ export default function ReceptionistDashboard() {
                   <table className="w-full text-left border-collapse whitespace-nowrap">
                     <thead>
                       <tr className={t.tableHead}>
-                        {["Lead No.", "Client Name", "Email ID", "Budget", "Phone", "Alt. Phone", "Date Created", "Sales Manager"].map((h) => (
+                        {/* ── Email removed, CP Company added ── */}
+                        {["Lead No.", "Client Name", "CP Company", "Budget", "Phone", "Alt. Phone", "Date Created", "Sales Manager"].map((h) => (
                           <th key={h} className={`px-3 py-3 md:p-4 font-bold uppercase tracking-wider border-b ${t.textHeader} ${t.tableBorder}`}>{h}</th>
                         ))}
                       </tr>
@@ -713,7 +934,10 @@ export default function ReceptionistDashboard() {
                           <tr key={enquiry.id} className={`transition-colors cursor-pointer ${t.tableRow}`} onClick={() => { setSelectedEnquiry(enquiry); setActiveTab("detail"); }}>
                             <td className={`px-3 py-3 md:p-4 text-xs md:text-sm font-bold ${t.accentText}`}>#{enquiry.id}</td>
                             <td className={`px-3 py-3 md:p-4 text-xs md:text-sm font-semibold ${t.text}`}>{enquiry.name}</td>
-                            <td className={`px-3 py-3 md:p-4 text-[10px] md:text-sm truncate max-w-[100px] md:max-w-[150px] ${t.textMuted}`}>{enquiry.email !== "N/A" ? enquiry.email : <span className="italic">Not provided</span>}</td>
+                            {/* ── CP Company column ── */}
+                            <td className={`px-3 py-3 md:p-4 text-[10px] md:text-sm truncate max-w-[100px] md:max-w-[140px] ${t.textMuted}`}>
+                              {enquiry.cp_company ? enquiry.cp_company : <span className="italic text-[10px]">—</span>}
+                            </td>
                             <td className={`px-3 py-3 md:p-4 text-xs md:text-sm font-bold ${isDark ? "text-green-700" : "text-emerald-600"}`}>{enquiry.budget}</td>
                             <td className={`px-3 py-3 md:p-4 text-[10px] md:text-sm font-mono tracking-wide ${t.text}`}>{maskPhoneNumber(enquiry.phone)}</td>
                             <td className={`px-3 py-3 md:p-4 text-[10px] md:text-sm font-mono tracking-wide ${t.textMuted}`}>{maskPhoneNumber(enquiry.altPhone)}</td>
@@ -752,16 +976,12 @@ export default function ReceptionistDashboard() {
                 <div className="flex gap-4 items-center">
                   <div className="relative">
                     <FaSearch className={`absolute left-3 top-1/2 -translate-y-1/2 text-xs ${t.textFaint}`} />
-                    <input
-                      type="text" placeholder="Search leads..." value={searchRecep}
+                    <input type="text" placeholder="Search leads..." value={searchRecep}
                       onChange={(e) => setSearchRecep(e.target.value)}
-                      className={`rounded-lg pl-9 pr-4 py-2 text-sm outline-none w-48 transition-colors border ${t.inputBg} ${t.text}`}
-                    />
+                      className={`rounded-lg pl-9 pr-4 py-2 text-sm outline-none w-48 transition-colors border ${t.inputBg} ${t.text}`} />
                   </div>
-                  <button
-                    onClick={() => setIsEnquiryModalOpen(true)}
-                    className={`font-bold py-2.5 px-6 rounded-xl transition-colors text-sm flex items-center gap-2 cursor-pointer ${t.btnPrimary}`}
-                  >
+                  <button onClick={() => setIsEnquiryModalOpen(true)}
+                    className={`font-bold py-2.5 px-6 rounded-xl transition-colors text-sm flex items-center gap-2 cursor-pointer ${t.btnPrimary}`}>
                     <FaClipboardList /> <span className="hidden sm:inline">+ Add New Form</span><span className="sm:hidden">+</span>
                   </button>
                 </div>
@@ -774,14 +994,10 @@ export default function ReceptionistDashboard() {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {receptionistLeads.map((enquiry: any, index: number) => (
-                    <div
-                      key={index}
+                    <div key={enquiry.id ?? index}
                       onClick={() => { setSelectedEnquiry(enquiry); setActiveTab("detail"); }}
-                      className={`rounded-2xl p-6 border shadow-sm cursor-pointer group flex flex-col justify-between transition-all ${t.card} ${
-                        isDark ? "hover:border-purple-500/50" : "hover:border-[#00AEEF]/40"
-                      }`}
-                      style={t.cardGlass}
-                    >
+                      className={`rounded-2xl p-6 border shadow-sm cursor-pointer group flex flex-col justify-between transition-all ${t.card} ${isDark ? "hover:border-purple-500/50" : "hover:border-[#00AEEF]/40"}`}
+                      style={t.cardGlass}>
                       <div>
                         <div className={`flex justify-between items-start mb-6 border-b pb-4 ${t.tableBorder}`}>
                           <h3 className={`text-xl font-bold transition-colors flex items-center gap-2 ${t.text} ${isDark ? "group-hover:text-purple-500" : "group-hover:text-[#00AEEF]"}`}>
@@ -792,14 +1008,16 @@ export default function ReceptionistDashboard() {
                             enquiry.status === "Routed"
                               ? isDark ? "border border-blue-500/30 text-blue-500 bg-blue-500/10" : "border border-[#00AEEF]/30 text-[#00AEEF] bg-[#00AEEF]/10"
                               : "border border-amber-500/30 text-amber-600 bg-amber-500/10"
-                          }`}>
-                            {enquiry.status}
-                          </span>
+                          }`}>{enquiry.status}</span>
                         </div>
                         <div className="space-y-4 mb-6">
                           <div>
-                            <p className={`text-xs font-medium ${t.textFaint}`}>Estimated Budget</p>
-                            <p className={`text-sm font-semibold ${t.text}`}>{enquiry.budget}</p>
+                            <p className={`text-xs font-medium ${t.textFaint}`}>Budget</p>
+                            <p className={`text-sm font-semibold ${isDark ? "text-green-400" : "text-emerald-600"}`}>{enquiry.budget}</p>
+                          </div>
+                          <div>
+                            <p className={`text-xs font-medium ${t.textFaint}`}>Configuration</p>
+                            <p className={`text-sm font-semibold ${t.text}`}>{enquiry.configuration || "N/A"}</p>
                           </div>
                           <div className={`p-3 rounded-lg border flex flex-col gap-2 ${t.settingsBg}`} style={t.settingsBgGl}>
                             <p className={`text-xs flex items-center gap-2 ${t.textMuted}`}><FaPhoneAlt className="w-3 h-3" /> Primary: <span className={`font-mono ${t.text}`}>{maskPhoneNumber(enquiry.phone)}</span></p>
@@ -811,9 +1029,7 @@ export default function ReceptionistDashboard() {
                       </div>
                       <div className={`pt-4 border-t flex justify-between items-center text-sm mt-auto ${t.tableBorder}`}>
                         <div className="flex items-center gap-2">
-                          <div className={`w-6 h-6 rounded-full text-white flex items-center justify-center text-xs font-bold ${
-                            isDark ? "bg-gradient-to-tr from-purple-600 to-blue-500" : "bg-gradient-to-tr from-[#00AEEF] to-[#9E217B]"
-                          }`}>
+                          <div className={`w-6 h-6 rounded-full text-white flex items-center justify-center text-xs font-bold ${isDark ? "bg-gradient-to-tr from-purple-600 to-blue-500" : "bg-gradient-to-tr from-[#00AEEF] to-[#9E217B]"}`}>
                             {String(enquiry.assignedTo || "U").charAt(0).toUpperCase()}
                           </div>
                           <p className={`text-xs ${t.textMuted}`}>Assigned: <span className={`font-semibold ${t.text}`}>{enquiry.assignedTo || "Unassigned"}</span></p>
@@ -840,10 +1056,10 @@ export default function ReceptionistDashboard() {
           {activeTab === "detail" && selectedEnquiry && (
             <div className="animate-fadeIn max-w-5xl mx-auto">
               <div className={`flex flex-col sm:flex-row sm:items-center gap-4 mb-8 rounded-2xl border p-6 md:p-8 ${t.card}`} style={t.cardGlass}>
-                <button
-                  onClick={() => setActiveTab("forms")}
-                  className={`w-10 h-10 flex items-center justify-center border hover:border-current rounded-xl transition-colors cursor-pointer shadow-sm ${t.textMuted} ${t.tableBorder}`}
-                ><FaChevronLeft className="text-sm" /></button>
+                <button onClick={() => setActiveTab("forms")}
+                  className={`w-10 h-10 flex items-center justify-center border hover:border-current rounded-xl transition-colors cursor-pointer shadow-sm ${t.textMuted} ${t.tableBorder}`}>
+                  <FaChevronLeft className="text-sm" />
+                </button>
                 <div>
                   <h1 className={`text-xl md:text-3xl font-bold flex flex-wrap items-center gap-3 ${t.text}`}>
                     <span className={t.accentText}>#{selectedEnquiry.id}</span>
@@ -858,12 +1074,7 @@ export default function ReceptionistDashboard() {
                 </div>
               </div>
               <div className={`rounded-2xl border p-6 md:p-8 ${t.card}`} style={t.cardGlass}>
-                {/* Assignment banner */}
-                <div className={`rounded-xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8 text-white ${
-                  isDark
-                    ? "bg-gradient-to-r from-purple-600 to-indigo-600"
-                    : "bg-gradient-to-r from-[#00AEEF] to-[#9E217B]"
-                }`}>
+                <div className={`rounded-xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8 text-white ${isDark ? "bg-gradient-to-r from-purple-600 to-indigo-600" : "bg-gradient-to-r from-[#00AEEF] to-[#9E217B]"}`}>
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 rounded-full border border-white/30 bg-white/20 flex items-center justify-center font-bold text-xl">
                       {String(selectedEnquiry.assignedTo || "U").charAt(0).toUpperCase()}
@@ -971,8 +1182,7 @@ export default function ReceptionistDashboard() {
                           <label className={`block text-xs mb-1.5 font-medium pl-2 ${t.textMuted}`}>Full Name *</label>
                           <input type="text" required value={enquiryForm.fullName} onChange={(e) => setEnquiryForm({ ...enquiryForm, fullName: e.target.value })}
                             className={`w-full rounded-lg p-3 text-sm outline-none transition-colors border ${t.modalInput} ${t.text}`}
-                            style={isDark ? {} : { outlineColor: "#00AEEF" }}
-                            placeholder="e.g. Mayur Acharya" />
+                            style={isDark ? {} : { outlineColor: "#00AEEF" }} placeholder="e.g. Mayur Acharya" />
                         </div>
                         <div className="sm:col-span-2">
                           <label className={`block text-xs mb-1.5 font-medium pl-2 ${t.textMuted}`}>Address</label>
@@ -1028,20 +1238,47 @@ export default function ReceptionistDashboard() {
                     <div className={`p-5 md:p-6 rounded-xl border ${t.modalBlock}`} style={t.modalBlockGl}>
                       <h3 className={`text-sm font-bold mb-4 md:mb-5 uppercase tracking-wider border-b pb-2 ${t.sectionTitle} ${t.sectionBorder}`}>Requirement & Timeline</h3>
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-5">
-                        {[
-                          { label: "Budget *", key: "budget", opts: ["50L to 1Cr","1Cr to 1.5Cr","1.5Cr to 2Cr","2Cr to 2.5Cr","2.5Cr to 3Cr","3Cr+"], req: true },
-                          { label: "Configuration (BHK)", key: "configuration", opts: ["1 BHK","2 BHK","3 BHK","4+ BHK"], req: false },
-                          { label: "Purpose", key: "purpose", opts: ["Personal use","Investment","Second home"], req: false },
-                        ].map(({ label, key, opts, req }) => (
-                          <div key={key}>
-                            <label className={`block text-xs mb-1.5 font-medium pl-2 ${t.textMuted}`}>{label}</label>
-                            <select required={req} value={(enquiryForm as any)[key]} onChange={(e) => setEnquiryForm({ ...enquiryForm, [key]: e.target.value })}
-                              className={`w-full rounded-lg p-3 text-sm outline-none transition-colors border cursor-pointer ${t.modalInput} ${t.text}`}>
-                              <option value="" disabled>Select…</option>
-                              {opts.map(o => <option key={o} value={o}>{o}</option>)}
-                            </select>
-                          </div>
-                        ))}
+
+                        {/* ── Budget: FREE TEXT FIELD (no dropdown) ── */}
+                        <div>
+                          <label className={`block text-xs mb-1.5 font-medium pl-2 ${t.textMuted}`}>Budget *</label>
+                          <input
+                            type="text"
+                            required
+                            value={enquiryForm.budget}
+                            onChange={(e) => setEnquiryForm({ ...enquiryForm, budget: e.target.value })}
+                            className={`w-full rounded-lg p-3 text-sm outline-none transition-colors border ${t.modalInput} ${t.text}`}
+                            style={isDark ? {} : { outlineColor: "#00AEEF" }}
+                            placeholder="e.g. 80 Lakhs, 1.5 Cr"
+                          />
+                          <p className={`text-[10px] mt-1 pl-2 ${t.textFaint}`}>Enter exact amount e.g. 50 Lakhs, 2 Cr</p>
+                        </div>
+
+                        {/* ── Configuration: now includes 1 RK and 4 BHK ── */}
+                        <div>
+                          <label className={`block text-xs mb-1.5 font-medium pl-2 ${t.textMuted}`}>Configuration (BHK)</label>
+                          <select value={enquiryForm.configuration} onChange={(e) => setEnquiryForm({ ...enquiryForm, configuration: e.target.value })}
+                            className={`w-full rounded-lg p-3 text-sm outline-none transition-colors border cursor-pointer ${t.modalInput} ${t.text}`}>
+                            <option value="" disabled>Select…</option>
+                            {/* ── Added 1 RK and 4 BHK ── */}
+                            <option value="1 RK">1 RK</option>
+                            <option value="1 BHK">1 BHK</option>
+                            <option value="2 BHK">2 BHK</option>
+                            <option value="3 BHK">3 BHK</option>
+                            <option value="4 BHK">4 BHK</option>
+                            <option value="4+ BHK">4+ BHK</option>
+                          </select>
+                        </div>
+
+                        {/* Purpose */}
+                        <div>
+                          <label className={`block text-xs mb-1.5 font-medium pl-2 ${t.textMuted}`}>Purpose</label>
+                          <select value={enquiryForm.purpose} onChange={(e) => setEnquiryForm({ ...enquiryForm, purpose: e.target.value })}
+                            className={`w-full rounded-lg p-3 text-sm outline-none transition-colors border cursor-pointer ${t.modalInput} ${t.text}`}>
+                            <option value="" disabled>Select…</option>
+                            {["Personal use", "Investment", "Second home"].map(o => <option key={o} value={o}>{o}</option>)}
+                          </select>
+                        </div>
                       </div>
                     </div>
 
@@ -1054,7 +1291,7 @@ export default function ReceptionistDashboard() {
                           <select required value={enquiryForm.source} onChange={(e) => setEnquiryForm({ ...enquiryForm, source: e.target.value })}
                             className={`w-full rounded-lg p-3 text-sm outline-none transition-colors border cursor-pointer ${t.modalInput} ${t.text}`}>
                             <option value="" disabled>Select Source</option>
-                            {["Advertisement","Referral","Exhibition","Channel Partner","Website","Call Center","Others"].map(s => <option key={s} value={s}>{s}</option>)}
+                            {["Advertisement", "Referral", "Exhibition", "Channel Partner", "Website", "Call Center", "Others"].map(s => <option key={s} value={s}>{s}</option>)}
                           </select>
                         </div>
                         <div>
@@ -1097,18 +1334,14 @@ export default function ReceptionistDashboard() {
 
                 {/* Modal Footer */}
                 <div className={`p-4 md:p-6 border-t flex flex-col md:flex-row justify-end gap-3 md:gap-4 ${t.modalHeader} ${t.tableBorder}`}>
-                  <button
-                    onClick={() => setIsEnquiryModalOpen(false)}
-                    type="button"
-                    className={`px-6 py-2.5 rounded-lg font-bold cursor-pointer transition-colors ${t.textMuted} ${isDark ? "hover:bg-red-500/10 hover:text-red-500" : "hover:bg-[#9E217B]/10 hover:text-[#9E217B]"}`}
-                  >Cancel</button>
-                  <button
-                    form="enquiryForm"
-                    type="submit"
-                    className={`px-8 py-2.5 rounded-lg font-bold transition-colors cursor-pointer ${t.btnPrimary} ${
-                      isDark ? "shadow-[0_0_15px_rgba(168,85,247,0.3)]" : "shadow-[0_0_12px_rgba(0,174,239,0.25)]"
-                    }`}
-                  >Submit</button>
+                  <button onClick={() => setIsEnquiryModalOpen(false)} type="button"
+                    className={`px-6 py-2.5 rounded-lg font-bold cursor-pointer transition-colors ${t.textMuted} ${isDark ? "hover:bg-red-500/10 hover:text-red-500" : "hover:bg-[#9E217B]/10 hover:text-[#9E217B]"}`}>
+                    Cancel
+                  </button>
+                  <button form="enquiryForm" type="submit"
+                    className={`px-8 py-2.5 rounded-lg font-bold transition-colors cursor-pointer ${t.btnPrimary} ${isDark ? "shadow-[0_0_15px_rgba(168,85,247,0.3)]" : "shadow-[0_0_12px_rgba(0,174,239,0.25)]"}`}>
+                    Submit
+                  </button>
                 </div>
               </div>
             </div>
@@ -1116,11 +1349,8 @@ export default function ReceptionistDashboard() {
         </main>
       </div>
 
-      {/* ================= BOTTOM NAVIGATION (MOBILE) ================= */}
-      <nav
-        className={`md:hidden flex w-full h-16 border-t items-center justify-around flex-shrink-0 z-40 ${t.sidebar}`}
-        style={t.sidebarGlass}
-      >
+      {/* ===== BOTTOM NAVIGATION (MOBILE) ===== */}
+      <nav className={`md:hidden flex w-full h-16 border-t items-center justify-around flex-shrink-0 z-40 ${t.sidebar}`}>
         {NAV_ITEMS.map(({ id, icon, title }) => {
           const active = activeTab === id || (id === "forms" && activeTab === "detail");
           return (

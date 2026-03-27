@@ -203,7 +203,7 @@ export default function Login() {
           {/* Identifier */}
           <div>
             <label className={`block ${theme.label} text-xs font-medium mb-1.5 transition-colors duration-300`}>
-              Email or Username
+              Email
             </label>
             <div className="relative">
               <MdPerson className={`absolute left-3 top-1/2 -translate-y-1/2 ${theme.iconColor} text-[1.1rem] transition-colors duration-300`} />
@@ -216,7 +216,7 @@ export default function Login() {
                   focus:outline-none focus:border-[#12B5CB] focus:ring-1 focus:ring-[#12B5CB]/30
                   transition-all duration-200
                 `}
-                placeholder="name@gmail.com or username"
+                placeholder="name@gmail.com"
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
                 required

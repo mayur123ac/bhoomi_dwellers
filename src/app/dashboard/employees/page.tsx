@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import * as XLSX from "xlsx";
 import {
   FaUserTie, FaListUl, FaPlus, FaThLarge, FaCog, FaBell, FaLock, FaIdCard,
-  FaClipboardList, FaUsers, FaEye, FaEyeSlash, FaTrash, FaUserEdit,
+  FaClipboardList, FaUsers, FaEyeSlash, FaTrash, FaUserEdit,
   FaPhoneAlt, FaSearch, FaChevronLeft, FaComments, FaUpload, FaDownload,
   FaFileExcel, FaDesktop, FaCheckCircle, FaTimes, FaPaperPlane,
   FaCalendarAlt, FaHeart, FaTimesCircle, FaAngleLeft, FaCommentAlt,
@@ -16,7 +16,124 @@ import {
 import { useCallerSync } from "@/lib/hooks/useCallerSync";
 
 type RoleType     = { _id: string; name: string };
-type EmployeeType = { _id: string; name: string; username: string; email: string; role: string; isActive: boolean; password?: string };
+type EmployeeType = {
+  _id: string; name: string; username: string;
+  email: string; role: string; isActive: boolean; password?: string;
+};
+
+// ─── Sun / Moon Icons ─────────────────────────────────────────────────────────
+const SunIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="5"/>
+    <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+    <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+  </svg>
+);
+const MoonIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+  </svg>
+);
+
+// ─── Theme Builder ─────────────────────────────────────────────────────────────
+function buildTheme(isDark: boolean) {
+  return {
+    // ── page shell ──
+    pageWrap:      isDark ? "bg-[#0a0a0a] text-gray-200" : "text-[#1A1A1A]",
+    pageStyle:     isDark ? {} : { background: "linear-gradient(135deg,#fdf0f8 0%,#f8fafc 30%,#faf0fb 62%,#f8fafc 78%,#fce8f6 100%)" },
+    mainBg:        isDark ? "bg-[#0a0a0a]" : "bg-transparent",
+    // ── header ──
+    header:        isDark ? "bg-[#111111]/80 backdrop-blur-md border-[#222]" : "bg-white border-[#9CA3AF]",
+    headerTitle:   isDark ? "text-white" : "text-[#1A1A1A]",
+    headerBadge:   isDark ? "bg-[#9E217B]/10 border-[#9E217B]/30 text-[#d946a8]" : "bg-[#9E217B]/10 border-[#9E217B]/30 text-[#9E217B]",
+    // ── panels / sections ──
+    panel:         isDark ? "bg-[#111111] border-[#222]" : "bg-white border-indigo-300",
+    panelHead:     isDark ? "border-[#222] bg-[#151515]" : "border-indigo-200 bg-[#F1F5F9]",
+    inner:         isDark ? "bg-[#1a1a1a]" : "bg-[#F8FAFC]",
+    innerBorder:   isDark ? "border-[#222]" : "border-indigo-200",
+    innerBorderSt: isDark ? "border-[#333]" : "border-indigo-300",
+    // ── text ──
+    text:          isDark ? "text-white" : "text-[#1A1A1A]",
+    textMuted:     isDark ? "text-gray-400" : "text-[#6B7280]",
+    textFaint:     isDark ? "text-gray-500" : "text-[#9CA3AF]",
+    textLight:     isDark ? "text-gray-300" : "text-[#374151]",
+    textLight2:    isDark ? "text-gray-600" : "text-[#9CA3AF]",
+    accentText:    isDark ? "text-[#d946a8]" : "text-[#9E217B]",
+    // ── inputs & selects ──
+    inp:           isDark
+      ? "w-full bg-[#1a1a1a] border border-[#333] rounded-lg px-4 py-2.5 text-sm text-white focus:border-[#9E217B] outline-none transition-colors placeholder:text-gray-600"
+      : "w-full bg-white border border-indigo-300 rounded-lg px-4 py-2.5 text-sm text-[#1A1A1A] focus:border-[#9E217B] outline-none transition-colors placeholder:text-[#9CA3AF]",
+    sel:           isDark
+      ? "w-full bg-[#1a1a1a] border border-[#333] rounded-lg px-4 py-2.5 text-sm text-gray-300 focus:border-[#9E217B] outline-none cursor-pointer transition-colors"
+      : "w-full bg-white border border-indigo-300 rounded-lg px-4 py-2.5 text-sm text-[#374151] focus:border-[#9E217B] outline-none cursor-pointer transition-colors",
+    smallSel:      isDark
+      ? "w-full bg-[#1a1a1a] border border-[#333] rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-[#9E217B] cursor-pointer"
+      : "w-full bg-white border border-indigo-300 rounded-lg px-3 py-2 text-xs text-[#1A1A1A] outline-none focus:border-[#9E217B] cursor-pointer",
+    searchInp:     isDark
+      ? "w-full bg-[#1a1a1a] border border-[#333] rounded-lg pl-9 pr-4 py-2 text-sm text-white focus:border-[#9E217B] outline-none transition-colors"
+      : "w-full bg-white border border-indigo-300 rounded-lg pl-9 pr-4 py-2 text-sm text-[#1A1A1A] focus:border-[#9E217B] outline-none transition-colors",
+    // ── table ──
+    tableHead:     isDark ? "bg-[#1a1a1a]" : "bg-[#F1F5F9]",
+    tableHeadText: isDark ? "text-gray-500" : "text-[#6B7280]",
+    tableRow:      isDark ? "hover:bg-[#151515]" : "hover:bg-[#F8FAFC]",
+    tableDivide:   isDark ? "divide-[#1a1a1a]" : "divide-[#E5E7EB]",
+    tableBorderB:  isDark ? "border-b border-[#222]" : "border-b border-indigo-200",
+    tableHeadBdr:  isDark ? "border-b border-[#222]" : "border-b border-indigo-200",
+    // ── caller sidebar ──
+    callerSidebar: isDark ? "bg-[#111111] border-r border-[#222]" : "bg-white border-r border-indigo-200",
+    callerItemBdr: isDark ? "border-b border-[#1a1a1a]" : "border-b border-indigo-100",
+    callerItemSel: isDark ? "bg-[#1a1a1a] border-l-4 border-l-[#9E217B]" : "bg-pink-50 border-l-4 border-l-[#9E217B]",
+    callerItemDef: isDark ? "border-l-4 border-l-transparent" : "border-l-4 border-l-transparent",
+    callerItemHov: isDark ? "hover:bg-[#151515]" : "hover:bg-pink-50/50",
+    callerAvatar:  isDark ? "bg-[#333] text-gray-400" : "bg-gray-300 text-gray-600",
+    // ── right panel ──
+    rightPanel:    isDark ? "bg-[#0a0a0a]" : "bg-[#F8FAFC]",
+    rightHeader:   isDark ? "bg-[#111111] border-b border-[#222]" : "bg-white border-b border-indigo-200",
+    // ── batch section ──
+    batchTop:      isDark ? "border-t border-[#222]" : "border-t border-indigo-200",
+    batchLabel:    isDark ? "text-gray-500" : "text-[#9CA3AF]",
+    batchItemSel:  isDark ? "bg-[#9E217B]/10 border border-[#9E217B]/30" : "bg-pink-50 border border-pink-200",
+    batchItemDef:  isDark ? "hover:bg-[#1a1a1a] border border-transparent" : "hover:bg-pink-50/30 border border-transparent",
+    // ── detail view ──
+    detailCard:    isDark ? "bg-[#111111] border-[#222]" : "bg-white border-indigo-200",
+    detailSection: isDark ? "border-b border-[#222] pb-2" : "border-b border-indigo-200 pb-2",
+    detailRow:     isDark ? "border-[#222]" : "border-indigo-100",
+    followBg:      isDark ? "bg-[#0a0a0a]" : "bg-[#F8FAFC]",
+    followSys:     isDark ? "bg-[#1a1a1a] border-[#222]" : "bg-white border-[#E5E7EB]",
+    followMsg:     isDark ? "bg-[#1f0a18] border-[#9E217B]/30" : "bg-pink-50 border-pink-200",
+    chatInputWrap: isDark ? "bg-[#1a1a1a] border-t border-[#222]" : "bg-white border-t border-indigo-200",
+    chatInputInner:isDark
+      ? "flex-1 bg-[#0a0a0a] border border-[#333] rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-[#9E217B] transition-colors"
+      : "flex-1 bg-white border border-indigo-300 rounded-xl px-4 py-3 text-sm text-[#1A1A1A] outline-none focus:border-[#9E217B] transition-colors",
+    // ── table inline edit ──
+    editRow:       isDark ? "bg-[#1a1a2e]" : "bg-indigo-50",
+    editInp:       isDark
+      ? "w-full bg-[#0f0f0f] border border-[#9E217B]/50 rounded-lg px-2.5 py-1.5 text-sm text-white outline-none"
+      : "w-full bg-white border border-[#9E217B]/50 rounded-lg px-2.5 py-1.5 text-sm text-[#1A1A1A] outline-none",
+    editSel:       isDark
+      ? "w-full bg-[#0f0f0f] border border-[#9E217B]/50 rounded-lg px-2.5 py-1.5 text-sm text-[#d946a8] outline-none cursor-pointer"
+      : "w-full bg-white border border-[#9E217B]/50 rounded-lg px-2.5 py-1.5 text-sm text-[#9E217B] outline-none cursor-pointer",
+    adminRow:      isDark ? "bg-[#9E217B]/5" : "bg-pink-50/30",
+    // ── upload msg ──
+    uploadSuccess: isDark ? "text-green-400 bg-green-500/10 border-green-500/20" : "text-green-700 bg-green-50 border-green-200",
+    uploadError:   isDark ? "text-red-400 bg-red-500/10 border-red-500/20" : "text-red-700 bg-red-50 border-red-200",
+    uploadInfo:    isDark ? "text-[#d946a8] bg-[#9E217B]/10 border-[#9E217B]/20" : "text-[#9E217B] bg-pink-50 border-pink-200",
+    // ── profile dropdown ──
+    dropdown:      isDark ? "bg-[#1a1a1a] border-[#2a2a2a]" : "bg-white border-indigo-200",
+    dropdownInner: isDark ? "bg-[#121212] border-[#2a2a2a]" : "bg-white border-indigo-200",
+    profileRole:   isDark ? "text-[#d946a8] bg-[#9E217B]/10 border-[#9E217B]/30" : "text-[#9E217B] bg-[#9E217B]/10 border-[#9E217B]/30",
+    profileLogout: isDark ? "bg-[#3B1F1F] text-[#F28B82] hover:bg-red-900/40 border border-red-900/30" : "bg-[#9E217B]/10 text-[#9E217B] hover:bg-[#9E217B] hover:text-white border border-[#9E217B]/30",
+    // ── toggle button ──
+    toggleBtn:     isDark ? "bg-[#1C1C2A] border-[#2A2A38] text-yellow-300" : "bg-white border-indigo-200 text-[#9E217B]",
+    // ── misc ──
+    dividerBar:    "bg-[#9E217B]",
+    scroll:        isDark ? "custom-scrollbar" : "custom-scrollbar-light",
+    pillBorder:    isDark ? "border-[#333]" : "border-indigo-200",
+    pillBg:        isDark ? "bg-[#222]" : "bg-[#F1F5F9]",
+  };
+}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const formatDate = (ds?: string) => {
@@ -26,8 +143,8 @@ const formatDate = (ds?: string) => {
 };
 const maskPhone = (p?: string) => {
   if (!p) return "N/A";
-  const c = String(p).replace(/\D/g,"");
-  return c.length<=5?c:`${c.slice(0,2)}*****${c.slice(-3)}`;
+  const c = String(p).replace(/\D/g, "");
+  return c.length <= 5 ? c : `${c.slice(0,2)}*****${c.slice(-3)}`;
 };
 const interestBadge = (status?: string) => {
   if (!status) return <span className="text-[10px] text-gray-600 italic">—</span>;
@@ -37,51 +154,53 @@ const interestBadge = (status?: string) => {
     "Maybe":          "text-yellow-400 bg-yellow-500/10 border-yellow-500/30",
   };
   const short: Record<string,string> = {
-    "Interested":     "Interested",
-    "Not Interested": "Not Int.",
-    "Maybe":          "Maybe",
+    "Interested": "Interested", "Not Interested": "Not Int.", "Maybe": "Maybe",
   };
-  return <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border whitespace-nowrap ${map[status]??"text-gray-400 bg-gray-500/10 border-gray-500/30"}`}>{short[status]??status}</span>;
+  return (
+    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border whitespace-nowrap ${map[status] ?? "text-gray-400 bg-gray-500/10 border-gray-500/30"}`}>
+      {short[status] ?? status}
+    </span>
+  );
 };
 
 // ─── Template export ───────────────────────────────────────────────────────────
 const exportTemplate = () => {
   const headers = ["Sr No.","Form No.","Date","Name","Contact No.","Source","Channel Partner","Assign Manager","Feedback"];
   const ws = XLSX.utils.aoa_to_sheet([headers]);
-  ws["!cols"] = headers.map(()=>({wch:20}));
+  ws["!cols"] = headers.map(() => ({ wch: 20 }));
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb,ws,"Leads Template");
-  XLSX.writeFile(wb,"leads_template.xlsx");
+  XLSX.utils.book_append_sheet(wb, ws, "Leads Template");
+  XLSX.writeFile(wb, "leads_template.xlsx");
 };
 
-// ─── Parse Excel file ─────────────────────────────────────────────────────────
-const parseExcelFile = (file: File): Promise<any[]> => new Promise((resolve,reject) => {
+// ─── Parse Excel ──────────────────────────────────────────────────────────────
+const parseExcelFile = (file: File): Promise<any[]> => new Promise((resolve, reject) => {
   const reader = new FileReader();
   reader.onload = (e) => {
     try {
       const data = new Uint8Array(e.target!.result as ArrayBuffer);
-      const wb = XLSX.read(data,{type:"array"});
-      const ws = wb.Sheets[wb.SheetNames[0]];
-      const json = XLSX.utils.sheet_to_json<Record<string,any>>(ws,{defval:"",raw:false});
-      if (json.length===0) { reject(new Error("Empty file")); return; }
+      const wb   = XLSX.read(data, { type: "array" });
+      const ws   = wb.Sheets[wb.SheetNames[0]];
+      const json = XLSX.utils.sheet_to_json<Record<string,any>>(ws, { defval:"", raw:false });
+      if (json.length === 0) { reject(new Error("Empty file")); return; }
       const cols = Object.keys(json[0]);
-      const find = (v:string[]) => cols.find(c=>v.some(x=>c.toLowerCase().trim().includes(x.toLowerCase())))||"";
-      const nameCol    = find(["name","customer","client"]);
-      const phoneCol   = find(["contact no","phone","mobile","contact","number","tel"]);
-      const emailCol   = find(["email","mail"]);
-      const sourceCol  = find(["source","platform","channel","medium"]);
-      const partnerCol = find(["channel partner","chanel partner","partner"]);
-      const managerCol = find(["assign manager","manager","assigned"]);
-      const feedbackCol= find(["feedback","remarks","comment"]);
-      const srNoCol    = find(["sr no","srno","s no","sr."]);
-      const formNoCol  = find(["form no","formno","form number"]);
-      const dateCol    = find(["date"]);
-      const leads = json.map((row,i) => ({
+      const find = (v: string[]) => cols.find(c => v.some(x => c.toLowerCase().trim().includes(x.toLowerCase()))) || "";
+      const nameCol     = find(["name","customer","client"]);
+      const phoneCol    = find(["contact no","phone","mobile","contact","number","tel"]);
+      const emailCol    = find(["email","mail"]);
+      const sourceCol   = find(["source","platform","channel","medium"]);
+      const partnerCol  = find(["channel partner","chanel partner","partner"]);
+      const managerCol  = find(["assign manager","manager","assigned"]);
+      const feedbackCol = find(["feedback","remarks","comment"]);
+      const srNoCol     = find(["sr no","srno","s no","sr."]);
+      const formNoCol   = find(["form no","formno","form number"]);
+      const dateCol     = find(["date"]);
+      const leads = json.map((row, i) => ({
         sr_no:           srNoCol    ? String(row[srNoCol])    : String(i+1),
         form_no:         formNoCol  ? String(row[formNoCol])  : "",
         lead_date:       dateCol    ? String(row[dateCol])    : "",
-        name:            String(row[nameCol]||row[cols[0]]||`Lead ${i+1}`),
-        contact_no:      String(row[phoneCol]||""),
+        name:            String(row[nameCol] || row[cols[0]] || `Lead ${i+1}`),
+        contact_no:      String(row[phoneCol]    || ""),
         email:           emailCol   ? String(row[emailCol])   : "",
         source:          sourceCol  ? String(row[sourceCol])  : "",
         channel_partner: partnerCol ? String(row[partnerCol]) : "",
@@ -91,116 +210,145 @@ const parseExcelFile = (file: File): Promise<any[]> => new Promise((resolve,reje
       resolve(leads);
     } catch(err) { reject(err); }
   };
-  reader.onerror = ()=>reject(new Error("Read failed"));
+  reader.onerror = () => reject(new Error("Read failed"));
   reader.readAsArrayBuffer(file);
 });
 
+// ─── ADMIN EMAIL CONSTANT ─────────────────────────────────────────────────────
+const ADMIN_EMAIL = "admin@bhoomi.com";
+
+// ============================================================================
+// MAIN PAGE
+// ============================================================================
 export default function EmployeesPage() {
   const router = useRouter();
 
-  const [activeSection, setActiveSection] = useState<"employees"|"callers">("employees");
-  const [isSidebarHovered, setIsSidebarHovered] = useState(false);
-  const [user, setUser]           = useState<any>(null);
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [showPassword, setShowPassword]   = useState(false);
-  const [isAuthorized, setIsAuthorized]   = useState<boolean|null>(null);
+  const [isDark, setIsDark]                               = useState(false);
+  const t = useMemo(() => buildTheme(isDark), [isDark]);
 
-  // Employee state
-  const [empName, setEmpName]     = useState("");
-  const [username, setUsername]   = useState("");
-  const [email, setEmail]         = useState("");
-  const [password, setPassword]   = useState("");
-  const [role, setRole]           = useState("");
-  const [dbRoles, setDbRoles]     = useState<RoleType[]>([]);
-  const [employees, setEmployees] = useState<EmployeeType[]>([]);
-  const [newRoleInput, setNewRoleInput] = useState("");
+  const [activeSection, setActiveSection]         = useState<"employees"|"callers">("employees");
+  const [isSidebarHovered, setIsSidebarHovered]   = useState(false);
+  const [user, setUser]                           = useState<any>(null);
+  const [isProfileOpen, setIsProfileOpen]         = useState(false);
+  const [showPassword, setShowPassword]           = useState(false);
+  const [isAuthorized, setIsAuthorized]           = useState<boolean|null>(null);
+
+  // ── Employee state ──
+  const [empName, setEmpName]         = useState("");
+  const [email, setEmail]             = useState("");
+  const [password, setPassword]       = useState("");
+  const [role, setRole]               = useState("");
+  const [dbRoles, setDbRoles]         = useState<RoleType[]>([]);
+  const [employees, setEmployees]     = useState<EmployeeType[]>([]);
+  const [newRoleInput, setNewRoleInput]           = useState("");
   const [revealedPasswords, setRevealedPasswords] = useState<Record<string,boolean>>({});
-  const [editingId, setEditingId]   = useState<string|null>(null);
-  const [editForm, setEditForm]     = useState<Partial<EmployeeType>>({});
-  const [editSaving, setEditSaving] = useState(false);
-  const [editError, setEditError]   = useState("");
+  const [editingId, setEditingId]                 = useState<string|null>(null);
+  const [editForm, setEditForm]                   = useState<Partial<EmployeeType>>({});
+  const [editSaving, setEditSaving]               = useState(false);
+  const [editError, setEditError]                 = useState("");
   const [selectedManageUserId, setSelectedManageUserId] = useState("");
 
-  // Caller state
-  const [callers, setCallers]           = useState<any[]>([]);
-  const [callerLeads, setCallerLeads]   = useState<any[]>([]);
-  const [batchList, setBatchList]       = useState<any[]>([]);
+  // ── Caller state ──
+  const [callers, setCallers]             = useState<any[]>([]);
+  const [callerLeads, setCallerLeads]     = useState<any[]>([]);
+  const [batchList, setBatchList]         = useState<any[]>([]);
   const [callerLoading, setCallerLoading] = useState(false);
-  const [selectedCaller, setSelectedCaller] = useState<any>(null);
-  const [callerSearch, setCallerSearch]     = useState("");
-  const [selectedBatch, setSelectedBatch]   = useState("all");
-  const [leadSearch, setLeadSearch]         = useState("");
-  const [selectedLead, setSelectedLead]     = useState<any>(null);
-  const [callerSubView, setCallerSubView]   = useState<"table"|"detail"|"control">("table");
+  const [selectedCaller, setSelectedCaller]   = useState<any>(null);
+  const [callerSearch, setCallerSearch]       = useState("");
+  const [selectedBatch, setSelectedBatch]     = useState("all");
+  const [leadSearch, setLeadSearch]           = useState("");
+  const [selectedLead, setSelectedLead]       = useState<any>(null);
+  const [callerSubView, setCallerSubView]     = useState<"table"|"detail"|"control">("table");
 
-  // Upload state
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [uploading, setUploading]     = useState(false);
-  const [uploadMsg, setUploadMsg]     = useState("");
-  const [isDragging, setIsDragging]   = useState(false);
+  // ── Upload state ──
+  const fileInputRef                      = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading]         = useState(false);
+  const [uploadMsg, setUploadMsg]         = useState("");
+  const [isDragging, setIsDragging]       = useState(false);
   const [assignUploadTo, setAssignUploadTo] = useState<string>("");
 
-  // Take Control state
-  const [controlLeads, setControlLeads]     = useState<any[]>([]);
-  const [controlSaved, setControlSaved]     = useState<any[]>([]);
-  const [controlSection, setControlSection] = useState<"dashboard"|"forms"|"interested"|"not_interested">("dashboard");
+  // ── Take Control state ──
+  const [controlLeads, setControlLeads]   = useState<any[]>([]);
+  const [controlSaved, setControlSaved]   = useState<any[]>([]);
 
-  // Auth
+  // ── Auth ──
   useEffect(() => {
     const stored = localStorage.getItem("crm_user");
     if (!stored) { router.push("/"); return; }
     const parsed = JSON.parse(stored);
     setUser(parsed);
-    if (parsed.role?.toLowerCase()==="admin") {
+
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("tab") === "callers") setActiveSection("callers");
+
+    if (parsed.role?.toLowerCase() === "admin") {
       setIsAuthorized(true);
-      fetchRoles(); fetchEmployees();
-    } else setIsAuthorized(false);
-  },[router]);
+      fetchRoles();
+      fetchEmployees();
+    } else {
+      setIsAuthorized(false);
+    }
+  }, [router]);
 
   useEffect(() => {
-    if (activeSection==="callers") fetchCallerData();
-  },[activeSection]);
+    if (activeSection === "callers") fetchCallerData();
+  }, [activeSection]);
 
   const handleLogout = () => { localStorage.removeItem("crm_user"); router.push("/"); };
 
-  // Employee API
-  const fetchRoles     = async () => { try { const r=await fetch("/api/roles"); if(r.ok)setDbRoles(await r.json()); }catch{} };
-  const fetchEmployees = async () => { try { const r=await fetch("/api/employees"); if(r.ok)setEmployees(await r.json()); }catch{} };
+  // ── Employee API ──
+  const fetchRoles = async () => {
+    try { const r = await fetch("/api/roles"); if (r.ok) setDbRoles(await r.json()); } catch {}
+  };
+  const fetchEmployees = async () => {
+    try { const r = await fetch("/api/employees"); if (r.ok) setEmployees(await r.json()); } catch {}
+  };
 
   const handleAddNewRole = async () => {
     if (!newRoleInput.trim()) return;
-    const r=await fetch("/api/roles",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:newRoleInput})});
-    if(r.ok){setNewRoleInput("");fetchRoles();}else{const d=await r.json();alert(`Error: ${d.message}`);}
+    const r = await fetch("/api/roles", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ name:newRoleInput }) });
+    if (r.ok) { setNewRoleInput(""); fetchRoles(); }
+    else { const d = await r.json(); alert(`Error: ${d.message}`); }
   };
-  const handleAddEmployee = async (e:React.FormEvent) => {
-    e.preventDefault();
-    const r=await fetch("/api/employees",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:empName,username,email,password,role})});
-    if(r.ok){setEmpName("");setUsername("");setEmail("");setPassword("");setRole("");fetchEmployees();}
-    else{const d=await r.json();alert(`Error: ${d.message}`);}
-  };
-  const handleToggleStatus = async (userId:string,currentStatus:boolean) => {
-    const r=await fetch("/api/employees",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({userId,isActive:!currentStatus})});
-    if(r.ok)fetchEmployees();
-  };
-  const handleDeleteEmployee = async (userId:string,userName:string) => {
-    if(!window.confirm(`Delete ${userName}? Cannot be undone.`))return;
-    const r=await fetch("/api/employees",{method:"DELETE",headers:{"Content-Type":"application/json"},body:JSON.stringify({userId})});
-    if(r.ok){if(selectedManageUserId===userId)setSelectedManageUserId("");fetchEmployees();}
-    else{const d=await r.json();alert(`Error: ${d.message}`);}
-  };
-  const handleEditStart  = (emp:EmployeeType) => { setEditingId(emp._id);setEditError("");setEditForm({name:emp.name,username:emp.username,email:emp.email,password:emp.password||"",role:emp.role}); };
-  const handleEditCancel = () => { setEditingId(null);setEditForm({});setEditError(""); };
-  const handleEditSave   = async (userId:string) => {
-    setEditSaving(true);setEditError("");
-    try {
-      const r=await fetch("/api/employees",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({userId,editData:editForm})});
-      const d=await r.json();
-      if(r.ok){setEditingId(null);setEditForm({});fetchEmployees();}else setEditError(d.message||"Failed.");
-    }catch{setEditError("Something went wrong.");}finally{setEditSaving(false);}
-  };
-  const toggleRowPassword = (id:string) => setRevealedPasswords(p=>({...p,[id]:!p[id]}));
 
-  // Caller API
+  const handleAddEmployee = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const r = await fetch("/api/employees", {
+      method: "POST",
+      headers: { "Content-Type":"application/json" },
+      body: JSON.stringify({ name:empName, username:empName.toLowerCase().replace(/\s+/g,"."), email, password, role }),
+    });
+    if (r.ok) { setEmpName(""); setEmail(""); setPassword(""); setRole(""); fetchEmployees(); }
+    else { const d = await r.json(); alert(`Error: ${d.message}`); }
+  };
+
+  const handleToggleStatus = async (userId: string, currentStatus: boolean) => {
+    const r = await fetch("/api/employees", { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ userId, isActive:!currentStatus }) });
+    if (r.ok) fetchEmployees();
+  };
+
+  const handleDeleteEmployee = async (userId: string, userName: string) => {
+    if (!window.confirm(`Delete ${userName}? Cannot be undone.`)) return;
+    const r = await fetch("/api/employees", { method:"DELETE", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ userId }) });
+    if (r.ok) { if (selectedManageUserId === userId) setSelectedManageUserId(""); fetchEmployees(); }
+    else { const d = await r.json(); alert(`Error: ${d.message}`); }
+  };
+
+  const handleEditStart  = (emp: EmployeeType) => { setEditingId(emp._id); setEditError(""); setEditForm({ name:emp.name, email:emp.email, password:emp.password||"", role:emp.role }); };
+  const handleEditCancel = () => { setEditingId(null); setEditForm({}); setEditError(""); };
+  const handleEditSave   = async (userId: string) => {
+    setEditSaving(true); setEditError("");
+    try {
+      const r = await fetch("/api/employees", { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ userId, editData:editForm }) });
+      const d = await r.json();
+      if (r.ok) { setEditingId(null); setEditForm({}); fetchEmployees(); }
+      else setEditError(d.message || "Failed.");
+    } catch { setEditError("Something went wrong."); }
+    finally { setEditSaving(false); }
+  };
+  const toggleRowPassword = (id: string) => setRevealedPasswords(p => ({ ...p, [id]:!p[id] }));
+
+  // ── Caller API ──
   const fetchCallerData = async () => {
     setCallerLoading(true);
     try {
@@ -209,11 +357,11 @@ export default function EmployeesPage() {
         fetch("/api/caller-leads"),
         fetch("/api/caller-leads?batches_only=1"),
       ]);
-      if(empRes.ok){const d=await empRes.json();setCallers(d.filter((u:any)=>u.role?.toLowerCase()==="caller"));}
-      if(leadsRes.ok){const j=await leadsRes.json();setCallerLeads(j.leads||[]);}
-      if(batchRes.ok){const j=await batchRes.json();setBatchList(j.batches||[]);}
-    }catch(e){console.error(e);}
-    finally{setCallerLoading(false);}
+      if (empRes.ok)   { const d = await empRes.json(); setCallers(d.filter((u: any) => u.role?.toLowerCase() === "caller")); }
+      if (leadsRes.ok) { const j = await leadsRes.json(); setCallerLeads(j.leads || []); }
+      if (batchRes.ok) { const j = await batchRes.json(); setBatchList(j.batches || []); }
+    } catch(e) { console.error(e); }
+    finally { setCallerLoading(false); }
   };
 
   useCallerSync({
@@ -231,7 +379,7 @@ export default function EmployeesPage() {
     onFollowupAdded: () => fetchCallerData(),
   });
 
-  // Upload Excel (admin)
+  // ── Upload Excel ──
   const handleAdminUpload = async (file: File, assignToCaller?: string) => {
     if (!file) return;
     setUploading(true);
@@ -242,55 +390,51 @@ export default function EmployeesPage() {
       const uploadedBy = assignToCaller || user?.name || "Admin";
       const res = await fetch("/api/caller-leads", {
         method: "POST",
-        headers: {"Content-Type":"application/json"},
-        body: JSON.stringify({ leads, fileName: file.name, uploadedBy, assignedTo: uploadedBy }),
+        headers: { "Content-Type":"application/json" },
+        body: JSON.stringify({ leads, fileName:file.name, uploadedBy, assignedTo:uploadedBy }),
       });
       if (!res.ok) throw new Error("Upload failed");
       setUploadMsg(`✓ ${leads.length} leads uploaded${assignToCaller ? ` → ${assignToCaller}` : ""}!`);
-      setTimeout(()=>setUploadMsg(""),4000);
+      setTimeout(() => setUploadMsg(""), 4000);
       await fetchCallerData();
-    } catch(err:any) {
+    } catch(err: any) {
       setUploadMsg(`Error: ${err.message}`);
-      setTimeout(()=>setUploadMsg(""),4000);
+      setTimeout(() => setUploadMsg(""), 4000);
     } finally { setUploading(false); }
   };
 
   const handleDeleteBatch = async (batch: any) => {
-    if (!window.confirm(`Delete all ${batch.row_count} leads from "${batch.file_name}"? This cannot be undone.`)) return;
+    if (!window.confirm(`Delete all ${batch.row_count} leads from "${batch.file_name}"? Cannot be undone.`)) return;
     try {
-      const res = await fetch("/api/caller-leads", {
-        method: "DELETE",
-        headers: {"Content-Type":"application/json"},
-        body: JSON.stringify({ batchId: batch.id }),
-      });
+      const res = await fetch("/api/caller-leads", { method:"DELETE", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ batchId:batch.id }) });
       if (!res.ok) throw new Error("Delete failed");
       await fetchCallerData();
       if (selectedBatch === batch.id) setSelectedBatch("all");
-    } catch(err:any) { alert(`Error: ${err.message}`); }
+    } catch(err: any) { alert(`Error: ${err.message}`); }
   };
 
   const handleDeleteLead = async (leadId: number, leadName: string) => {
-    if (!window.confirm(`Delete lead "${leadName}"? This cannot be undone.`)) return;
+    if (!window.confirm(`Delete lead "${leadName}"? Cannot be undone.`)) return;
     try {
-      const res = await fetch(`/api/caller-leads/${leadId}`, { method: "DELETE" });
+      const res = await fetch(`/api/caller-leads/${leadId}`, { method:"DELETE" });
       if (!res.ok) throw new Error("Delete failed");
       setCallerLeads(prev => prev.filter((l: any) => l.id !== leadId));
       if (selectedLead?.id === leadId) { setSelectedLead(null); setCallerSubView("table"); }
-    } catch(err:any) { alert(`Error: ${err.message}`); }
+    } catch(err: any) { alert(`Error: ${err.message}`); }
   };
 
   const handleTakeControl = (callerLeadsToControl: any[]) => {
     const leads = callerLeadsToControl.map(l => ({
       ...l,
-      id:             String(l.id).padStart(4,"0"),
+      id:             String(l.id).padStart(4, "0"),
       dbId:           l.id,
       phone:          l.contact_no,
       source:         l.source,
       channelPartner: l.channel_partner,
       assignManager:  l.assign_manager,
-      followUps:      (l.follow_ups||[]).map((f:any) => ({
+      followUps: (l.follow_ups || []).map((f: any) => ({
         id: String(f.id), message: f.message,
-        createdAt: f.created_at, createdBy: f.created_by_name||"Admin",
+        createdAt: f.created_at, createdBy: f.created_by_name || "Admin",
       })),
       status:         l.status || "new",
       interestStatus: l.interest_status || null,
@@ -302,112 +446,101 @@ export default function EmployeesPage() {
       siteVisitDate:  l.site_visit_date || null,
     }));
     setControlLeads(leads);
-    const saved = leads.filter(l =>
-      l.status === "saved" || l.status === "not_interested" ||
-      l.status === "interested" || !!l.interestStatus
-    );
-    setControlSaved(saved);
+    setControlSaved(leads.filter(l => l.status === "saved" || l.status === "not_interested" || l.status === "interested" || !!l.interestStatus));
     setCallerSubView("control");
-    setControlSection("dashboard");
   };
 
-  // ── Helper to check if a lead belongs to a caller ──
   const leadBelongsToCaller = (l: any, callerName: string) => {
-    const assignedTo = (l.assigned_to||"").toLowerCase().trim();
-    const uploadedBy = (l.uploaded_by||"").toLowerCase().trim();
+    const assignedTo = (l.assigned_to || "").toLowerCase().trim();
+    const uploadedBy = (l.uploaded_by || "").toLowerCase().trim();
     const name = callerName.toLowerCase().trim();
-    if (assignedTo===name || uploadedBy===name) return true;
-    const isUnassigned    = !assignedTo    || assignedTo==="admin"    || assignedTo==="unknown";
-    const uploadedByAdmin = !uploadedBy    || uploadedBy==="admin"    || uploadedBy==="unknown";
+    if (assignedTo === name || uploadedBy === name) return true;
+    const isUnassigned    = !assignedTo    || assignedTo === "admin"    || assignedTo === "unknown";
+    const uploadedByAdmin = !uploadedBy    || uploadedBy === "admin"    || uploadedBy === "unknown";
     return isUnassigned && uploadedByAdmin;
   };
 
-  // ── Filtered leads (All Callers table) ──
   const filteredCallerLeads = useMemo(() => {
     let leads = callerLeads;
-    if (selectedCaller) {
-      leads = leads.filter((l:any) => leadBelongsToCaller(l, selectedCaller.name));
-    }
-    if (selectedBatch!=="all") leads = leads.filter((l:any)=>String(l.upload_batch)===selectedBatch);
+    if (selectedCaller) leads = leads.filter((l: any) => leadBelongsToCaller(l, selectedCaller.name));
+    if (selectedBatch !== "all") leads = leads.filter((l: any) => String(l.upload_batch) === selectedBatch);
     if (leadSearch) {
       const s = leadSearch.toLowerCase();
-      leads = leads.filter((l:any) =>
-        l.name?.toLowerCase().includes(s) ||
-        l.contact_no?.includes(s) ||
-        String(l.id).includes(s) ||
-        l.source?.toLowerCase().includes(s) ||
-        l.channel_partner?.toLowerCase().includes(s) ||
-        l.assign_manager?.toLowerCase().includes(s) ||
-        l.feedback?.toLowerCase().includes(s) ||
-        l.batch_name?.toLowerCase().includes(s)
+      leads = leads.filter((l: any) =>
+        l.name?.toLowerCase().includes(s) || l.contact_no?.includes(s) ||
+        String(l.id).includes(s) || l.source?.toLowerCase().includes(s) ||
+        l.channel_partner?.toLowerCase().includes(s) || l.assign_manager?.toLowerCase().includes(s) ||
+        l.feedback?.toLowerCase().includes(s) || l.batch_name?.toLowerCase().includes(s)
       );
     }
     return leads;
-  },[callerLeads,selectedCaller,selectedBatch,leadSearch]);
+  }, [callerLeads, selectedCaller, selectedBatch, leadSearch]);
 
-  // ── Saved forms for individual caller snapshot ──
   const callerSavedFormLeads = useMemo(() => {
     if (!selectedCaller) return [];
-    return filteredCallerLeads.filter((l:any) =>
-      l.status === "saved" ||
-      l.status === "not_interested" ||
-      l.status === "interested" ||
-      !!l.interest_status
+    return filteredCallerLeads.filter((l: any) =>
+      l.status === "saved" || l.status === "not_interested" ||
+      l.status === "interested" || !!l.interest_status
     );
   }, [filteredCallerLeads, selectedCaller]);
 
-  const callerStats = useMemo(()=>callers.map((c:any)=>{
-    const leads = callerLeads.filter((l:any) => leadBelongsToCaller(l, c.name));
-    return{...c,totalLeads:leads.length,interested:leads.filter((l:any)=>l.interest_status==="Interested").length};
-  }),[callers,callerLeads]);
+  const callerStats = useMemo(() => callers.map((c: any) => {
+    const leads = callerLeads.filter((l: any) => leadBelongsToCaller(l, c.name));
+    return { ...c, totalLeads:leads.length, interested:leads.filter((l: any) => l.interest_status === "Interested").length };
+  }), [callers, callerLeads]);
 
-  const filteredCallers = callerStats.filter((c:any)=>c.name?.toLowerCase().includes(callerSearch.toLowerCase()));
+  const filteredCallers = callerStats.filter((c: any) => c.name?.toLowerCase().includes(callerSearch.toLowerCase()));
 
   const menuItems = [
-    {id:"dashboard",  icon:FaThLarge,       label:"Overview",       link:"/dashboard",           section:null},
-    {id:"receptionist",icon:FaClipboardList,label:"Receptionist",   link:"/dashboard",           section:null},
-    {id:"sales",      icon:FaUsers,          label:"Sales Managers", link:"/dashboard",           section:null},
-    {id:"employees",  icon:FaIdCard,         label:"Add Employee",   link:"/dashboard/employees", section:"employees" as const},
-    {id:"callers",    icon:FaPhoneAlt,       label:"Caller Panel",   link:"/dashboard/employees", section:"callers" as const},
+    { id:"dashboard",    icon:FaThLarge,       label:"Overview",      link:"/dashboard",           section:null },
+    { id:"receptionist", icon:FaClipboardList, label:"Receptionist",  link:"/dashboard",           section:null },
+    { id:"sales",        icon:FaUsers,         label:"Sales Managers",link:"/dashboard",           section:null },
+    { id:"employees",    icon:FaIdCard,        label:"Add Employee",  link:"/dashboard/employees", section:"employees" as const },
+    { id:"callers",      icon:FaPhoneAlt,      label:"Caller Panel",  link:"/dashboard/employees", section:"callers" as const },
   ];
 
-  if (isAuthorized===null) return <div className="min-h-screen bg-[#0a0a0a]"/>;
-  const selectedManageUser = employees.find(e=>e._id===selectedManageUserId);
+  if (isAuthorized === null) return <div className="min-h-screen bg-[#0a0a0a]"/>;
+  const selectedManageUser = employees.find(e => e._id === selectedManageUserId);
 
   return (
-    <div className="flex h-screen bg-[#0a0a0a] text-gray-200 font-sans overflow-hidden relative">
+    <div
+      className={`flex h-screen font-sans overflow-hidden relative transition-colors duration-300 ${t.pageWrap}`}
+      style={t.pageStyle}
+    >
       <AnimatePresence>
-        {isSidebarHovered&&(
-          <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} transition={{duration:0.2}}
+        {isSidebarHovered && (
+          <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }} transition={{ duration:0.2 }}
             className="fixed inset-0 bg-black/60 z-40 pointer-events-none backdrop-blur-[1px]"/>
         )}
       </AnimatePresence>
 
-      {/* ── SIDEBAR ── */}
+      {/* ── SIDEBAR (always dark — same as admin panel) ── */}
       <motion.aside
-        initial={{width:"80px"}} animate={{width:isSidebarHovered?"240px":"80px"}} transition={{duration:0.2,ease:"easeInOut"}}
-        onMouseEnter={()=>setIsSidebarHovered(true)} onMouseLeave={()=>setIsSidebarHovered(false)}
+        initial={{ width:"80px" }} animate={{ width:isSidebarHovered?"240px":"80px" }} transition={{ duration:0.2, ease:"easeInOut" }}
+        onMouseEnter={() => setIsSidebarHovered(true)} onMouseLeave={() => setIsSidebarHovered(false)}
         className="fixed left-0 top-0 h-screen bg-[#111111] border-r border-[#222] z-50 flex flex-col py-6 overflow-hidden shadow-2xl"
       >
         <div className="flex items-center px-5 mb-10 whitespace-nowrap">
-          <div className="w-10 h-10 min-w-[40px] bg-gradient-to-br from-purple-600 to-blue-600 rounded-xl flex items-center justify-center text-xl font-bold text-white shadow-lg">B</div>
-          <motion.span initial={{opacity:0}} animate={{opacity:isSidebarHovered?1:0}} className="ml-4 font-bold text-lg text-white tracking-wide">Bhoomi CRM</motion.span>
+          <div className="w-10 h-10 min-w-[40px] bg-[#9E217B] rounded-xl flex items-center justify-center text-xl font-bold text-white shadow-lg shadow-[#9E217B]/30">B</div>
+          <motion.span initial={{ opacity:0 }} animate={{ opacity:isSidebarHovered?1:0 }} className="ml-4 font-bold text-lg text-white tracking-wide">Bhoomi CRM</motion.span>
         </div>
         <nav className="flex flex-col gap-2 px-3 flex-1">
-          {menuItems.map((item)=>{
-            const isActive=item.section?activeSection===item.section:false;
-            return item.section?(
-              <button key={item.id} onClick={()=>{setActiveSection(item.section!);setIsSidebarHovered(false);if(item.section==="callers"&&callerSubView==="control")setCallerSubView("table");}}
-                className={`flex items-center px-3 py-3.5 rounded-xl cursor-pointer transition-colors whitespace-nowrap relative w-full text-left ${isActive?"bg-purple-500/10 text-purple-400":"text-gray-500 hover:bg-[#1a1a1a] hover:text-gray-300"}`}>
-                {isActive&&<div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-purple-500 rounded-r-full"/>}
+          {menuItems.map(item => {
+            const isActive = item.section ? activeSection === item.section : false;
+            return item.section ? (
+              <button key={item.id}
+                onClick={() => { setActiveSection(item.section!); setIsSidebarHovered(false); if (item.section === "callers" && callerSubView === "control") setCallerSubView("table"); }}
+                className={`flex items-center px-3 py-3.5 rounded-xl cursor-pointer transition-colors whitespace-nowrap relative w-full text-left
+                  ${isActive ? "bg-[#9E217B]/20 text-[#d946a8]" : "text-gray-500 hover:bg-[#1a1a1a] hover:text-gray-300"}`}>
+                {isActive && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-[#9E217B] rounded-r-full shadow-[0_0_8px_rgba(158,33,123,0.5)]"/>}
                 <item.icon className="w-5 h-5 min-w-[20px] ml-1"/>
-                <motion.span initial={{opacity:0}} animate={{opacity:isSidebarHovered?1:0}} className={`ml-5 font-semibold text-sm ${isActive?"text-purple-300":""}`}>{item.label}</motion.span>
+                <motion.span initial={{ opacity:0 }} animate={{ opacity:isSidebarHovered?1:0 }} className={`ml-5 font-semibold text-sm ${isActive?"text-[#d946a8]":""}`}>{item.label}</motion.span>
               </button>
-            ):(
-              <Link key={item.id} href={item.link} onClick={()=>{localStorage.setItem("return_tab",item.id);setIsSidebarHovered(false);}}
+            ) : (
+              <Link key={item.id} href={item.link} onClick={() => { localStorage.setItem("return_tab", item.id); setIsSidebarHovered(false); }}
                 className="flex items-center px-3 py-3.5 rounded-xl cursor-pointer transition-colors whitespace-nowrap text-gray-500 hover:bg-[#1a1a1a] hover:text-gray-300">
                 <item.icon className="w-5 h-5 min-w-[20px] ml-1"/>
-                <motion.span initial={{opacity:0}} animate={{opacity:isSidebarHovered?1:0}} className="ml-5 font-semibold text-sm">{item.label}</motion.span>
+                <motion.span initial={{ opacity:0 }} animate={{ opacity:isSidebarHovered?1:0 }} className="ml-5 font-semibold text-sm">{item.label}</motion.span>
               </Link>
             );
           })}
@@ -415,41 +548,65 @@ export default function EmployeesPage() {
         <div className="px-3 mt-auto">
           <div className="flex items-center px-3 py-3.5 rounded-xl cursor-pointer text-gray-500 hover:bg-[#1a1a1a] hover:text-gray-300 transition-colors whitespace-nowrap">
             <FaCog className="w-5 h-5 min-w-[20px] ml-1"/>
-            <motion.span initial={{opacity:0}} animate={{opacity:isSidebarHovered?1:0}} className="ml-5 font-semibold text-sm">Settings</motion.span>
+            {/* <motion.span initial={{ opacity:0 }} animate={{ opacity:isSidebarHovered?1:0 }} className="ml-5 font-semibold text-sm">Settings</motion.span> */}
           </div>
         </div>
       </motion.aside>
 
       {/* ── MAIN ── */}
-      <div className="flex-1 flex flex-col pl-[80px] h-screen overflow-hidden">
-        <header className="h-16 bg-[#111111]/80 backdrop-blur-md border-b border-[#222] flex items-center justify-between px-8 z-30 flex-shrink-0">
-          <h1 className="text-white font-bold text-lg tracking-wide flex items-center gap-3">
-            {activeSection==="callers"?callerSubView==="control"?"Caller Control Mode":"Caller Panel":"Add Employee"}
-            <span className={`px-2 py-0.5 rounded text-xs border ${callerSubView==="control"?"bg-orange-500/10 border-orange-500/30 text-orange-400":"bg-[#222] border-[#333] text-gray-400"}`}>
-              {callerSubView==="control"?"Admin Acting as Caller":"Admin Root"}
+      <div className={`flex-1 flex flex-col pl-[80px] h-screen overflow-hidden transition-colors duration-300 ${t.mainBg}`}>
+
+        {/* HEADER */}
+        <header className={`h-16 border-b flex items-center justify-between px-8 z-30 flex-shrink-0 transition-colors duration-300 ${t.header}`}>
+          <h1 className={`font-bold text-lg tracking-wide flex items-center gap-3 ${t.headerTitle}`}>
+            {activeSection === "callers"
+              ? callerSubView === "control" ? "Caller Control Mode" : "Caller Panel"
+              : "Add Employee"}
+            <span className={`px-2 py-0.5 rounded text-xs border ${callerSubView === "control"
+              ? "bg-orange-500/10 border-orange-500/30 text-orange-400"
+              : t.headerBadge}`}>
+              {callerSubView === "control" ? "Admin Acting as Caller" : "Admin Root"}
             </span>
           </h1>
-          <div className="flex items-center space-x-6 relative">
-            <button className="text-gray-400 hover:text-white cursor-pointer"><FaBell className="w-5 h-5"/></button>
+          <div className="flex items-center space-x-4 relative">
+            {/* ── Light / Dark Toggle ── */}
+            <button
+              onClick={() => setIsDark(!isDark)}
+              aria-label="Toggle theme"
+              className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm border ${t.toggleBtn}`}
+            >
+              {isDark ? <SunIcon /> : <MoonIcon />}
+            </button>
+
+            <button className={`${t.textMuted} hover:text-[#9E217B] cursor-pointer transition-colors`}><FaBell className="w-5 h-5"/></button>
             <div className="relative">
-              <div onClick={()=>setIsProfileOpen(!isProfileOpen)} className="w-9 h-9 rounded-full bg-purple-900/30 text-purple-400 border border-purple-500/50 flex items-center justify-center font-bold text-sm cursor-pointer hover:bg-purple-900/50 transition-colors">
-                {String(user?.name||"A").charAt(0).toUpperCase()}
+              <div onClick={() => setIsProfileOpen(!isProfileOpen)}
+                className={`w-9 h-9 rounded-full border flex items-center justify-center font-bold text-sm cursor-pointer transition-colors
+                  ${isDark ? "bg-[#9E217B]/20 text-[#d946a8] border-[#9E217B]/50 hover:bg-[#9E217B]/30" : "bg-[#9E217B]/10 text-[#9E217B] border-[#9E217B]/40 hover:bg-[#9E217B]/20"}`}>
+                {String(user?.name || "A").charAt(0).toUpperCase()}
               </div>
-              {isProfileOpen&&(
-                <div className="absolute top-12 right-0 w-64 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl shadow-2xl p-5 z-50 animate-fadeIn">
-                  <div className="mb-4"><h3 className="text-white font-bold text-lg">{user?.name||"Admin"}</h3><p className="text-gray-400 text-sm truncate">{user?.email}</p></div>
-                  <hr className="border-[#2a2a2a] mb-4"/>
+              {isProfileOpen && (
+                <div className={`absolute top-12 right-0 w-64 border rounded-xl shadow-2xl p-5 z-50 animate-fadeIn ${t.dropdown}`}>
+                  <div className="mb-4">
+                    <h3 className={`font-bold text-lg ${t.text}`}>{user?.name || "Admin"}</h3>
+                    <p className={`text-sm truncate ${t.textMuted}`}>{user?.email}</p>
+                  </div>
+                  <hr className={`mb-4 ${t.innerBorder}`}/>
                   <div className="space-y-4 mb-6 text-sm">
-                    <p className="text-gray-400 flex justify-between">Role:<span className="text-purple-400 font-bold capitalize bg-purple-500/10 px-2 py-0.5 rounded border border-purple-500/30">{user?.role}</span></p>
+                    <p className={`flex justify-between items-center ${t.textMuted}`}>Role:
+                      <span className={`font-bold capitalize px-2 py-0.5 rounded border ${t.profileRole}`}>{user?.role}</span>
+                    </p>
                     <div>
-                      <p className="text-gray-400 text-xs mb-1">Password</p>
-                      <div className="flex items-center justify-between bg-[#121212] border border-[#2a2a2a] p-2 rounded-md">
-                        <span className="font-mono text-gray-300 tracking-widest text-xs">{showPassword?user?.password:"••••••••"}</span>
-                        <button onClick={()=>setShowPassword(!showPassword)} className="text-gray-500 hover:text-purple-400 cursor-pointer">{showPassword?<FaEyeSlash/>:<FaEye/>}</button>
+                      <p className={`text-xs mb-1 ${t.textMuted}`}>Password</p>
+                      <div className={`flex items-center justify-between border p-2 rounded-md ${t.dropdownInner}`}>
+                        <span className={`font-mono tracking-widest text-xs ${t.text}`}>{showPassword ? user?.password : "••••••••"}</span>
+                        <button onClick={() => setShowPassword(!showPassword)} className={`${t.textMuted} hover:text-[#9E217B] cursor-pointer`}>
+                          {showPassword ? <FaEyeSlash/> : <FaEye/>}
+                        </button>
                       </div>
                     </div>
                   </div>
-                  <button onClick={handleLogout} className="w-full bg-[#3B1F1F] text-[#F28B82] hover:bg-red-900/40 border border-red-900/30 py-2.5 rounded-lg font-semibold transition-colors cursor-pointer">Logout</button>
+                  <button onClick={handleLogout} className={`w-full py-2.5 rounded-lg font-semibold transition-colors cursor-pointer ${t.profileLogout}`}>Logout</button>
                 </div>
               )}
             </div>
@@ -457,67 +614,228 @@ export default function EmployeesPage() {
         </header>
 
         {/* ── CONTENT ── */}
-        {!isAuthorized?(
+        {!isAuthorized ? (
           <main className="flex-1 flex flex-col items-center justify-center text-center p-8">
             <div className="w-20 h-20 bg-red-900/20 text-red-500 rounded-full flex items-center justify-center text-4xl mb-6"><FaLock/></div>
-            <h1 className="text-3xl font-bold text-white mb-2">Access Denied</h1>
-            <Link href="/dashboard" className="bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 px-8 rounded-lg transition-colors">Return to Dashboard</Link>
+            <h1 className={`text-3xl font-bold mb-2 ${t.text}`}>Access Denied</h1>
+            <Link href="/dashboard" className="bg-[#9E217B] hover:bg-[#b8268f] text-white font-bold py-3 px-8 rounded-lg transition-colors">Return to Dashboard</Link>
           </main>
 
-        ):activeSection==="employees"?(
-          <main className="flex-1 overflow-y-auto p-8 bg-[#0a0a0a] custom-scrollbar">
-            <div className="max-w-6xl mx-auto">
-              <h1 className="text-2xl font-bold mb-6 text-white">Master Configurations</h1>
+        ) : activeSection === "employees" ? (
+
+          /* ════════════ EMPLOYEE SECTION ════════════ */
+          <main className={`flex-1 overflow-y-auto p-8 transition-colors duration-300 ${t.mainBg} ${t.scroll}`}>
+            <div className="max-w-7xl mx-auto">
+              <h1 className={`text-2xl font-bold mb-6 ${t.text}`}>Master Configurations</h1>
+
+              {/* Tab pills */}
               <div className="flex flex-wrap gap-2 mb-8">
-                <button className="flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg border border-purple-500 shadow-sm"><FaUserTie/> Employees</button>
-                <button className="flex items-center gap-2 bg-[#111] text-gray-400 px-4 py-2 rounded-lg border border-[#222] hover:bg-[#222] transition-colors"><FaListUl/> Lead Statuses</button>
+                <button className="flex items-center gap-2 bg-[#9E217B] text-white px-5 py-2 rounded-lg border border-[#b8268f] shadow-lg shadow-[#9E217B]/20 font-semibold">
+                  <FaUserTie/> Employees
+                </button>
+                {/* <button className={`flex items-center gap-2 px-5 py-2 rounded-lg border font-semibold transition-colors ${t.inner} ${t.textMuted} ${t.pillBorder} hover:opacity-80`}>
+                  <FaListUl/> Lead Statuses
+                </button> */}
               </div>
-              <div className="bg-[#111111] rounded-xl border border-[#222] p-5 mb-6 flex flex-wrap items-end gap-4 shadow-sm">
-                <div className="flex-1 max-w-sm">
-                  <label className="block text-xs text-purple-400 font-semibold mb-2">Add a Custom System Role</label>
-                  <input type="text" value={newRoleInput} onChange={e=>setNewRoleInput(e.target.value)} className="w-full bg-[#1a1a1a] border border-[#333] rounded-lg p-2.5 text-sm focus:border-purple-500 outline-none text-white transition-colors" placeholder="e.g. Marketing Lead"/>
+
+              {/* ── Add Custom Role ── */}
+              <div className={`rounded-2xl border p-6 mb-6 shadow-sm ${t.panel}`}>
+                <h2 className={`text-base font-bold mb-4 flex items-center gap-2 ${t.text}`}>
+                  <div className={`w-1 h-5 ${t.dividerBar} rounded-full`}/>
+                  Add a Custom System Role
+                </h2>
+                <div className="flex flex-wrap items-end gap-4">
+                  <div className="flex-1 min-w-[260px] max-w-md">
+                    <label className={`block text-xs mb-1.5 font-medium ${t.textMuted}`}>Role Name</label>
+                    <input type="text" value={newRoleInput} onChange={e => setNewRoleInput(e.target.value)}
+                      className={t.inp} placeholder="e.g. Marketing Lead"/>
+                  </div>
+                  <button onClick={handleAddNewRole}
+                    className={`text-sm font-semibold py-2.5 px-5 rounded-lg border transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap
+                      ${isDark ? "bg-[#1a1a1a] hover:bg-[#252525] text-white border-[#333] hover:border-[#9E217B]/50" : "bg-white hover:bg-pink-50 text-[#1A1A1A] border-indigo-300 hover:border-[#9E217B]/60"}`}>
+                    <FaPlus className="text-[#9E217B] text-xs"/> Add to Dropdown
+                  </button>
                 </div>
-                <button onClick={handleAddNewRole} className="bg-[#222] hover:bg-[#333] text-white text-sm font-semibold py-2.5 px-4 rounded-lg border border-[#444] transition-colors flex items-center gap-2 cursor-pointer"><FaPlus className="text-purple-500 text-xs"/>Add to Dropdown</button>
               </div>
-              <div className="bg-[#111111] rounded-xl border border-[#222] p-6 mb-6 shadow-sm">
-                <h2 className="text-lg font-semibold mb-5 text-white">Create & Assign Role to Employee</h2>
-                <form onSubmit={handleAddEmployee} className="grid grid-cols-1 md:grid-cols-6 gap-4 items-end">
-                  {[{label:"Full Name",v:empName,s:setEmpName,t:"text",p:"e.g. John Doe"},{label:"Username",v:username,s:setUsername,t:"text",p:"e.g. johndoe"},{label:"Email",v:email,s:setEmail,t:"email",p:"email@company.com"},{label:"Password",v:password,s:setPassword,t:"text",p:"Set password"}].map(f=>(
-                    <div key={f.label}><label className="block text-xs text-gray-400 mb-1.5 font-medium">{f.label}</label><input type={f.t} value={f.v} onChange={e=>f.s(e.target.value)} required className="w-full bg-[#1a1a1a] border border-[#333] rounded-lg p-2.5 text-sm focus:border-purple-500 outline-none text-white transition-colors" placeholder={f.p}/></div>
-                  ))}
-                  <div><label className="block text-xs text-gray-400 mb-1.5 font-medium">Assign Role</label><select value={role} onChange={e=>setRole(e.target.value)} required className="w-full bg-[#1a1a1a] border border-[#333] rounded-lg p-2.5 text-sm focus:border-purple-500 outline-none text-gray-300 cursor-pointer"><option value="" disabled>-- Choose Role --</option>{dbRoles.map(r=><option key={r._id} value={r.name}>{r.name}</option>)}</select></div>
-                  <button type="submit" className="bg-purple-600 hover:bg-purple-500 text-white font-semibold py-2.5 px-4 rounded-lg transition-colors shadow-sm cursor-pointer">Add Employee</button>
+
+              {/* ── Create Employee Form ── */}
+              <div className={`rounded-2xl border p-6 mb-6 shadow-sm ${t.panel}`}>
+                <h2 className={`text-base font-bold mb-5 flex items-center gap-2 ${t.text}`}>
+                  <div className={`w-1 h-5 ${t.dividerBar} rounded-full`}/>
+                  Create & Assign Role to Employee
+                </h2>
+                <form onSubmit={handleAddEmployee} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+                  <div>
+                    <label className={`block text-xs mb-1.5 font-medium ${t.textMuted}`}>Full Name</label>
+                    <input type="text" value={empName} onChange={e => setEmpName(e.target.value)} required className={t.inp} placeholder="e.g. John Doe"/>
+                  </div>
+                  <div>
+                    <label className={`block text-xs mb-1.5 font-medium ${t.textMuted}`}>Email</label>
+                    <input type="email" value={email} onChange={e => setEmail(e.target.value)} required className={t.inp} placeholder="email@company.com"/>
+                  </div>
+                  <div>
+                    <label className={`block text-xs mb-1.5 font-medium ${t.textMuted}`}>Password</label>
+                    <input type="text" value={password} onChange={e => setPassword(e.target.value)} required className={t.inp} placeholder="Set password"/>
+                  </div>
+                  <div>
+                    <label className={`block text-xs mb-1.5 font-medium ${t.textMuted}`}>Assign Role</label>
+                    <select value={role} onChange={e => setRole(e.target.value)} required className={t.sel}>
+                      <option value="" disabled>-- Choose Role --</option>
+                      {dbRoles.map(r => <option key={r._id} value={r.name}>{r.name}</option>)}
+                    </select>
+                  </div>
+                  <div className="sm:col-span-2 lg:col-span-4 flex justify-end">
+                    <button type="submit"
+                      className="bg-[#9E217B] hover:bg-[#b8268f] text-white font-bold py-2.5 px-8 rounded-lg transition-all cursor-pointer shadow-lg shadow-[#9E217B]/20 flex items-center gap-2">
+                      <FaPlus className="text-xs"/> Add Employee
+                    </button>
+                  </div>
                 </form>
               </div>
-              <div className="bg-[#111111] rounded-xl border border-[#222] p-6 mb-8 shadow-sm">
-                <h2 className="text-lg font-semibold mb-5 text-white">Account Activation Management</h2>
+
+              {/* ── Account Activation Management ── */}
+              <div className={`rounded-2xl border p-6 mb-6 shadow-sm ${t.panel}`}>
+                <h2 className={`text-base font-bold mb-5 flex items-center gap-2 ${t.text}`}>
+                  <div className={`w-1 h-5 ${t.dividerBar} rounded-full`}/>
+                  Account Activation Management
+                </h2>
                 <div className="flex flex-col md:flex-row items-end gap-5">
-                  <div className="flex-1 w-full max-w-md"><label className="block text-xs text-gray-400 mb-1.5 font-medium">Select Employee</label><select value={selectedManageUserId} onChange={e=>setSelectedManageUserId(e.target.value)} className="w-full bg-[#1a1a1a] border border-[#333] rounded-lg p-2.5 text-sm focus:border-purple-500 outline-none text-white cursor-pointer"><option value="" disabled>-- Select user to manage --</option>{employees.map(emp=><option key={emp._id} value={emp._id}>{emp.email} ({emp.role})</option>)}</select></div>
-                  {selectedManageUser?(<button onClick={()=>handleToggleStatus(selectedManageUser._id,selectedManageUser.isActive)} className={`py-2.5 px-6 rounded-lg font-bold text-sm transition-colors cursor-pointer ${selectedManageUser.isActive?"bg-red-600 hover:bg-red-700 text-white border border-red-500":"bg-green-600 hover:bg-green-700 text-white border border-green-500"}`}>{selectedManageUser.isActive?"Deactivate Account":"Activate Account"}</button>):(<button disabled className="py-2.5 px-6 rounded-lg font-bold text-sm bg-[#222] border border-[#333] text-gray-500 cursor-not-allowed">Select User</button>)}
+                  <div className="flex-1 w-full max-w-md">
+                    <label className={`block text-xs mb-1.5 font-medium ${t.textMuted}`}>Select Employee</label>
+                    <select value={selectedManageUserId} onChange={e => setSelectedManageUserId(e.target.value)} className={t.sel}>
+                      <option value="" disabled>-- Select user to manage --</option>
+                      {employees.map(emp => (
+                        <option key={emp._id} value={emp._id}>{emp.email} ({emp.role})</option>
+                      ))}
+                    </select>
+                  </div>
+                  {selectedManageUser ? (
+                    <button
+                      onClick={() => handleToggleStatus(selectedManageUser._id, selectedManageUser.isActive)}
+                      disabled={selectedManageUser.email === ADMIN_EMAIL}
+                      className={`py-2.5 px-6 rounded-lg font-bold text-sm transition-colors cursor-pointer ${
+                        selectedManageUser.email === ADMIN_EMAIL
+                          ? isDark ? "bg-[#222] border border-[#333] text-gray-600 cursor-not-allowed" : "bg-[#F1F5F9] border border-indigo-200 text-[#9CA3AF] cursor-not-allowed"
+                          : selectedManageUser.isActive
+                            ? "bg-red-600 hover:bg-red-700 text-white border border-red-500"
+                            : "bg-green-600 hover:bg-green-700 text-white border border-green-500"
+                      }`}
+                    >
+                      {selectedManageUser.email === ADMIN_EMAIL
+                        ? "Protected Account"
+                        : selectedManageUser.isActive ? "Deactivate Account" : "Activate Account"}
+                    </button>
+                  ) : (
+                    <button disabled className={`py-2.5 px-6 rounded-lg font-bold text-sm cursor-not-allowed border ${isDark ? "bg-[#222] border-[#333] text-gray-500" : "bg-[#F1F5F9] border-indigo-200 text-[#9CA3AF]"}`}>Select User</button>
+                  )}
                 </div>
               </div>
-              <div className="bg-[#111111] rounded-xl border border-[#222] overflow-hidden shadow-sm">
-                <div className="p-5 border-b border-[#222] bg-[#151515]"><h2 className="text-lg font-semibold text-white">Registered Employees Database</h2></div>
+
+              {/* ── Employee Table ── */}
+              <div className={`rounded-2xl border overflow-hidden shadow-sm ${t.panel}`}>
+                <div className={`p-5 border-b flex items-center justify-between ${t.panelHead}`}>
+                  <h2 className={`text-base font-bold flex items-center gap-2 ${t.text}`}>
+                    <FaUsers className="text-[#9E217B]"/> Registered Employees Database
+                  </h2>
+                  <span className={`text-[10px] px-3 py-1 rounded-full border ${t.textFaint} ${t.pillBg} ${t.pillBorder}`}>{employees.length} employees</span>
+                </div>
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left text-sm text-gray-400">
-                    <thead className="text-xs uppercase bg-[#1a1a1a]"><tr>{["Name","Username","Email","Password","Assigned Role","System Status","Actions"].map(h=><th key={h} className={`px-6 py-4 font-semibold border-b border-[#222] ${h==="System Status"||h==="Actions"?"text-center":""}`}>{h}</th>)}</tr></thead>
-                    <tbody className="divide-y divide-[#222]">
-                      {employees.map(emp=>{
-                        const isRevealed=revealedPasswords[emp._id]||false;
-                        const isEditing=editingId===emp._id;
-                        return(
-                          <tr key={emp._id} className={`transition-colors group ${isEditing?"bg-[#1a1a2e]":"hover:bg-[#151515]"}`}>
-                            <td className="px-4 py-3 text-white font-medium">{isEditing?<input value={editForm.name||""} onChange={e=>setEditForm(p=>({...p,name:e.target.value}))} className="w-full bg-[#0f0f0f] border border-purple-500/50 rounded-lg px-2.5 py-1.5 text-sm text-white outline-none"/>:emp.name}</td>
-                            <td className="px-4 py-3 text-gray-300 font-mono">{isEditing?<input value={editForm.username||""} onChange={e=>setEditForm(p=>({...p,username:e.target.value}))} className="w-full bg-[#0f0f0f] border border-purple-500/50 rounded-lg px-2.5 py-1.5 text-sm text-white outline-none"/>:emp.username}</td>
-                            <td className="px-4 py-3">{isEditing?<input type="email" value={editForm.email||""} onChange={e=>setEditForm(p=>({...p,email:e.target.value}))} className="w-full bg-[#0f0f0f] border border-purple-500/50 rounded-lg px-2.5 py-1.5 text-sm text-white outline-none"/>:emp.email}</td>
-                            <td className="px-4 py-3">{isEditing?<input value={editForm.password||""} onChange={e=>setEditForm(p=>({...p,password:e.target.value}))} className="w-full bg-[#0f0f0f] border border-purple-500/50 rounded-lg px-2.5 py-1.5 text-sm text-white outline-none"/>:<div className="flex items-center gap-3"><span className="font-mono text-gray-300 tracking-wider">{isRevealed?(emp.password||"N/A"):"••••••••"}</span><button onClick={()=>toggleRowPassword(emp._id)} className="text-gray-500 hover:text-purple-400 cursor-pointer">{isRevealed?<FaEyeSlash/>:<FaEye/>}</button></div>}</td>
-                            <td className="px-4 py-3 text-purple-400 font-semibold capitalize">{isEditing?<select value={editForm.role||""} onChange={e=>setEditForm(p=>({...p,role:e.target.value}))} className="w-full bg-[#0f0f0f] border border-purple-500/50 rounded-lg px-2.5 py-1.5 text-sm text-purple-300 outline-none cursor-pointer">{dbRoles.map(r=><option key={r._id} value={r.name}>{r.name}</option>)}</select>:emp.role}</td>
-                            <td className="px-4 py-3 text-center"><span className={`border px-3 py-1 rounded text-xs font-bold uppercase tracking-widest inline-block w-[80px] ${emp.isActive?"border-green-500/30 text-green-500 bg-green-500/10":"border-red-500/30 text-red-500 bg-red-500/10"}`}>{emp.isActive?"Active":"Inactive"}</span></td>
-                            <td className="px-4 py-3">{isEditing?(<div className="flex flex-col items-center gap-1.5"><div className="flex gap-2"><button onClick={()=>handleEditSave(emp._id)} disabled={editSaving} className="bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white text-xs font-bold px-3 py-1.5 rounded-lg cursor-pointer">{editSaving?"Saving...":"Save"}</button><button onClick={handleEditCancel} className="bg-[#2a2a2a] hover:bg-[#333] text-gray-300 text-xs font-bold px-3 py-1.5 rounded-lg cursor-pointer">Cancel</button></div>{editError&&<span className="text-red-400 text-xs text-center max-w-[120px]">{editError}</span>}</div>):(<div className="flex items-center justify-center gap-1"><button onClick={()=>handleEditStart(emp)} className="text-gray-500 hover:text-purple-400 hover:bg-purple-500/10 p-2 rounded-lg transition-colors cursor-pointer"><FaUserEdit/></button><button onClick={()=>handleDeleteEmployee(emp._id,emp.name)} className="text-gray-600 hover:text-red-500 hover:bg-red-500/10 p-2 rounded-lg transition-colors cursor-pointer"><FaTrash/></button></div>)}</td>
+                  <table className="w-full text-left text-sm">
+                    <thead className={`text-xs uppercase ${t.tableHead} ${t.tableHeadBdr}`}>
+                      <tr>
+                        {["Name","Email","Password","Assigned Role","Status","Actions"].map(h => (
+                          <th key={h} className={`px-6 py-4 font-semibold ${t.tableHeadText} ${h === "Status" || h === "Actions" ? "text-center" : ""}`}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className={`divide-y ${t.tableDivide}`}>
+                      {employees.map(emp => {
+                        const isRevealed   = revealedPasswords[emp._id] || false;
+                        const isEditing    = editingId === emp._id;
+                        const isAdminUser  = emp.email === ADMIN_EMAIL;
+                        return (
+                          <tr key={emp._id} className={`transition-colors group ${isEditing ? t.editRow : isAdminUser ? t.adminRow : t.tableRow}`}>
+                            {/* Name */}
+                            <td className={`px-5 py-3.5 font-medium ${t.text}`}>
+                              {isEditing
+                                ? <input value={editForm.name || ""} onChange={e => setEditForm(p => ({ ...p, name:e.target.value }))} className={t.editInp}/>
+                                : <div className="flex items-center gap-2">
+                                    {emp.name}
+                                    {isAdminUser && <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase border ${isDark ? "text-[#d946a8] bg-[#9E217B]/10 border-[#9E217B]/30" : "text-[#9E217B] bg-[#9E217B]/10 border-[#9E217B]/30"}`}>Protected</span>}
+                                  </div>
+                              }
+                            </td>
+                            {/* Email */}
+                            <td className={`px-5 py-3.5 ${t.textLight}`}>
+                              {isEditing
+                                ? <input type="email" value={editForm.email || ""} onChange={e => setEditForm(p => ({ ...p, email:e.target.value }))} className={t.editInp}/>
+                                : emp.email
+                              }
+                            </td>
+                            {/* Password */}
+                            <td className="px-5 py-3.5">
+                              {isEditing
+                                ? <input value={editForm.password || ""} onChange={e => setEditForm(p => ({ ...p, password:e.target.value }))} className={t.editInp}/>
+                                : <div className="flex items-center gap-3">
+                                    <span className={`font-mono tracking-wider ${t.textLight}`}>{isRevealed ? (emp.password || "N/A") : "••••••••"}</span>
+                                    <button onClick={() => toggleRowPassword(emp._id)} className={`${t.textMuted} hover:text-[#9E217B] cursor-pointer`}><FaEyeSlash/></button>
+                                  </div>
+                              }
+                            </td>
+                            {/* Role */}
+                            <td className="px-5 py-3.5">
+                              {isEditing
+                                ? <select value={editForm.role || ""} onChange={e => setEditForm(p => ({ ...p, role:e.target.value }))} className={t.editSel}>
+                                    {dbRoles.map(r => <option key={r._id} value={r.name}>{r.name}</option>)}
+                                  </select>
+                                : <span className={`font-semibold capitalize ${isDark ? "text-[#d946a8]" : "text-[#9E217B]"}`}>{emp.role}</span>
+                              }
+                            </td>
+                            {/* Status */}
+                            <td className="px-5 py-3.5 text-center">
+                              <span className={`border px-3 py-1 rounded text-xs font-bold uppercase tracking-widest inline-block w-[80px] ${emp.isActive ? "border-green-500/30 text-green-500 bg-green-500/10" : "border-red-500/30 text-red-500 bg-red-500/10"}`}>
+                                {emp.isActive ? "Active" : "Inactive"}
+                              </span>
+                            </td>
+                            {/* Actions */}
+                            <td className="px-5 py-3.5">
+                              {isEditing ? (
+                                <div className="flex flex-col items-center gap-1.5">
+                                  <div className="flex gap-2">
+                                    <button onClick={() => handleEditSave(emp._id)} disabled={editSaving}
+                                      className="bg-[#9E217B] hover:bg-[#b8268f] disabled:opacity-50 text-white text-xs font-bold px-3 py-1.5 rounded-lg cursor-pointer transition-colors">
+                                      {editSaving ? "Saving..." : "Save"}
+                                    </button>
+                                    <button onClick={handleEditCancel}
+                                      className={`text-xs font-bold px-3 py-1.5 rounded-lg cursor-pointer border ${isDark ? "bg-[#2a2a2a] hover:bg-[#333] text-gray-300 border-[#333]" : "bg-[#F1F5F9] hover:bg-[#E5E7EB] text-[#374151] border-indigo-200"}`}>
+                                      Cancel
+                                    </button>
+                                  </div>
+                                  {editError && <span className="text-red-400 text-xs text-center max-w-[120px]">{editError}</span>}
+                                </div>
+                              ) : isAdminUser ? (
+                                <div className="flex items-center justify-center">
+                                  <span className={`text-[10px] italic ${t.textLight2}`}>Protected</span>
+                                </div>
+                              ) : (
+                                <div className="flex items-center justify-center gap-1">
+                                  <button onClick={() => handleEditStart(emp)}
+                                    className={`p-2 rounded-lg transition-colors cursor-pointer ${t.textMuted} hover:text-[#d946a8] hover:bg-[#9E217B]/10`}>
+                                    <FaUserEdit/>
+                                  </button>
+                                  <button onClick={() => handleDeleteEmployee(emp._id, emp.name)}
+                                    className={`p-2 rounded-lg transition-colors cursor-pointer ${t.textLight2} hover:text-red-500 hover:bg-red-500/10`}>
+                                    <FaTrash/>
+                                  </button>
+                                </div>
+                              )}
+                            </td>
                           </tr>
                         );
                       })}
-                      {employees.length===0&&<tr><td colSpan={7} className="px-6 py-8 text-center text-gray-500">No employees found.</td></tr>}
+                      {employees.length === 0 && (
+                        <tr><td colSpan={6} className={`px-6 py-8 text-center ${t.textMuted}`}>No employees found.</td></tr>
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -525,86 +843,103 @@ export default function EmployeesPage() {
             </div>
           </main>
 
-        ):callerSubView==="control"?(
+        ) : callerSubView === "control" ? (
+
           <CallerControlMode
             leads={controlLeads}
             savedLeads={controlSaved}
             setSavedLeads={setControlSaved}
-            adminName={user?.name||"Admin"}
-            onExit={()=>{setCallerSubView("table");fetchCallerData();}}
+            adminName={user?.name || "Admin"}
+            onExit={() => { setCallerSubView("table"); fetchCallerData(); }}
           />
 
-        ):(
+        ) : (
+
           /* ════════════ CALLER PANEL ════════════ */
           <div className="flex flex-1 h-full overflow-hidden">
 
             {/* Caller Sidebar */}
-            <div className="w-72 border-r border-[#222] bg-[#111111] flex flex-col h-full flex-shrink-0 shadow-xl">
-              <div className="p-4 border-b border-[#222] space-y-3">
+            <div className={`w-72 flex flex-col h-full flex-shrink-0 shadow-xl transition-colors duration-300 ${t.callerSidebar}`}>
+              <div className={`p-4 border-b space-y-3 ${t.innerBorder}`}>
                 <div>
-                  <label className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1 block">Assign Upload To</label>
-                  <select value={assignUploadTo} onChange={e=>setAssignUploadTo(e.target.value)}
-                    className="w-full bg-[#1a1a1a] border border-[#333] rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-purple-500 cursor-pointer">
+                  <label className={`text-[10px] font-bold uppercase tracking-wider mb-1 block ${t.batchLabel}`}>Assign Upload To</label>
+                  <select value={assignUploadTo} onChange={e => setAssignUploadTo(e.target.value)} className={t.smallSel}>
                     <option value="">Admin (unassigned)</option>
-                    {callers.map((c:any)=><option key={c._id||c.name} value={c.name}>{c.name}</option>)}
+                    {callers.map((c: any) => <option key={c._id||c.name} value={c.name}>{c.name}</option>)}
                   </select>
                 </div>
                 <div className="flex gap-2">
                   <button onClick={exportTemplate}
-                    className="flex-1 flex items-center justify-center gap-2 bg-[#1a1a1a] hover:bg-[#222] border border-[#333] hover:border-green-500/50 text-gray-300 hover:text-green-400 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer">
+                    className={`flex-1 flex items-center justify-center gap-2 border py-2 rounded-lg text-xs font-bold transition-all cursor-pointer
+                      ${isDark ? "bg-[#1a1a1a] hover:bg-[#222] border-[#333] hover:border-green-500/50 text-gray-300 hover:text-green-400" : "bg-white hover:bg-green-50 border-indigo-200 hover:border-green-400/60 text-[#6B7280] hover:text-green-600"}`}>
                     <FaDownload className="text-green-400 text-[10px]"/> Template
                   </button>
-                  <label className="flex-1 flex items-center justify-center gap-2 bg-[#1a1a1a] hover:bg-[#222] border border-[#333] hover:border-purple-500/50 text-gray-300 hover:text-white py-2 rounded-lg text-xs font-bold transition-all cursor-pointer"
-                    onDragOver={e=>{e.preventDefault();setIsDragging(true);}} onDragLeave={()=>setIsDragging(false)}
-                    onDrop={e=>{e.preventDefault();setIsDragging(false);const f=e.dataTransfer.files[0];if(f)handleAdminUpload(f,assignUploadTo||undefined);}}>
+                  <label
+                    className={`flex-1 flex items-center justify-center gap-2 border py-2 rounded-lg text-xs font-bold transition-all cursor-pointer
+                      ${isDark ? "bg-[#1a1a1a] hover:bg-[#222] border-[#333] hover:border-[#9E217B]/50 text-gray-300 hover:text-white" : "bg-white hover:bg-pink-50 border-indigo-200 hover:border-[#9E217B]/50 text-[#6B7280] hover:text-[#9E217B]"}`}
+                    onDragOver={e => { e.preventDefault(); setIsDragging(true); }}
+                    onDragLeave={() => setIsDragging(false)}
+                    onDrop={e => { e.preventDefault(); setIsDragging(false); const f = e.dataTransfer.files[0]; if (f) handleAdminUpload(f, assignUploadTo||undefined); }}
+                  >
                     <FaFileExcel className="text-green-400 text-[10px]"/>
-                    {uploading?"Uploading...":"Upload Excel"}
+                    {uploading ? "Uploading..." : "Upload Excel"}
                     <input type="file" accept=".xlsx,.xls,.csv" className="hidden" ref={fileInputRef}
-                      onChange={e=>{const f=e.target.files?.[0];if(f)handleAdminUpload(f,assignUploadTo||undefined);e.target.value="";}}/>
+                      onChange={e => { const f = e.target.files?.[0]; if (f) handleAdminUpload(f, assignUploadTo||undefined); e.target.value = ""; }}/>
                   </label>
                 </div>
-                {uploadMsg&&(
-                  <div className={`text-[10px] font-semibold px-3 py-2 rounded-lg border flex items-center gap-2 ${uploadMsg.startsWith("✓")?"text-green-400 bg-green-500/10 border-green-500/20":uploadMsg.startsWith("Error")?"text-red-400 bg-red-500/10 border-red-500/20":"text-blue-400 bg-blue-500/10 border-blue-500/20"}`}>
+                {uploadMsg && (
+                  <div className={`text-[10px] font-semibold px-3 py-2 rounded-lg border flex items-center gap-2 ${uploadMsg.startsWith("✓") ? t.uploadSuccess : uploadMsg.startsWith("Error") ? t.uploadError : t.uploadInfo}`}>
                     {uploadMsg}
                   </div>
                 )}
                 <div className="relative">
-                  <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs"/>
-                  <input type="text" placeholder="Search Callers..." value={callerSearch} onChange={e=>setCallerSearch(e.target.value)}
-                    className="w-full bg-[#1a1a1a] border border-[#333] rounded-lg pl-9 pr-4 py-2 text-sm text-white focus:border-purple-500 outline-none transition-colors"/>
+                  <FaSearch className={`absolute left-3 top-1/2 -translate-y-1/2 text-xs ${t.textFaint}`}/>
+                  <input type="text" placeholder="Search Callers..." value={callerSearch} onChange={e => setCallerSearch(e.target.value)} className={t.searchInp}/>
                 </div>
               </div>
 
-              <div className="flex-1 overflow-y-auto custom-scrollbar">
+              <div className={`flex-1 overflow-y-auto ${t.scroll}`}>
                 {/* All Callers */}
-                <div onClick={()=>{setSelectedCaller(null);setCallerSubView("table");setSelectedLead(null);setLeadSearch("");setSelectedBatch("all");}}
-                  className={`p-4 flex items-center gap-3 cursor-pointer transition-all border-b border-[#1a1a1a] ${!selectedCaller?"bg-[#1a1a1a] border-l-4 border-l-purple-500":"hover:bg-[#151515] border-l-4 border-l-transparent"}`}>
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-white flex-shrink-0 ${!selectedCaller?"bg-purple-600":"bg-[#333] text-gray-400"}`}><FaPhoneAlt className="text-sm"/></div>
+                <div onClick={() => { setSelectedCaller(null); setCallerSubView("table"); setSelectedLead(null); setLeadSearch(""); setSelectedBatch("all"); }}
+                  className={`p-4 flex items-center gap-3 cursor-pointer transition-all ${t.callerItemBdr} ${!selectedCaller ? t.callerItemSel : `${t.callerItemDef} ${t.callerItemHov}`}`}>
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-white flex-shrink-0 ${!selectedCaller ? "bg-[#9E217B]" : isDark ? "bg-[#333] text-gray-400" : "bg-gray-300 text-gray-600"}`}><FaPhoneAlt className="text-sm"/></div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex justify-between items-center"><h3 className="font-bold text-gray-200 text-sm">All Callers</h3><span className="text-[10px] text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded-full font-bold">{callerLeads.length} leads</span></div>
-                    <p className="text-xs text-gray-500">{callers.length} callers total</p>
+                    <div className="flex justify-between items-center">
+                      <h3 className={`font-bold text-sm ${t.text}`}>All Callers</h3>
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${isDark ? "text-[#d946a8] bg-[#9E217B]/10" : "text-[#9E217B] bg-pink-100"}`}>{callerLeads.length} leads</span>
+                    </div>
+                    <p className={`text-xs ${t.textFaint}`}>{callers.length} callers total</p>
                   </div>
                 </div>
 
-                {callerLoading?<div className="p-8 text-center text-gray-500 text-sm">Loading...</div>
-                :filteredCallers.length===0?<div className="p-8 text-center text-gray-500 text-sm">{callers.length===0?"No callers. Add user with role 'Caller'.":"No callers match."}</div>
-                :filteredCallers.map((caller:any)=>{
-                  const isSel=selectedCaller?.name===caller.name;
-                  const thisCallerLeads = callerLeads.filter((l:any) => leadBelongsToCaller(l, caller.name));
-                  return(
-                    <div key={caller._id||caller.name} className={`border-b border-[#1a1a1a] ${isSel?"bg-[#1a1a1a] border-l-4 border-l-purple-500":"border-l-4 border-l-transparent"}`}>
-                      <div onClick={()=>{setSelectedCaller(caller);setCallerSubView("table");setSelectedLead(null);setLeadSearch("");setSelectedBatch("all");}}
-                        className="p-4 flex items-center gap-3 cursor-pointer transition-all hover:bg-[#151515]">
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-white flex-shrink-0 ${isSel?"bg-purple-600":"bg-[#333] text-gray-400"}`}>{caller.name?.charAt(0).toUpperCase()}</div>
+                {callerLoading ? <div className={`p-8 text-center text-sm ${t.textMuted}`}>Loading...</div>
+                : filteredCallers.length === 0 ? <div className={`p-8 text-center text-sm ${t.textMuted}`}>{callers.length === 0 ? "No callers. Add user with role 'Caller'." : "No callers match."}</div>
+                : filteredCallers.map((caller: any) => {
+                  const isSel = selectedCaller?.name === caller.name;
+                  const thisCallerLeads = callerLeads.filter((l: any) => leadBelongsToCaller(l, caller.name));
+                  return (
+                    <div key={caller._id||caller.name} className={`${t.callerItemBdr} ${isSel ? t.callerItemSel : t.callerItemDef}`}>
+                      <div onClick={() => { setSelectedCaller(caller); setCallerSubView("table"); setSelectedLead(null); setLeadSearch(""); setSelectedBatch("all"); }}
+                        className={`p-4 flex items-center gap-3 cursor-pointer transition-all ${t.callerItemHov}`}>
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-white flex-shrink-0 ${isSel ? "bg-[#9E217B]" : isDark ? "bg-[#333] text-gray-400" : "bg-gray-300 text-gray-600"}`}>
+                          {caller.name?.charAt(0).toUpperCase()}
+                        </div>
                         <div className="flex-1 min-w-0">
-                          <div className="flex justify-between items-center mb-0.5"><h3 className="font-bold text-gray-200 truncate text-sm">{caller.name}</h3><span className="text-[10px] text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded-full font-bold">{caller.totalLeads} leads</span></div>
-                          <p className="text-xs text-gray-500 flex items-center gap-2"><span className="text-green-500">{caller.interested} interested</span><span className={`w-1.5 h-1.5 rounded-full ${caller.isActive?"bg-green-500":"bg-red-500"}`}/>{caller.isActive?"Active":"Inactive"}</p>
+                          <div className="flex justify-between items-center mb-0.5">
+                            <h3 className={`font-bold truncate text-sm ${t.text}`}>{caller.name}</h3>
+                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${isDark ? "text-[#d946a8] bg-[#9E217B]/10" : "text-[#9E217B] bg-pink-100"}`}>{caller.totalLeads} leads</span>
+                          </div>
+                          <p className={`text-xs flex items-center gap-2 ${t.textFaint}`}>
+                            <span className="text-green-500">{caller.interested} interested</span>
+                            <span className={`w-1.5 h-1.5 rounded-full ${caller.isActive ? "bg-green-500" : "bg-red-500"}`}/>
+                            {caller.isActive ? "Active" : "Inactive"}
+                          </p>
                         </div>
                       </div>
-                      {isSel&&(
+                      {isSel && (
                         <div className="px-4 pb-3">
                           <button
-                            onClick={e=>{e.stopPropagation();handleTakeControl(thisCallerLeads);}}
+                            onClick={e => { e.stopPropagation(); handleTakeControl(thisCallerLeads); }}
                             className="w-full flex items-center justify-center gap-2 bg-orange-600 hover:bg-orange-500 text-white font-bold px-3 py-2 rounded-lg text-xs transition-colors cursor-pointer shadow-lg shadow-orange-600/20 border border-orange-500">
                             <FaDesktop className="text-xs"/> Take Control of {caller.name.split(" ")[0]}
                           </button>
@@ -615,21 +950,22 @@ export default function EmployeesPage() {
                 })}
               </div>
 
-              {batchList.length>0&&(
-                <div className="border-t border-[#222] p-3 max-h-52 overflow-y-auto custom-scrollbar">
-                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2 px-1">Uploaded Excel Files</p>
-                  {batchList.map((b:any)=>(
-                    <div key={b.id} className={`flex items-center justify-between p-2 rounded-lg mb-1 cursor-pointer transition-colors ${selectedBatch===String(b.id)?"bg-purple-500/10 border border-purple-500/30":"hover:bg-[#1a1a1a] border border-transparent"}`}
-                      onClick={()=>setSelectedBatch(String(b.id))}>
+              {batchList.length > 0 && (
+                <div className={`p-3 max-h-52 overflow-y-auto ${t.batchTop} ${t.scroll}`}>
+                  <p className={`text-[10px] font-bold uppercase tracking-wider mb-2 px-1 ${t.batchLabel}`}>Uploaded Excel Files</p>
+                  {batchList.map((b: any) => (
+                    <div key={b.id}
+                      className={`flex items-center justify-between p-2 rounded-lg mb-1 cursor-pointer transition-colors ${selectedBatch === String(b.id) ? t.batchItemSel : t.batchItemDef}`}
+                      onClick={() => setSelectedBatch(String(b.id))}>
                       <div className="flex items-center gap-2 min-w-0">
                         <FaFileExcel className="text-green-500 text-xs flex-shrink-0"/>
                         <div className="min-w-0">
-                          <p className="text-xs text-white font-medium truncate max-w-[130px]">{b.file_name}</p>
-                          <p className="text-[10px] text-gray-500">{b.row_count} leads · {formatDate(b.created_at).split(",")[0]}</p>
+                          <p className={`text-xs font-medium truncate max-w-[130px] ${t.text}`}>{b.file_name}</p>
+                          <p className={`text-[10px] ${t.textFaint}`}>{b.row_count} leads · {formatDate(b.created_at).split(",")[0]}</p>
                         </div>
                       </div>
-                      <button onClick={e=>{e.stopPropagation();handleDeleteBatch(b);}}
-                        className="text-gray-600 hover:text-red-400 p-1 rounded transition-colors cursor-pointer flex-shrink-0 ml-1">
+                      <button onClick={e => { e.stopPropagation(); handleDeleteBatch(b); }}
+                        className={`${t.textLight2} hover:text-red-400 p-1 rounded transition-colors cursor-pointer flex-shrink-0 ml-1`}>
                         <FaTrash className="text-[10px]"/>
                       </button>
                     </div>
@@ -639,162 +975,211 @@ export default function EmployeesPage() {
             </div>
 
             {/* Right Panel */}
-            <div className="flex-1 flex flex-col h-full bg-[#0a0a0a] overflow-hidden">
-              <div className="p-5 border-b border-[#222] bg-[#111111] flex justify-between items-center flex-shrink-0 shadow-sm">
+            <div className={`flex-1 flex flex-col h-full overflow-hidden transition-colors duration-300 ${t.rightPanel}`}>
+              <div className={`p-5 border-b flex justify-between items-center flex-shrink-0 shadow-sm ${t.rightHeader}`}>
                 <div>
-                  <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                    <FaPhoneAlt className="text-purple-500"/>
-                    {selectedCaller?`${selectedCaller.name}'s Saved Forms`:"All Caller Leads"}
+                  <h2 className={`text-lg font-bold flex items-center gap-2 ${t.text}`}>
+                    <FaPhoneAlt className="text-[#9E217B]"/>
+                    {selectedCaller ? `${selectedCaller.name}'s Saved Forms` : "All Caller Leads"}
                   </h2>
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className={`text-xs mt-1 ${t.textFaint}`}>
                     {selectedCaller
                       ? `${callerSavedFormLeads.length} saved forms · ${filteredCallerLeads.length} total leads`
                       : `${filteredCallerLeads.length} total leads · Live sync active`}
                   </p>
                 </div>
-                {!selectedCaller&&(
+                {!selectedCaller && (
                   <div className="flex gap-2 text-xs flex-wrap items-center">
-                    <span className="bg-green-500/10 border border-green-500/30 text-green-400 px-3 py-1 rounded-full">{filteredCallerLeads.filter((l:any)=>l.interest_status==="Interested").length} Interested</span>
-                    <span className="bg-red-500/10 border border-red-500/30 text-red-400 px-3 py-1 rounded-full">{filteredCallerLeads.filter((l:any)=>l.interest_status==="Not Interested").length} Not Interested</span>
-                    <span className="bg-purple-500/10 border border-purple-500/30 text-purple-400 px-3 py-1 rounded-full">{filteredCallerLeads.filter((l:any)=>l.status==="saved").length} Saved</span>
+                    <span className="bg-green-500/10 border border-green-500/30 text-green-400 px-3 py-1 rounded-full">{filteredCallerLeads.filter((l: any) => l.interest_status === "Interested").length} Interested</span>
+                    <span className="bg-red-500/10 border border-red-500/30 text-red-400 px-3 py-1 rounded-full">{filteredCallerLeads.filter((l: any) => l.interest_status === "Not Interested").length} Not Interested</span>
+                    <span className={`px-3 py-1 rounded-full border ${isDark ? "bg-[#9E217B]/10 border-[#9E217B]/30 text-[#d946a8]" : "bg-pink-50 border-pink-200 text-[#9E217B]"}`}>{filteredCallerLeads.filter((l: any) => l.status === "saved").length} Saved</span>
                   </div>
                 )}
-                {selectedCaller&&(
+                {selectedCaller && (
                   <div className="flex gap-2 text-xs flex-wrap items-center">
-                    <span className="bg-purple-500/10 border border-purple-500/30 text-purple-400 px-3 py-1 rounded-full">{callerSavedFormLeads.length} Forms</span>
-                    <span className="bg-green-500/10 border border-green-500/30 text-green-400 px-3 py-1 rounded-full">{callerSavedFormLeads.filter((l:any)=>l.interest_status==="Interested").length} Interested</span>
-                    <span className="bg-red-500/10 border border-red-500/30 text-red-400 px-3 py-1 rounded-full">{callerSavedFormLeads.filter((l:any)=>l.interest_status==="Not Interested").length} Not Int.</span>
+                    <span className={`px-3 py-1 rounded-full border ${isDark ? "bg-[#9E217B]/10 border-[#9E217B]/30 text-[#d946a8]" : "bg-pink-50 border-pink-200 text-[#9E217B]"}`}>{callerSavedFormLeads.length} Forms</span>
+                    <span className="bg-green-500/10 border border-green-500/30 text-green-400 px-3 py-1 rounded-full">{callerSavedFormLeads.filter((l: any) => l.interest_status === "Interested").length} Interested</span>
+                    <span className="bg-red-500/10 border border-red-500/30 text-red-400 px-3 py-1 rounded-full">{callerSavedFormLeads.filter((l: any) => l.interest_status === "Not Interested").length} Not Int.</span>
                   </div>
                 )}
               </div>
 
               {/* Detail View */}
-              {callerSubView==="detail"&&selectedLead?(
-                <div className="flex-1 overflow-y-auto custom-scrollbar p-6 animate-fadeIn">
-                  <div className="flex items-center gap-4 mb-6 bg-[#111111] border border-[#222] rounded-2xl p-5">
-                    <button onClick={()=>{setCallerSubView("table");setSelectedLead(null);}} className="w-10 h-10 flex items-center justify-center bg-[#1a1a1a] hover:bg-[#222] border border-[#333] rounded-lg text-gray-400 cursor-pointer transition-colors"><FaChevronLeft/></button>
-                    <div className="flex-1"><h1 className="text-xl font-bold text-white flex items-center gap-3"><span className="text-purple-400">#{selectedLead.id}</span>{selectedLead.name}</h1><p className="text-xs text-gray-500 mt-0.5">From: <span className="text-gray-400">{selectedLead.batch_name||"—"}</span></p></div>
+              {callerSubView === "detail" && selectedLead ? (
+                <div className={`flex-1 overflow-y-auto p-6 animate-fadeIn ${t.scroll}`}>
+                  <div className={`flex items-center gap-4 mb-6 border rounded-2xl p-5 ${t.detailCard}`}>
+                    <button onClick={() => { setCallerSubView("table"); setSelectedLead(null); }}
+                      className={`w-10 h-10 flex items-center justify-center border rounded-lg cursor-pointer transition-colors ${isDark ? "bg-[#1a1a1a] hover:bg-[#222] border-[#333] text-gray-400" : "bg-white hover:bg-[#F8FAFC] border-indigo-200 text-[#6B7280]"}`}>
+                      <FaChevronLeft/>
+                    </button>
+                    <div className="flex-1">
+                      <h1 className={`text-xl font-bold flex items-center gap-3 ${t.text}`}>
+                        <span className={t.accentText}>#{selectedLead.id}</span>{selectedLead.name}
+                      </h1>
+                      <p className={`text-xs mt-0.5 ${t.textFaint}`}>From: <span className={t.textLight}>{selectedLead.batch_name || "—"}</span></p>
+                    </div>
                     {interestBadge(selectedLead.interest_status)}
                   </div>
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div className="bg-[#111111] border border-[#222] rounded-2xl p-6">
-                      <h3 className="text-xs font-bold text-purple-400 uppercase tracking-wider mb-4 border-b border-[#222] pb-2">Lead Information</h3>
+                    <div className={`border rounded-2xl p-6 ${t.detailCard}`}>
+                      <h3 className={`text-xs font-bold uppercase tracking-wider mb-4 pb-2 ${t.accentText} ${t.detailSection}`}>Lead Information</h3>
                       <div className="space-y-3 text-sm">
-                        {[{label:"Contact No.",value:selectedLead.contact_no},{label:"Email",value:selectedLead.email},{label:"Source",value:selectedLead.source},{label:"Channel Partner",value:selectedLead.channel_partner},{label:"Assign Manager",value:selectedLead.assign_manager},{label:"Budget",value:selectedLead.budget},{label:"Status",value:selectedLead.status},{label:"Uploaded On",value:formatDate(selectedLead.created_at).split(",")[0]}].map(({label,value})=>(
-                          <div key={label} className="flex justify-between items-start"><p className="text-gray-500 text-xs">{label}</p><p className="text-white font-medium text-right max-w-[55%] break-words">{value||"—"}</p></div>
+                        {[
+                          {label:"Contact No.",  value:selectedLead.contact_no},
+                          {label:"Email",        value:selectedLead.email},
+                          {label:"Source",       value:selectedLead.source},
+                          {label:"Channel Partner",value:selectedLead.channel_partner},
+                          {label:"Assign Manager",value:selectedLead.assign_manager},
+                          {label:"Budget",       value:selectedLead.budget},
+                          {label:"Status",       value:selectedLead.status},
+                          {label:"Uploaded On",  value:formatDate(selectedLead.created_at).split(",")[0]},
+                        ].map(({ label, value }) => (
+                          <div key={label} className="flex justify-between items-start">
+                            <p className={`text-xs ${t.textFaint}`}>{label}</p>
+                            <p className={`font-medium text-right max-w-[55%] break-words ${t.text}`}>{value || "—"}</p>
+                          </div>
                         ))}
-                        <div className="flex justify-between items-center pt-1"><p className="text-gray-500 text-xs">Interest</p>{interestBadge(selectedLead.interest_status)}</div>
+                        <div className="flex justify-between items-center pt-1">
+                          <p className={`text-xs ${t.textFaint}`}>Interest</p>
+                          {interestBadge(selectedLead.interest_status)}
+                        </div>
                       </div>
-                      {selectedLead.feedback&&<div className="mt-4 bg-yellow-500/5 border border-yellow-500/20 rounded-xl p-3"><p className="text-[10px] text-yellow-400 font-bold uppercase mb-1">Caller Feedback</p><p className="text-sm text-gray-300">{selectedLead.feedback}</p></div>}
-                      {selectedLead.site_visit_date&&<div className="mt-4 bg-orange-500/10 border border-orange-500/30 rounded-xl p-3 text-center"><p className="text-[10px] text-orange-400 font-bold mb-1">Site Visit</p><p className="text-white font-bold">{formatDate(selectedLead.site_visit_date)}</p></div>}
+                      {selectedLead.feedback && (
+                        <div className="mt-4 bg-yellow-500/5 border border-yellow-500/20 rounded-xl p-3">
+                          <p className="text-[10px] text-yellow-400 font-bold uppercase mb-1">Caller Feedback</p>
+                          <p className={`text-sm ${t.textLight}`}>{selectedLead.feedback}</p>
+                        </div>
+                      )}
+                      {selectedLead.site_visit_date && (
+                        <div className="mt-4 bg-orange-500/10 border border-orange-500/30 rounded-xl p-3 text-center">
+                          <p className="text-[10px] text-orange-400 font-bold mb-1">Site Visit</p>
+                          <p className={`font-bold ${t.text}`}>{formatDate(selectedLead.site_visit_date)}</p>
+                        </div>
+                      )}
                     </div>
-                    <div className="bg-[#111111] border border-[#222] rounded-2xl overflow-hidden flex flex-col" style={{minHeight:"400px"}}>
-                      <div className="p-4 border-b border-[#222] bg-[#151515]"><h3 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2"><FaComments className="text-purple-400"/> Follow-up Timeline</h3></div>
-                      <div className="flex-1 overflow-y-auto custom-scrollbar p-5 flex flex-col gap-4 bg-[#0a0a0a]">
-                        <div className="flex justify-start"><div className="bg-[#1a1a1a] border border-[#222] rounded-2xl rounded-tl-none p-4 max-w-[85%]"><div className="flex justify-between items-center mb-2 gap-4"><span className="font-bold text-xs text-purple-400">System</span><span className="text-[10px] text-gray-500">{formatDate(selectedLead.created_at)}</span></div><p className="text-sm text-gray-300">Lead uploaded to Caller Panel.</p></div></div>
-                        {(selectedLead.follow_ups||[]).length===0?<div className="flex-1 flex flex-col items-center justify-center text-gray-700 py-6"><FaComments className="text-3xl mb-3 opacity-20"/><p className="text-sm">No follow-ups yet.</p></div>
-                        :(selectedLead.follow_ups||[]).map((fup:any,idx:number)=>(
-                          <div key={idx} className="flex justify-start"><div className="bg-[#2a2135] border border-[#4c1d95] rounded-2xl rounded-tl-none p-4 max-w-[85%]"><div className="flex justify-between items-center mb-2 gap-4"><span className="font-bold text-xs text-white">{fup.created_by_name||"Caller"}</span><span className="text-[10px] text-gray-400">{formatDate(fup.created_at)}</span></div><p className="text-sm text-gray-200 whitespace-pre-wrap">{fup.message}</p></div></div>
-                        ))}
+                    <div className={`border rounded-2xl overflow-hidden flex flex-col ${t.detailCard}`} style={{ minHeight:"400px" }}>
+                      <div className={`p-4 border-b ${t.panelHead}`}>
+                        <h3 className={`text-xs font-bold uppercase tracking-wider flex items-center gap-2 ${t.text}`}><FaComments className={t.accentText}/> Follow-up Timeline</h3>
+                      </div>
+                      <div className={`flex-1 overflow-y-auto p-5 flex flex-col gap-4 ${t.followBg} ${t.scroll}`}>
+                        <div className="flex justify-start">
+                          <div className={`border rounded-2xl rounded-tl-none p-4 max-w-[85%] ${t.followSys}`}>
+                            <div className="flex justify-between items-center mb-2 gap-4">
+                              <span className={`font-bold text-xs ${t.accentText}`}>System</span>
+                              <span className={`text-[10px] ${t.textFaint}`}>{formatDate(selectedLead.created_at)}</span>
+                            </div>
+                            <p className={`text-sm ${t.textLight}`}>Lead uploaded to Caller Panel.</p>
+                          </div>
+                        </div>
+                        {(selectedLead.follow_ups || []).length === 0
+                          ? <div className={`flex-1 flex flex-col items-center justify-center py-6 ${t.textLight2}`}><FaComments className="text-3xl mb-3 opacity-20"/><p className="text-sm">No follow-ups yet.</p></div>
+                          : (selectedLead.follow_ups || []).map((fup: any, idx: number) => (
+                              <div key={idx} className="flex justify-start">
+                                <div className={`rounded-2xl rounded-tl-none p-4 max-w-[85%] ${t.followMsg}`}>
+                                  <div className="flex justify-between items-center mb-2 gap-4">
+                                    <span className={`font-bold text-xs ${t.text}`}>{fup.created_by_name || "Caller"}</span>
+                                    <span className={`text-[10px] ${t.textMuted}`}>{formatDate(fup.created_at)}</span>
+                                  </div>
+                                  <p className={`text-sm whitespace-pre-wrap ${t.text}`}>{fup.message}</p>
+                                </div>
+                              </div>
+                            ))
+                        }
                       </div>
                     </div>
                   </div>
                 </div>
 
-              ):(
-                <div className="flex-1 overflow-y-auto custom-scrollbar p-6">
+              ) : (
+                <div className={`flex-1 overflow-y-auto p-6 ${t.scroll}`}>
 
-                  {/* ══ INDIVIDUAL CALLER — Saved Forms Snapshot ══ */}
+                  {/* Individual Caller — Saved Forms */}
                   {selectedCaller ? (
                     <div className="space-y-5 animate-fadeIn">
-                      {/* Stats */}
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         {[
-                          { label:"Saved Forms",    value:callerSavedFormLeads.length,                                                            color:"text-purple-400", bg:"bg-purple-500/10 border-purple-500/20" },
-                          { label:"Interested",     value:callerSavedFormLeads.filter((l:any)=>l.interest_status==="Interested").length,          color:"text-green-400",  bg:"bg-green-500/10 border-green-500/20"   },
-                          { label:"Not Interested", value:callerSavedFormLeads.filter((l:any)=>l.interest_status==="Not Interested").length,      color:"text-red-400",    bg:"bg-red-500/10 border-red-500/20"       },
-                          { label:"Pending Review", value:callerSavedFormLeads.filter((l:any)=>!l.interest_status&&l.status==="saved").length,    color:"text-yellow-400", bg:"bg-yellow-500/10 border-yellow-500/20" },
-                        ].map(s=>(
+                          { label:"Saved Forms",    value:callerSavedFormLeads.length,                                                                          color:"text-[#d946a8]", bg:isDark?"bg-[#9E217B]/10 border-[#9E217B]/20":"bg-pink-50 border-pink-200" },
+                          { label:"Interested",     value:callerSavedFormLeads.filter((l: any) => l.interest_status === "Interested").length,                   color:"text-green-400",  bg:"bg-green-500/10 border-green-500/20" },
+                          { label:"Not Interested", value:callerSavedFormLeads.filter((l: any) => l.interest_status === "Not Interested").length,               color:"text-red-400",    bg:"bg-red-500/10 border-red-500/20" },
+                          { label:"Pending Review", value:callerSavedFormLeads.filter((l: any) => !l.interest_status && l.status === "saved").length,           color:"text-yellow-400", bg:"bg-yellow-500/10 border-yellow-500/20" },
+                        ].map(s => (
                           <div key={s.label} className={`rounded-2xl p-4 border ${s.bg}`}>
-                            <p className="text-gray-500 text-[10px] font-bold uppercase tracking-wider mb-1">{s.label}</p>
+                            <p className={`text-[10px] font-bold uppercase tracking-wider mb-1 ${t.textFaint}`}>{s.label}</p>
                             <p className={`text-3xl font-black ${s.color}`}>{s.value}</p>
                           </div>
                         ))}
                       </div>
 
-                      {/* Saved Forms Table */}
-                      <div className="bg-[#111111] border border-[#222] rounded-2xl overflow-hidden">
-                        <div className="p-4 border-b border-[#222] bg-[#151515] flex flex-wrap justify-between items-center gap-3">
+                      <div className={`border rounded-2xl overflow-hidden ${t.panel}`}>
+                        <div className={`p-4 border-b flex flex-wrap justify-between items-center gap-3 ${t.panelHead}`}>
                           <div>
-                            <h3 className="font-bold text-white text-sm flex items-center gap-2">
-                              <FaClipboardList className="text-purple-400"/> {selectedCaller.name}'s Saved Forms
-                            </h3>
-                            <p className="text-[10px] text-gray-500 mt-0.5">Only leads this caller has saved or interacted with</p>
+                            <h3 className={`font-bold text-sm flex items-center gap-2 ${t.text}`}><FaClipboardList className={t.accentText}/> {selectedCaller.name}'s Saved Forms</h3>
+                            <p className={`text-[10px] mt-0.5 ${t.textFaint}`}>Only leads this caller has saved or interacted with</p>
                           </div>
                           <div className="flex items-center gap-3 flex-wrap">
                             <div className="relative">
-                              <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs"/>
-                              <input type="text" placeholder="Search forms..." value={leadSearch} onChange={e=>setLeadSearch(e.target.value)}
-                                className="bg-[#1a1a1a] border border-[#333] rounded-lg pl-9 pr-4 py-2 text-sm text-white focus:border-purple-500 outline-none w-44"/>
+                              <FaSearch className={`absolute left-3 top-1/2 -translate-y-1/2 text-xs ${t.textFaint}`}/>
+                              <input type="text" placeholder="Search forms..." value={leadSearch} onChange={e => setLeadSearch(e.target.value)}
+                                className={`${t.searchInp} w-44`}/>
                             </div>
-                            <span className="text-[10px] text-gray-500 bg-[#222] px-2 py-0.5 rounded border border-[#333]">{callerSavedFormLeads.length} forms</span>
-                            <button onClick={fetchCallerData} className="text-purple-400 text-xs font-bold bg-purple-500/10 border border-purple-500/20 px-3 py-2 rounded-lg hover:bg-purple-500/20 cursor-pointer">↻ Refresh</button>
+                            <span className={`text-[10px] px-2 py-0.5 rounded border ${t.textFaint} ${t.pillBg} ${t.pillBorder}`}>{callerSavedFormLeads.length} forms</span>
+                            <button onClick={fetchCallerData} className={`text-xs font-bold px-3 py-2 rounded-lg cursor-pointer border transition-colors ${isDark ? "text-[#d946a8] bg-[#9E217B]/10 border-[#9E217B]/20 hover:bg-[#9E217B]/20" : "text-[#9E217B] bg-pink-50 border-pink-200 hover:bg-pink-100"}`}>↻ Refresh</button>
                           </div>
                         </div>
                         <div className="overflow-x-auto">
-                          <table className="w-full text-left text-sm text-gray-400">
-                            <thead className="text-[11px] uppercase bg-[#1a1a1a] text-gray-500">
-                              <tr>{["#","Name","Contact","Source","Channel Partner","Assign Manager","Feedback","Interest","Status","Site Visit","Follow-ups","Saved On","Action"].map(h=>(
-                                <th key={h} className={`px-4 py-3 border-b border-[#222] whitespace-nowrap ${h==="Action"?"text-center":""}`}>{h}</th>
+                          <table className="w-full text-left text-sm">
+                            <thead className={`text-[11px] uppercase ${t.tableHead} ${t.tableHeadText}`}>
+                              <tr>{["#","Name","Contact","Source","Channel Partner","Assign Manager","Feedback","Interest","Status","Site Visit","Follow-ups","Saved On","Action"].map(h => (
+                                <th key={h} className={`px-4 py-3 ${t.tableHeadBdr} whitespace-nowrap ${h === "Action" ? "text-center" : ""}`}>{h}</th>
                               ))}</tr>
                             </thead>
-                            <tbody className="divide-y divide-[#1a1a1a]">
+                            <tbody className={`divide-y ${t.tableDivide}`}>
                               {callerLoading
-                                ?<tr><td colSpan={13} className="px-4 py-8 text-center text-gray-600">Loading...</td></tr>
-                                :callerSavedFormLeads.length===0
-                                ?<tr><td colSpan={13} className="px-4 py-12 text-center">
-                                    <FaClipboardList className="text-4xl text-gray-700 mx-auto mb-3"/>
-                                    <p className="text-gray-500 font-semibold">{selectedCaller.name} hasn't saved any forms yet.</p>
-                                    <p className="text-gray-600 text-xs mt-1">Forms appear here once the caller saves a lead from their panel.</p>
-                                  </td></tr>
-                                :callerSavedFormLeads.map((lead:any)=>(
-                                  <tr key={lead.id} className="hover:bg-[#1a1a1a] transition-colors group align-middle">
-                                    <td className="px-4 py-3 font-mono text-purple-400 font-bold">#{lead.id}</td>
-                                    <td className="px-4 py-3 text-white font-semibold whitespace-nowrap">{lead.name}</td>
-                                    <td className="px-4 py-3 font-mono text-sm">{maskPhone(lead.contact_no)}</td>
-                                    <td className="px-4 py-3 text-gray-300">{lead.source||"—"}</td>
-                                    <td className="px-4 py-3 text-gray-300 whitespace-nowrap">{lead.channel_partner||"—"}</td>
-                                    <td className="px-4 py-3 text-gray-300 whitespace-nowrap">{lead.assign_manager||"—"}</td>
-                                    <td className="px-4 py-3 max-w-[140px]">
-                                      {lead.feedback
-                                        ?<span className="text-xs text-yellow-300 bg-yellow-500/10 border border-yellow-500/20 rounded-lg px-2 py-1 inline-block truncate max-w-[120px]" title={lead.feedback}>{lead.feedback}</span>
-                                        :<span className="text-gray-600 italic text-xs">—</span>}
-                                    </td>
-
-                                    <td className="px-4 py-3 align-middle">
-                                      {lead.status==="not_interested"
-                                        ?<span className="text-[10px] font-bold text-red-400 bg-red-500/10 border border-red-500/30 px-2 py-0.5 rounded-full whitespace-nowrap">✗ Rejected</span>
-                                        :<span className="text-[10px] font-bold text-green-400 bg-green-500/10 border border-green-500/30 px-2 py-0.5 rounded-full whitespace-nowrap">✓ Saved</span>}
-                                    </td>
-                                    <td className="px-4 py-3 text-[11px] align-middle whitespace-nowrap">
-                                      {lead.site_visit_date
-                                        ?<span className="text-orange-400 font-semibold">{formatDate(lead.site_visit_date).split(",")[0]}</span>
-                                        :<span className="text-gray-600">—</span>}
-                                    </td>
-                                    <td className="px-4 py-3 align-middle">
-                                      {(lead.follow_ups||[]).length>0
-                                        ?<span className="text-[10px] bg-purple-500/10 border border-purple-500/20 text-purple-400 px-2 py-0.5 rounded-full font-bold">{lead.follow_ups.length} notes</span>
-                                        :<span className="text-gray-600 text-[10px]">—</span>}
-                                    </td>
-                                    <td className="px-4 py-3 text-[11px] text-gray-500 whitespace-nowrap">{formatDate(lead.updated_at||lead.created_at).split(",")[0]}</td>
-                                    <td className="px-4 py-3 text-center">
-                                      <button onClick={()=>{setSelectedLead(lead);setCallerSubView("detail");}}
-                                        className="text-gray-500 hover:text-purple-400 text-xs flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-purple-500/10 border border-transparent hover:border-purple-500/20 cursor-pointer mx-auto">
-                                        <FaEye className="text-[10px]"/>View
-                                      </button>
-                                    </td>
-                                  </tr>
-                                ))}
+                                ? <tr><td colSpan={13} className={`px-4 py-8 text-center ${t.textMuted}`}>Loading...</td></tr>
+                                : callerSavedFormLeads.length === 0
+                                  ? <tr><td colSpan={13} className="px-4 py-12 text-center">
+                                      <FaClipboardList className={`text-4xl mx-auto mb-3 ${t.textLight2}`}/>
+                                      <p className={`font-semibold ${t.textMuted}`}>{selectedCaller.name} hasn't saved any forms yet.</p>
+                                      <p className={`text-xs mt-1 ${t.textLight2}`}>Forms appear here once the caller saves a lead from their panel.</p>
+                                    </td></tr>
+                                  : callerSavedFormLeads.map((lead: any) => (
+                                      <tr key={lead.id} className={`transition-colors group align-middle ${t.tableRow}`}>
+                                        <td className={`px-4 py-3 font-mono font-bold ${t.accentText}`}>#{lead.id}</td>
+                                        <td className={`px-4 py-3 font-semibold whitespace-nowrap ${t.text}`}>{lead.name}</td>
+                                        <td className={`px-4 py-3 font-mono text-sm ${t.textLight}`}>{maskPhone(lead.contact_no)}</td>
+                                        <td className={`px-4 py-3 ${t.textLight}`}>{lead.source || "—"}</td>
+                                        <td className={`px-4 py-3 whitespace-nowrap ${t.textLight}`}>{lead.channel_partner || "—"}</td>
+                                        <td className={`px-4 py-3 whitespace-nowrap ${t.textLight}`}>{lead.assign_manager || "—"}</td>
+                                        <td className="px-4 py-3 max-w-[140px]">
+                                          {lead.feedback
+                                            ? <span className="text-xs text-yellow-600 bg-yellow-500/10 border border-yellow-500/20 rounded-lg px-2 py-1 inline-block truncate max-w-[120px]" title={lead.feedback}>{lead.feedback}</span>
+                                            : <span className={`italic text-xs ${t.textLight2}`}>—</span>}
+                                        </td>
+                                        <td className="px-4 py-3 align-middle">
+                                          {lead.status === "not_interested"
+                                            ? <span className="text-[10px] font-bold text-red-400 bg-red-500/10 border border-red-500/30 px-2 py-0.5 rounded-full whitespace-nowrap">✗ Rejected</span>
+                                            : <span className="text-[10px] font-bold text-green-400 bg-green-500/10 border border-green-500/30 px-2 py-0.5 rounded-full whitespace-nowrap">✓ Saved</span>}
+                                        </td>
+                                        <td className="px-4 py-3 text-[11px] align-middle whitespace-nowrap">
+                                          {lead.site_visit_date
+                                            ? <span className="text-orange-400 font-semibold">{formatDate(lead.site_visit_date).split(",")[0]}</span>
+                                            : <span className={t.textLight2}>—</span>}
+                                        </td>
+                                        <td className="px-4 py-3 align-middle">
+                                          {(lead.follow_ups || []).length > 0
+                                            ? <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${isDark ? "bg-[#9E217B]/10 border border-[#9E217B]/20 text-[#d946a8]" : "bg-pink-50 border border-pink-200 text-[#9E217B]"}`}>{lead.follow_ups.length} notes</span>
+                                            : <span className={`text-[10px] ${t.textLight2}`}>—</span>}
+                                        </td>
+                                        <td className={`px-4 py-3 text-[11px] whitespace-nowrap ${t.textFaint}`}>{formatDate(lead.updated_at || lead.created_at).split(",")[0]}</td>
+                                        <td className="px-4 py-3 text-center">
+                                          <button onClick={() => { setSelectedLead(lead); setCallerSubView("detail"); }}
+                                            className={`text-xs flex items-center gap-1 px-2 py-1 rounded-lg border border-transparent cursor-pointer mx-auto transition-colors ${t.textMuted} hover:text-[#9E217B] hover:bg-[#9E217B]/10 hover:border-[#9E217B]/20`}>
+                                            <FaEye className="text-[10px]"/> View
+                                          </button>
+                                        </td>
+                                      </tr>
+                                    ))
+                              }
                             </tbody>
                           </table>
                         </div>
@@ -802,61 +1187,77 @@ export default function EmployeesPage() {
                     </div>
 
                   ) : (
-                    /* ══ ALL CALLERS — Raw Leads Table ══ */
-                    <div className="bg-[#111111] border border-[#222] rounded-2xl overflow-hidden">
-                      <div className="p-4 border-b border-[#222] bg-[#151515] flex flex-wrap justify-between items-center gap-3">
-                        <h3 className="font-bold text-white text-sm flex items-center gap-2"><FaPhoneAlt className="text-purple-400"/>All Caller Leads</h3>
+                    /* All Callers — Raw Leads Table */
+                    <div className={`border rounded-2xl overflow-hidden ${t.panel}`}>
+                      <div className={`p-4 border-b flex flex-wrap justify-between items-center gap-3 ${t.panelHead}`}>
+                        <h3 className={`font-bold text-sm flex items-center gap-2 ${t.text}`}><FaPhoneAlt className={t.accentText}/> All Caller Leads</h3>
                         <div className="flex items-center gap-3 flex-wrap">
-                          <select value={selectedBatch} onChange={e=>setSelectedBatch(e.target.value)} className="bg-[#1a1a1a] border border-[#333] rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-purple-500 cursor-pointer">
+                          <select value={selectedBatch} onChange={e => setSelectedBatch(e.target.value)} className={t.smallSel}>
                             <option value="all">All Excel Files</option>
-                            {batchList.map((b:any)=><option key={b.id} value={String(b.id)}>{b.file_name} ({b.row_count})</option>)}
+                            {batchList.map((b: any) => <option key={b.id} value={String(b.id)}>{b.file_name} ({b.row_count})</option>)}
                           </select>
-                          <div className="relative"><FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs"/><input type="text" placeholder="Search leads..." value={leadSearch} onChange={e=>setLeadSearch(e.target.value)} className="bg-[#1a1a1a] border border-[#333] rounded-lg pl-9 pr-4 py-2 text-sm text-white focus:border-purple-500 outline-none w-44"/></div>
-                          <span className="text-[10px] text-gray-500 bg-[#222] px-2 py-0.5 rounded border border-[#333]">{filteredCallerLeads.length} leads</span>
-                          <button onClick={fetchCallerData} className="text-purple-400 text-xs font-bold bg-purple-500/10 border border-purple-500/20 px-3 py-2 rounded-lg hover:bg-purple-500/20 cursor-pointer">↻ Refresh</button>
+                          <div className="relative">
+                            <FaSearch className={`absolute left-3 top-1/2 -translate-y-1/2 text-xs ${t.textFaint}`}/>
+                            <input type="text" placeholder="Search leads..." value={leadSearch} onChange={e => setLeadSearch(e.target.value)}
+                              className={`${t.searchInp} w-44`}/>
+                          </div>
+                          <span className={`text-[10px] px-2 py-0.5 rounded border ${t.textFaint} ${t.pillBg} ${t.pillBorder}`}>{filteredCallerLeads.length} leads</span>
+                          <button onClick={fetchCallerData} className={`text-xs font-bold px-3 py-2 rounded-lg cursor-pointer border transition-colors ${isDark ? "text-[#d946a8] bg-[#9E217B]/10 border-[#9E217B]/20 hover:bg-[#9E217B]/20" : "text-[#9E217B] bg-pink-50 border-pink-200 hover:bg-pink-100"}`}>↻ Refresh</button>
                         </div>
                       </div>
                       <div className="overflow-x-auto">
-                        <table className="w-full text-left text-sm text-gray-400">
-                          <thead className="text-[11px] uppercase bg-[#1a1a1a] text-gray-500">
-                            <tr>{["#","Name","Contact","Source","Channel Partner","Assign Manager","Feedback","Interest","Saved By","Excel File","Uploaded On","Action"].map(h=><th key={h} className={`px-4 py-3 border-b border-[#222] whitespace-nowrap ${h==="Action"?"text-center":""}`}>{h}</th>)}</tr>
+                        <table className="w-full text-left text-sm">
+                          <thead className={`text-[11px] uppercase ${t.tableHead} ${t.tableHeadText}`}>
+                            <tr>{["#","Name","Contact","Source","Channel Partner","Assign Manager","Feedback","Interest","Saved By","Excel File","Uploaded On","Action"].map(h => (
+                              <th key={h} className={`px-4 py-3 ${t.tableHeadBdr} whitespace-nowrap ${h === "Action" ? "text-center" : ""}`}>{h}</th>
+                            ))}</tr>
                           </thead>
-                          <tbody className="divide-y divide-[#1a1a1a]">
-                            {callerLoading?<tr><td colSpan={11} className="px-4 py-8 text-center text-gray-600">Loading...</td></tr>
-                            :filteredCallerLeads.length===0?<tr><td colSpan={11} className="px-4 py-8 text-center text-gray-600">No caller leads yet.</td></tr>
-                            :filteredCallerLeads.map((lead:any)=>(
-                              <tr key={lead.id} className="hover:bg-[#1a1a1a] transition-colors group align-middle">
-                                <td className="px-4 py-3 font-mono text-purple-400 font-bold">#{lead.id}</td>
-                                <td className="px-4 py-3 text-white font-semibold whitespace-nowrap">{lead.name}</td>
-                                <td className="px-4 py-3 font-mono text-sm">{maskPhone(lead.contact_no)}</td>
-                                <td className="px-4 py-3 text-gray-300">{lead.source||"—"}</td>
-                                <td className="px-4 py-3 text-gray-300 whitespace-nowrap">{lead.channel_partner||"—"}</td>
-                                <td className="px-4 py-3 text-gray-300 whitespace-nowrap">{lead.assign_manager||"—"}</td>
-                                <td className="px-4 py-3 max-w-[150px]">{lead.feedback?<span className="text-xs text-yellow-300 bg-yellow-500/10 border border-yellow-500/20 rounded-lg px-2 py-1 inline-block truncate max-w-[130px]" title={lead.feedback}>{lead.feedback}</span>:<span className="text-gray-600 text-xs italic">—</span>}</td>
-                                <td className="px-4 py-3 align-middle">{interestBadge(lead.interest_status)}</td>
-                                <td className="px-4 py-3 whitespace-nowrap">
-                                  {lead.status==="saved"||lead.status==="not_interested"||lead.status==="interested"||!!lead.interest_status
-                                    ? <span className="text-[10px] font-semibold text-purple-300 bg-purple-500/10 border border-purple-500/20 px-2 py-0.5 rounded-full flex items-center gap-1 w-fit">
-                                        <FaPhoneAlt className="text-[8px]"/>
-                                        {lead.uploaded_by&&lead.uploaded_by!=="admin"&&lead.uploaded_by!=="Admin"&&lead.uploaded_by!=="unknown"
-                                          ? `Caller · ${lead.uploaded_by}`
-                                          : lead.assigned_to&&lead.assigned_to!=="admin"&&lead.assigned_to!=="Admin"&&lead.assigned_to!=="unknown"
-                                          ? `Caller · ${lead.assigned_to}`
-                                          : <span className="text-gray-500 italic">Not saved yet</span>}
-                                      </span>
-                                    : <span className="text-gray-600 text-[10px] italic">Not saved yet</span>}
-                                </td>
-                                <td className="px-4 py-3 text-[11px] text-blue-400 whitespace-nowrap">{lead.batch_name||"—"}</td>
-
-                                <td className="px-4 py-3 text-[11px] text-gray-500 whitespace-nowrap">{formatDate(lead.created_at).split(",")[0]}</td>
-                                <td className="px-4 py-3 text-center">
-                                  <div className="flex items-center justify-center gap-1">
-                                    <button onClick={()=>{setSelectedLead(lead);setCallerSubView("detail");}} className="text-gray-500 hover:text-purple-400 text-xs flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-purple-500/10 border border-transparent hover:border-purple-500/20 cursor-pointer"><FaEye className="text-[10px]"/>View</button>
-                                    <button onClick={e=>{e.stopPropagation();handleDeleteLead(lead.id,lead.name);}} className="text-gray-600 hover:text-red-400 text-xs flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-red-500/10 border border-transparent hover:border-red-500/20 cursor-pointer"><FaTrash className="text-[10px]"/></button>
-                                  </div>
-                                </td>
-                              </tr>
-                            ))}
+                          <tbody className={`divide-y ${t.tableDivide}`}>
+                            {callerLoading ? <tr><td colSpan={11} className={`px-4 py-8 text-center ${t.textMuted}`}>Loading...</td></tr>
+                            : filteredCallerLeads.length === 0 ? <tr><td colSpan={11} className={`px-4 py-8 text-center ${t.textMuted}`}>No caller leads yet.</td></tr>
+                            : filteredCallerLeads.map((lead: any) => (
+                                <tr key={lead.id} className={`transition-colors group align-middle ${t.tableRow}`}>
+                                  <td className={`px-4 py-3 font-mono font-bold ${t.accentText}`}>#{lead.id}</td>
+                                  <td className={`px-4 py-3 font-semibold whitespace-nowrap ${t.text}`}>{lead.name}</td>
+                                  <td className={`px-4 py-3 font-mono text-sm ${t.textLight}`}>{maskPhone(lead.contact_no)}</td>
+                                  <td className={`px-4 py-3 ${t.textLight}`}>{lead.source || "—"}</td>
+                                  <td className={`px-4 py-3 whitespace-nowrap ${t.textLight}`}>{lead.channel_partner || "—"}</td>
+                                  <td className={`px-4 py-3 whitespace-nowrap ${t.textLight}`}>{lead.assign_manager || "—"}</td>
+                                  <td className="px-4 py-3 max-w-[150px]">
+                                    {lead.feedback
+                                      ? <span className="text-xs text-yellow-600 bg-yellow-500/10 border border-yellow-500/20 rounded-lg px-2 py-1 inline-block truncate max-w-[130px]" title={lead.feedback}>{lead.feedback}</span>
+                                      : <span className={`text-xs italic ${t.textLight2}`}>—</span>}
+                                  </td>
+                                  <td className="px-4 py-3 align-middle">{interestBadge(lead.interest_status)}</td>
+                                  <td className="px-4 py-3 whitespace-nowrap">
+                                    {lead.status === "saved" || lead.status === "not_interested" || lead.status === "interested" || !!lead.interest_status
+                                      ? <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full flex items-center gap-1 w-fit border ${isDark ? "text-[#d946a8] bg-[#9E217B]/10 border-[#9E217B]/20" : "text-[#9E217B] bg-pink-50 border-pink-200"}`}>
+                                          <FaPhoneAlt className="text-[8px]"/>
+                                          {lead.uploaded_by && lead.uploaded_by !== "admin" && lead.uploaded_by !== "Admin" && lead.uploaded_by !== "unknown"
+                                            ? `Caller · ${lead.uploaded_by}`
+                                            : lead.assigned_to && lead.assigned_to !== "admin" && lead.assigned_to !== "Admin" && lead.assigned_to !== "unknown"
+                                            ? `Caller · ${lead.assigned_to}`
+                                            : <span className={`italic ${t.textFaint}`}>Not saved yet</span>}
+                                        </span>
+                                      : <span className={`text-[10px] italic ${t.textLight2}`}>Not saved yet</span>}
+                                  </td>
+                                  <td className={`px-4 py-3 text-[11px] whitespace-nowrap ${isDark ? "text-[#d946a8]/70" : "text-[#9E217B]/60"}`}>{lead.batch_name || "—"}</td>
+                                  <td className={`px-4 py-3 text-[11px] whitespace-nowrap ${t.textFaint}`}>{formatDate(lead.created_at).split(",")[0]}</td>
+                                  <td className="px-4 py-3 text-center">
+                                    <div className="flex items-center justify-center gap-1">
+                                      <button onClick={() => { setSelectedLead(lead); setCallerSubView("detail"); }}
+                                        className={`text-xs flex items-center gap-1 px-2 py-1 rounded-lg border border-transparent cursor-pointer transition-colors ${t.textMuted} hover:text-[#9E217B] hover:bg-[#9E217B]/10 hover:border-[#9E217B]/20`}>
+                                        <FaEye className="text-[10px]"/> View
+                                      </button>
+                                      <button onClick={e => { e.stopPropagation(); handleDeleteLead(lead.id, lead.name); }}
+                                        className={`text-xs flex items-center gap-1 px-2 py-1 rounded-lg border border-transparent cursor-pointer transition-colors ${t.textLight2} hover:text-red-400 hover:bg-red-500/10 hover:border-red-500/20`}>
+                                        <FaTrash className="text-[10px]"/>
+                                      </button>
+                                    </div>
+                                  </td>
+                                </tr>
+                              ))
+                            }
                           </tbody>
                         </table>
                       </div>
@@ -869,11 +1270,15 @@ export default function EmployeesPage() {
         )}
       </div>
 
-      <style dangerouslySetInnerHTML={{__html:`
+      <style dangerouslySetInnerHTML={{__html: `
         .custom-scrollbar::-webkit-scrollbar{width:6px;height:6px}
         .custom-scrollbar::-webkit-scrollbar-track{background:transparent}
-        .custom-scrollbar::-webkit-scrollbar-thumb{background:#3a3a3a;border-radius:10px}
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover{background:#555}
+        .custom-scrollbar::-webkit-scrollbar-thumb{background:rgba(158,33,123,0.25);border-radius:10px}
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover{background:rgba(158,33,123,0.45)}
+        .custom-scrollbar-light::-webkit-scrollbar{width:6px;height:6px}
+        .custom-scrollbar-light::-webkit-scrollbar-track{background:transparent}
+        .custom-scrollbar-light::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:10px}
+        .custom-scrollbar-light::-webkit-scrollbar-thumb:hover{background:#94a3b8}
         @keyframes fadeIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
         .animate-fadeIn{animation:fadeIn 0.2s ease-out}
       `}}/>
@@ -881,12 +1286,13 @@ export default function EmployeesPage() {
   );
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-// CALLER CONTROL MODE
-// ══════════════════════════════════════════════════════════════════════════════
+// ============================================================================
+// CALLER CONTROL MODE  (orange-themed — unchanged)
+// ============================================================================
 function CallerControlMode({ leads, savedLeads, setSavedLeads, adminName, onExit }: {
-  leads: any[]; savedLeads: any[]; setSavedLeads: React.Dispatch<React.SetStateAction<any[]>>;
-  adminName: string; onExit: ()=>void;
+  leads: any[]; savedLeads: any[];
+  setSavedLeads: React.Dispatch<React.SetStateAction<any[]>>;
+  adminName: string; onExit: () => void;
 }) {
   const [section, setSection]       = useState<"dashboard"|"forms"|"interested"|"not_interested">("dashboard");
   const [detailLead, setDetailLead] = useState<any>(null);
@@ -901,106 +1307,129 @@ function CallerControlMode({ leads, savedLeads, setSavedLeads, adminName, onExit
   };
   const mPhone = (p?: string) => {
     if (!p) return "N/A";
-    const c = String(p).replace(/\D/g,"");
-    return c.length<=5?c:`${c.slice(0,2)}*****${c.slice(-3)}`;
+    const c = String(p).replace(/\D/g, "");
+    return c.length <= 5 ? c : `${c.slice(0,2)}*****${c.slice(-3)}`;
   };
   const iBadge = (status?: string) => {
     if (!status) return <span className="text-[10px] text-gray-600 italic">—</span>;
-    const map: Record<string,string> = { "Interested":"text-green-400 bg-green-500/10 border-green-500/30", "Not Interested":"text-red-400 bg-red-500/10 border-red-500/30", "Maybe":"text-yellow-400 bg-yellow-500/10 border-yellow-500/30" };
+    const map: Record<string,string> = {
+      "Interested": "text-green-400 bg-green-500/10 border-green-500/30",
+      "Not Interested": "text-red-400 bg-red-500/10 border-red-500/30",
+      "Maybe": "text-yellow-400 bg-yellow-500/10 border-yellow-500/30",
+    };
     const short: Record<string,string> = { "Interested":"Interested","Not Interested":"Not Int.","Maybe":"Maybe" };
-    return <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border whitespace-nowrap ${map[status]??"text-gray-400 bg-gray-500/10 border-gray-500/30"}`}>{short[status]??status}</span>;
+    return <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border whitespace-nowrap ${map[status] ?? "text-gray-400 bg-gray-500/10 border-gray-500/30"}`}>{short[status] ?? status}</span>;
   };
 
-  const isLeadSaved = (id:string) => savedLeads.some(l=>l.id===id);
+  const isLeadSaved = (id: string) => savedLeads.some(l => l.id === id);
 
-  const saveLead = (lead:any) => {
-    if(isLeadSaved(lead.id))return;
-    setSavedLeads(prev=>[...prev,{...lead,savedAt:new Date().toISOString(),followUps:lead.followUps||[],status:"saved"}]);
-    if(lead.dbId) fetch(`/api/caller-leads/${lead.dbId}`,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({status:"saved"})}).catch(()=>{});
+  const saveLead = (lead: any) => {
+    if (isLeadSaved(lead.id)) return;
+    setSavedLeads(prev => [...prev, { ...lead, savedAt:new Date().toISOString(), followUps:lead.followUps||[], status:"saved" }]);
+    if (lead.dbId) fetch(`/api/caller-leads/${lead.dbId}`, { method:"PATCH", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ status:"saved" }) }).catch(() => {});
   };
 
-  const setInterest = async (lead:any, status:"Interested"|"Not Interested"|"Maybe") => {
-    setSavedLeads(prev=>prev.map(l=>l.id===lead.id?{...l,interestStatus:status,status:status==="Not Interested"?"not_interested":"saved"}:l));
-    if(detailLead?.id===lead.id) setDetailLead((p:any)=>({...p,interestStatus:status}));
-    if(lead.dbId) await fetch(`/api/caller-leads/${lead.dbId}`,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({interest_status:status,status:status==="Not Interested"?"not_interested":"saved"})}).catch(()=>{});
+  const setInterest = async (lead: any, status: "Interested"|"Not Interested"|"Maybe") => {
+    setSavedLeads(prev => prev.map(l => l.id === lead.id ? { ...l, interestStatus:status, status:status==="Not Interested"?"not_interested":"saved" } : l));
+    if (detailLead?.id === lead.id) setDetailLead((p: any) => ({ ...p, interestStatus:status }));
+    if (lead.dbId) await fetch(`/api/caller-leads/${lead.dbId}`, { method:"PATCH", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ interest_status:status, status:status==="Not Interested"?"not_interested":"saved" }) }).catch(() => {});
   };
 
-  const sendNote = async (e:React.FormEvent) => {
+  const sendNote = async (e: React.FormEvent) => {
     e.preventDefault();
-    if(!noteInput.trim()||!detailLead)return;
-    const fu={id:Date.now().toString(),message:noteInput,createdAt:new Date().toISOString(),createdBy:adminName+" (Admin)"};
-    setSavedLeads(prev=>prev.map(l=>l.id===detailLead.id?{...l,followUps:[...(l.followUps||[]),fu]}:l));
-    setDetailLead((p:any)=>({...p,followUps:[...(p.followUps||[]),fu]}));
+    if (!noteInput.trim() || !detailLead) return;
+    const fu = { id:Date.now().toString(), message:noteInput, createdAt:new Date().toISOString(), createdBy:adminName+" (Admin)" };
+    setSavedLeads(prev => prev.map(l => l.id === detailLead.id ? { ...l, followUps:[...(l.followUps||[]), fu] } : l));
+    setDetailLead((p: any) => ({ ...p, followUps:[...(p.followUps||[]), fu] }));
     setNoteInput("");
-    if(detailLead.dbId){
-      await fetch(`/api/caller-leads/${detailLead.dbId}/follow-ups`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:noteInput.trim(),created_by:adminName+" (Admin)"})}).catch(()=>{});
+    if (detailLead.dbId) {
+      await fetch(`/api/caller-leads/${detailLead.dbId}/follow-ups`, { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ message:noteInput.trim(), created_by:adminName+" (Admin)" }) }).catch(() => {});
     }
   };
 
-  const revertLead = async (id:string) => {
-    setSavedLeads(prev=>prev.map(l=>l.id===id?{...l,status:"saved",interestStatus:undefined}:l));
-    const lead=savedLeads.find(l=>l.id===id);
-    if(lead?.dbId) await fetch(`/api/caller-leads/${lead.dbId}`,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({status:"saved",interest_status:null})}).catch(()=>{});
+  const revertLead = async (id: string) => {
+    setSavedLeads(prev => prev.map(l => l.id === id ? { ...l, status:"saved", interestStatus:undefined } : l));
+    const lead = savedLeads.find(l => l.id === id);
+    if (lead?.dbId) await fetch(`/api/caller-leads/${lead.dbId}`, { method:"PATCH", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ status:"saved", interest_status:null }) }).catch(() => {});
   };
 
-  const formLeads       = savedLeads.filter(l=>l.status!=="not_interested");
-  const interestedLeads = savedLeads.filter(l=>l.interestStatus==="Interested");
-  const notIntLeads     = savedLeads.filter(l=>l.status==="not_interested");
-  const filtered        = leads.filter(l=>(l.name||"").toLowerCase().includes(searchTerm.toLowerCase())||String(l.id).includes(searchTerm));
+  const formLeads       = savedLeads.filter(l => l.status !== "not_interested");
+  const interestedLeads = savedLeads.filter(l => l.interestStatus === "Interested");
+  const notIntLeads     = savedLeads.filter(l => l.status === "not_interested");
+  const filtered        = leads.filter(l => (l.name||"").toLowerCase().includes(searchTerm.toLowerCase()) || String(l.id).includes(searchTerm));
 
   const sidebarItems = [
-    {id:"dashboard",     icon:FaThLarge,      label:"Dashboard",     badge:null,                   active:"text-orange-400 bg-orange-500/10", dot:"bg-orange-500"},
-    {id:"forms",         icon:FaClipboardList,label:"Forms",         badge:formLeads.length,       active:"text-orange-400 bg-orange-500/10", dot:"bg-orange-500"},
-    {id:"interested",    icon:FaHeart,        label:"Interested",    badge:interestedLeads.length, active:"text-green-400 bg-green-500/10",   dot:"bg-green-500"},
-    {id:"not_interested",icon:FaTimesCircle,  label:"Not Interested",badge:notIntLeads.length,     active:"text-red-400 bg-red-500/10",       dot:"bg-red-500"},
+    { id:"dashboard",      icon:FaThLarge,       label:"Dashboard",     badge:null,                   dot:"bg-orange-500" },
+    { id:"forms",          icon:FaClipboardList, label:"Forms",         badge:formLeads.length,       dot:"bg-orange-500" },
+    { id:"interested",     icon:FaHeart,         label:"Interested",    badge:interestedLeads.length, dot:"bg-green-500" },
+    { id:"not_interested", icon:FaTimesCircle,   label:"Not Interested",badge:notIntLeads.length,     dot:"bg-red-500" },
   ];
+
+  const sectionActive = (id: string) => ({
+    dashboard:      "text-orange-400 bg-orange-500/10",
+    forms:          "text-orange-400 bg-orange-500/10",
+    interested:     "text-green-400 bg-green-500/10",
+    not_interested: "text-red-400 bg-red-500/10",
+  }[id] || "text-orange-400 bg-orange-500/10");
 
   return (
     <div className="flex flex-1 h-full overflow-hidden bg-[#0a0a0a]">
-      {ticketLead&&(
-        <div className="fixed inset-0 z-[200] flex items-center justify-center" onClick={()=>setTicketLead(null)}>
+      {/* Ticket Modal */}
+      {ticketLead && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center" onClick={() => setTicketLead(null)}>
           <div className="absolute inset-0 bg-black/70 backdrop-blur-sm"/>
-          <div className="relative bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6 animate-fadeIn" onClick={e=>e.stopPropagation()}>
+          <div className="relative bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6 animate-fadeIn" onClick={e => e.stopPropagation()}>
             <div className="flex items-start justify-between mb-5">
-              <div><p className="text-[10px] text-orange-400 font-bold uppercase tracking-wider mb-1">Admin Control — Lead Ticket</p><h2 className="text-xl font-bold text-white">{ticketLead.name}</h2></div>
-              <button onClick={()=>setTicketLead(null)} className="text-gray-500 hover:text-white p-1 cursor-pointer"><FaTimes/></button>
+              <div>
+                <p className="text-[10px] text-orange-400 font-bold uppercase tracking-wider mb-1">Admin Control — Lead Ticket</p>
+                <h2 className="text-xl font-bold text-white">{ticketLead.name}</h2>
+              </div>
+              <button onClick={() => setTicketLead(null)} className="text-gray-500 hover:text-white p-1 cursor-pointer"><FaTimes/></button>
             </div>
             <div className="grid grid-cols-2 gap-3 mb-5">
               <div className="col-span-2 bg-[#222] rounded-xl p-3 border border-[#333]"><p className="text-[10px] text-gray-500 mb-1">Contact No.</p><p className="text-white font-mono font-semibold">{ticketLead.contact_no||ticketLead.phone||"N/A"}</p></div>
-              {ticketLead.email&&<div className="col-span-2 bg-[#222] rounded-xl p-3 border border-[#333]"><p className="text-[10px] text-gray-500 mb-1">Email</p><p className="text-white text-sm truncate">{ticketLead.email}</p></div>}
-              {ticketLead.channel_partner&&<div className="bg-[#222] rounded-xl p-3 border border-[#333]"><p className="text-[10px] text-gray-500 mb-1">Channel Partner</p><p className="text-white text-sm">{ticketLead.channel_partner}</p></div>}
-              {ticketLead.assign_manager&&<div className="bg-[#222] rounded-xl p-3 border border-[#333]"><p className="text-[10px] text-gray-500 mb-1">Assign Manager</p><p className="text-white text-sm">{ticketLead.assign_manager}</p></div>}
+              {ticketLead.email && <div className="col-span-2 bg-[#222] rounded-xl p-3 border border-[#333]"><p className="text-[10px] text-gray-500 mb-1">Email</p><p className="text-white text-sm truncate">{ticketLead.email}</p></div>}
+              {ticketLead.channel_partner && <div className="bg-[#222] rounded-xl p-3 border border-[#333]"><p className="text-[10px] text-gray-500 mb-1">Channel Partner</p><p className="text-white text-sm">{ticketLead.channel_partner}</p></div>}
+              {ticketLead.assign_manager && <div className="bg-[#222] rounded-xl p-3 border border-[#333]"><p className="text-[10px] text-gray-500 mb-1">Assign Manager</p><p className="text-white text-sm">{ticketLead.assign_manager}</p></div>}
               <div className="col-span-2 flex justify-between bg-[#222] rounded-xl p-3 border border-[#333]">
-                <div><p className="text-[10px] text-gray-500 mb-1">Source</p><p className="text-white">{ticketLead.source||"—"}</p></div>
+                <div><p className="text-[10px] text-gray-500 mb-1">Source</p><p className="text-white">{ticketLead.source || "—"}</p></div>
                 <div className="text-right"><p className="text-[10px] text-gray-500 mb-1">Lead ID</p><p className="text-orange-400 font-bold font-mono">#{ticketLead.id}</p></div>
               </div>
-              {ticketLead.feedback&&<div className="col-span-2 bg-yellow-500/5 border border-yellow-500/20 rounded-xl p-3"><p className="text-[10px] text-yellow-400 font-bold uppercase mb-1">Feedback</p><p className="text-sm text-gray-300">{ticketLead.feedback}</p></div>}
+              {ticketLead.feedback && (
+                <div className="col-span-2 bg-yellow-500/5 border border-yellow-500/20 rounded-xl p-3">
+                  <p className="text-[10px] text-yellow-400 font-bold uppercase mb-1">Feedback</p>
+                  <p className="text-sm text-gray-300">{ticketLead.feedback}</p>
+                </div>
+              )}
             </div>
             <div className="flex gap-3">
-              <button onClick={()=>setTicketLead(null)} className="flex-1 bg-[#222] hover:bg-[#333] border border-[#333] text-gray-300 font-semibold py-2.5 rounded-xl cursor-pointer text-sm">Close</button>
-              <button onClick={()=>{saveLead(ticketLead);setTicketLead(null);}} disabled={isLeadSaved(ticketLead.id)}
-                className={`flex-1 flex items-center justify-center gap-2 font-bold py-2.5 rounded-xl cursor-pointer text-sm ${isLeadSaved(ticketLead.id)?"bg-green-800/30 border border-green-600/30 text-green-400 cursor-not-allowed":"bg-orange-600 hover:bg-orange-500 text-white"}`}>
-                {isLeadSaved(ticketLead.id)?<><FaCheckCircle/> Saved</>:<><FaSave/> Save to Forms</>}
+              <button onClick={() => setTicketLead(null)} className="flex-1 bg-[#222] hover:bg-[#333] border border-[#333] text-gray-300 font-semibold py-2.5 rounded-xl cursor-pointer text-sm">Close</button>
+              <button onClick={() => { saveLead(ticketLead); setTicketLead(null); }} disabled={isLeadSaved(ticketLead.id)}
+                className={`flex-1 flex items-center justify-center gap-2 font-bold py-2.5 rounded-xl cursor-pointer text-sm ${isLeadSaved(ticketLead.id) ? "bg-green-800/30 border border-green-600/30 text-green-400 cursor-not-allowed" : "bg-orange-600 hover:bg-orange-500 text-white"}`}>
+                {isLeadSaved(ticketLead.id) ? <><FaCheckCircle/> Saved</> : <><FaSave/> Save to Forms</>}
               </button>
             </div>
           </div>
         </div>
       )}
 
+      {/* Control Mode Sidebar */}
       <aside className="w-20 bg-[#111111] border-r border-[#222] flex flex-col items-center py-6 flex-shrink-0">
-        <div className="w-10 h-10 bg-orange-600 rounded-xl flex items-center justify-center text-xl font-bold text-white mb-8 cursor-pointer hover:bg-orange-500" title="Exit" onClick={onExit}>✕</div>
+        <div className="w-10 h-10 bg-orange-600 rounded-xl flex items-center justify-center text-xl font-bold text-white mb-8 cursor-pointer hover:bg-orange-500 transition-colors" title="Exit" onClick={onExit}>✕</div>
         <nav className="flex flex-col gap-2 w-full px-2">
-          {sidebarItems.map(({id,icon:Icon,label,badge,active,dot})=>(
-            <div key={id} onClick={()=>{setSection(id as any);setDetailLead(null);}} title={label}
-              className={`relative flex flex-col items-center justify-center py-3 rounded-xl cursor-pointer transition-colors ${section===id?active:"text-gray-500 hover:bg-[#1a1a1a] hover:text-gray-300"}`}>
-              {section===id&&<div className={`absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 ${dot} rounded-r-full`}/>}
+          {sidebarItems.map(({ id, icon:Icon, label, badge, dot }) => (
+            <div key={id} onClick={() => { setSection(id as any); setDetailLead(null); }} title={label}
+              className={`relative flex flex-col items-center justify-center py-3 rounded-xl cursor-pointer transition-colors ${section === id ? sectionActive(id) : "text-gray-500 hover:bg-[#1a1a1a] hover:text-gray-300"}`}>
+              {section === id && <div className={`absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 ${dot} rounded-r-full`}/>}
               <Icon className="w-4 h-4"/>
-              {badge!==null&&badge!>0&&<span className="absolute -top-1 -right-1 w-4 h-4 bg-orange-600 rounded-full text-[9px] font-black text-white flex items-center justify-center">{badge!>9?"9+":badge}</span>}
+              {badge !== null && badge! > 0 && (
+                <span className="absolute -top-1 -right-1 w-4 h-4 bg-orange-600 rounded-full text-[9px] font-black text-white flex items-center justify-center">{badge! > 9 ? "9+" : badge}</span>
+              )}
             </div>
           ))}
         </nav>
         <div className="mt-auto px-2 w-full">
-          <button onClick={onExit} title="Exit" className="w-full flex flex-col items-center py-3 rounded-xl text-orange-500 hover:bg-orange-500/10 cursor-pointer">
+          <button onClick={onExit} title="Exit" className="w-full flex flex-col items-center py-3 rounded-xl text-orange-500 hover:bg-orange-500/10 cursor-pointer transition-colors">
             <FaDesktop className="w-4 h-4"/>
           </button>
         </div>
@@ -1009,25 +1438,30 @@ function CallerControlMode({ leads, savedLeads, setSavedLeads, adminName, onExit
       <div className="flex-1 flex flex-col overflow-hidden">
         <div className="h-12 bg-orange-600/10 border-b border-orange-500/30 flex items-center justify-between px-6 flex-shrink-0">
           <p className="text-orange-400 font-bold text-sm flex items-center gap-2"><FaDesktop className="text-xs"/> Admin Control Mode — Acting as Caller</p>
-          <button onClick={onExit} className="text-orange-400 hover:text-white text-xs font-bold border border-orange-500/30 hover:bg-orange-600 px-4 py-1.5 rounded-lg cursor-pointer">Exit Control Mode</button>
+          <button onClick={onExit} className="text-orange-400 hover:text-white text-xs font-bold border border-orange-500/30 hover:bg-orange-600 px-4 py-1.5 rounded-lg cursor-pointer transition-colors">Exit Control Mode</button>
         </div>
 
         <main className="flex-1 overflow-y-auto p-6 bg-[#0a0a0a] custom-scrollbar">
 
           {/* DASHBOARD */}
-          {section==="dashboard"&&!detailLead&&(
+          {section === "dashboard" && !detailLead && (
             <div className="animate-fadeIn space-y-6">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {[
-                  {label:"Total Leads",    value:leads.length,          color:"text-white",      bg:"bg-orange-500/10 border-orange-500/20"},
-                  {label:"Saved to Forms", value:savedLeads.length,     color:"text-orange-400", bg:"bg-orange-500/10 border-orange-500/20"},
-                  {label:"Interested",     value:interestedLeads.length,color:"text-green-400",  bg:"bg-green-500/10 border-green-500/20"},
-                  {label:"Not Interested", value:notIntLeads.length,    color:"text-red-400",    bg:"bg-red-500/10 border-red-500/20"},
-                ].map(s=><div key={s.label} className={`rounded-2xl p-5 border ${s.bg}`}><p className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-2">{s.label}</p><p className={`text-3xl font-black ${s.color}`}>{s.value}</p></div>)}
+                  { label:"Total Leads",   value:leads.length,          color:"text-white",      bg:"bg-orange-500/10 border-orange-500/20" },
+                  { label:"Saved to Forms",value:savedLeads.length,     color:"text-orange-400", bg:"bg-orange-500/10 border-orange-500/20" },
+                  { label:"Interested",    value:interestedLeads.length, color:"text-green-400",  bg:"bg-green-500/10 border-green-500/20" },
+                  { label:"Not Interested",value:notIntLeads.length,    color:"text-red-400",    bg:"bg-red-500/10 border-red-500/20" },
+                ].map(s => (
+                  <div key={s.label} className={`rounded-2xl p-5 border ${s.bg}`}>
+                    <p className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-2">{s.label}</p>
+                    <p className={`text-3xl font-black ${s.color}`}>{s.value}</p>
+                  </div>
+                ))}
               </div>
               <div className="relative">
                 <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs"/>
-                <input type="text" placeholder="Search leads..." value={searchTerm} onChange={e=>setSearchTerm(e.target.value)}
+                <input type="text" placeholder="Search leads..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
                   className="w-full bg-[#1a1a1a] border border-[#222] rounded-lg pl-9 pr-4 py-2 text-sm text-white focus:border-orange-500 outline-none"/>
               </div>
               <div className="bg-[#111111] border border-[#222] rounded-2xl overflow-hidden">
@@ -1038,27 +1472,38 @@ function CallerControlMode({ leads, savedLeads, setSavedLeads, adminName, onExit
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-sm text-gray-400">
                     <thead className="text-[11px] uppercase bg-[#1a1a1a] text-gray-500">
-                      <tr>{["#","Name","Contact No.","Source","Channel Partner","Assign Manager","Feedback","Interest","Status"].map(h=><th key={h} className="px-4 py-3 border-b border-[#222] whitespace-nowrap">{h}</th>)}</tr>
+                      <tr>{["#","Name","Contact No.","Source","Channel Partner","Assign Manager","Feedback","Interest","Status"].map(h => (
+                        <th key={h} className="px-4 py-3 border-b border-[#222] whitespace-nowrap">{h}</th>
+                      ))}</tr>
                     </thead>
                     <tbody className="divide-y divide-[#1a1a1a]">
-                      {filtered.length===0?<tr><td colSpan={9} className="px-4 py-8 text-center text-gray-600">No leads found.</td></tr>
-                      :filtered.map((lead:any)=>{
-                        const saved=isLeadSaved(lead.id);
-                        const sl=savedLeads.find(l=>l.id===lead.id);
-                        return(
-                          <tr key={lead.id} onClick={()=>setTicketLead(lead)} className="hover:bg-[#1a1a1a] transition-colors cursor-pointer group align-middle">
-                            <td className="px-4 py-3 font-mono text-orange-400 font-bold">#{lead.id}</td>
-                            <td className="px-4 py-3 text-white font-semibold group-hover:text-orange-300 whitespace-nowrap">{lead.name}</td>
-                            <td className="px-4 py-3 font-mono text-sm">{mPhone(lead.contact_no||lead.phone)}</td>
-                            <td className="px-4 py-3 text-gray-300">{lead.source||"—"}</td>
-                            <td className="px-4 py-3 text-gray-300 whitespace-nowrap">{lead.channel_partner||"—"}</td>
-                            <td className="px-4 py-3 text-gray-300 whitespace-nowrap">{lead.assign_manager||lead.assignManager||"—"}</td>
-                            <td className="px-4 py-3 max-w-[150px]">{lead.feedback?<span className="text-xs text-yellow-300 bg-yellow-500/10 border border-yellow-500/20 rounded-lg px-2 py-1 inline-block truncate max-w-[130px]" title={lead.feedback}>{lead.feedback}</span>:<span className="text-gray-600 italic text-xs">—</span>}</td>
-                            <td className="px-4 py-3 align-middle">{iBadge(sl?.interestStatus)}</td>
-                            <td className="px-4 py-3">{saved?<span className="text-[10px] font-bold text-green-400 bg-green-500/10 border border-green-500/30 px-2 py-0.5 rounded-full">Saved</span>:<span className="text-[10px] font-bold text-gray-500 bg-[#222] border border-[#333] px-2 py-0.5 rounded-full">New</span>}</td>
-                          </tr>
-                        );
-                      })}
+                      {filtered.length === 0 ? <tr><td colSpan={9} className="px-4 py-8 text-center text-gray-600">No leads found.</td></tr>
+                      : filtered.map((lead: any) => {
+                          const saved = isLeadSaved(lead.id);
+                          const sl    = savedLeads.find(l => l.id === lead.id);
+                          return (
+                            <tr key={lead.id} onClick={() => setTicketLead(lead)} className="hover:bg-[#1a1a1a] transition-colors cursor-pointer group align-middle">
+                              <td className="px-4 py-3 font-mono text-orange-400 font-bold">#{lead.id}</td>
+                              <td className="px-4 py-3 text-white font-semibold group-hover:text-orange-300 whitespace-nowrap">{lead.name}</td>
+                              <td className="px-4 py-3 font-mono text-sm">{mPhone(lead.contact_no||lead.phone)}</td>
+                              <td className="px-4 py-3 text-gray-300">{lead.source || "—"}</td>
+                              <td className="px-4 py-3 text-gray-300 whitespace-nowrap">{lead.channel_partner || "—"}</td>
+                              <td className="px-4 py-3 text-gray-300 whitespace-nowrap">{lead.assign_manager||lead.assignManager||"—"}</td>
+                              <td className="px-4 py-3 max-w-[150px]">
+                                {lead.feedback
+                                  ? <span className="text-xs text-yellow-300 bg-yellow-500/10 border border-yellow-500/20 rounded-lg px-2 py-1 inline-block truncate max-w-[130px]" title={lead.feedback}>{lead.feedback}</span>
+                                  : <span className="text-gray-600 italic text-xs">—</span>}
+                              </td>
+                              <td className="px-4 py-3 align-middle">{iBadge(sl?.interestStatus)}</td>
+                              <td className="px-4 py-3">
+                                {saved
+                                  ? <span className="text-[10px] font-bold text-green-400 bg-green-500/10 border border-green-500/30 px-2 py-0.5 rounded-full">Saved</span>
+                                  : <span className="text-[10px] font-bold text-gray-500 bg-[#222] border border-[#333] px-2 py-0.5 rounded-full">New</span>}
+                              </td>
+                            </tr>
+                          );
+                        })
+                      }
                     </tbody>
                   </table>
                 </div>
@@ -1066,132 +1511,157 @@ function CallerControlMode({ leads, savedLeads, setSavedLeads, adminName, onExit
             </div>
           )}
 
-          {/* FORMS — Cards */}
-          {section==="forms"&&!detailLead&&(
+          {/* FORMS */}
+          {section === "forms" && !detailLead && (
             <div className="animate-fadeIn">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-xl font-bold text-white flex items-center gap-2"><FaClipboardList className="text-orange-400"/> Saved Forms</h2>
                 <span className="text-xs text-gray-500 bg-[#1a1a1a] border border-[#222] px-3 py-1.5 rounded-full">{formLeads.length} leads</span>
               </div>
-              {formLeads.length===0
-                ?<div className="border-2 border-dashed border-[#2a2a2a] rounded-2xl p-16 text-center text-gray-600"><FaSave className="text-5xl mx-auto mb-4 opacity-20"/><p className="font-semibold mb-1">No saved leads yet</p></div>
-                :<div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-                  {formLeads.map((lead:any)=>(
-                    <div key={lead.id} onClick={()=>setDetailLead(lead)}
-                      className="bg-[#1a1a1a] border border-[#2a2a2a] hover:border-orange-500/50 rounded-2xl p-5 cursor-pointer transition-all group">
-                      <div className="flex justify-between items-start mb-4 pb-3 border-b border-[#2a2a2a]">
-                        <div>
-                          <p className="text-[10px] text-orange-400 font-bold mb-1">#{lead.id}</p>
-                          <h3 className="text-white font-bold group-hover:text-orange-300 transition-colors">{lead.name}</h3>
+              {formLeads.length === 0
+                ? <div className="border-2 border-dashed border-[#2a2a2a] rounded-2xl p-16 text-center text-gray-600"><FaSave className="text-5xl mx-auto mb-4 opacity-20"/><p className="font-semibold mb-1">No saved leads yet</p></div>
+                : <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+                    {formLeads.map((lead: any) => (
+                      <div key={lead.id} onClick={() => setDetailLead(lead)}
+                        className="bg-[#1a1a1a] border border-[#2a2a2a] hover:border-orange-500/50 rounded-2xl p-5 cursor-pointer transition-all group">
+                        <div className="flex justify-between items-start mb-4 pb-3 border-b border-[#2a2a2a]">
+                          <div>
+                            <p className="text-[10px] text-orange-400 font-bold mb-1">#{lead.id}</p>
+                            <h3 className="text-white font-bold group-hover:text-orange-300 transition-colors">{lead.name}</h3>
+                          </div>
+                          {lead.interestStatus ? iBadge(lead.interestStatus) : <span className="text-[10px] font-bold text-gray-500 bg-[#222] border border-[#333] px-2 py-0.5 rounded-full">Pending</span>}
                         </div>
-                        {lead.interestStatus?iBadge(lead.interestStatus):<span className="text-[10px] font-bold text-gray-500 bg-[#222] border border-[#333] px-2 py-0.5 rounded-full">Pending</span>}
+                        <div className="space-y-2 text-sm">
+                          <p className="text-gray-400 flex items-center gap-2 text-xs"><FaPhoneAlt className="text-[10px]"/>{mPhone(lead.contact_no||lead.phone)}</p>
+                          {(lead.channel_partner||lead.channelPartner) && <p className="text-gray-400 text-xs flex items-center gap-2"><FaUserTie className="text-[10px]"/>{lead.channel_partner||lead.channelPartner}</p>}
+                          {lead.feedback && <p className="text-yellow-400 text-xs truncate">{lead.feedback}</p>}
+                          {lead.siteVisitDate && <p className="text-orange-400 text-xs flex items-center gap-1"><FaCalendarAlt className="text-[9px]"/>{fmtDate(lead.siteVisitDate).split(",")[0]}</p>}
+                          {(lead.followUps||[]).length > 0 && <p className="text-[#d946a8] text-xs">{lead.followUps.length} follow-up{lead.followUps.length>1?"s":""}</p>}
+                        </div>
+                        <div className="mt-4 pt-3 border-t border-[#2a2a2a] flex justify-between items-center">
+                          <span className="text-[10px] text-gray-600">{fmtDate(lead.savedAt).split(",")[0]}</span>
+                          <span className="text-[10px] font-bold text-gray-500 group-hover:text-orange-400 transition-colors">Open →</span>
+                        </div>
                       </div>
-                      <div className="space-y-2 text-sm">
-                        <p className="text-gray-400 flex items-center gap-2 text-xs"><FaPhoneAlt className="text-[10px]"/>{mPhone(lead.contact_no||lead.phone)}</p>
-                        {(lead.channel_partner||lead.channelPartner)&&<p className="text-gray-400 text-xs flex items-center gap-2"><FaUserTie className="text-[10px]"/>{lead.channel_partner||lead.channelPartner}</p>}
-                        {lead.feedback&&<p className="text-yellow-400 text-xs truncate">{lead.feedback}</p>}
-                        {lead.siteVisitDate&&<p className="text-orange-400 text-xs flex items-center gap-1"><FaCalendarAlt className="text-[9px]"/>{fmtDate(lead.siteVisitDate).split(",")[0]}</p>}
-                        {(lead.followUps||[]).length>0&&<p className="text-purple-400 text-xs">{lead.followUps.length} follow-up{lead.followUps.length>1?"s":""}</p>}
-                      </div>
-                      <div className="mt-4 pt-3 border-t border-[#2a2a2a] flex justify-between items-center">
-                        <span className="text-[10px] text-gray-600">{fmtDate(lead.savedAt).split(",")[0]}</span>
-                        <span className="text-[10px] font-bold text-gray-500 group-hover:text-orange-400 transition-colors">Open →</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>}
+                    ))}
+                  </div>
+              }
             </div>
           )}
 
-          {/* INTERESTED — Table */}
-          {section==="interested"&&!detailLead&&(
+          {/* INTERESTED */}
+          {section === "interested" && !detailLead && (
             <div className="animate-fadeIn">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-xl font-bold text-white flex items-center gap-2"><FaHeart className="text-green-400"/> Interested Leads</h2>
                 <span className="text-xs text-gray-500 bg-[#1a1a1a] border border-[#222] px-3 py-1.5 rounded-full">{interestedLeads.length} leads</span>
               </div>
-              {interestedLeads.length===0?<div className="border-2 border-dashed border-[#2a2a2a] rounded-2xl p-16 text-center text-gray-600"><FaHeart className="text-5xl mx-auto mb-4 opacity-20"/><p className="font-semibold mb-1">No interested leads yet</p></div>
-              :<div className="bg-[#111111] border border-[#222] rounded-2xl overflow-hidden"><div className="overflow-x-auto">
-                <table className="w-full text-left text-sm text-gray-400">
-                  <thead className="text-[11px] uppercase bg-[#1a1a1a] text-gray-500">
-                    <tr>{["#","Name","Contact No.","Source","Channel Partner","Assign Manager","Feedback","Follow-ups","Site Visit","Saved On","Actions"].map(h=><th key={h} className={`px-4 py-3 border-b border-[#222] whitespace-nowrap ${h==="Actions"?"text-center":""}`}>{h}</th>)}</tr>
-                  </thead>
-                  <tbody className="divide-y divide-[#1a1a1a]">
-                    {interestedLeads.map((lead:any)=>(
-                      <tr key={lead.id} className="hover:bg-[#1a1a1a] transition-colors group align-middle">
-                        <td className="px-4 py-3 font-mono text-green-400 font-bold">#{lead.id}</td>
-                        <td className="px-4 py-3 text-white font-semibold whitespace-nowrap">{lead.name}</td>
-                        <td className="px-4 py-3 font-mono text-sm">{mPhone(lead.contact_no||lead.phone)}</td>
-                        <td className="px-4 py-3 text-gray-300">{lead.source||"—"}</td>
-                        <td className="px-4 py-3 text-gray-300 whitespace-nowrap">{lead.channel_partner||lead.channelPartner||"—"}</td>
-                        <td className="px-4 py-3 text-gray-300 whitespace-nowrap">{lead.assign_manager||lead.assignManager||"—"}</td>
-                        <td className="px-4 py-3 max-w-[150px]">{lead.feedback?<span className="text-xs text-yellow-300 bg-yellow-500/10 border border-yellow-500/20 rounded-lg px-2 py-1 inline-block truncate max-w-[130px]" title={lead.feedback}>{lead.feedback}</span>:<span className="text-gray-600 italic text-xs">—</span>}</td>
-                        <td className="px-4 py-3"><span className="text-[10px] bg-[#222] border border-[#333] px-2 py-0.5 rounded-full font-bold">{(lead.followUps||[]).length} notes</span></td>
-                        <td className="px-4 py-3 text-[11px]">{lead.siteVisitDate?<span className="text-orange-400">{fmtDate(lead.siteVisitDate).split(",")[0]}</span>:<span className="text-gray-600">—</span>}</td>
-                        <td className="px-4 py-3 text-[11px] text-gray-500 whitespace-nowrap">{fmtDate(lead.savedAt).split(",")[0]}</td>
-                        <td className="px-4 py-3 text-center"><button onClick={()=>setDetailLead(lead)} className="text-gray-500 hover:text-green-400 cursor-pointer text-xs flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-green-500/10 border border-transparent hover:border-green-500/20 mx-auto"><FaEye className="text-[10px]"/> View</button></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div></div>}
+              {interestedLeads.length === 0
+                ? <div className="border-2 border-dashed border-[#2a2a2a] rounded-2xl p-16 text-center text-gray-600"><FaHeart className="text-5xl mx-auto mb-4 opacity-20"/><p className="font-semibold">No interested leads yet</p></div>
+                : <div className="bg-[#111111] border border-[#222] rounded-2xl overflow-hidden">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-sm text-gray-400">
+                        <thead className="text-[11px] uppercase bg-[#1a1a1a] text-gray-500">
+                          <tr>{["#","Name","Contact No.","Source","Channel Partner","Assign Manager","Feedback","Follow-ups","Site Visit","Saved On","Actions"].map(h => (
+                            <th key={h} className={`px-4 py-3 border-b border-[#222] whitespace-nowrap ${h==="Actions"?"text-center":""}`}>{h}</th>
+                          ))}</tr>
+                        </thead>
+                        <tbody className="divide-y divide-[#1a1a1a]">
+                          {interestedLeads.map((lead: any) => (
+                            <tr key={lead.id} className="hover:bg-[#1a1a1a] transition-colors group align-middle">
+                              <td className="px-4 py-3 font-mono text-green-400 font-bold">#{lead.id}</td>
+                              <td className="px-4 py-3 text-white font-semibold whitespace-nowrap">{lead.name}</td>
+                              <td className="px-4 py-3 font-mono text-sm">{mPhone(lead.contact_no||lead.phone)}</td>
+                              <td className="px-4 py-3 text-gray-300">{lead.source||"—"}</td>
+                              <td className="px-4 py-3 text-gray-300 whitespace-nowrap">{lead.channel_partner||lead.channelPartner||"—"}</td>
+                              <td className="px-4 py-3 text-gray-300 whitespace-nowrap">{lead.assign_manager||lead.assignManager||"—"}</td>
+                              <td className="px-4 py-3 max-w-[150px]">
+                                {lead.feedback ? <span className="text-xs text-yellow-300 bg-yellow-500/10 border border-yellow-500/20 rounded-lg px-2 py-1 inline-block truncate max-w-[130px]" title={lead.feedback}>{lead.feedback}</span> : <span className="text-gray-600 italic text-xs">—</span>}
+                              </td>
+                              <td className="px-4 py-3"><span className="text-[10px] bg-[#222] border border-[#333] px-2 py-0.5 rounded-full font-bold">{(lead.followUps||[]).length} notes</span></td>
+                              <td className="px-4 py-3 text-[11px]">{lead.siteVisitDate ? <span className="text-orange-400">{fmtDate(lead.siteVisitDate).split(",")[0]}</span> : <span className="text-gray-600">—</span>}</td>
+                              <td className="px-4 py-3 text-[11px] text-gray-500 whitespace-nowrap">{fmtDate(lead.savedAt).split(",")[0]}</td>
+                              <td className="px-4 py-3 text-center">
+                                <button onClick={() => setDetailLead(lead)} className="text-gray-500 hover:text-green-400 cursor-pointer text-xs flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-green-500/10 border border-transparent hover:border-green-500/20 mx-auto">
+                                  <FaEye className="text-[10px]"/> View
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+              }
             </div>
           )}
 
-          {/* NOT INTERESTED — Table */}
-          {section==="not_interested"&&!detailLead&&(
+          {/* NOT INTERESTED */}
+          {section === "not_interested" && !detailLead && (
             <div className="animate-fadeIn">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-xl font-bold text-white flex items-center gap-2"><FaTimesCircle className="text-red-400"/> Not Interested</h2>
                 <span className="text-xs text-gray-500 bg-[#1a1a1a] border border-[#222] px-3 py-1.5 rounded-full">{notIntLeads.length} leads</span>
               </div>
-              {notIntLeads.length===0?<div className="border-2 border-dashed border-[#2a2a2a] rounded-2xl p-16 text-center text-gray-600"><FaTimesCircle className="text-5xl mx-auto mb-4 opacity-20"/><p className="font-semibold mb-1">No rejected leads</p></div>
-              :<div className="bg-[#111111] border border-[#222] rounded-2xl overflow-hidden"><div className="overflow-x-auto">
-                <table className="w-full text-left text-sm text-gray-400">
-                  <thead className="text-[11px] uppercase bg-[#1a1a1a] text-gray-500">
-                    <tr>{["#","Name","Contact No.","Source","Channel Partner","Assign Manager","Feedback","Follow-ups","Saved On","Actions"].map(h=><th key={h} className={`px-5 py-3 border-b border-[#222] whitespace-nowrap ${h==="Actions"?"text-center":""}`}>{h}</th>)}</tr>
-                  </thead>
-                  <tbody className="divide-y divide-[#1a1a1a]">
-                    {notIntLeads.map((lead:any)=>(
-                      <tr key={lead.id} className="hover:bg-[#1a1a1a] transition-colors group">
-                        <td className="px-5 py-3 font-mono text-red-400 font-bold">#{lead.id}</td>
-                        <td className="px-5 py-3 text-white font-semibold whitespace-nowrap">{lead.name}</td>
-                        <td className="px-5 py-3 font-mono text-sm">{mPhone(lead.contact_no||lead.phone)}</td>
-                        <td className="px-5 py-3 text-gray-300">{lead.source||"—"}</td>
-                        <td className="px-5 py-3 text-gray-300 whitespace-nowrap">{lead.channel_partner||lead.channelPartner||"—"}</td>
-                        <td className="px-5 py-3 text-gray-300 whitespace-nowrap">{lead.assign_manager||lead.assignManager||"—"}</td>
-                        <td className="px-5 py-3 max-w-[150px] truncate text-yellow-300 text-xs">{lead.feedback||"—"}</td>
-                        <td className="px-5 py-3"><span className="text-[10px] bg-[#222] border border-[#333] px-2 py-0.5 rounded-full font-bold">{(lead.followUps||[]).length} notes</span></td>
-                        <td className="px-5 py-3 text-[11px] text-gray-500 whitespace-nowrap">{fmtDate(lead.savedAt).split(",")[0]}</td>
-                        <td className="px-5 py-3">
-                          <div className="flex items-center gap-2 justify-center">
-                            <button onClick={()=>setDetailLead(lead)} className="text-gray-500 hover:text-purple-400 cursor-pointer text-xs flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-purple-500/10 border border-transparent hover:border-purple-500/20"><FaEye className="text-[10px]"/> View</button>
-                            <button onClick={()=>revertLead(lead.id)} className="text-gray-500 hover:text-green-400 cursor-pointer text-xs flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-green-500/10 border border-transparent hover:border-green-500/20"><FaAngleLeft className="text-[10px]"/> Revert</button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div></div>}
+              {notIntLeads.length === 0
+                ? <div className="border-2 border-dashed border-[#2a2a2a] rounded-2xl p-16 text-center text-gray-600"><FaTimesCircle className="text-5xl mx-auto mb-4 opacity-20"/><p className="font-semibold">No rejected leads</p></div>
+                : <div className="bg-[#111111] border border-[#222] rounded-2xl overflow-hidden">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-sm text-gray-400">
+                        <thead className="text-[11px] uppercase bg-[#1a1a1a] text-gray-500">
+                          <tr>{["#","Name","Contact No.","Source","Channel Partner","Assign Manager","Feedback","Follow-ups","Saved On","Actions"].map(h => (
+                            <th key={h} className={`px-5 py-3 border-b border-[#222] whitespace-nowrap ${h==="Actions"?"text-center":""}`}>{h}</th>
+                          ))}</tr>
+                        </thead>
+                        <tbody className="divide-y divide-[#1a1a1a]">
+                          {notIntLeads.map((lead: any) => (
+                            <tr key={lead.id} className="hover:bg-[#1a1a1a] transition-colors group">
+                              <td className="px-5 py-3 font-mono text-red-400 font-bold">#{lead.id}</td>
+                              <td className="px-5 py-3 text-white font-semibold whitespace-nowrap">{lead.name}</td>
+                              <td className="px-5 py-3 font-mono text-sm">{mPhone(lead.contact_no||lead.phone)}</td>
+                              <td className="px-5 py-3 text-gray-300">{lead.source||"—"}</td>
+                              <td className="px-5 py-3 text-gray-300 whitespace-nowrap">{lead.channel_partner||lead.channelPartner||"—"}</td>
+                              <td className="px-5 py-3 text-gray-300 whitespace-nowrap">{lead.assign_manager||lead.assignManager||"—"}</td>
+                              <td className="px-5 py-3 max-w-[150px] truncate text-yellow-300 text-xs">{lead.feedback||"—"}</td>
+                              <td className="px-5 py-3"><span className="text-[10px] bg-[#222] border border-[#333] px-2 py-0.5 rounded-full font-bold">{(lead.followUps||[]).length} notes</span></td>
+                              <td className="px-5 py-3 text-[11px] text-gray-500 whitespace-nowrap">{fmtDate(lead.savedAt).split(",")[0]}</td>
+                              <td className="px-5 py-3">
+                                <div className="flex items-center gap-2 justify-center">
+                                  <button onClick={() => setDetailLead(lead)} className="text-gray-500 hover:text-[#d946a8] cursor-pointer text-xs flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-[#9E217B]/10 border border-transparent hover:border-[#9E217B]/20">
+                                    <FaEye className="text-[10px]"/> View
+                                  </button>
+                                  <button onClick={() => revertLead(lead.id)} className="text-gray-500 hover:text-green-400 cursor-pointer text-xs flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-green-500/10 border border-transparent hover:border-green-500/20">
+                                    <FaAngleLeft className="text-[10px]"/> Revert
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+              }
             </div>
           )}
 
           {/* DETAIL VIEW */}
-          {detailLead&&(()=>{
-            const sl = savedLeads.find(l=>l.id===detailLead.id)||detailLead;
-            return(
+          {detailLead && (() => {
+            const sl = savedLeads.find(l => l.id === detailLead.id) || detailLead;
+            return (
               <div className="animate-fadeIn flex flex-col h-full">
                 <div className="flex items-center justify-between mb-4 bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl p-4 flex-shrink-0 flex-wrap gap-3">
                   <div className="flex items-center gap-4">
-                    <button onClick={()=>setDetailLead(null)} className="w-10 h-10 flex items-center justify-center bg-[#222] hover:bg-[#333] border border-[#444] rounded-lg text-gray-400 cursor-pointer"><FaAngleLeft/></button>
-                    <div><h1 className="text-lg font-bold text-white">{sl.name}</h1><p className="text-xs text-gray-500">{sl.source||""}</p></div>
+                    <button onClick={() => setDetailLead(null)} className="w-10 h-10 flex items-center justify-center bg-[#222] hover:bg-[#333] border border-[#444] rounded-lg text-gray-400 cursor-pointer transition-colors">
+                      <FaAngleLeft/>
+                    </button>
+                    <div><h1 className="text-lg font-bold text-white">{sl.name}</h1><p className="text-xs text-gray-500">{sl.source || ""}</p></div>
                   </div>
                   <div className="flex items-center gap-2 flex-wrap">
-                    {sl.interestStatus&&iBadge(sl.interestStatus)}
-                    {sl.interestStatus!=="Interested"&&<button onClick={()=>setInterest(sl,"Interested")} className="flex items-center gap-2 bg-green-600/10 hover:bg-green-600 border border-green-500/30 text-green-400 hover:text-white font-bold px-3 py-2 rounded-lg text-xs cursor-pointer"><FaCheckCircle/>Interested</button>}
-                    {sl.interestStatus!=="Not Interested"&&<button onClick={()=>setInterest(sl,"Not Interested")} className="flex items-center gap-2 bg-red-600/10 hover:bg-red-600 border border-red-500/30 text-red-400 hover:text-white font-bold px-3 py-2 rounded-lg text-xs cursor-pointer"><FaTimes/>Not Interested</button>}
-                    {sl.interestStatus!=="Maybe"&&<button onClick={()=>setInterest(sl,"Maybe")} className="flex items-center gap-2 bg-yellow-600/10 hover:bg-yellow-600 border border-yellow-500/30 text-yellow-400 hover:text-white font-bold px-3 py-2 rounded-lg text-xs cursor-pointer">Maybe</button>}
+                    {sl.interestStatus && iBadge(sl.interestStatus)}
+                    {sl.interestStatus !== "Interested"    && <button onClick={() => setInterest(sl, "Interested")}    className="flex items-center gap-2 bg-green-600/10 hover:bg-green-600 border border-green-500/30 text-green-400 hover:text-white font-bold px-3 py-2 rounded-lg text-xs cursor-pointer transition-colors"><FaCheckCircle/> Interested</button>}
+                    {sl.interestStatus !== "Not Interested"&& <button onClick={() => setInterest(sl, "Not Interested")} className="flex items-center gap-2 bg-red-600/10 hover:bg-red-600 border border-red-500/30 text-red-400 hover:text-white font-bold px-3 py-2 rounded-lg text-xs cursor-pointer transition-colors"><FaTimes/> Not Interested</button>}
+                    {sl.interestStatus !== "Maybe"         && <button onClick={() => setInterest(sl, "Maybe")}         className="flex items-center gap-2 bg-yellow-600/10 hover:bg-yellow-600 border border-yellow-500/30 text-yellow-400 hover:text-white font-bold px-3 py-2 rounded-lg text-xs cursor-pointer transition-colors">Maybe</button>}
                   </div>
                 </div>
                 <div className="flex flex-col lg:flex-row gap-4 flex-1 min-h-0">
@@ -1199,44 +1669,69 @@ function CallerControlMode({ leads, savedLeads, setSavedLeads, adminName, onExit
                     <h3 className="text-xs font-bold text-orange-400 uppercase tracking-wider mb-4 border-b border-[#2a2a2a] pb-2">Lead Information</h3>
                     <div className="space-y-3 text-sm">
                       {[
-                        {label:"Phone",          value:sl.contact_no||sl.phone},
-                        {label:"Email",          value:sl.email},
-                        {label:"Source",         value:sl.source},
-                        {label:"Channel Partner",value:sl.channel_partner||sl.channelPartner},
-                        {label:"Assign Manager", value:sl.assign_manager||sl.assignManager},
-                        {label:"Budget",         value:sl.budget},
-                        {label:"Location",       value:sl.location},
-                        {label:"Status",         value:sl.status},
-                      ].map(({label,value})=>value?(
+                        { label:"Phone",          value:sl.contact_no||sl.phone },
+                        { label:"Email",          value:sl.email },
+                        { label:"Source",         value:sl.source },
+                        { label:"Channel Partner",value:sl.channel_partner||sl.channelPartner },
+                        { label:"Assign Manager", value:sl.assign_manager||sl.assignManager },
+                        { label:"Budget",         value:sl.budget },
+                        { label:"Location",       value:sl.location },
+                        { label:"Status",         value:sl.status },
+                      ].map(({ label, value }) => value ? (
                         <div key={label} className="flex justify-between items-start">
                           <p className="text-gray-500 text-xs">{label}</p>
                           <p className="text-white font-medium text-right max-w-[60%] break-words">{value}</p>
                         </div>
-                      ):null)}
-                      {sl.siteVisitDate&&<div className="mt-3 bg-orange-500/10 border border-orange-500/30 rounded-xl p-3 text-center"><p className="text-xs text-orange-400 font-bold mb-1">Site Visit</p><p className="text-white font-bold">{fmtDate(sl.siteVisitDate)}</p></div>}
+                      ) : null)}
+                      {sl.siteVisitDate && (
+                        <div className="mt-3 bg-orange-500/10 border border-orange-500/30 rounded-xl p-3 text-center">
+                          <p className="text-xs text-orange-400 font-bold mb-1">Site Visit</p>
+                          <p className="text-white font-bold">{fmtDate(sl.siteVisitDate)}</p>
+                        </div>
+                      )}
                     </div>
-                    {sl.feedback&&<div className="mt-4 bg-yellow-500/5 border border-yellow-500/20 rounded-xl p-3"><p className="text-[10px] text-yellow-400 font-bold uppercase mb-1">Feedback</p><p className="text-sm text-gray-300">{sl.feedback}</p></div>}
+                    {sl.feedback && (
+                      <div className="mt-4 bg-yellow-500/5 border border-yellow-500/20 rounded-xl p-3">
+                        <p className="text-[10px] text-yellow-400 font-bold uppercase mb-1">Feedback</p>
+                        <p className="text-sm text-gray-300">{sl.feedback}</p>
+                      </div>
+                    )}
                   </div>
-                  <div className="w-full lg:w-[58%] flex flex-col bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl overflow-hidden" style={{minHeight:"400px"}}>
+                  <div className="w-full lg:w-[58%] flex flex-col bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl overflow-hidden" style={{ minHeight:"400px" }}>
                     <div className="p-4 border-b border-[#2a2a2a] bg-[#151515] flex-shrink-0">
                       <h3 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2"><FaCommentAlt className="text-orange-400"/> Follow-up Timeline</h3>
                     </div>
                     <div className="flex-1 overflow-y-auto custom-scrollbar p-5 flex flex-col gap-4 bg-[#111]">
-                      <div className="flex justify-start"><div className="bg-[#1a1a1a] border border-[#222] rounded-2xl rounded-tl-none p-4 max-w-[85%]"><span className="font-bold text-xs text-orange-400">System</span><p className="text-sm text-gray-300 mt-1">Lead loaded into Admin Control Mode.</p></div></div>
-                      {(sl.followUps||[]).length===0&&<div className="flex-1 flex flex-col items-center justify-center text-gray-700 py-6"><FaCommentAlt className="text-3xl mb-3 opacity-20"/><p className="text-sm">No follow-ups yet.</p></div>}
-                      {(sl.followUps||[]).map((fup:any,idx:number)=>(
+                      <div className="flex justify-start">
+                        <div className="bg-[#1a1a1a] border border-[#222] rounded-2xl rounded-tl-none p-4 max-w-[85%]">
+                          <span className="font-bold text-xs text-orange-400">System</span>
+                          <p className="text-sm text-gray-300 mt-1">Lead loaded into Admin Control Mode.</p>
+                        </div>
+                      </div>
+                      {(sl.followUps || []).length === 0 && (
+                        <div className="flex-1 flex flex-col items-center justify-center text-gray-700 py-6">
+                          <FaCommentAlt className="text-3xl mb-3 opacity-20"/>
+                          <p className="text-sm">No follow-ups yet.</p>
+                        </div>
+                      )}
+                      {(sl.followUps || []).map((fup: any, idx: number) => (
                         <div key={idx} className="flex justify-start">
                           <div className="bg-[#2a1818] border border-orange-900/50 rounded-2xl rounded-tl-none p-4 max-w-[85%]">
-                            <div className="flex justify-between items-center mb-2 gap-4"><span className="font-bold text-xs text-orange-300">{fup.createdBy}</span><span className="text-[10px] text-gray-400">{fmtDate(fup.createdAt)}</span></div>
+                            <div className="flex justify-between items-center mb-2 gap-4">
+                              <span className="font-bold text-xs text-orange-300">{fup.createdBy}</span>
+                              <span className="text-[10px] text-gray-400">{fmtDate(fup.createdAt)}</span>
+                            </div>
                             <p className="text-sm text-gray-200 whitespace-pre-wrap">{fup.message}</p>
                           </div>
                         </div>
                       ))}
                     </div>
                     <form onSubmit={sendNote} className="p-4 bg-[#1a1a1a] border-t border-[#2a2a2a] flex gap-3 items-center flex-shrink-0">
-                      <input type="text" value={noteInput} onChange={e=>setNoteInput(e.target.value)} placeholder="Add follow-up note..."
-                        className="flex-1 bg-[#111] border border-[#333] rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-orange-500"/>
-                      <button type="submit" className="w-12 h-12 bg-orange-600 hover:bg-orange-500 text-white rounded-xl flex items-center justify-center cursor-pointer shadow-lg"><FaPaperPlane className="text-sm"/></button>
+                      <input type="text" value={noteInput} onChange={e => setNoteInput(e.target.value)} placeholder="Add follow-up note..."
+                        className="flex-1 bg-[#111] border border-[#333] rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-orange-500 transition-colors"/>
+                      <button type="submit" className="w-12 h-12 bg-orange-600 hover:bg-orange-500 text-white rounded-xl flex items-center justify-center cursor-pointer shadow-lg transition-colors">
+                        <FaPaperPlane className="text-sm"/>
+                      </button>
                     </form>
                   </div>
                 </div>
@@ -1246,5 +1741,14 @@ function CallerControlMode({ leads, savedLeads, setSavedLeads, adminName, onExit
         </main>
       </div>
     </div>
+  );
+}
+
+// ── FaEye inline (avoids import conflict) ──
+function FaEye({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 576 512" fill="currentColor" width="1em" height="1em">
+      <path d="M572.52 241.4C518.29 135.59 410.93 64 288 64S57.68 135.64 3.48 241.41a32.35 32.35 0 0 0 0 29.19C57.71 376.41 165.07 448 288 448s230.32-71.64 284.52-177.41a32.35 32.35 0 0 0 0-29.19zM288 400a144 144 0 1 1 144-144 143.93 143.93 0 0 1-144 144zm0-240a95.31 95.31 0 0 0-25.31 3.79 47.85 47.85 0 0 1-66.9 66.9A95.78 95.78 0 1 0 288 160z"/>
+    </svg>
   );
 }
