@@ -16,7 +16,7 @@ export async function GET(req: Request) {
 
     const rows = await query(
       `SELECT * FROM walkin_enquiries
-       WHERE assigned_to = $1
+       WHERE assigned_to = $17
        ORDER BY created_at DESC`,
       [name]
     );
