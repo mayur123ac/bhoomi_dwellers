@@ -14,6 +14,7 @@ import {
   FaMoneyBillWave, FaMapMarkerAlt, FaBullseye, FaSave,
 } from "react-icons/fa";
 import { useCallerSync } from "@/lib/hooks/useCallerSync";
+import { label } from "framer-motion/client";
 
 type RoleType     = { _id: string; name: string };
 type EmployeeType = {
@@ -248,6 +249,25 @@ export default function EmployeesPage() {
   const [editError, setEditError]                 = useState("");
   const [selectedManageUserId, setSelectedManageUserId] = useState("");
 
+  // ── Password Validation Helpers ──
+  const validatePassword = (pwd: string) => {
+    return {
+      length: pwd.length >= 8,
+      upper: /[A-Z]/.test(pwd),
+      lower: /[a-z]/.test(pwd),
+      number: /\d/.test(pwd),
+      special: /[@$!%*?&]/.test(pwd),
+    };
+  };
+
+  const passwordRules = validatePassword(password);
+  const isPasswordValid =
+    passwordRules.length &&
+    passwordRules.upper &&
+    passwordRules.lower &&
+    passwordRules.number &&
+    passwordRules.special;
+
   // ── Caller state ──
   const [callers, setCallers]             = useState<any[]>([]);
   const [callerLeads, setCallerLeads]     = useState<any[]>([]);
@@ -313,6 +333,13 @@ export default function EmployeesPage() {
 
   const handleAddEmployee = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Prevent form submission if password doesn't meet requirements
+    if (!isPasswordValid) {
+      alert("Password does not meet security requirements");
+      return;
+    }
+
     const r = await fetch("/api/employees", {
       method: "POST",
       headers: { "Content-Type":"application/json" },
@@ -338,6 +365,18 @@ export default function EmployeesPage() {
   const handleEditCancel = () => { setEditingId(null); setEditForm({}); setEditError(""); };
   const handleEditSave   = async (userId: string) => {
     setEditSaving(true); setEditError("");
+
+    // Strict Password validation for Edit form
+    if (editForm.password) {
+      const editRules = validatePassword(editForm.password);
+      const isValid = editRules.length && editRules.upper && editRules.lower && editRules.number && editRules.special;
+      if (!isValid) {
+        setEditError("Password does not meet security requirements");
+        setEditSaving(false);
+        return;
+      }
+    }
+
     try {
       const r = await fetch("/api/employees", { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ userId, editData:editForm }) });
       const d = await r.json();
@@ -492,9 +531,9 @@ export default function EmployeesPage() {
   const filteredCallers = callerStats.filter((c: any) => c.name?.toLowerCase().includes(callerSearch.toLowerCase()));
 
   const menuItems = [
-    { id:"dashboard",    icon:FaThLarge,       label:"Overview",      link:"/dashboard",           section:null },
-    { id:"receptionist", icon:FaClipboardList, label:"Receptionist",  link:"/dashboard",           section:null },
-    { id:"sales",        icon:FaUsers,         label:"Sales Managers",link:"/dashboard",           section:null },
+    { id:"dashboard",    icon:FaThLarge,       label:"Overview",      link:"/dashboard",             section:null },
+    { id:"receptionist", icon:FaClipboardList, label:"Receptionist",  link:"/dashboard",             section:null },
+    { id:"sales",        icon:FaUsers,         label:"Sales Managers",link:"/dashboard",             section:null },
     { id:"employees",    icon:FaIdCard,        label:"Add Employee",  link:"/dashboard/employees", section:"employees" as const },
     { id:"callers",      icon:FaPhoneAlt,      label:"Caller Panel",  link:"/dashboard/employees", section:"callers" as const },
   ];
@@ -664,7 +703,7 @@ export default function EmployeesPage() {
                   <div className={`w-1 h-5 ${t.dividerBar} rounded-full`}/>
                   Create & Assign Role to Employee
                 </h2>
-                <form onSubmit={handleAddEmployee} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+                <form onSubmit={handleAddEmployee} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-start">
                   <div>
                     <label className={`block text-xs mb-1.5 font-medium ${t.textMuted}`}>Full Name</label>
                     <input type="text" value={empName} onChange={e => setEmpName(e.target.value)} required className={t.inp} placeholder="e.g. John Doe"/>
@@ -676,6 +715,25 @@ export default function EmployeesPage() {
                   <div>
                     <label className={`block text-xs mb-1.5 font-medium ${t.textMuted}`}>Password</label>
                     <input type="text" value={password} onChange={e => setPassword(e.target.value)} required className={t.inp} placeholder="Set password"/>
+                    
+                    {/* Password Policy Real-time UI Check */}
+                    <div className="text-[10px] mt-2 space-y-1 bg-black/5 p-2 rounded-lg border border-gray-200 dark:border-gray-800 dark:bg-white/5">
+                      <p className={passwordRules.length ? "text-green-500 font-semibold" : "text-red-500"}>
+                        {passwordRules.length ? "✅" : "❌"} Minimum 8 characters
+                      </p>
+                      <p className={passwordRules.upper ? "text-green-500 font-semibold" : "text-red-500"}>
+                        {passwordRules.upper ? "✅" : "❌"} At least 1 uppercase letter
+                      </p>
+                      <p className={passwordRules.lower ? "text-green-500 font-semibold" : "text-red-500"}>
+                        {passwordRules.lower ? "✅" : "❌"} At least 1 lowercase letter
+                      </p>
+                      <p className={passwordRules.number ? "text-green-500 font-semibold" : "text-red-500"}>
+                        {passwordRules.number ? "✅" : "❌"} At least 1 number
+                      </p>
+                      <p className={passwordRules.special ? "text-green-500 font-semibold" : "text-red-500"}>
+                        {passwordRules.special ? "✅" : "❌"} At least 1 special character
+                      </p>
+                    </div>
                   </div>
                   <div>
                     <label className={`block text-xs mb-1.5 font-medium ${t.textMuted}`}>Assign Role</label>
@@ -684,7 +742,7 @@ export default function EmployeesPage() {
                       {dbRoles.map(r => <option key={r._id} value={r.name}>{r.name}</option>)}
                     </select>
                   </div>
-                  <div className="sm:col-span-2 lg:col-span-4 flex justify-end">
+                  <div className="sm:col-span-2 lg:col-span-4 flex justify-end mt-2">
                     <button type="submit"
                       className="bg-[#9E217B] hover:bg-[#b8268f] text-white font-bold py-2.5 px-8 rounded-lg transition-all cursor-pointer shadow-lg shadow-[#9E217B]/20 flex items-center gap-2">
                       <FaPlus className="text-xs"/> Add Employee
@@ -811,7 +869,7 @@ export default function EmployeesPage() {
                                       Cancel
                                     </button>
                                   </div>
-                                  {editError && <span className="text-red-400 text-xs text-center max-w-[120px]">{editError}</span>}
+                                  {editError && <span className="text-red-400 text-[10px] font-semibold text-center max-w-[140px]">{editError}</span>}
                                 </div>
                               ) : isAdminUser ? (
                                 <div className="flex items-center justify-center">
@@ -1038,11 +1096,12 @@ export default function EmployeesPage() {
                             <p className={`text-xs ${t.textFaint}`}>{label}</p>
                             <p className={`font-medium text-right max-w-[55%] break-words ${t.text}`}>{value || "—"}</p>
                           </div>
+                          
                         ))}
-                        <div className="flex justify-between items-center pt-1">
-                          <p className={`text-xs ${t.textFaint}`}>Interest</p>
-                          {interestBadge(selectedLead.interest_status)}
-                        </div>
+                       <div className="flex justify-between items-center pt-1">
+                            <p className={`text-xs ${t.textFaint}`}>Interest</p>
+                            {interestBadge(selectedLead.interest_status)}
+                          </div>
                       </div>
                       {selectedLead.feedback && (
                         <div className="mt-4 bg-yellow-500/5 border border-yellow-500/20 rounded-xl p-3">
@@ -1098,10 +1157,10 @@ export default function EmployeesPage() {
                     <div className="space-y-5 animate-fadeIn">
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         {[
-                          { label:"Saved Forms",    value:callerSavedFormLeads.length,                                                                          color:"text-[#d946a8]", bg:isDark?"bg-[#9E217B]/10 border-[#9E217B]/20":"bg-pink-50 border-pink-200" },
-                          { label:"Interested",     value:callerSavedFormLeads.filter((l: any) => l.interest_status === "Interested").length,                   color:"text-green-400",  bg:"bg-green-500/10 border-green-500/20" },
-                          { label:"Not Interested", value:callerSavedFormLeads.filter((l: any) => l.interest_status === "Not Interested").length,               color:"text-red-400",    bg:"bg-red-500/10 border-red-500/20" },
-                          { label:"Pending Review", value:callerSavedFormLeads.filter((l: any) => !l.interest_status && l.status === "saved").length,           color:"text-yellow-400", bg:"bg-yellow-500/10 border-yellow-500/20" },
+                          { label:"Saved Forms",    value:callerSavedFormLeads.length,                                                                                  color:"text-[#d946a8]", bg:isDark?"bg-[#9E217B]/10 border-[#9E217B]/20":"bg-pink-50 border-pink-200" },
+                          { label:"Interested",     value:callerSavedFormLeads.filter((l: any) => l.interest_status === "Interested").length,                    color:"text-green-400",  bg:"bg-green-500/10 border-green-500/20" },
+                          { label:"Not Interested", value:callerSavedFormLeads.filter((l: any) => l.interest_status === "Not Interested").length,                color:"text-red-400",    bg:"bg-red-500/10 border-red-500/20" },
+                          { label:"Pending Review", value:callerSavedFormLeads.filter((l: any) => !l.interest_status && l.status === "saved").length,            color:"text-yellow-400", bg:"bg-yellow-500/10 border-yellow-500/20" },
                         ].map(s => (
                           <div key={s.label} className={`rounded-2xl p-4 border ${s.bg}`}>
                             <p className={`text-[10px] font-bold uppercase tracking-wider mb-1 ${t.textFaint}`}>{s.label}</p>

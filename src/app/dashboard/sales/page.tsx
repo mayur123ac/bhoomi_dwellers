@@ -49,7 +49,7 @@ function buildTheme(isDark: boolean) {
   return {
     // ── Page & Layout ──
     pageWrap:      isDark ? "bg-[#0A0A0F] text-white"                   : "text-[#1A1A1A]",
-    mainBg:        isDark ? "bg-[#121212]"                              : "bg-transparent",
+    mainBg: isDark ? "bg-[#121212]" : "bg-[#F1F5F9]",
 
     // ── Sidebar (stays dark in both modes, like receptionist) ──
     sidebar:       "bg-[#1a1a1a] border-[#2a2a2a]",
@@ -58,12 +58,12 @@ function buildTheme(isDark: boolean) {
     header:        isDark ? "bg-[#1a1a1a] border-[#2a2a2a]"             : "bg-white border-[#9CA3AF]",
     headerGlass:   isDark ? {}                                          : { boxShadow: "0 1px 0 #9CA3AF, 0 4px 16px rgba(0,174,239,0.06)" },
 
-    // ── Cards ──
-   card: isDark
-      ? "bg-[#1a1a1a] border border-[#2a2a2a] hover:border-purple-500/50 hover:bg-[#1e1e1e]"
-      : "bg-gradient-to-r from-[#f1f5ff] via-[#eef2ff] to-[#f5f3ff] border border-indigo-300 hover:border-[#00AEEF]/40 hover:shadow-[0_-4px_16px_2px_rgba(99,102,241,0.2),0_0_24px_6px_rgba(99,102,241,0.12),0_4px_16px_rgba(0,0,0,0.08)]",
+    // ── Cards (Hover color and shadow only, no size increase) ──
+    card: isDark
+      ? "bg-[#1a1a1a] border border-[#2a2a2a] transition-all duration-300 hover:border-[#d946a8]/50 hover:bg-[#1e1e1e] hover:shadow-2xl hover:shadow-[#d946a8]/20"
+      : "bg-gradient-to-r from-[#f1f5ff] via-[#eef2ff] to-[#f5f3ff] border border-indigo-300 transition-all duration-300 hover:border-[#9E217B]/50 hover:shadow-2xl hover:shadow-[#9E217B]/20",
     cardGlass:     isDark ? {}                                          : { boxShadow: "0 1px 2px rgba(0,0,0,0.04), 0 4px 12px rgba(0,174,239,0.07), 0 12px 28px rgba(0,0,0,0.08)" },
-    cardClosing:   isDark ? "bg-yellow-900/10 border-yellow-500/30 hover:border-yellow-400/60" : "bg-amber-50 border-amber-200 hover:border-amber-400/60 hover:shadow-[0_0_20px_4px_rgba(251,191,36,0.15)]",
+    cardClosing:   isDark ? "bg-yellow-900/10 border-yellow-500/30 transition-all duration-300 hover:border-yellow-400/60 hover:shadow-2xl hover:shadow-yellow-500/20" : "bg-amber-50 border-amber-200 transition-all duration-300 hover:border-amber-400/60 hover:shadow-2xl hover:shadow-[0_0_20px_4px_rgba(251,191,36,0.15)]",
 
     // ── Tables ──
     tableWrap:     isDark ? "bg-[#1a1a1a] border-[#2a2a2a]"             : "bg-white border border-indigo-300",
@@ -95,10 +95,10 @@ function buildTheme(isDark: boolean) {
     dropdownItem:  isDark ? "hover:bg-[#222] border-[#222]"             : "hover:bg-[#F8FAFC] border-[#F0F0F0]",
 
     // ── Typography ──
-    text:          isDark ? "text-white"                                : "text-[#1A1A1A]",
-    textMuted:     isDark ? "text-gray-400"                             : "text-[#6B7280]",
-    textFaint:     isDark ? "text-gray-500"                             : "text-[#9CA3AF]",
-    textHeader:    isDark ? "text-xs text-gray-500 uppercase"           : "text-xs text-[#6B7280] uppercase",
+    text:          isDark ? "text-white"                                : "text-[#0f172a]",
+    textMuted:     isDark ? "text-gray-400"                             : "text-[#334155]", // Darker gray for light mode visibility
+    textFaint:     isDark ? "text-gray-500"                             : "text-[#475569]", // Darker faint text
+    textHeader:    isDark ? "text-xs text-gray-500 uppercase"           : "text-xs text-[#334155] font-bold uppercase",
 
     // ── Navigation (sidebar stays dark, active uses same purple/magenta pattern) ──
     navActive:     isDark ? "bg-purple-900/20 border-purple-800 text-purple-400" : "bg-[#9E217B]/20 text-[#d946a8] border-transparent",
@@ -109,13 +109,35 @@ function buildTheme(isDark: boolean) {
     toggleWrap:    isDark ? "bg-[#1C1C2A] border-[#2A2A38] text-yellow-300" : "bg-[#F1F5F9] border-[#9CA3AF] text-[#1A1A1A]",
 
     // ── Chat ──
-    chatArea:      isDark ? "bg-[#0a0a0a]"                              : "bg-[#F8FAFC]",
-    chatBubbleAi:  isDark ? "bg-[#141414] border border-[#1f1f1f] text-gray-200" : "bg-white border border-[#E5E7EB] text-[#1A1A1A] shadow-sm",
-    chatBubbleUser:isDark ? "bg-purple-600 text-white"                  : "bg-[#9E217B] text-white",
-    chatInput:     isDark ? "bg-[#111] border-[#222] hover:border-[#333] focus-within:border-purple-500/50" : "bg-white border-[#E5E7EB] hover:border-[#9CA3AF] focus-within:border-[#00AEEF]/50",
-    chatInputInner:isDark ? "bg-[#111] border-[#222]"                   : "bg-white border-[#E5E7EB]",
-    chatPanel:     isDark ? "bg-[#1a1a1a] border-[#333]"                : "bg-white border-[#D1D5DB]",
-    chatPanelGl:   isDark ? {}                                          : { boxShadow: "0 1px 2px rgba(0,0,0,0.04), 0 4px 12px rgba(158,33,123,0.06), 0 16px 36px rgba(0,0,0,0.09)" },
+   chatArea: isDark 
+      ? "bg-[#EDEFF3]" 
+      : "bg-[#EDEFF3]",
+
+    chatBubbleAi: isDark 
+      ? "bg-[#141414] border border-[#262626] text-gray-200" 
+      : "bg-[#F3F4F6] border border-[#E2E8F0] text-gray-900 font-medium shadow-sm",
+
+    chatBubbleUser: isDark 
+      ? "bg-purple-600 text-white" 
+      : "bg-[#9E217B] text-white shadow-md",
+
+    chatInput: isDark 
+      ? "bg-[#111] border border-[#2a2a2a] hover:border-[#3a3a3a] focus-within:border-purple-500/50" 
+      : "bg-[#F3F4F6] border border-[#CBD5E1] hover:border-[#64748B] focus-within:bg-white focus-within:border-[#9E217B] shadow-inner",
+
+    chatInputInner: isDark 
+      ? "bg-[#111] border border-[#2a2a2a]" 
+      : "bg-white border border-[#E5E7EB]",
+
+    chatPanel: isDark 
+      ? "bg-[#1a1a1a] border border-[#2a2a2a]" 
+      : "bg-white border border-[#E5E7EB]",
+
+    chatPanelGl: isDark 
+      ? {} 
+      : { 
+          boxShadow: "0 2px 6px rgba(0,0,0,0.05), 0 8px 24px rgba(158,33,123,0.08)" 
+        },
 
     // ── Stat glow orbs ──
     statGlow1:     isDark ? "bg-purple-600/10"                          : "bg-[#00AEEF]/10",
@@ -130,11 +152,11 @@ function buildTheme(isDark: boolean) {
     sectionTitle:  isDark ? "text-purple-400"                           : "text-[#9E217B]",
     sectionBorder: isDark ? "border-purple-500/20"                      : "border-[#9E217B]/25",
 
-    // ── Buttons ──
-    btnPrimary:    isDark ? "bg-purple-600 hover:bg-purple-500 text-white shadow-md" : "bg-[#9E217B] hover:bg-[#0099d4] text-white shadow-sm",
-    btnSecondary:  isDark ? "bg-blue-600 hover:bg-blue-500 text-white shadow-md" : "bg-[#9E217B] hover:bg-[#8a1d6b] text-white shadow-sm",
-    btnDanger:     isDark ? "bg-[#3B1F1F] text-[#F28B82] hover:bg-red-900/40 border border-red-900/30" : "bg-[#9E217B]/10 text-[#9E217B] hover:bg-[#9E217B] hover:text-white border border-[#9E217B]/30",
-    btnWarning:    isDark ? "bg-yellow-600 hover:bg-yellow-500 text-white shadow-md" : "bg-amber-500 hover:bg-amber-400 text-white shadow-sm",
+    // ── Buttons (Added Hover Pop-out transforms) ──
+    btnPrimary:    isDark ? "bg-purple-600 hover:bg-purple-500 text-white shadow-md transform transition-all duration-300 hover:-translate-y-1 hover:scale-[1.03] hover:shadow-lg" : "bg-[#9E217B] hover:bg-[#0099d4] text-white shadow-sm transform transition-all duration-300 hover:-translate-y-1 hover:scale-[1.03] hover:shadow-lg",
+    btnSecondary:  isDark ? "bg-[#00AEEF] hover:bg-[#0099d4] text-white shadow-md transform transition-all duration-300 hover:-translate-y-1 hover:scale-[1.03] hover:shadow-lg" : "bg-[#00AEEF] hover:bg-[#0099d4] text-white shadow-sm transform transition-all duration-300 hover:-translate-y-1 hover:scale-[1.03] hover:shadow-lg",
+    btnDanger:     isDark ? "bg-[#3B1F1F] text-[#F28B82] hover:bg-red-900/40 border border-red-900/30 transform transition-all duration-300 hover:-translate-y-1 hover:scale-[1.03] hover:shadow-lg" : "bg-[#9E217B]/10 text-[#9E217B] hover:bg-[#9E217B] hover:text-white border border-[#9E217B]/30 transform transition-all duration-300 hover:-translate-y-1 hover:scale-[1.03] hover:shadow-lg",
+    btnWarning:    isDark ? "bg-yellow-600 hover:bg-yellow-500 text-white shadow-md transform transition-all duration-300 hover:-translate-y-1 hover:scale-[1.03] hover:shadow-lg" : "bg-amber-500 hover:bg-amber-400 text-white shadow-sm transform transition-all duration-300 hover:-translate-y-1 hover:scale-[1.03] hover:shadow-lg",
     btnClosingBadge: isDark ? "bg-yellow-900/20 border border-yellow-500/40 text-yellow-400" : "bg-amber-50 border border-amber-400/60 text-amber-600",
 
     // ── Logo ──
@@ -333,35 +355,32 @@ export default function SalesDashboard() {
 
   return (
     <div
-      className={`flex h-screen font-sans overflow-hidden relative ${t.pageWrap}`}
+      className={`flex flex-col md:flex-row h-screen font-sans overflow-hidden relative ${t.pageWrap}`}
       style={isDark ? {} : {
         background: "linear-gradient(135deg, #e8f6fd 0%, #f8fafc 30%, #faf0fb 62%, #f8fafc 78%, #e6fafe 100%)",
       }}
     >
       {/* ── SIDEBAR (always dark, like receptionist) ── */}
-      <aside className={`w-20 border-r flex flex-col items-center py-6 flex-shrink-0 z-40 shadow-sm ${t.sidebar}`}>
+      <aside className={`hidden md:flex w-20 border-r flex-col items-center py-6 flex-shrink-0 z-40 shadow-sm ${t.sidebar}`}>
         <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xl font-bold text-white mb-10 cursor-pointer ${t.logoBg}`}>B</div>
         <nav className="flex flex-col space-y-6 w-full items-center">
           {[
-            { view: "overview",   icon: <FaThLarge className="w-6 h-6" />,    title: "Dashboard" },
-            { view: "forms",      icon: <FaFileInvoice className="w-6 h-6" />, title: "Assigned Leads" },
-            { view: "assistant",  icon: <FaRobot className="w-6 h-6" />,       title: "CRM AI Assistant" },
-          ].map(({ view, icon, title }) => (
+              { view: "overview",     icon: <FaThLarge className="w-6 h-6" />,       title: "Dashboard" },
+              { view: "forms",        icon: <FaFileInvoice className="w-6 h-6" />,   title: "Assigned Leads" },
+              { view: "closed-leads", icon: <FaCheckCircle className="w-6 h-6" />,   title: "Closed Leads" },
+              { view: "assistant",    icon: <FaRobot className="w-6 h-6" />,         title: "CRM AI Assistant" },
+            ].map(({ view, icon, title }) => (
             <div key={view} onClick={() => setActiveView(view)} className="group relative flex justify-center cursor-pointer w-full" title={title}>
               {(activeView === view || (view === "forms" && activeView === "detail")) &&
                 <div className={`absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 rounded-r ${t.navIndicator}`} />}
               <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-colors border ${activeView === view || (view === "forms" && activeView === "detail") ? t.navActive : t.navInactive}`}>{icon}</div>
             </div>
           ))}
-          {/* <div onClick={() => setActiveView("settings")} className="group relative flex justify-center cursor-pointer w-full mt-auto" title="Settings">
-            {activeView === "settings" && <div className={`absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 rounded-r ${t.navIndicator}`} />}
-            <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-colors border ${activeView === "settings" ? t.navActive : t.navInactive}`}><FaCog className="w-6 h-6" /></div>
-          </div> */}
         </nav>
       </aside>
 
       {/* ── MAIN ── */}
-      <div className="flex-1 flex flex-col h-screen overflow-hidden relative">
+      <div className="flex-1 flex flex-col h-full overflow-hidden relative">
         {/* HEADER */}
         <header
           className={`h-16 border-b flex items-center justify-between px-8 flex-shrink-0 z-30 shadow-sm ${t.header}`}
@@ -527,7 +546,7 @@ export default function SalesDashboard() {
         </header>
 
         <main className={`flex-1 overflow-hidden custom-scrollbar ${t.mainBg} ${activeView === "assistant" ? "p-0" : "p-8 overflow-y-auto"}`}>
-          {(activeView === "sales" || activeView === "overview" || activeView === "forms" || activeView === "detail") ? (
+          {(activeView === "sales" || activeView === "overview" || activeView === "forms" || activeView === "detail" || activeView === "closed-leads") ? (
             <SalesManagerView
               managers={managers} allLeads={allLeads} followUps={followUps}
               isLoading={isLoading} adminUser={user} refetch={refetch}
@@ -544,6 +563,22 @@ export default function SalesDashboard() {
           )}
         </main>
       </div>
+
+      {/* ── BOTTOM NAV (MOBILE) ── */}
+      <nav className={`md:hidden flex w-full h-16 border-t items-center justify-around flex-shrink-0 z-40 ${t.sidebar}`}>
+        {[
+          { view: "overview",     icon: <FaThLarge className="w-5 h-5" />,       title: "Dashboard" },
+          { view: "forms",        icon: <FaFileInvoice className="w-5 h-5" />,   title: "Assigned" },
+          { view: "closed-leads", icon: <FaCheckCircle className="w-5 h-5" />,   title: "Closed" },
+          { view: "assistant",    icon: <FaRobot className="w-5 h-5" />,         title: "AI" },
+        ].map(({ view, icon, title }) => (
+          <div key={view} onClick={() => setActiveView(view)} className="relative flex flex-col justify-center items-center h-full flex-1 cursor-pointer" title={title}>
+            {(activeView === view || (view === "forms" && activeView === "detail")) &&
+              <div className={`absolute top-0 left-1/2 -translate-x-1/2 h-1 w-8 rounded-b ${t.navIndicator}`} />}
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${activeView === view || (view === "forms" && activeView === "detail") ? t.navActive : t.navInactive}`}>{icon}</div>
+          </div>
+        ))}
+      </nav>
 
       <style dangerouslySetInnerHTML={{__html:`
         .custom-scrollbar::-webkit-scrollbar{width:5px;height:5px}
@@ -708,11 +743,12 @@ function DashboardAnalytics({ leads, isDark, t }: { leads: any[]; isDark: boolea
 // SALES MANAGER MODULE
 // ============================================================================
 function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser, refetch, initialView, setMainView, isDark, t }: any) {
-  const [subView, setSubView]           = useState<"overview"|"cards"|"detail">(
-    initialView==="overview" ? "overview" : initialView==="detail" ? "detail" : "cards"
+  const [subView, setSubView]           = useState<"overview"|"cards"|"detail"|"closed-leads">(
+    initialView==="overview" ? "overview" : initialView==="detail" ? "detail" : initialView==="closed-leads" ? "closed-leads" : "cards"
   );
   const [selectedLead, setSelectedLead] = useState<any>(null);
   const [searchTerm, setSearchTerm]     = useState("");
+  const [searchClosed, setSearchClosed] = useState(""); // <-- Added for closed leads
   const [detailTab, setDetailTab]       = useState<"personal"|"loan">("personal");
   const [showSalesForm, setShowSalesForm]   = useState(false);
   const [salesForm, setSalesForm]           = useState({ propertyType:"",location:"",budget:"",useType:"",purchaseDate:"",loanPlanned:"",siteVisit:"",leadStatus:"" });
@@ -729,25 +765,30 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
   const [cardsPage, setCardsPage]     = useState(1);
   const cardsSentinelRef              = useRef<HTMLDivElement>(null);
 
-  useEffect(() => { setSubView(initialView==="overview"?"overview":initialView==="detail"&&selectedLead?"detail":"cards"); },[initialView]);
+  // Update effect to handle closed-leads routing
+  useEffect(() => { setSubView(initialView==="overview"?"overview":initialView==="detail"&&selectedLead?"detail":initialView==="closed-leads"?"closed-leads":"cards"); },[initialView]);
   useEffect(() => { if(selectedLead){ const u=allLeads.find((l:any)=>String(l.id)===String(selectedLead.id)); if(u) setSelectedLead(u); } },[allLeads]);
   useEffect(() => { setCardsPage(1); }, [searchTerm]);
 
-  const activeManagerLeads   = adminUser.role==="admin" ? allLeads : allLeads.filter((l:any)=>l.assigned_to===adminUser.name);
+  // 1. Get ALL leads for this manager
+  const baseManagerLeads   = adminUser.role==="admin" ? allLeads : allLeads.filter((l:any)=>l.assigned_to===adminUser.name);
   const currentLeadFollowUps = followUps.filter((f:any)=>String(f.leadId)===String(selectedLead?.id));
 
+  // 2. Split into Active and Closed queues
+  const activeManagerLeads = baseManagerLeads.filter((l:any) => l.status !== "Closing" && !l.closingDate);
+  const closingLeads       = baseManagerLeads.filter((l:any) => l.status === "Closing" || !!l.closingDate);
+
+  // Keep stats calculating off the BASE leads so stats don't drop when a lead closes
   const enquiriesAttended = useMemo(() =>
-    activeManagerLeads.filter((l:any) => followUps.some((f:any) => String(f.leadId) === String(l.id))).length
-  , [activeManagerLeads, followUps]);
+    baseManagerLeads.filter((l:any) => followUps.some((f:any) => String(f.leadId) === String(l.id))).length
+  , [baseManagerLeads, followUps]);
 
   const enquiriesThisMonth = useMemo(() =>
-    activeManagerLeads.filter((l:any) => {
+    baseManagerLeads.filter((l:any) => {
       const d = new Date(l.created_at);
       return d.getMonth() === selectedMonth && d.getFullYear() === selectedYear;
     }).length
-  , [activeManagerLeads, selectedMonth, selectedYear]);
-
-  const closingLeads = useMemo(() => activeManagerLeads.filter((l:any) => l.status === "Closing"), [activeManagerLeads]);
+  , [baseManagerLeads, selectedMonth, selectedYear]);
 
   const closingThisMonth = useMemo(() => {
     return closingLeads.filter((l:any) => {
@@ -758,17 +799,24 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
   }, [closingLeads, selectedMonth, selectedYear]);
 
   const closingPct = useMemo(() =>
-    activeManagerLeads.length > 0
-      ? ((closingLeads.length / activeManagerLeads.length) * 100).toFixed(1)
+    baseManagerLeads.length > 0
+      ? ((closingLeads.length / baseManagerLeads.length) * 100).toFixed(1)
       : "0.0"
-  , [closingLeads, activeManagerLeads]);
+  , [closingLeads, baseManagerLeads]);
 
+  // Filters for active cards
   const filteredLeads   = activeManagerLeads.filter((lead:any) =>
     (lead.name||"").toLowerCase().includes(searchTerm.toLowerCase()) ||
     String(lead.id).includes(searchTerm)
   );
   const paginatedLeads  = filteredLeads.slice(0, cardsPage * CARDS_PER_PAGE);
   const hasMoreCards    = paginatedLeads.length < filteredLeads.length;
+
+  // Filters for closed leads table
+  const filteredClosedLeads = closingLeads.filter((lead:any) =>
+    (lead.name||"").toLowerCase().includes(searchClosed.toLowerCase()) ||
+    String(lead.id).includes(searchClosed)
+  );
 
   useEffect(() => {
     const sentinel = cardsSentinelRef.current;
@@ -864,7 +912,7 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
             {/* ── 5-CARD STATS GRID ── */}
             <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4">
               {[
-                { label: "Total Enquiries",             value: activeManagerLeads.length,  sub: "in your pipeline",       glow: t.statGlow1, textColor: t.text },
+                { label: "Total Enquiries",             value: activeManagerLeads.length,  sub: "in your pipeline",        glow: t.statGlow1, textColor: t.text },
                 { label: "Enquiries Attended",          value: enquiriesAttended,           sub: `of ${activeManagerLeads.length} total`, glow: t.statGlow1, textColor: isDark?"text-purple-400":"text-[#00AEEF]" },
                 { label: "Enquiries Attended This Month", value: enquiriesThisMonth,        sub: `in ${MONTH_NAMES[selectedMonth].slice(0,3)}`, glow: t.statGlow3, textColor: isDark?"text-blue-400":"text-[#9E217B]", monthSelect: true },
                 { label: "Closing",                     value: closingThisMonth > 0 ? closingThisMonth : "—", sub: `${closingLeads.length} total closed`, glow: t.statGlow4, textColor: isDark?"text-yellow-400":"text-amber-500", monthSelect: true },
@@ -889,7 +937,7 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
               ))}
             </div>
 
-            {!isLoading && <DashboardAnalytics leads={activeManagerLeads} isDark={isDark} t={t}/>}
+            {!isLoading && <DashboardAnalytics leads={baseManagerLeads} isDark={isDark} t={t}/>}
 
             {/* Overview table */}
             <div className={`rounded-2xl border shadow-sm overflow-hidden ${t.tableWrap}`} style={t.tableGlass}>
@@ -908,35 +956,39 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
                   <tbody className={`divide-y ${t.tableDivide}`}>
                     {isLoading
                       ? <tr><td colSpan={8} className={`text-center py-8 ${t.textMuted}`}>Loading...</td></tr>
-                      : activeManagerLeads.length === 0
+                      : baseManagerLeads.length === 0
                         ? <tr><td colSpan={8} className={`text-center py-8 ${t.textMuted}`}>No leads found.</td></tr>
-                        : activeManagerLeads.map((lead:any) => (
-                            <tr key={lead.id} className={`transition-colors cursor-pointer ${t.tableRow}`} onClick={() => { setSelectedLead(lead); setMainView("detail"); setSubView("detail"); }}>
-                              <td className={`px-6 py-4 font-bold ${t.accentText}`}>#{lead.id}</td>
-                              <td className={`px-4 py-4 font-medium ${t.text}`}>{lead.name}</td>
-                              <td className={`px-4 py-4 ${t.textMuted}`}>{lead.propType || "Pending"}</td>
-                              <td className={`px-4 py-4 font-semibold ${isDark ? "text-green-400" : "text-emerald-600"}`}>{lead.salesBudget}</td>
-                              <td className="px-4 py-4">
-                                <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase border ${
-                                  lead.status === "Closing" ? t.statusClosing :
-                                  lead.status === "Visit Scheduled" ? t.statusVisit : t.statusRouted
-                                }`}>{lead.status || "Routed"}</span>
-                              </td>
-                              <td className="px-4 py-4">
-                                {lead.loanStatus && lead.loanStatus !== "N/A"
-                                  ? <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase border ${lead.loanStatus==="Approved"?"text-green-400 border-green-500/40 bg-green-500/10":lead.loanStatus==="Rejected"?"text-red-400 border-red-500/40 bg-red-500/10":lead.loanStatus==="In Progress"?"text-yellow-400 border-yellow-500/40 bg-yellow-500/10":"text-gray-400 border-gray-500/30 bg-gray-500/10"}`}>{lead.loanStatus}</span>
-                                  : <span className={`text-xs italic ${t.textFaint}`}>N/A</span>
-                                }
-                              </td>
-                              <td className="px-4 py-4">
-                                {lead.loanAmtReq && lead.loanAmtReq !== "N/A"
-                                  ? <div className="flex flex-col gap-0.5"><span className="text-[11px] text-orange-400 font-medium">Req: {lead.loanAmtReq}</span><span className={`text-[11px] font-medium ${isDark?"text-green-400":"text-emerald-600"}`}>App: {lead.loanAmtApp !== "N/A" ? lead.loanAmtApp : "—"}</span></div>
-                                  : <span className={`text-xs italic ${t.textFaint}`}>N/A</span>
-                                }
-                              </td>
-                              <td className="px-6 py-4">{lead.mongoVisitDate ? <span className="text-orange-400 font-medium whitespace-nowrap">{formatDate(lead.mongoVisitDate).split(",")[0]}</span> : <span className={`text-xs italic ${t.textFaint}`}>Pending</span>}</td>
-                            </tr>
-                          ))
+                        : baseManagerLeads.map((lead:any) => {
+                            const isClosed = lead.status === "Closing" || lead.status === "Completed" || lead.status === "Closed" || lead.closingDate;
+                            return (
+                              <tr key={lead.id} className={`transition-colors cursor-pointer ${t.tableRow}`} onClick={() => { setSelectedLead(lead); setMainView("detail"); setSubView("detail"); }}>
+                                <td className={`px-6 py-4 font-bold ${t.accentText}`}>#{lead.id}</td>
+                                <td className={`px-4 py-4 font-medium ${t.text}`}>{lead.name}</td>
+                                <td className={`px-4 py-4 ${t.textMuted}`}>{lead.propType || "Pending"}</td>
+                                <td className={`px-4 py-4 font-semibold ${isDark ? "text-green-400" : "text-emerald-600"}`}>{lead.salesBudget}</td>
+                                <td className="px-4 py-4">
+                                  <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase border ${
+                                    isClosed 
+                                      ? (isDark ? "text-emerald-400 border-emerald-500/30 bg-emerald-500/10" : "text-emerald-600 border-emerald-400/40 bg-emerald-50")
+                                      : lead.status === "Visit Scheduled" ? t.statusVisit : t.statusRouted
+                                  }`}>{isClosed ? "CLOSED" : (lead.status || "ROUTED")}</span>
+                                </td>
+                                <td className="px-4 py-4">
+                                  {lead.loanStatus && lead.loanStatus !== "N/A"
+                                    ? <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase border ${lead.loanStatus==="Approved"?"text-green-400 border-green-500/40 bg-green-500/10":lead.loanStatus==="Rejected"?"text-red-400 border-red-500/40 bg-red-500/10":lead.loanStatus==="In Progress"?"text-yellow-400 border-yellow-500/40 bg-yellow-500/10":"text-gray-400 border-gray-500/30 bg-gray-500/10"}`}>{lead.loanStatus}</span>
+                                    : <span className={`text-xs italic ${t.textFaint}`}>N/A</span>
+                                  }
+                                </td>
+                                <td className="px-4 py-4">
+                                  {lead.loanAmtReq && lead.loanAmtReq !== "N/A"
+                                    ? <div className="flex flex-col gap-0.5"><span className="text-[11px] text-orange-400 font-medium">Req: {lead.loanAmtReq}</span><span className={`text-[11px] font-medium ${isDark?"text-green-400":"text-emerald-600"}`}>App: {lead.loanAmtApp !== "N/A" ? lead.loanAmtApp : "—"}</span></div>
+                                    : <span className={`text-xs italic ${t.textFaint}`}>N/A</span>
+                                  }
+                                </td>
+                                <td className="px-6 py-4">{lead.mongoVisitDate ? <span className="text-orange-400 font-medium whitespace-nowrap">{formatDate(lead.mongoVisitDate).split(",")[0]}</span> : <span className={`text-xs italic ${t.textFaint}`}>Pending</span>}</td>
+                              </tr>
+                            )
+                          })
                     }
                   </tbody>
                 </table>
@@ -985,7 +1037,7 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
                           >
                             <div>
                               <div className={`flex justify-between items-start mb-5 pb-4 border-b ${t.tableBorder}`}>
-                                <h3 className={`text-xl font-bold transition-colors line-clamp-1 pr-2 ${t.text} ${isClosing ? "group-hover:text-amber-500" : isDark ? "group-hover:text-purple-400" : "group-hover:text-[#00AEEF]"}`}>
+                                <h3 className={`text-xl font-bold transition-colors line-clamp-1 pr-2 ${t.text} ${isClosing ? "group-hover:text-amber-500" : isDark ? "group-hover:text-[#d946a8]" : "group-hover:text-[#9E217B]"}`}>
                                   <span className={`mr-2 ${t.accentText}`}>#{lead.id}</span>{lead.name}
                                 </h3>
                                 <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border flex-shrink-0 ${
@@ -1001,7 +1053,7 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
                                   </div>
                                   <div className="flex flex-col items-end gap-1">
                                     {loanSt ? <LoanStatusBadge status={loanSt}/> : lead.loanPlanned==="Yes" && (
-                                      <div className="bg-blue-500/10 border border-blue-500/30 px-2 py-1 rounded text-blue-400 text-[10px] font-bold uppercase flex items-center gap-1"><FaUniversity/> Loan Active</div>
+                                      <div className="bg-[#00AEEF]/10 border border-[#00AEEF]/30 px-2 py-1 rounded text-[#00AEEF] text-[10px] font-bold uppercase flex items-center gap-1"><FaUniversity/> Loan Active</div>
                                     )}
                                   </div>
                                 </div>
@@ -1030,7 +1082,7 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
                             </div>
                             <div className={`pt-4 border-t mt-auto flex justify-between items-center ${t.tableBorder}`}>
                               <p className={`text-[10px] flex-shrink-0 ${t.textFaint}`}>{formatDate(lead.created_at).split(",")[0]}</p>
-                              <span className={`text-[10px] font-bold uppercase tracking-widest transition-colors ${isClosing ? (isDark?"text-yellow-500 group-hover:text-yellow-400":"text-amber-500 group-hover:text-amber-400") : (isDark?"text-gray-500 group-hover:text-purple-400":"text-[#9CA3AF] group-hover:text-[#00AEEF]")}`}>Details →</span>
+                              <span className={`text-[10px] font-bold uppercase tracking-widest transition-colors ${isClosing ? (isDark?"text-yellow-500 group-hover:text-yellow-400":"text-amber-500 group-hover:text-amber-400") : (isDark?"text-gray-500 group-hover:text-[#d946a8]":"text-[#9CA3AF] group-hover:text-[#9E217B]")}`}>Details →</span>
                             </div>
                           </div>
                         );
@@ -1045,6 +1097,69 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
                   )
             }
             <div ref={cardsSentinelRef} className="h-1 w-full mt-4" aria-hidden="true"/>
+          </div>
+        )}
+        
+        {/* ── CLOSED LEADS ── */}
+        {subView === "closed-leads" && (
+          <div className="animate-fadeIn">
+            <div className={`flex justify-between items-center mb-8 border-b pb-6 ${t.tableBorder}`}>
+              <div>
+                <h1 className={`text-2xl font-bold ${t.text}`}>Closed Leads</h1>
+                <p className={`text-xs mt-0.5 ${t.textFaint}`}>Leads successfully closed</p>
+              </div>
+              <div className="relative">
+                <FaSearch className={`absolute left-3 top-1/2 -translate-y-1/2 text-xs ${t.textFaint}`}/>
+                <input
+                  type="text" placeholder="Search closed leads..." value={searchClosed}
+                  onChange={e => setSearchClosed(e.target.value)}
+                  className={`rounded-lg pl-9 pr-4 py-2 text-sm outline-none w-64 transition-colors border ${t.inputBg} ${t.text} ${t.inputFocus}`}
+                />
+              </div>
+            </div>
+
+            <div className={`rounded-2xl border overflow-hidden ${t.tableWrap}`} style={t.tableGlass}>
+              <div className={`p-4 border-b flex justify-between items-center ${t.tableBorder}`}>
+                <p className={`text-sm font-semibold ${t.text}`}>{filteredClosedLeads.length} closed leads</p>
+              </div>
+              <div className="overflow-x-auto custom-scrollbar">
+                <table className="w-full text-left border-collapse whitespace-nowrap">
+                  <thead><tr className={t.tableHead}>
+                    {["Lead No.","Client Name","Budget","Property","Status","Site Visit","Closing Date","Actions"].map(h => (
+                      <th key={h} className={`px-4 py-4 font-bold uppercase tracking-wider border-b ${t.textHeader} ${t.tableBorder}`}>{h}</th>
+                    ))}
+                  </tr></thead>
+                  <tbody className={`${t.tableDivide} divide-y`}>
+                    {isLoading ? <tr><td colSpan={8} className={`p-8 text-center text-sm ${t.textMuted}`}>Loading...</td></tr>
+                    : filteredClosedLeads.length === 0 ? (
+                      <tr><td colSpan={8} className={`p-12 text-center ${t.textMuted}`}>
+                        <FaHandshake className={`text-5xl mx-auto mb-4 ${t.textFaint}`}/>
+                        <p className="text-lg font-semibold">No closed leads yet.</p>
+                      </td></tr>
+                    ) : filteredClosedLeads.map((lead: any) => (
+                      <tr key={lead.id} className={`transition-colors cursor-pointer ${t.tableRow}`} onClick={() => { setSelectedLead(lead); setMainView("detail"); setSubView("detail"); }}>
+                        <td className={`px-4 py-4 font-bold ${t.accentText}`}>#{lead.id}</td>
+                        <td className={`px-4 py-4 font-semibold ${t.text}`}>{lead.name}</td>
+                        <td className={`px-4 py-4 font-bold ${isDark?"text-green-400":"text-emerald-600"}`}>{lead.salesBudget||lead.budget}</td>
+                        <td className={`px-4 py-4 ${t.textMuted}`}>{lead.propType||lead.configuration||"N/A"}</td>
+                        <td className="px-4 py-4">
+                          <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase border ${t.statusClosing}`}>{lead.status}</span>
+                        </td>
+                        <td className={`px-4 py-4 text-[10px] ${lead.mongoVisitDate?"text-orange-400":t.textFaint}`}>
+                          {lead.mongoVisitDate ? formatDate(lead.mongoVisitDate).split(",")[0] : "—"}
+                        </td>
+                        <td className={`px-4 py-4 text-[10px] ${t.textFaint}`}>
+                          {lead.closingDate ? formatDate(lead.closingDate).split(",")[0] : "—"}
+                        </td>
+                        <td className="px-4 py-4">
+                          <button className={`text-xs font-bold px-3 py-1.5 rounded-lg ${t.btnWarning}`}>View History</button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
         )}
 
@@ -1073,7 +1188,7 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
                       <FaFileInvoice/> Fill Salesform
                     </button>
                     <button onClick={() => { prefillLoanForm(); setShowLoanForm(true); setShowSalesForm(false); }}
-                      className={`font-bold px-5 py-2 rounded-lg text-sm flex items-center gap-2 transition-colors cursor-pointer shadow-lg ${t.btnSecondary} ${isDark?"shadow-blue-600/20":"shadow-[#9E217B]/20"}`}>
+                      className={`font-bold px-5 py-2 rounded-lg text-sm flex items-center gap-2 transition-colors cursor-pointer shadow-lg ${t.btnSecondary} ${isDark?"shadow-blue-600/20":"shadow-[#00AEEF]/20"}`}>
                       <FaUniversity/> Track Loan
                     </button>
                     {selectedLead.mongoVisitDate && selectedLead.status !== "Closing" && (
@@ -1116,7 +1231,7 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
                         <select required value={salesForm.leadStatus} onChange={e=>setSalesForm({...salesForm,leadStatus:e.target.value})} className={formSelect}><option value="" disabled>Select Status</option><option>Interested</option><option>Not Interested</option><option>Maybe</option></select>
                       </div>
                       <div className={`border-t pt-3 mt-1 ${t.tableBorder}`}>
-                        <label className={`block text-xs font-bold mb-1.5 ${isDark?"text-blue-400":"text-[#9E217B]"}`}>Loan Planned?</label>
+                        <label className={`block text-xs font-bold mb-1.5 ${isDark?"text-[#00AEEF]":"text-[#00AEEF]"}`}>Loan Planned?</label>
                         <select required value={salesForm.loanPlanned} onChange={e=>setSalesForm({...salesForm,loanPlanned:e.target.value})} className={formSelect}><option value="" disabled>Select Option</option><option>Yes</option><option>No</option><option>Not Sure</option></select>
                       </div>
                       <div className={`mt-2 border-t pt-3 ${t.tableBorder}`}>
@@ -1130,14 +1245,14 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
                   <div className={`rounded-xl border p-5 shadow-xl flex-1 overflow-y-auto custom-scrollbar flex flex-col animate-fadeIn ${t.modalCard}`} style={t.modalGlass}>
                     <div className={`flex justify-between items-center mb-4 border-b pb-3 flex-shrink-0 ${t.tableBorder}`}>
                       <div>
-                        <h3 className={`text-lg font-bold flex items-center gap-2 ${isDark?"text-blue-400":"text-[#9E217B]"}`}><FaUniversity/> Loan Tracking Workflow</h3>
+                        <h3 className={`text-lg font-bold flex items-center gap-2 ${isDark?"text-[#00AEEF]":"text-[#00AEEF]"}`}><FaUniversity/> Loan Tracking Workflow</h3>
                         <p className={`text-xs mt-0.5 ${t.textFaint}`}>For Lead #{selectedLead.id}</p>
                       </div>
                       <button type="button" onClick={() => setShowLoanForm(false)} className={`p-1 ${t.textMuted} hover:text-red-500`}><FaTimes/></button>
                     </div>
                     <form onSubmit={handleLoanFormSubmit} className="flex flex-col gap-6 flex-1">
                       <div>
-                        <h4 className={`text-xs font-bold uppercase tracking-wider mb-3 ${isDark?"text-blue-500":"text-[#00AEEF]"}`}>1. Loan Decision</h4>
+                        <h4 className={`text-xs font-bold uppercase tracking-wider mb-3 ${isDark?"text-[#00AEEF]":"text-[#00AEEF]"}`}>1. Loan Decision</h4>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           <div><label className={`text-xs mb-1 block ${t.textMuted}`}>Loan Required? *</label><select required value={loanForm.loanRequired} onChange={e=>setLoanForm({...loanForm,loanRequired:e.target.value})} className={formSelect}><option value="">Select</option><option>Yes</option><option>No</option><option>Not Sure</option></select></div>
                           <div>
@@ -1148,7 +1263,7 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
                         </div>
                       </div>
                       <div className={`border-t pt-4 ${t.tableBorder}`}>
-                        <h4 className={`text-xs font-bold uppercase tracking-wider mb-3 ${isDark?"text-blue-500":"text-[#00AEEF]"}`}>2. Bank & Loan Details</h4>
+                        <h4 className={`text-xs font-bold uppercase tracking-wider mb-3 ${isDark?"text-[#00AEEF]":"text-[#00AEEF]"}`}>2. Bank & Loan Details</h4>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           {[{label:"Bank Name",k:"bank",ph:"e.g. HDFC"},{label:"Amount Required",k:"amountReq",ph:"e.g. 60L"},{label:"Amount Approved",k:"amountApp",ph:"e.g. 55L"},{label:"CIBIL Score",k:"cibil",ph:"e.g. 750"},{label:"Agent Name",k:"agent",ph:"Agent Name"},{label:"Agent Contact",k:"agentContact",ph:"Agent Phone",tel:true}].map(f=>(
                             <div key={f.k}><label className={`text-xs mb-1 block ${t.textMuted}`}>{f.label}</label><input type={f.tel?"tel":"text"} value={(loanForm as any)[f.k]} onChange={e=>setLoanForm({...loanForm,[f.k]:e.target.value})} className={formInput} placeholder={f.ph}/></div>
@@ -1156,7 +1271,7 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
                         </div>
                       </div>
                       <div className={`border-t pt-4 ${t.tableBorder}`}>
-                        <h4 className={`text-xs font-bold uppercase tracking-wider mb-3 ${isDark?"text-blue-500":"text-[#00AEEF]"}`}>3. Financial Qualification</h4>
+                        <h4 className={`text-xs font-bold uppercase tracking-wider mb-3 ${isDark?"text-[#00AEEF]":"text-[#00AEEF]"}`}>3. Financial Qualification</h4>
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                           <div><label className={`text-xs mb-1 block ${t.textMuted}`}>Employment</label><select value={loanForm.empType} onChange={e=>setLoanForm({...loanForm,empType:e.target.value})} className={formSelect}><option value="">Select</option><option>Salaried</option><option>Self-employed</option></select></div>
                           <div><label className={`text-xs mb-1 block ${t.textMuted}`}>Monthly Income</label><input type="text" value={loanForm.income} onChange={e=>setLoanForm({...loanForm,income:e.target.value})} className={formInput} placeholder="e.g. 1L"/></div>
@@ -1164,7 +1279,7 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
                         </div>
                       </div>
                       <div className={`border-t pt-4 ${t.tableBorder}`}>
-                        <h4 className={`text-xs font-bold uppercase tracking-wider mb-3 flex items-center gap-1 ${isDark?"text-blue-500":"text-[#00AEEF]"}`}><FaFileAlt/> 4. Document Checklist</h4>
+                        <h4 className={`text-xs font-bold uppercase tracking-wider mb-3 flex items-center gap-1 ${isDark?"text-[#00AEEF]":"text-[#00AEEF]"}`}><FaFileAlt/> 4. Document Checklist</h4>
                         <div className={`grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 rounded-lg border ${t.settingsBg}`} style={t.settingsBgGl}>
                           {["docPan","docAadhaar","docSalary","docBank","docProperty"].map(docKey=>{
                             const label=docKey==="docPan"?"PAN Card":docKey==="docAadhaar"?"Aadhaar Card":docKey==="docSalary"?"Salary Slips / ITR":docKey==="docBank"?"Bank Statements":"Property Documents";
@@ -1178,7 +1293,7 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
                         </div>
                       </div>
                       <div className={`border-t pt-4 ${t.tableBorder}`}>
-                        <h4 className={`text-xs font-bold uppercase tracking-wider mb-3 ${isDark?"text-blue-500":"text-[#00AEEF]"}`}>5. Notes / Remarks</h4>
+                        <h4 className={`text-xs font-bold uppercase tracking-wider mb-3 ${isDark?"text-[#00AEEF]":"text-[#00AEEF]"}`}>5. Notes / Remarks</h4>
                         <textarea value={loanForm.notes} onChange={e=>setLoanForm({...loanForm,notes:e.target.value})} className={`w-full rounded-lg px-4 py-2.5 text-sm outline-none resize-none h-20 custom-scrollbar border ${t.inputInner} ${t.text} ${t.inputFocus}`} placeholder="Bank feedback, CIBIL issues, Internal notes..."/>
                       </div>
                       <button type="submit" className={`mt-4 flex-shrink-0 w-full font-bold py-3.5 rounded-xl shadow-md transition-colors cursor-pointer ${t.btnSecondary}`}>Save Loan Tracker Update</button>
@@ -1212,7 +1327,7 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
                             <div><p className={`text-xs font-medium mb-1 ${t.textFaint}`}>Loan Required?</p><p className={`font-semibold ${t.text}`}>{getLatestLoanDetails()?.loanRequired}</p></div>
                             <div><p className={`text-xs font-medium mb-1 ${t.textFaint}`}>Status</p><span className={`text-sm font-bold ${selectedLead.status==="Closing"?"text-amber-500":selectedLead.status==="Visit Scheduled"?"text-orange-400":t.accentText}`}>{selectedLead.status||"Routed"}</span></div>
                             <div className={`col-span-2 p-3 rounded-xl border ${t.settingsBg}`} style={t.settingsBgGl}>
-                              <p className={`text-xs font-bold uppercase tracking-wider mb-0.5 ${isDark?"text-blue-400":"text-[#00AEEF]"}`}>📍 Site Visit Date</p>
+                              <p className={`text-xs font-bold uppercase tracking-wider mb-0.5 ${isDark?"text-[#00AEEF]":"text-[#00AEEF]"}`}>📍 Site Visit Date</p>
                               <p className={`text-base font-black ${t.text}`}>{selectedLead.mongoVisitDate?formatDate(selectedLead.mongoVisitDate):"Not Scheduled"}</p>
                             </div>
                           </div>
@@ -1239,7 +1354,7 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
                             const isHighProb = curLoan?.status?.toLowerCase() === "approved" && selectedLead.mongoVisitDate;
                             return (
                               <>
-                                <h3 className={`text-sm font-bold border-b pb-2 mb-6 uppercase flex items-center justify-between ${isDark?"text-blue-400":"text-[#9E217B]"} ${t.tableBorder}`}><span className="flex items-center gap-2"><FaUniversity/> Deal Loan Overview</span></h3>
+                                <h3 className={`text-sm font-bold border-b pb-2 mb-6 uppercase flex items-center justify-between ${isDark?"text-[#00AEEF]":"text-[#00AEEF]"} ${t.tableBorder}`}><span className="flex items-center gap-2"><FaUniversity/> Deal Loan Overview</span></h3>
                                 {isHighProb && <div className="mb-6 bg-gradient-to-r from-orange-500/20 to-red-500/20 border border-orange-500/50 p-3 rounded-lg flex items-center justify-center gap-2 text-orange-400 font-bold tracking-wide shadow-md">🚀 HIGH PROBABILITY DEAL (Visit Done + Loan Approved)</div>}
                                 <div className="grid grid-cols-2 gap-y-5 gap-x-4 text-sm">
                                   <div><p className={`text-xs font-medium mb-1 ${t.textFaint}`}>Loan Required?</p><p className={`font-semibold ${t.text}`}>{curLoan?.loanRequired}</p></div>
@@ -1264,7 +1379,7 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
                       )}
                     </div>
                     <div className="grid grid-cols-2 gap-3 mt-4 flex-shrink-0">
-                      <button className={`border flex flex-col items-center justify-center py-3 rounded-xl transition-all cursor-pointer gap-1 ${isDark?"bg-blue-600/10 border-blue-500/30 hover:bg-blue-600 text-blue-400 hover:text-white":"bg-[#00AEEF]/10 border-[#00AEEF]/30 hover:bg-[#00AEEF] text-[#00AEEF] hover:text-white"}`}><FaMicrophone className="text-lg"/><span className="font-bold text-[10px]">Browser Call</span></button>
+                      <button className={`border flex flex-col items-center justify-center py-3 rounded-xl transition-all cursor-pointer gap-1 ${isDark?"bg-[#00AEEF]/10 border-[#00AEEF]/30 hover:bg-[#00AEEF] text-[#00AEEF] hover:text-white":"bg-[#00AEEF]/10 border-[#00AEEF]/30 hover:bg-[#00AEEF] text-[#00AEEF] hover:text-white"}`}><FaMicrophone className="text-lg"/><span className="font-bold text-[10px]">Browser Call</span></button>
                       <button className="bg-green-600/10 border border-green-500/30 hover:bg-green-600 text-green-400 hover:text-white flex flex-col items-center justify-center py-3 rounded-xl transition-all cursor-pointer gap-1"><FaWhatsapp className="text-xl"/><span className="font-bold text-[10px]">WhatsApp</span></button>
                     </div>
                   </div>

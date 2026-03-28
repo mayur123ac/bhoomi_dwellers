@@ -1,7 +1,6 @@
 // app/api/walkin_enquiries/[id]/route.ts
-// Only change: import from "@/lib/db" instead of "@/lib/mongodb"
 import { NextResponse } from "next/server";
-import { getPool } from "@/lib/db"; // ← ONLY LINE THAT CHANGED
+import { getPool } from "@/lib/db";
 
 export async function PUT(
   req: Request,
@@ -11,7 +10,13 @@ export async function PUT(
     const pool = getPool();
     const { id } = await params;
     const body = await req.json();
-    const { name, status, alt_phone, loan_planned, source_other, cp_name, cp_company, cp_phone } = body;
+
+    const {
+      name, status, alt_phone, loan_planned,
+      source_other, cp_name, cp_company, cp_phone,
+      assigned_to, // ← NEW: for transfer flow
+      // assigned_receptionist is intentionally NEVER accepted here
+    } = body;
 
     const fields: string[] = [];
     const values: any[]    = [];
@@ -25,6 +30,7 @@ export async function PUT(
     if (cp_name      !== undefined) { fields.push(`cp_name = $${i++}`);      values.push(cp_name); }
     if (cp_company   !== undefined) { fields.push(`cp_company = $${i++}`);   values.push(cp_company); }
     if (cp_phone     !== undefined) { fields.push(`cp_phone = $${i++}`);     values.push(cp_phone); }
+    if (assigned_to  !== undefined) { fields.push(`assigned_to = $${i++}`);  values.push(assigned_to); } // ← NEW
 
     if (fields.length === 0) {
       return NextResponse.json({ success: false, message: "No fields to update" }, { status: 400 });
