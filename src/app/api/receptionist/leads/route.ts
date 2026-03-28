@@ -16,9 +16,9 @@ export async function GET(req: Request) {
 
     const rows = await query(
       `SELECT * FROM walkin_enquiries
-       WHERE assigned_receptionist = $18
+       WHERE assigned_receptionist = $1
        ORDER BY created_at DESC`,
-      [name]
+      [name] // <-- 'name' is the 1st item in the array, so it is $1
     );
 
     return NextResponse.json({ success: true, data: rows, total: rows.length }, { status: 200 });
