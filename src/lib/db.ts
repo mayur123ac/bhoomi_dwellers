@@ -1,8 +1,4 @@
 // lib/db.ts
-// ─────────────────────────────────────────────
-// Single PostgreSQL connection — use this everywhere
-// after migration is complete
-// ─────────────────────────────────────────────
 import { Pool, PoolClient } from "pg";
 
 let pool: Pool | undefined;
@@ -11,9 +7,7 @@ export function getPool(): Pool {
   if (!pool) {
     pool = new Pool({
       connectionString: process.env.DATABASE_URL,
-      ssl: process.env.NODE_ENV === "production"
-        ? { rejectUnauthorized: false }
-        : false,
+      ssl: { rejectUnauthorized: false }, // ← Always ON for Neon
       max: 10,
       idleTimeoutMillis: 30_000,
       connectionTimeoutMillis: 5_000,
@@ -23,7 +17,6 @@ export function getPool(): Pool {
   return pool;
 }
 
-// Run a single query — returns rows[]
 export async function query<T = any>(
   text: string,
   params?: any[]
@@ -37,7 +30,6 @@ export async function query<T = any>(
   }
 }
 
-// Run multiple queries safely in one transaction
 export async function transaction<T>(
   fn: (client: PoolClient) => Promise<T>
 ): Promise<T> {
@@ -54,10 +46,11 @@ export async function transaction<T>(
     client.release();
   }
 }
+
 if (typeof window === "undefined") {
   setInterval(async () => {
     try {
       await query("SELECT 1");
     } catch {}
-  }, 4 * 60 * 1000); // every 4 minutes
+  }, 4 * 60 * 1000);
 }
