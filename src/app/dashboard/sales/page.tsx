@@ -110,7 +110,7 @@ function buildTheme(isDark: boolean) {
 
     // ── Chat ──
    chatArea: isDark 
-      ? "bg-[#EDEFF3]" 
+      ? "bg-[#262626]" 
       : "bg-[#EDEFF3]",
 
     chatBubbleAi: isDark 
