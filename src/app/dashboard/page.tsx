@@ -7,7 +7,7 @@ import {
   FaThLarge, FaClipboardList, FaUsers, FaIdCard,
   FaSearch, FaBell, FaChevronLeft, FaPhoneAlt, FaComments,
   FaCheckCircle, FaCalendarAlt, FaTimes,
-  FaFileInvoice, FaPaperPlane, FaMicrophone, FaWhatsapp, FaTable, FaChartPie, FaEyeSlash, FaUniversity, FaFileAlt, FaCheck, FaClock, FaHandshake
+  FaFileInvoice, FaPaperPlane, FaMicrophone, FaWhatsapp, FaTable, FaChartPie, FaEyeSlash, FaUniversity, FaFileAlt, FaCheck, FaClock, FaHandshake, FaExchangeAlt, FaBriefcase, 
 } from "react-icons/fa";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, Cell,
@@ -418,7 +418,18 @@ export default function AdminAtlasDashboard() {
         <main className={`flex-1 overflow-hidden transition-colors duration-300 ${theme.mainBg}`}>
           {activeView === "dashboard"    && <DashboardOverview managers={managers} allLeads={allLeads} isLoading={isLoading} user={user} theme={theme} isDark={isDark} />}
           {activeView === "sales"        && <AdminSalesView managers={managers} allLeads={allLeads} followUps={followUps} isLoading={isLoading} adminUser={user} refetch={refetch} theme={theme} isDark={isDark} />}
-          {activeView === "receptionist" && <ReceptionistView receptionists={receptionists} allLeads={allLeads} managers={managers} isLoading={isLoading} refetch={refetch} theme={theme} isDark={isDark} />}
+         {activeView === "receptionist" && (
+            <ReceptionistView
+              receptionists={receptionists}
+              allLeads={allLeads}
+              followUps={followUps}
+              isLoading={isLoading}
+              refetch={refetch}
+              adminUser={user} 
+              theme={theme}
+              isDark={isDark}
+            />
+          )}
         </main>
       </div>
 
@@ -1426,45 +1437,878 @@ function AdminSalesView({ managers, allLeads, followUps, isLoading, adminUser, r
 // ============================================================================
 // RECEPTIONIST VIEW
 // ============================================================================
-function ReceptionistView({ receptionists, allLeads, isLoading, refetch, theme, isDark }: any) {
+function ReceptionistView({ receptionists, allLeads, followUps, isLoading, refetch, theme, isDark, adminUser }: any) {
+  const [assignedTableFilter, setAssignedTableFilter] = useState<"working" | "all">("working");
   const [selectedReceptionist, setSelectedReceptionist] = useState<any>(null);
-  const [searchRecep, setSearchRecep] = useState("");
-  const [subView, setSubView]         = useState<"cards"|"detail">("cards");
+  const [searchRecep, setSearchRecep]   = useState("");
+  const [activeSection, setActiveSection] = useState<"enquiries" | "assignedTable" | "assignedForm" | "closed">("enquiries");
+  const [subView, setSubView]           = useState<"list" | "detail">("list");
   const [selectedLead, setSelectedLead] = useState<any>(null);
-  const filteredRecep     = receptionists.filter((r: any) => r.name?.toLowerCase().includes(searchRecep.toLowerCase()));
-  const receptionistLeads = allLeads;
+  const followUpEndRef                  = useRef<HTMLDivElement>(null);
+  const inputRef                        = useRef<HTMLInputElement>(null);
+// ── NEW: Full detail panel state ──────────────────────────────────────────
+  const [detailTab, setDetailTab]         = useState<"personal"|"loan">("personal");
+  const [showSalesForm, setShowSalesForm] = useState(false);
+  const [showLoanForm, setShowLoanForm]   = useState(false);
+  const [salesForm, setSalesForm]         = useState({ propertyType:"",location:"",budget:"",useType:"",purchaseDate:"",loanPlanned:"",siteVisit:"",leadStatus:"" });
+  const [loanForm, setLoanForm]           = useState({ loanRequired:"",status:"",bank:"",amountReq:"",amountApp:"",cibil:"",agent:"",agentContact:"",empType:"",income:"",emi:"",docPan:"Pending",docAadhaar:"Pending",docSalary:"Pending",docBank:"Pending",docProperty:"Pending",notes:"" });
+  const [customNote, setCustomNote]       = useState("");
+  const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
+  const [transferNote, setTransferNote]   = useState("");
+  const [transferTarget, setTransferTarget] = useState("");
+  const [isTransferring, setIsTransferring] = useState(false);
+  const [salesManagers, setSalesManagers] = useState<any[]>([]);
+  const [toastMsg, setToastMsg]           = useState<string|null>(null);
 
+  const showToast = (msg: string) => { setToastMsg(msg); setTimeout(() => setToastMsg(null), 3000); };
+  useEffect(() => {
+    fetch("/api/users/sales-manager").then(r => r.ok ? r.json() : null).then(j => {
+      if (j) setSalesManagers(j.data || j || []);
+    }).catch(() => {});
+  }, []);
+  const [isEnquiryView, setIsEnquiryView] = useState(false);
+
+  const currentFollowUps = useMemo(
+    () => (followUps || []).filter((f: any) => String(f.leadId) === String(selectedLead?.id)),
+    [followUps, selectedLead]
+  );
+
+  useEffect(() => {
+    if (subView === "detail") followUpEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [currentFollowUps, subView, detailTab]);
+
+  const getLatestLoanDetails = () => {
+    if (!selectedLead) return null;
+    let ex: Record<string,any> = { loanRequired: selectedLead.loanPlanned||"N/A", status:"Pending", bankName:"N/A", amountReq:"N/A", amountApp:"N/A", cibil:"N/A", agent:"N/A", agentContact:"N/A", empType:"N/A", income:"N/A", emi:"N/A", docPan:"Pending", docAadhaar:"Pending", docSalary:"Pending", docBank:"Pending", docProperty:"Pending", notes:"N/A" };
+    const lu = currentFollowUps.filter((f:any) => f.message?.includes("🏦 Loan Update:"));
+    if (lu.length > 0) {
+      const msg = lu[lu.length-1].message;
+      const g = (l:string) => { const m = msg.match(new RegExp(`• ${l}: (.*)`)); return m ? m[1].trim() : "N/A"; };
+      ex = { loanRequired:g("Loan Required"), status:g("Status"), bankName:g("Bank Name"), amountReq:g("Amount Requested"), amountApp:g("Amount Approved"), cibil:g("CIBIL Score"), agent:g("Agent Name"), agentContact:g("Agent Contact"), empType:g("Employment Type"), income:g("Monthly Income"), emi:g("Existing EMIs"), docPan:g("PAN Card"), docAadhaar:g("Aadhaar Card"), docSalary:g("Salary Slips"), docBank:g("Bank Statements"), docProperty:g("Property Docs"), notes:g("Notes") };
+    }
+    return ex;
+  };
+
+  const getLoanStatusColor = (s: string) => {
+    const sl = (s||"").toLowerCase();
+    if (sl==="approved")    return isDark?"bg-green-900/20 text-green-400 border-green-500/30":"bg-green-50 text-green-700 border-green-300";
+    if (sl==="rejected")    return isDark?"bg-red-900/20 text-red-400 border-red-500/30":"bg-red-50 text-red-700 border-red-300";
+    if (sl==="in progress") return isDark?"bg-yellow-900/20 text-yellow-400 border-yellow-500/30":"bg-yellow-50 text-yellow-700 border-yellow-300";
+    return isDark?"bg-gray-900/20 text-gray-400 border-gray-500/30":"bg-gray-50 text-gray-600 border-gray-300";
+  };
+
+  const prefillSalesForm = () => {
+    const sf = currentFollowUps.filter((f:any) => f.message?.includes("Detailed Salesform Submitted"));
+    if (sf.length === 0) return;
+    const msg = sf[sf.length-1].message;
+    const g = (label:string) => { const m = msg.match(new RegExp(`• ${label}: (.*)`)); return m&&m[1].trim()!=="N/A"?m[1].trim():""; };
+    setSalesForm({ propertyType:g("Property Type"), location:g("Location"), budget:g("Budget"), useType:g("Use Type"), purchaseDate:g("Planning to Purchase"), loanPlanned:g("Loan Planned"), leadStatus:g("Lead Status"), siteVisit:"" });
+  };
+
+  const prefillLoanForm = () => {
+    const cur = getLatestLoanDetails();
+    if (!cur) return;
+    const n = (v:string) => v!=="N/A"?v:"";
+    setLoanForm({ loanRequired:n(cur.loanRequired), status:cur.status!=="Pending"?cur.status:"", bank:n(cur.bankName), amountReq:n(cur.amountReq), amountApp:n(cur.amountApp), cibil:n(cur.cibil), agent:n(cur.agent), agentContact:n(cur.agentContact), empType:n(cur.empType), income:n(cur.income), emi:n(cur.emi), docPan:cur.docPan!=="N/A"?cur.docPan:"Pending", docAadhaar:cur.docAadhaar!=="N/A"?cur.docAadhaar:"Pending", docSalary:cur.docSalary!=="N/A"?cur.docSalary:"Pending", docBank:cur.docBank!=="N/A"?cur.docBank:"Pending", docProperty:cur.docProperty!=="N/A"?cur.docProperty:"Pending", notes:n(cur.notes) });
+  };
+
+  const actorName = adminUser?.name || "Admin";
+
+  const handleSendCustomNote = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!customNote.trim() || !selectedLead) return;
+    const nm = { leadId:String(selectedLead.id), salesManagerName:actorName, createdBy:"admin", message:customNote, siteVisitDate:null, createdAt:new Date().toISOString() };
+    setCustomNote("");
+    try { await fetch("/api/followups",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(nm)}); refetch(); } catch{}
+  };
+
+  const handleSalesFormSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedLead) return;
+    const msg = `📝 Detailed Salesform Submitted:\n• Property Type: ${salesForm.propertyType||"N/A"}\n• Location: ${salesForm.location||"N/A"}\n• Budget: ${salesForm.budget||"N/A"}\n• Use Type: ${salesForm.useType||"N/A"}\n• Planning to Purchase: ${salesForm.purchaseDate||"N/A"}\n• Loan Planned: ${salesForm.loanPlanned||"N/A"}\n• Lead Status: ${salesForm.leadStatus||"N/A"}\n• Site Visit Requested: ${salesForm.siteVisit ? new Date(salesForm.siteVisit).toLocaleString("en-IN") : "No"}`;
+    const nm = { leadId:String(selectedLead.id), salesManagerName:actorName, createdBy:"admin", message:msg, siteVisitDate:salesForm.siteVisit||null, createdAt:new Date().toISOString() };
+    const ns = salesForm.siteVisit ? "Visit Scheduled" : selectedLead.status;
+    setShowSalesForm(false);
+    setSalesForm({ propertyType:"",location:"",budget:"",useType:"",purchaseDate:"",loanPlanned:"",siteVisit:"",leadStatus:"" });
+    try {
+      await fetch("/api/followups",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(nm)});
+      await fetch(`/api/walkin_enquiries/${selectedLead.id}`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:selectedLead.name,status:ns})});
+      refetch();
+    } catch{}
+  };
+
+  const handleLoanFormSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedLead) return;
+    const msg = `🏦 Loan Update:\n• Loan Required: ${loanForm.loanRequired||"N/A"}\n• Status: ${loanForm.status||"N/A"}\n• Bank Name: ${loanForm.bank||"N/A"}\n• Amount Requested: ${loanForm.amountReq||"N/A"}\n• Amount Approved: ${loanForm.amountApp||"N/A"}\n• CIBIL Score: ${loanForm.cibil||"N/A"}\n• Agent Name: ${loanForm.agent||"N/A"}\n• Agent Contact: ${loanForm.agentContact||"N/A"}\n• Employment Type: ${loanForm.empType||"N/A"}\n• Monthly Income: ${loanForm.income||"N/A"}\n• Existing EMIs: ${loanForm.emi||"N/A"}\n• PAN Card: ${loanForm.docPan||"Pending"}\n• Aadhaar Card: ${loanForm.docAadhaar||"Pending"}\n• Salary Slips: ${loanForm.docSalary||"Pending"}\n• Bank Statements: ${loanForm.docBank||"Pending"}\n• Property Docs: ${loanForm.docProperty||"Pending"}\n• Notes: ${loanForm.notes||"N/A"}`;
+    const nm = { leadId:String(selectedLead.id), salesManagerName:actorName, createdBy:"admin", message:msg, siteVisitDate:null, createdAt:new Date().toISOString() };
+    setShowLoanForm(false);
+    showToast(`Loan data logged for ${selectedLead.name}`);
+    try { await fetch("/api/followups",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(nm)}); refetch(); } catch{}
+  };
+
+  const handleMarkAsClosing = async () => {
+    if (!selectedLead || selectedLead.status==="Closing") return;
+    const nm = { leadId:String(selectedLead.id), salesManagerName:actorName, createdBy:"admin", message:`✅ Lead Marked as Closing by ${actorName} (Admin)`, siteVisitDate:null, createdAt:new Date().toISOString() };
+    try {
+      await fetch("/api/followups",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(nm)});
+      await fetch(`/api/walkin_enquiries/${selectedLead.id}`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:selectedLead.name,status:"Closing"})});
+      showToast(`🎉 ${selectedLead.name} marked as Closing!`);
+      refetch();
+    } catch{}
+  };
+
+  const handleTransferLead = async () => {
+    if (!selectedLead || !transferTarget || transferNote.trim().length < 50) return;
+    setIsTransferring(true);
+    try {
+      const res = await fetch("/api/leads/transfer", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ lead_id:selectedLead.id, transfer_to:transferTarget, transfer_note:transferNote, transferred_by:actorName }) });
+      if (!res.ok) throw new Error("Transfer failed");
+      setIsTransferModalOpen(false); setTransferNote(""); setTransferTarget("");
+      showToast(`Lead #${selectedLead.id} transferred to ${transferTarget}!`);
+      setSubView("list"); setSelectedLead(null);
+      refetch();
+    } catch(e:any) { alert(e.message ?? "Transfer failed."); }
+    finally { setIsTransferring(false); }
+  };
+
+  const formInput  = `w-full rounded-lg px-4 py-2 text-sm outline-none transition-colors border ${theme.inputInner} ${theme.text} ${theme.inputFocus}`;
+  const formSelect = `w-full rounded-lg px-4 py-2.5 text-sm outline-none cursor-pointer border ${theme.inputInner} ${theme.text} ${theme.inputFocus}`;
+
+
+  const formatDate = (ds: string) => {
+    if (!ds) return "—";
+    try { return new Date(ds).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }); }
+    catch { return ds; }
+  };
+  const maskPhone = (phone: any) => {
+    if (!phone || phone === "N/A") return "N/A";
+    const c = String(phone).replace(/[^a-zA-Z0-9]/g, "");
+    if (c.length <= 5) return c;
+    return `${c.slice(0, 2)}*****${c.slice(-3)}`;
+  };
+
+  // ── Sidebar filter ──────────────────────────────────────────────────────────
+  const filteredRecep = receptionists.filter((r: any) =>
+    r.name?.toLowerCase().includes(searchRecep.toLowerCase())
+  );
+
+  const recepName = selectedReceptionist?.name ?? "";
+
+  // ── Enrich leads with follow-up data ────────────────────────────────────────
+  const mergedLeads = useMemo(() => {
+    return allLeads.map((lead: any) => {
+      const lf         = (followUps || []).filter((f: any) => String(f.leadId) === String(lead.id));
+      const salesForms = lf.filter((f: any) => f.message?.includes("Detailed Salesform Submitted"));
+      const latestMsg  = salesForms.length > 0 ? salesForms[salesForms.length - 1].message : "";
+      const g = (field: string) => {
+        if (!latestMsg) return "Pending";
+        const m = latestMsg.match(new RegExp(`• ${field}: (.*)`));
+        return m ? m[1].trim() : "Pending";
+      };
+      const loanUpdates = lf.filter((f: any) => f.message?.includes("🏦 Loan Update:"));
+      let loanStatus = "N/A";
+      if (loanUpdates.length > 0) {
+        const msg = loanUpdates[loanUpdates.length - 1].message;
+        const mS  = msg.match(/• Status: (.*)/); if (mS) loanStatus = mS[1].trim();
+      }
+      const visitsWithDate = lf.filter((f: any) => f.siteVisitDate?.trim());
+      const mongoVisitDate = visitsWithDate.length > 0 ? visitsWithDate[visitsWithDate.length - 1].siteVisitDate : null;
+      const closingFups    = lf.filter((f: any) => f.message?.includes("✅ Lead Marked as Closing"));
+      const closingDate    = closingFups.length > 0 ? closingFups[closingFups.length - 1].createdAt : null;
+      const sfBudget       = g("Budget");
+      const activeBudget   = sfBudget !== "Pending" && sfBudget !== "N/A" ? sfBudget : (lead.budget || "Pending");
+
+      return {
+        ...lead,
+        propType:           (g("Property Type") !== "Pending" && g("Property Type") !== "N/A") ? g("Property Type") : (lead.configuration || "Pending"),
+        salesBudget:        activeBudget,
+        useType:            g("Use Type") !== "Pending" ? g("Use Type") : (lead.purpose || "Pending"),
+        leadInterestStatus: g("Lead Status"),
+        loanStatus, mongoVisitDate, closingDate,
+        allFollowUps:       lf,
+        status: lead.status === "Closing" ? "Closing" : mongoVisitDate ? "Visit Scheduled" : lead.status,
+      };
+    });
+  }, [allLeads, followUps]);
+
+  // ── 4 section datasets ───────────────────────────────────────────────────────
+  // 1. All Logged Enquiries — everything (no filter by receptionist)
+  const allEnquiries = mergedLeads;
+
+  // 2. Assigned Lead Table — leads where assigned_to === receptionist name
+  const assignedLeads = useMemo(
+    () => mergedLeads.filter((l: any) => l.assigned_to === recepName),
+    [mergedLeads, recepName]
+  );
+
+  // 3. Assigned Lead Form — leads where assigned_receptionist === receptionist name
+  //    (receptionist self-assigned, acting as sales manager)
+  const assignedFormLeads = useMemo(
+    () => mergedLeads.filter((l: any) => l.assigned_receptionist === recepName),
+    [mergedLeads, recepName]
+  );
+
+  // 4. Closed Leads — assigned_receptionist === name AND status Closing
+  const closedLeads = useMemo(
+    () => mergedLeads.filter((l: any) =>
+      l.assigned_receptionist === recepName &&
+      (l.status === "Closing" || l.status === "Closed" || !!l.closingDate)
+    ),
+    [mergedLeads, recepName]
+  );
+
+  // ── Current lead's follow-ups ────────────────────────────────────────────────
+
+  useEffect(() => {
+    if (subView === "detail") followUpEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [currentFollowUps, subView]);
+
+  // ── Status badge ─────────────────────────────────────────────────────────────
+  const statusCls = (status: string) => {
+    const s = status || "Routed";
+    if (s === "Closing" || s === "Closed") return isDark
+      ? "text-yellow-400 border-yellow-500/40 bg-yellow-500/10"
+      : "text-amber-600 border-amber-400/50 bg-amber-50";
+    if (s === "Visit Scheduled") return isDark
+      ? "text-orange-400 border-orange-500/30 bg-orange-500/10"
+      : "text-orange-500 border-orange-400/40 bg-orange-50";
+    return isDark
+      ? "text-[#d946a8] border-[#9E217B]/30 bg-[#9E217B]/10"
+      : "text-[#9E217B] border-[#9E217B]/30 bg-[#9E217B]/10";
+  };
+
+  // ── Section config ────────────────────────────────────────────────────────────
+  const sections = [
+    { key: "enquiries",    label: "All Logged Enquiries",        icon: "🗒️",  count: allEnquiries.length,      desc: "All walk-in forms logged in the system" },
+    { key: "assignedTable",label: "Assigned Lead Table",         icon: "🗃️",  count: assignedLeads.length,     desc: "Leads where assigned_to = this receptionist" },
+    { key: "assignedForm", label: "Assigned Lead Form",          icon: "📋",  count: assignedFormLeads.length, desc: "Leads self-assigned by receptionist (acting as sales manager)" },
+    { key: "closed",       label: "Closed Leads",                icon: "✅",  count: closedLeads.length,       desc: "Leads closed by this receptionist" },
+  ] as const;
+
+  // ── Reusable table renderer ───────────────────────────────────────────────────
+  const renderTable = (leads: any[], showFollowUpCount = false, isEnquiryTable = false) => (
+    <div className={`rounded-2xl overflow-hidden border ${theme.tableWrap}`} style={theme.tableGlass}>
+      <div className="overflow-x-auto">
+        <table className="w-full text-left text-sm">
+          <thead className={`text-xs uppercase ${theme.tableHead} ${theme.textHeader}`}>
+            <tr>
+              <th className="px-4 py-3">Lead ID</th>
+              <th className="px-4 py-3">Client</th>
+              <th className="px-4 py-3">Budget</th>
+              <th className="px-4 py-3">Phone</th>
+              <th className="px-4 py-3">Source</th>
+              <th className="px-4 py-3">Status</th>
+              <th className="px-4 py-3">Interest</th>
+              {showFollowUpCount && <th className="px-4 py-3">Follow-ups</th>}
+              <th className="px-4 py-3">Site Visit</th>
+              <th className="px-4 py-3">Date</th>
+              <th className="px-4 py-3">Action</th>
+            </tr>
+          </thead>
+          <tbody className={`divide-y ${theme.tableDivide}`}>
+            {isLoading ? (
+              <tr><td colSpan={10} className={`text-center py-8 ${theme.textMuted}`}>Syncing…</td></tr>
+            ) : leads.length === 0 ? (
+              <tr><td colSpan={10} className={`text-center py-12 ${theme.textMuted}`}>
+                <FaClipboardList className="text-3xl mx-auto mb-3 opacity-20"/>
+                <p className="text-sm">No leads found.</p>
+              </td></tr>
+            ) : leads.map((lead: any) => (
+              <tr
+                key={lead.id}
+                className={`transition-colors ${theme.tableRow} ${!isEnquiryTable ? "cursor-pointer" : ""}`}
+                onClick={!isEnquiryTable ? () => { setIsEnquiryView(false); setSelectedLead(lead); setSubView("detail"); } : undefined}
+              >
+                <td className={`px-4 py-3 font-black text-sm ${isDark ? "text-[#d946a8]" : "text-[#9E217B]"}`}>#{lead.id}</td>
+
+                {/* CLIENT NAME — only clickable in enquiry table */}
+                <td className={`px-4 py-3 font-semibold whitespace-nowrap ${theme.text}`}>
+                  {isEnquiryTable ? (
+                    <span
+                      className={`cursor-pointer hover:underline ${isDark ? "hover:text-[#d946a8]" : "hover:text-[#9E217B]"} transition-colors`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setIsEnquiryView(true);
+                        setSelectedLead(lead);
+                        setSubView("detail");
+                      }}
+                    >
+                      {lead.name}
+                    </span>
+                  ) : (
+                    lead.name
+                  )}
+                </td>
+
+                <td className={`px-4 py-3 font-semibold ${isDark ? "text-green-400" : "text-emerald-600"}`}>{lead.salesBudget || lead.budget || "N/A"}</td>
+                <td className={`px-4 py-3 font-mono text-xs ${theme.textMuted}`}>{maskPhone(lead.phone)}</td>
+                <td className={`px-4 py-3 text-xs ${theme.textMuted}`}>{lead.source || "—"}</td>
+                <td className="px-4 py-3">
+                  <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase border ${statusCls(lead.status)}`}>
+                    {lead.status || "Routed"}
+                  </span>
+                </td>
+                <td className="px-4 py-3">
+                  {lead.leadInterestStatus && lead.leadInterestStatus !== "Pending" ? (
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold border ${
+                      lead.leadInterestStatus === "Interested" ? (isDark ? "text-green-400 border-green-500/30 bg-green-500/10" : "text-green-700 border-green-200 bg-green-50") :
+                      lead.leadInterestStatus === "Not Interested" ? (isDark ? "text-red-400 border-red-500/30 bg-red-500/10" : "text-red-700 border-red-200 bg-red-50") :
+                      (isDark ? "text-yellow-400 border-yellow-500/30 bg-yellow-500/10" : "text-yellow-700 border-yellow-200 bg-yellow-50")
+                    }`}>{lead.leadInterestStatus}</span>
+                  ) : <span className={`text-xs italic ${theme.textFaint}`}>—</span>}
+                </td>
+                {showFollowUpCount && (
+                  <td className="px-4 py-3">
+                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${isDark ? "bg-[#9E217B]/10 text-[#d946a8]" : "bg-pink-50 text-[#9E217B]"}`}>
+                      {(lead.allFollowUps || []).length}
+                    </span>
+                  </td>
+                )}
+                <td className={`px-4 py-3 text-xs ${lead.mongoVisitDate ? "text-orange-500 font-semibold" : theme.textFaint}`}>
+                  {lead.mongoVisitDate ? formatDate(lead.mongoVisitDate).split(",")[0] : "—"}
+                </td>
+                <td className={`px-4 py-3 text-xs whitespace-nowrap ${theme.textFaint}`}>
+                  {formatDate(lead.created_at).split(",")[0]}
+                </td>
+                <td className="px-4 py-3">
+                  <button
+                    className={`text-xs font-bold px-3 py-1.5 rounded-lg cursor-pointer transition-colors ${isDark ? "bg-[#9E217B] text-white hover:bg-[#b8268f]" : "bg-[#9E217B]/10 text-[#9E217B] hover:bg-[#9E217B] hover:text-white"}`}
+                    onClick={e => {
+                      e.stopPropagation();
+                      setIsEnquiryView(isEnquiryTable); // enquiry table → enquiry-style detail
+                      setSelectedLead(lead);
+                      setSubView("detail");
+                    }}
+                  >
+                    View
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+  // ── ENQUIRY-STYLE DETAIL VIEW (read-only, receptionist layout, Image 1) ──
+  if (subView === "detail" && selectedLead && isEnquiryView) {
+    return (
+      <div className="flex flex-col h-full overflow-hidden animate-fadeIn">
+        {/* Header */}
+        <div className={`flex flex-col sm:flex-row sm:items-center gap-4 p-5 border-b flex-shrink-0 ${theme.header}`} style={theme.headerGlass}>
+          <button
+            onClick={() => { setSubView("list"); setSelectedLead(null); setIsEnquiryView(false); }}
+            className={`w-10 h-10 flex items-center justify-center border rounded-xl transition-colors cursor-pointer ${theme.textMuted} ${theme.tableBorder} ${isDark ? "bg-[#222] hover:bg-[#333]" : "bg-white hover:bg-[#F8FAFC]"}`}
+          >
+            <FaChevronLeft className="text-sm"/>
+          </button>
+          <h1 className={`text-xl md:text-2xl font-bold flex items-center flex-wrap gap-3 ${theme.text}`}>
+            <span className={isDark ? "text-[#d946a8]" : "text-[#9E217B]"}>#{selectedLead.id}</span>
+            <span>{selectedLead.name}</span>
+            <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${statusCls(selectedLead.status)}`}>
+              {selectedLead.status || "Routed"}
+            </span>
+          </h1>
+        </div>
+
+        {/* Body */}
+        <div className="flex-1 overflow-y-auto p-6">
+          <div className={`rounded-2xl border p-6 md:p-8 ${theme.card}`} style={theme.cardGlass}>
+
+            {/* Assigned Sales Manager banner */}
+            <div className={`rounded-xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8 text-white ${isDark ? "bg-gradient-to-r from-[#9E217B] to-[#7a1a5e]" : "bg-gradient-to-r from-[#00AEEF] to-[#9E217B]"}`}>
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-full border border-white/30 bg-white/20 flex items-center justify-center font-bold text-xl">
+                  {String(selectedLead.assignedTo || selectedLead.assigned_to || "U").charAt(0).toUpperCase()}
+                </div>
+                <div>
+                  <p className="text-xs text-white/70 font-bold tracking-wider uppercase mb-1">Assigned Sales Manager</p>
+                  <p className="font-bold text-lg">{selectedLead.assignedTo || selectedLead.assigned_to || "Unassigned"}</p>
+                </div>
+              </div>
+              <div className="sm:text-right">
+                <p className="text-xs text-white/70 uppercase tracking-wider font-bold mb-1">Source</p>
+                <p className="font-semibold flex items-center sm:justify-end gap-2">
+                  <FaBriefcase className="opacity-70"/> {selectedLead.source || "N/A"}
+                </p>
+              </div>
+            </div>
+
+            {/* Two-column layout */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+
+              {/* LEFT: Contact Info */}
+              <div className="space-y-6">
+                <div>
+                  <h3 className={`text-sm font-bold border-b pb-2 mb-4 uppercase tracking-widest ${isDark ? "text-[#d946a8]" : "text-[#9E217B]"} ${theme.tableBorder}`}>
+                    Contact Information
+                  </h3>
+                  <div className="space-y-4">
+                    {[
+                      { label: "Phone Number",        val: selectedLead.phone,   mono: true },
+                      { label: "Alt. Phone",           val: selectedLead.altPhone || selectedLead.alt_phone || "N/A", mono: true },
+                      { label: "Email Address",        val: selectedLead.email },
+                      { label: "Residential Address",  val: selectedLead.address },
+                    ].map(({ label, val, mono }) => (
+                      <div key={label}>
+                        <p className={`text-xs font-medium mb-1 ${theme.textFaint}`}>{label}</p>
+                        <p className={`${mono ? "text-lg tracking-widest font-semibold" : "font-medium"} ${theme.text}`}>{val || "N/A"}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* RIGHT: Property Requirements */}
+              <div className="space-y-6">
+                <div>
+                  <h3 className={`text-sm font-bold border-b pb-2 mb-4 uppercase tracking-widest ${isDark ? "text-[#d946a8]" : "text-[#9E217B]"} ${theme.tableBorder}`}>
+                    Property Requirements
+                  </h3>
+                  <div className={`rounded-xl p-5 space-y-5 border ${theme.settingsBg}`} style={theme.settingsBgGl}>
+                    <div>
+                      <p className={`text-xs font-medium mb-1 pl-2 ${theme.textFaint}`}>Budget</p>
+                      <p className={`font-bold text-xl ${isDark ? "text-green-500" : "text-emerald-600"}`}>
+                        {selectedLead.salesBudget || selectedLead.budget || "N/A"}
+                      </p>
+                    </div>
+                    <div className={`grid grid-cols-2 gap-4 border-t pt-5 ${theme.tableBorder}`}>
+                      <div>
+                        <p className={`text-xs font-medium mb-1 pl-2 ${theme.textFaint}`}>Configuration</p>
+                        <p className={`font-medium ${theme.text}`}>{selectedLead.configuration || selectedLead.propType || "N/A"}</p>
+                      </div>
+                      <div>
+                        <p className={`text-xs font-medium mb-1 pl-2 ${theme.textFaint}`}>Purpose</p>
+                        <p className={`font-medium ${theme.text}`}>{selectedLead.purpose || selectedLead.useType || "N/A"}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Occupation / Organization */}
+                {(selectedLead.occupation || selectedLead.organization) && (
+                  <div className={`rounded-xl p-4 border space-y-3 ${theme.settingsBg}`} style={theme.settingsBgGl}>
+                    {selectedLead.occupation && selectedLead.occupation !== "N/A" && (
+                      <div>
+                        <p className={`text-xs font-medium mb-1 ${theme.textFaint}`}>Occupation</p>
+                        <p className={`font-medium ${theme.text}`}>{selectedLead.occupation}</p>
+                      </div>
+                    )}
+                    {selectedLead.organization && selectedLead.organization !== "N/A" && (
+                      <div>
+                        <p className={`text-xs font-medium mb-1 ${theme.textFaint}`}>Organization</p>
+                        <p className={`font-medium ${theme.text}`}>{selectedLead.organization}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Loan Planned */}
+                <div>
+                  <p className={`text-xs font-medium mb-1 ${theme.textFaint}`}>Loan Planned</p>
+                  <p className={`font-semibold ${theme.text}`}>{selectedLead.loanPlanned || selectedLead.loan_planned || "N/A"}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Channel Partner section if applicable */}
+            {selectedLead.source === "Channel Partner" && (
+              <div className={`mt-8 rounded-xl p-5 border ${theme.settingsBg}`} style={theme.settingsBgGl}>
+                <h3 className={`text-xs font-bold uppercase tracking-widest mb-4 border-b pb-2 ${isDark ? "text-[#d946a8]" : "text-[#9E217B]"} ${theme.tableBorder}`}>
+                  Channel Partner Details
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  {[
+                    { label: "CP Name",    val: selectedLead.cp_name    || selectedLead.cpName },
+                    { label: "CP Company", val: selectedLead.cp_company || selectedLead.cpCompany },
+                    { label: "CP Phone",   val: selectedLead.cp_phone   || selectedLead.cpPhone },
+                  ].map(({ label, val }) => (
+                    <div key={label}>
+                      <p className={`text-xs font-medium mb-1 ${theme.textFaint}`}>{label}</p>
+                      <p className={`font-medium ${theme.text}`}>{val || "N/A"}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Date created */}
+            <div className={`mt-6 pt-4 border-t flex justify-end ${theme.tableBorder}`}>
+              <p className={`text-xs ${theme.textFaint}`}>
+                Created: {formatDate(selectedLead.created_at)}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  // ── Detail view ────────────────────────────────────────────────────────────────
+  if (subView === "detail" && selectedLead) {
+    return (
+      <div className="flex flex-col h-full overflow-hidden">
+        {/* Toast */}
+        {toastMsg && (
+          <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[200] px-6 py-3 rounded-xl shadow-lg bg-green-600 border-green-400 text-white text-sm font-bold animate-fadeIn">
+            {toastMsg}
+          </div>
+        )}
+
+        {/* Detail header */}
+        <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 border-b flex-shrink-0 ${theme.header}`} style={theme.headerGlass}>
+          <div className="flex items-center gap-4">
+            <button onClick={() => { setSubView("list"); setSelectedLead(null); setIsEnquiryView(false); setShowSalesForm(false); setShowLoanForm(false); }}
+              className={`w-10 h-10 flex items-center justify-center border rounded-xl transition-colors cursor-pointer ${theme.textMuted} ${theme.tableBorder} ${isDark?"bg-[#222] hover:bg-[#333]":"bg-white hover:bg-[#F8FAFC]"}`}>
+              <FaChevronLeft className="text-sm"/>
+            </button>
+            <div>
+              <h1 className={`text-lg md:text-xl font-bold flex items-center gap-3 ${theme.text}`}>
+                <span className={isDark?"text-[#d946a8]":"text-[#9E217B]"}>#{selectedLead.id}</span>
+                <span>{selectedLead.name}</span>
+                {selectedLead.status==="Closing" && (
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${isDark?"text-yellow-400 border-yellow-500/40 bg-yellow-500/10":"text-amber-600 border-amber-400/50 bg-amber-50"}`}>
+                    <FaHandshake className="inline mr-1 text-[9px]"/>Closing
+                  </span>
+                )}
+              </h1>
+              <p className={`text-xs mt-0.5 ${theme.textFaint}`}>Admin acting on behalf of {selectedReceptionist?.name}</p>
+            </div>
+          </div>
+          <div className="flex gap-2 flex-wrap justify-end">
+            {!showSalesForm && !showLoanForm && (
+              <>
+                <button onClick={() => { prefillSalesForm(); setShowSalesForm(true); setShowLoanForm(false); }}
+                  className={`font-bold px-3 py-2 rounded-lg text-xs flex items-center gap-1.5 transition-colors cursor-pointer ${theme.btnPrimary}`}>
+                  <FaFileInvoice/> Fill Salesform
+                </button>
+                <button onClick={() => { prefillLoanForm(); setShowLoanForm(true); setShowSalesForm(false); }}
+                  className={`font-bold px-3 py-2 rounded-lg text-xs flex items-center gap-1.5 transition-colors cursor-pointer ${theme.btnSecondary}`}>
+                  <FaUniversity/> Track Loan
+                </button>
+                {selectedLead.mongoVisitDate && selectedLead.status!=="Closing" && (
+                  <button onClick={handleMarkAsClosing}
+                    className={`font-bold px-3 py-2 rounded-lg text-xs flex items-center gap-1.5 transition-colors cursor-pointer ${theme.btnWarning}`}>
+                    <FaHandshake/> Mark Closing
+                  </button>
+                )}
+                <button onClick={() => { setTransferTarget(""); setTransferNote(""); setIsTransferModalOpen(true); }}
+                  className={`font-bold px-3 py-2 rounded-lg text-xs flex items-center gap-1.5 transition-colors cursor-pointer ${isDark?"bg-purple-600 hover:bg-purple-500 text-white":"bg-purple-600 hover:bg-purple-700 text-white"}`}>
+                  <FaExchangeAlt/> Transfer
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Main body */}
+        <div className="flex flex-col lg:flex-row gap-4 flex-1 min-h-0 p-4 overflow-hidden">
+
+          {/* LEFT PANEL */}
+          <div className="w-full lg:w-[50%] flex flex-col gap-3 h-full min-h-0">
+            {showSalesForm ? (
+              <div className={`rounded-xl border p-5 shadow-xl flex-1 overflow-y-auto flex flex-col ${theme.modalCard}`} style={theme.modalGlass}>
+                <div className={`flex justify-between items-center mb-4 border-b pb-3 ${theme.tableBorder}`}>
+                  <div>
+                    <h3 className={`text-base font-bold ${theme.text}`}>Sales Data Form</h3>
+                    <p className={`text-xs mt-0.5 ${isDark?"text-[#d946a8]":"text-[#9E217B]"}`}>Admin override — Lead #{selectedLead.id}</p>
+                  </div>
+                  <button type="button" onClick={() => setShowSalesForm(false)} className={`p-1 ${theme.textMuted} hover:text-red-500`}><FaTimes/></button>
+                </div>
+                <form onSubmit={handleSalesFormSubmit} className="flex flex-col gap-4 flex-1">
+                  <div><label className={`text-xs mb-1 block ${theme.textMuted}`}>Property Type?</label><input type="text" placeholder="e.g. 1BHK, 2BHK" value={salesForm.propertyType} onChange={e=>setSalesForm({...salesForm,propertyType:e.target.value})} className={formInput}/></div>
+                  <div><label className={`text-xs mb-1 block ${theme.textMuted}`}>Preferred Location?</label><input type="text" placeholder="e.g. Dombivali, Kalyan" value={salesForm.location} onChange={e=>setSalesForm({...salesForm,location:e.target.value})} className={formInput}/></div>
+                  <div><label className={`text-xs mb-1 block ${theme.textMuted}`}>Approximate Budget?</label><input type="text" placeholder="e.g. 5 cr" value={salesForm.budget} onChange={e=>setSalesForm({...salesForm,budget:e.target.value})} className={formInput}/></div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div><label className={`text-xs mb-1 block ${theme.textMuted}`}>Self-use or Investment?</label>
+                      <select value={salesForm.useType} onChange={e=>setSalesForm({...salesForm,useType:e.target.value})} className={formSelect}><option value="">Select</option><option>Self Use</option><option>Investment</option></select>
+                    </div>
+                    <div><label className={`text-xs mb-1 block ${theme.textMuted}`}>Planning to Purchase?</label>
+                      <select value={salesForm.purchaseDate} onChange={e=>setSalesForm({...salesForm,purchaseDate:e.target.value})} className={formSelect}><option value="">Select</option><option>Immediate</option><option>Next 3 Months</option></select>
+                    </div>
+                  </div>
+                  <div className={`border-t pt-3 ${theme.tableBorder}`}>
+                    <label className={`block text-xs font-bold mb-1.5 ${isDark?"text-[#d946a8]":"text-[#9E217B]"}`}>Lead Interest Status *</label>
+                    <select required value={salesForm.leadStatus} onChange={e=>setSalesForm({...salesForm,leadStatus:e.target.value})} className={formSelect}><option value="" disabled>Select Status</option><option>Interested</option><option>Not Interested</option><option>Maybe</option></select>
+                  </div>
+                  <div className={`border-t pt-3 ${theme.tableBorder}`}>
+                    <label className={`block text-xs font-bold mb-1.5 ${isDark?"text-[#d946a8]":"text-[#9E217B]"}`}>Loan Planned?</label>
+                    <select required value={salesForm.loanPlanned} onChange={e=>setSalesForm({...salesForm,loanPlanned:e.target.value})} className={formSelect}><option value="" disabled>Select Option</option><option>Yes</option><option>No</option><option>Not Sure</option></select>
+                  </div>
+                  <div className={`border-t pt-3 ${theme.tableBorder}`}>
+                    <label className="text-xs text-orange-400 font-bold mb-1.5 block">Schedule a Site Visit?</label>
+                    <input ref={inputRef} type="datetime-local" value={salesForm.siteVisit} onChange={e=>setSalesForm({...salesForm,siteVisit:e.target.value})} onClick={()=>inputRef.current?.showPicker()} className={`${formInput} focus:border-orange-500`}/>
+                  </div>
+                  <button type="submit" className={`mt-auto w-full font-bold py-3 rounded-xl transition-colors ${theme.btnPrimary}`}>Submit Salesform</button>
+                </form>
+              </div>
+
+            ) : showLoanForm ? (
+              <div className={`rounded-xl border p-5 shadow-xl flex-1 overflow-y-auto flex flex-col ${theme.modalCard}`} style={theme.modalGlass}>
+                <div className={`flex justify-between items-center mb-4 border-b pb-3 flex-shrink-0 ${theme.tableBorder}`}>
+                  <h3 className={`text-base font-bold flex items-center gap-2 ${isDark?"text-[#d946a8]":"text-[#9E217B]"}`}><FaUniversity/> Loan Tracking</h3>
+                  <button type="button" onClick={() => setShowLoanForm(false)} className={`p-1 ${theme.textMuted} hover:text-red-500`}><FaTimes/></button>
+                </div>
+                <form onSubmit={handleLoanFormSubmit} className="flex flex-col gap-4 flex-1">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div><label className={`text-xs mb-1 block ${theme.textMuted}`}>Loan Required? *</label>
+                      <select required value={loanForm.loanRequired} onChange={e=>setLoanForm({...loanForm,loanRequired:e.target.value})} className={formSelect}><option value="">Select</option><option>Yes</option><option>No</option><option>Not Sure</option></select>
+                    </div>
+                    <div><label className={`text-xs mb-1 block ${theme.textMuted}`}>Loan Status *</label>
+                      <select required value={loanForm.status} onChange={e=>setLoanForm({...loanForm,status:e.target.value})} className={formSelect}><option value="">Select</option><option>Approved</option><option>In Progress</option><option>Rejected</option></select>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    {[{label:"Bank Name",k:"bank",ph:"e.g. HDFC"},{label:"Amount Required",k:"amountReq",ph:"e.g. 60L"},{label:"Amount Approved",k:"amountApp",ph:"e.g. 55L"},{label:"CIBIL Score",k:"cibil",ph:"e.g. 750"},{label:"Agent Name",k:"agent",ph:"Agent Name"},{label:"Agent Contact",k:"agentContact",ph:"Agent Phone"}].map(f=>(
+                      <div key={f.k}><label className={`text-xs mb-1 block ${theme.textMuted}`}>{f.label}</label><input type="text" value={(loanForm as any)[f.k]} onChange={e=>setLoanForm({...loanForm,[f.k]:e.target.value})} className={formInput} placeholder={f.ph}/></div>
+                    ))}
+                  </div>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div><label className={`text-xs mb-1 block ${theme.textMuted}`}>Employment</label>
+                      <select value={loanForm.empType} onChange={e=>setLoanForm({...loanForm,empType:e.target.value})} className={formSelect}><option value="">Select</option><option>Salaried</option><option>Self-employed</option></select>
+                    </div>
+                    <div><label className={`text-xs mb-1 block ${theme.textMuted}`}>Monthly Income</label><input type="text" value={loanForm.income} onChange={e=>setLoanForm({...loanForm,income:e.target.value})} className={formInput} placeholder="e.g. 1L"/></div>
+                    <div><label className={`text-xs mb-1 block ${theme.textMuted}`}>Existing EMIs</label><input type="text" value={loanForm.emi} onChange={e=>setLoanForm({...loanForm,emi:e.target.value})} className={formInput} placeholder="e.g. 15k"/></div>
+                  </div>
+                  <div className={`border-t pt-3 ${theme.tableBorder}`}>
+                    <p className={`text-xs font-bold mb-2 ${isDark?"text-[#d946a8]":"text-[#9E217B]"}`}>Document Checklist</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {["docPan","docAadhaar","docSalary","docBank","docProperty"].map(docKey => {
+                        const label = docKey==="docPan"?"PAN Card":docKey==="docAadhaar"?"Aadhaar":docKey==="docSalary"?"Salary/ITR":docKey==="docBank"?"Bank Stmt":"Property Docs";
+                        return (
+                          <div key={docKey} className={`flex items-center justify-between border p-2 rounded-lg ${theme.innerBlock}`}>
+                            <span className={`text-xs ${theme.textMuted}`}>{label}</span>
+                            <select value={(loanForm as any)[docKey]} onChange={e=>setLoanForm({...loanForm,[docKey]:e.target.value})} className={`text-xs font-bold bg-transparent outline-none cursor-pointer ${(loanForm as any)[docKey]==="Uploaded"?"text-green-400":"text-gray-500"}`}><option>Pending</option><option>Uploaded</option></select>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <div><label className={`text-xs mb-1 block ${theme.textMuted}`}>Notes</label><textarea value={loanForm.notes} onChange={e=>setLoanForm({...loanForm,notes:e.target.value})} className={`w-full rounded-lg px-4 py-2 text-sm outline-none resize-none h-16 border ${theme.inputInner} ${theme.text} ${theme.inputFocus}`} placeholder="Internal notes..."/></div>
+                  <button type="submit" className={`w-full font-bold py-3 rounded-xl transition-colors ${theme.btnSecondary}`}>Save Loan Update</button>
+                </form>
+              </div>
+
+            ) : (
+              <div className="flex flex-col h-full">
+                {/* Tab switcher */}
+                <div className={`flex items-center gap-2 mb-3 border p-1.5 rounded-xl flex-shrink-0 ${theme.tableWrap}`}>
+                  <button onClick={() => setDetailTab("personal")} className={`flex-1 py-2 text-sm font-bold rounded-lg transition-colors cursor-pointer ${detailTab==="personal" ? theme.btnPrimary : `${theme.textMuted} ${isDark?"hover:text-white hover:bg-[#222]":"hover:text-[#1A1A1A] hover:bg-[#F1F5F9]"}`}`}>Personal Info</button>
+                  <button onClick={() => setDetailTab("loan")} className={`flex-1 py-2 text-sm font-bold rounded-lg transition-colors cursor-pointer ${detailTab==="loan" ? theme.btnSecondary : `${theme.textMuted} ${isDark?"hover:text-white hover:bg-[#222]":"hover:text-[#1A1A1A] hover:bg-[#F1F5F9]"}`}`}>Loan Tracking</button>
+                </div>
+                <div className={`flex-1 overflow-y-auto rounded-xl p-4 border ${theme.chatPanel}`} style={theme.chatPanelGl}>
+                  {detailTab === "personal" ? (
+                    <div className="grid grid-cols-2 gap-y-4 gap-x-4 text-sm">
+                      {[
+                        {label:"Email", val:selectedLead.email!=="N/A"?selectedLead.email:"Not Provided"},
+                        {label:"Phone", val:selectedLead.phone, mono:true},
+                        {label:"Alt Phone", val:selectedLead.altPhone&&selectedLead.altPhone!=="N/A"?selectedLead.altPhone:"Not Provided", mono:true},
+                        {label:"Budget", val:selectedLead.salesBudget||selectedLead.budget},
+                        {label:"Property Type", val:selectedLead.propType||"Pending"},
+                        {label:"Use Type", val:selectedLead.useType!=="Pending"?selectedLead.useType:(selectedLead.purpose||"N/A")},
+                        {label:"Source", val:selectedLead.source||"N/A"},
+                        {label:"Status", val:selectedLead.status||"Routed"},
+                      ].map(f=>(
+                        <div key={f.label}>
+                          <p className={`text-xs font-medium mb-0.5 ${theme.textFaint}`}>{f.label}</p>
+                          <p className={`font-semibold ${(f as any).mono?"font-mono":""} ${theme.text}`}>{f.val}</p>
+                        </div>
+                      ))}
+                      <div className="col-span-2">
+                        <p className={`text-xs font-medium mb-0.5 ${theme.textFaint}`}>Lead Interest</p>
+                        {selectedLead.leadInterestStatus && selectedLead.leadInterestStatus !== "Pending"
+                          ? <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold border ${selectedLead.leadInterestStatus==="Interested"?(isDark?"text-green-400 border-green-500/30 bg-green-500/10":"text-green-700 border-green-200 bg-green-50"):selectedLead.leadInterestStatus==="Not Interested"?(isDark?"text-red-400 border-red-500/30 bg-red-500/10":"text-red-700 border-red-200 bg-red-50"):(isDark?"text-yellow-400 border-yellow-500/30 bg-yellow-500/10":"text-yellow-700 border-yellow-200 bg-yellow-50")}`}>{selectedLead.leadInterestStatus}</span>
+                          : <p className={`font-semibold ${theme.text}`}>Pending</p>}
+                      </div>
+                      <div className={`col-span-2 p-3 rounded-xl border ${theme.settingsBg}`}>
+                        <p className={`text-xs font-bold uppercase mb-0.5 ${isDark?"text-orange-400":"text-orange-500"}`}>📍 Site Visit</p>
+                        <p className={`text-sm font-black ${theme.text}`}>{selectedLead.mongoVisitDate ? new Date(selectedLead.mongoVisitDate).toLocaleString("en-IN") : "Not Scheduled"}</p>
+                      </div>
+                      {selectedLead.closingDate && (
+                        <div className={`col-span-2 p-3 rounded-xl border ${isDark?"bg-yellow-900/10 border-yellow-500/20":"bg-amber-50 border-amber-200"}`}>
+                          <p className="text-xs font-bold text-amber-500 uppercase mb-0.5">Closing Date</p>
+                          <p className={`text-sm font-black ${theme.text}`}>{new Date(selectedLead.closingDate).toLocaleString("en-IN")}</p>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div>
+                      {(() => {
+                        const curLoan: any = getLatestLoanDetails() || {};
+                        const sColor = getLoanStatusColor(curLoan?.status || "");
+                        const isHighProb = curLoan?.status?.toLowerCase() === "approved" && selectedLead.mongoVisitDate;
+                        return (
+                          <>
+                            <h3 className={`text-sm font-bold border-b pb-2 mb-4 uppercase flex items-center gap-2 ${isDark?"text-[#d946a8]":"text-[#9E217B]"} ${theme.tableBorder}`}><FaUniversity/> Loan Overview</h3>
+                            {isHighProb && <div className="mb-4 bg-gradient-to-r from-orange-500/20 to-red-500/20 border border-orange-500/50 p-2 rounded-lg text-center text-orange-400 font-bold text-xs">🚀 HIGH PROBABILITY DEAL</div>}
+                            <div className="grid grid-cols-2 gap-y-4 gap-x-4 text-sm">
+                              <div><p className={`text-xs mb-0.5 ${theme.textFaint}`}>Loan Required?</p><p className={`font-semibold ${theme.text}`}>{curLoan?.loanRequired}</p></div>
+                              <div><p className={`text-xs mb-0.5 ${theme.textFaint}`}>Status</p><p className={`font-bold px-2 py-0.5 rounded inline-block border text-xs ${sColor}`}>{curLoan?.status}</p></div>
+                              <div><p className={`text-xs mb-0.5 ${theme.textFaint}`}>Requested</p><p className="text-orange-400 font-semibold">{curLoan?.amountReq}</p></div>
+                              <div><p className={`text-xs mb-0.5 ${theme.textFaint}`}>Approved</p><p className={`font-semibold ${isDark?"text-green-400":"text-emerald-600"}`}>{curLoan?.amountApp}</p></div>
+                              {[{label:"Bank",val:curLoan?.bankName},{label:"CIBIL",val:curLoan?.cibil},{label:"Agent",val:curLoan?.agent},{label:"Agent Ph",val:curLoan?.agentContact},{label:"Employment",val:curLoan?.empType},{label:"Income",val:curLoan?.income}].map(f=>(
+                                <div key={f.label}><p className={`text-xs mb-0.5 ${theme.textFaint}`}>{f.label}</p><p className={`font-semibold ${theme.text}`}>{f.val}</p></div>
+                              ))}
+                              <div className="col-span-2"><p className={`text-xs font-bold uppercase mb-2 ${theme.textMuted}`}>Documents</p></div>
+                              {[{label:"PAN",val:curLoan?.docPan},{label:"Aadhaar",val:curLoan?.docAadhaar},{label:"Salary",val:curLoan?.docSalary},{label:"Bank Stmt",val:curLoan?.docBank},{label:"Property",val:curLoan?.docProperty}].map((doc,i)=>(
+                                <div key={i} className={`flex items-center justify-between p-2 rounded-lg border ${theme.innerBlock}`}>
+                                  <span className={`text-xs ${theme.textMuted}`}>{doc.label}</span>
+                                  {doc.val==="Uploaded"?<FaCheck className="text-green-500 text-xs"/>:<FaClock className={`text-xs ${theme.textFaint}`}/>}
+                                </div>
+                              ))}
+                            </div>
+                          </>
+                        );
+                      })()}
+                    </div>
+                  )}
+                </div>
+                <div className="grid grid-cols-2 gap-3 mt-3 flex-shrink-0">
+                  <button className={`border flex flex-col items-center justify-center py-3 rounded-xl transition-all cursor-pointer gap-1 ${isDark?"bg-[#9E217B]/10 border-[#9E217B]/30 hover:bg-[#9E217B] text-[#d946a8] hover:text-white":"bg-[#9E217B]/10 border-[#9E217B]/30 hover:bg-[#9E217B] text-[#9E217B] hover:text-white"}`}><FaMicrophone className="text-lg"/><span className="font-bold text-[10px]">Browser Call</span></button>
+                  <button className="bg-green-600/10 border border-green-500/30 hover:bg-green-600 text-green-400 hover:text-white flex flex-col items-center justify-center py-3 rounded-xl transition-all cursor-pointer gap-1"><FaWhatsapp className="text-xl"/><span className="font-bold text-[10px]">WhatsApp</span></button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* RIGHT PANEL: Follow-ups */}
+          <div className={`w-full lg:w-[50%] flex flex-col rounded-2xl overflow-hidden border h-full min-h-0 ${theme.chatPanel}`} style={theme.chatPanelGl}>
+            <div className={`p-3 border-b flex items-center gap-3 flex-shrink-0 ${theme.header}`}>
+              <FaComments className={isDark?"text-[#d946a8]":"text-[#9E217B]"}/>
+              <div>
+                <p className={`font-bold text-sm ${theme.text}`}>Lead History & Follow-ups</p>
+                <p className={`text-xs ${theme.textFaint}`}>{currentFollowUps.length} entries · Admin can add notes</p>
+              </div>
+              <span className={`ml-auto text-[10px] px-2 py-0.5 rounded-full border font-bold ${isDark?"text-green-400 border-green-500/30 bg-green-500/10":"text-green-700 border-green-200 bg-green-50"}`}>🟢 Live</span>
+            </div>
+            <div className={`flex-1 p-4 overflow-y-auto flex flex-col gap-4 ${theme.chatArea}`}>
+              {/* System entry */}
+              <div className={`rounded-2xl rounded-tl-none p-4 max-w-[85%] border ${theme.fupSalesform}`}>
+                <div className="flex justify-between items-center mb-2 gap-4">
+                  <span className={`font-bold text-sm ${theme.accentText}`}>System (Front Desk)</span>
+                  <span className={`text-[10px] ${theme.textFaint}`}>{selectedLead.created_at ? new Date(selectedLead.created_at).toLocaleString("en-IN") : "—"}</span>
+                </div>
+                <p className={`text-sm ${theme.text}`}>Lead assigned to {selectedLead.assigned_to||"Unassigned"}. Status: {selectedLead.status}</p>
+              </div>
+              {currentFollowUps.length === 0
+                ? <p className={`text-center text-sm py-8 ${theme.textFaint}`}>No follow-up history yet.</p>
+                : currentFollowUps.map((msg:any, idx:number) => {
+                    const isLoan    = msg.message?.includes("🏦 Loan Update");
+                    const isSF      = msg.message?.includes("📝 Detailed Salesform Submitted");
+                    const isClosing = msg.message?.includes("✅ Lead Marked as Closing");
+                    const bubble    = isLoan ? theme.fupLoan : isSF ? theme.fupSalesform : isClosing ? theme.fupClosing : theme.fupDefault;
+                    return (
+                      <div key={idx} className={`rounded-2xl rounded-tl-none p-4 max-w-[85%] border ${bubble}`}>
+                        <div className="flex justify-between items-center mb-2 gap-4">
+                          <span className={`font-bold text-sm ${theme.text}`}>
+                            {msg.createdBy==="admin" ? `${msg.salesManagerName||"Admin"} (Admin)` : msg.createdBy==="receptionist" ? `${msg.salesManagerName} (Receptionist)` : msg.salesManagerName}
+                          </span>
+                          <span className={`text-[10px] ${theme.textFaint}`}>{msg.createdAt ? new Date(msg.createdAt).toLocaleString("en-IN") : "—"}</span>
+                        </div>
+                        <p className={`text-sm whitespace-pre-wrap leading-relaxed ${theme.text}`}>{msg.message}</p>
+                      </div>
+                    );
+                  })
+              }
+              <div ref={followUpEndRef}/>
+            </div>
+            <form onSubmit={handleSendCustomNote} className={`p-3 border-t flex gap-3 items-center flex-shrink-0 ${theme.header} ${theme.tableBorder}`}>
+              <input type="text" value={customNote} onChange={e=>setCustomNote(e.target.value)} placeholder="Add admin follow-up note..."
+                className={`flex-1 rounded-xl px-4 py-2.5 text-sm outline-none transition-colors border ${theme.inputInner} ${theme.text} ${theme.inputFocus}`}/>
+              <button type="submit" className={`w-11 h-11 text-white rounded-xl flex items-center justify-center cursor-pointer transition-colors shadow-lg ${isDark?"bg-[#9E217B] hover:bg-[#b8268f]":"bg-[#9E217B] hover:bg-[#8a1d6b]"}`}><FaPaperPlane className="text-sm"/></button>
+            </form>
+          </div>
+        </div>
+
+        {/* Transfer Modal */}
+        {isTransferModalOpen && (
+          <div className="fixed inset-0 bg-black/75 z-[200] flex justify-center items-center p-4 animate-fadeIn" style={{backdropFilter:"blur(8px)"}}>
+            <div className={`rounded-2xl w-full max-w-lg shadow-2xl border overflow-hidden ${theme.modalCard}`} style={theme.modalGlass}>
+              <div className={`p-5 border-b flex justify-between items-center ${isDark?"bg-purple-900/20 border-purple-500/20":"bg-purple-50 border-purple-200"}`}>
+                <h2 className={`text-base font-bold flex items-center gap-2 ${isDark?"text-purple-400":"text-purple-700"}`}><FaExchangeAlt/> Transfer Lead #{selectedLead.id}</h2>
+                <button onClick={() => { setIsTransferModalOpen(false); setTransferNote(""); setTransferTarget(""); }} className={`p-2 ${theme.textMuted} hover:text-red-500`}><FaTimes/></button>
+              </div>
+              <div className={`p-5 ${theme.modalInner}`}>
+                <div className="mb-4">
+                  <label className={`block text-sm font-bold mb-2 ${isDark?"text-purple-400":"text-purple-700"}`}>Transfer to Sales Manager *</label>
+                  <select required value={transferTarget} onChange={e=>setTransferTarget(e.target.value)}
+                    className={`w-full rounded-xl p-3 text-sm outline-none border-2 cursor-pointer ${isDark?"bg-[#14141B] border-purple-500/40 text-white":"bg-white border-purple-300 text-[#1A1A1A]"}`}>
+                    <option value="" disabled>-- Select Sales Manager --</option>
+                    {salesManagers.map((m:any,i:number)=><option key={i} value={m.name}>{m.name}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className={`block text-sm font-bold mb-2 ${isDark?"text-purple-400":"text-purple-700"}`}>Handover Summary * (min 50 chars)</label>
+                  <textarea required value={transferNote} onChange={e=>setTransferNote(e.target.value)} rows={5}
+                    placeholder="Summarize all actions, discussions, interest level and next steps..."
+                    className={`w-full rounded-xl px-4 py-3 text-sm outline-none resize-none border-2 ${isDark?"bg-[#14141B] border-purple-500/30 text-white focus:border-purple-500":"bg-white border-purple-200 text-[#1A1A1A] focus:border-purple-500"}`}/>
+                  {transferNote.length > 0 && transferNote.length < 50 && <p className="text-xs text-amber-500 mt-1">⚠ Min 50 characters required.</p>}
+                </div>
+              </div>
+              <div className={`p-4 border-t flex justify-end gap-3 ${theme.modalHeader} ${theme.tableBorder}`}>
+                <button onClick={() => { setIsTransferModalOpen(false); setTransferNote(""); setTransferTarget(""); }}
+                  className={`px-5 py-2 rounded-lg font-bold cursor-pointer ${theme.textMuted} hover:text-red-500`}>Cancel</button>
+                <button onClick={handleTransferLead} disabled={isTransferring || !transferTarget || transferNote.trim().length < 50}
+                  className={`px-6 py-2 rounded-lg font-bold flex items-center gap-2 ${isTransferring||!transferTarget||transferNote.trim().length<50?"opacity-50 cursor-not-allowed bg-purple-400 text-white":"cursor-pointer bg-purple-600 hover:bg-purple-500 text-white"}`}>
+                  {isTransferring ? "Transferring…" : <><FaExchangeAlt/> Confirm Transfer</>}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ── Main list view ─────────────────────────────────────────────────────────────
   return (
     <div className="flex h-full">
-      <div className={`w-80 border-r flex flex-col h-full flex-shrink-0 z-20 shadow-xl ${theme.innerBlock}`}>
+      {/* Sidebar */}
+      <div className={`w-72 border-r flex flex-col h-full flex-shrink-0 z-20 shadow-xl ${theme.innerBlock}`}>
         <div className={`p-5 border-b ${theme.tableBorder}`}>
           <div className="relative">
             <FaSearch className={`absolute left-3 top-1/2 -translate-y-1/2 text-xs ${theme.textFaint}`}/>
-            <input type="text" placeholder="Search Receptionists..." value={searchRecep} onChange={e => setSearchRecep(e.target.value)}
+            <input type="text" placeholder="Search Receptionists…" value={searchRecep}
+              onChange={e => setSearchRecep(e.target.value)}
               className={`w-full rounded-lg pl-9 pr-4 py-2 text-sm outline-none transition-colors ${theme.inputInner} ${theme.text} ${theme.inputFocus}`}/>
           </div>
         </div>
         <div className={`flex-1 overflow-y-auto ${theme.scroll}`}>
-          {isLoading ? <div className={`p-8 text-center text-sm ${theme.textMuted}`}>Loading staff...</div>
-          : filteredRecep.length === 0 ? <div className={`p-8 text-center text-sm ${theme.textMuted}`}>No receptionists found.</div>
-          : filteredRecep.map((recep: any) => {
-            const isSelected = selectedReceptionist?.id === recep.id;
+          {isLoading ? (
+            <div className={`p-8 text-center text-sm ${theme.textMuted}`}>Loading staff…</div>
+          ) : filteredRecep.length === 0 ? (
+            <div className={`p-8 text-center text-sm ${theme.textMuted}`}>No receptionists found.</div>
+          ) : filteredRecep.map((recep: any) => {
+            const isSelected = selectedReceptionist?.id === recep.id || selectedReceptionist?.name === recep.name;
+            const recepAssigned = mergedLeads.filter((l: any) => l.assigned_to === recep.name).length;
+            const recepCreated  = mergedLeads.filter((l: any) => l.assigned_receptionist === recep.name).length;
+            const recepClosed   = mergedLeads.filter((l: any) => l.assigned_receptionist === recep.name && (l.status === "Closing" || !!l.closingDate)).length;
+
             return (
-              <div key={recep.id||recep.name||recep._id}
-                onClick={() => { setSelectedReceptionist(recep); setSubView("cards"); }}
-                className={`p-4 flex items-center gap-4 cursor-pointer transition-all border-b ${theme.tableBorder}
+              <div key={recep.id || recep.name}
+                onClick={() => { setSelectedReceptionist(recep); setActiveSection("enquiries"); setSubView("list"); setSelectedLead(null); }}
+                className={`p-4 flex items-start gap-3 cursor-pointer transition-all border-b ${theme.tableBorder}
                   ${isSelected
                     ? isDark ? "border-l-4 border-l-[#9E217B] bg-[#9E217B]/10" : "border-l-4 border-l-[#9E217B] bg-pink-50"
                     : "hover:opacity-80 border-l-4 border-l-transparent"}`}>
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-white shadow-sm flex-shrink-0 ${isSelected ? "bg-[#9E217B]" : isDark ? "bg-[#333] text-gray-400" : "bg-gray-400"}`}>
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-white shadow-sm flex-shrink-0
+                  ${isSelected ? "bg-[#9E217B]" : isDark ? "bg-[#333] text-gray-400" : "bg-gray-400"}`}>
                   {recep.name?.charAt(0).toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="flex justify-between items-center mb-1">
-                    <h3 className={`font-bold truncate text-sm ${theme.text}`}>{recep.name}</h3>
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${isDark ? "text-[#d946a8] bg-[#9E217B]/10" : "text-[#9E217B] bg-pink-100"}`}>{allLeads.length} logged</span>
+                  <h3 className={`font-bold truncate text-sm mb-0.5 ${theme.text}`}>{recep.name}</h3>
+                  <p className={`text-xs capitalize mb-2 ${theme.textFaint}`}>{recep.role?.replace("_", " ")}</p>
+                  <div className="flex gap-1.5 flex-wrap">
+                    <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold border ${isDark ? "text-[#d946a8] bg-[#9E217B]/10 border-[#9E217B]/20" : "text-[#9E217B] bg-pink-50 border-pink-200"}`}>
+                      {recepAssigned} assigned
+                    </span>
+                    <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold border ${isDark ? "text-purple-400 bg-purple-500/10 border-purple-500/20" : "text-purple-700 bg-purple-50 border-purple-200"}`}>
+                      {recepCreated} self-mgd
+                    </span>
+                    <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold border ${isDark ? "text-yellow-400 bg-yellow-500/10 border-yellow-500/20" : "text-amber-700 bg-amber-50 border-amber-200"}`}>
+                      {recepClosed} closed
+                    </span>
                   </div>
-                  <p className={`text-xs truncate capitalize ${theme.textFaint}`}>{recep.role?.replace("_", " ")}</p>
                 </div>
               </div>
             );
@@ -1472,90 +2316,332 @@ function ReceptionistView({ receptionists, allLeads, isLoading, refetch, theme, 
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col h-full relative overflow-hidden">
+      {/* Right panel */}
+      <div className="flex-1 flex flex-col h-full overflow-hidden">
+        {/* Header */}
         <div className={`p-5 border-b flex justify-between items-center shadow-sm z-10 flex-shrink-0 gap-4 ${theme.header}`} style={theme.headerGlass}>
           <div>
             <h2 className={`text-lg font-bold flex items-center gap-2 ${theme.text}`}>
               <FaClipboardList className={isDark ? "text-[#d946a8]" : "text-[#9E217B]"}/>
-              {selectedReceptionist ? `${selectedReceptionist.name}'s Logged Enquiries` : "Select a Receptionist"}
+              {selectedReceptionist ? `${selectedReceptionist.name}'s Dashboard` : "Select a Receptionist"}
             </h2>
-            <p className={`text-xs mt-1 ${theme.textFaint}`}>Review walk-in forms registered by this desk.</p>
+            <p className={`text-xs mt-1 ${theme.textFaint}`}>
+              {selectedReceptionist ? "Admin view — monitor receptionist activity across all sections" : "Select a receptionist to monitor their activity"}
+            </p>
           </div>
+          {selectedReceptionist && (
+            <span className={`text-xs px-3 py-1 rounded-full border font-bold flex items-center gap-1.5 ${isDark ? "text-green-400 border-green-500/30 bg-green-500/10" : "text-green-700 border-green-200 bg-green-50"}`}>
+              🟢 Live Sync Active
+            </span>
+          )}
         </div>
+
         <div className={`flex-1 overflow-y-auto p-6 ${theme.scroll}`}>
           {!selectedReceptionist ? (
             <div className={`h-full flex flex-col items-center justify-center ${theme.textMuted}`}>
               <FaClipboardList className="text-4xl mb-4 opacity-20"/>
-              <p>Select a receptionist from the left to view their logged data.</p>
+              <p>Select a receptionist from the left to monitor their activity.</p>
             </div>
-          ) : subView === "cards" ? (
-            <div className="animate-fadeIn grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-6">
-              {receptionistLeads.length === 0 ? <p className={`text-sm ${theme.textMuted}`}>No forms logged yet.</p>
-              : receptionistLeads.map((lead: any) => {
-                const statusColors: any = {
-                  "Completed": { text:isDark?"text-green-500":"text-green-700",border:isDark?"border-green-500/30":"border-green-300",bg:isDark?"bg-green-500/10":"bg-green-50" },
-                  "Visit Scheduled": { text:isDark?"text-yellow-500":"text-yellow-700",border:isDark?"border-yellow-500/30":"border-yellow-300",bg:isDark?"bg-yellow-500/10":"bg-yellow-50" },
-                  "Routed": { text:isDark?"text-[#d946a8]":"text-[#9E217B]",border:isDark?"border-[#9E217B]/30":"border-pink-300",bg:isDark?"bg-[#9E217B]/10":"bg-pink-50" },
-                };
-                const leadStatus = lead.status || "Routed";
-                const colorSet   = statusColors[leadStatus] || statusColors["Routed"];
-                return (
-                  <div key={lead.id}
-                    onClick={() => { setSelectedLead(lead); setSubView("detail"); }}
-                    className={`rounded-2xl p-6 shadow-sm flex flex-col justify-between transition-colors cursor-pointer ${theme.card}`} style={theme.cardGlass}>
-                    <div>
-                      <div className={`flex justify-between items-start mb-5 pb-4 border-b ${theme.tableBorder}`}>
-                        <h3 className={`text-lg font-bold line-clamp-1 pr-2 ${theme.text}`}><span className={`mr-2 ${theme.accentText}`}>#{lead.id}</span>{lead.name}</h3>
-                        <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${colorSet.border} ${colorSet.text} ${colorSet.bg}`}>{leadStatus}</span>
-                      </div>
-                      <div className="space-y-4 mb-6">
-                        <div><p className={`text-xs font-medium ${theme.textMuted}`}>Estimated Budget</p><p className={`text-sm font-semibold ${theme.text}`}>{lead.salesBudget||lead.budget||"N/A"}</p></div>
-                        <div className={`p-3 rounded-lg border flex flex-col gap-2 ${theme.innerBlock}`}>
-                          <p className={`text-xs flex items-center gap-2 ${theme.textMuted}`}><FaPhoneAlt className="w-3 h-3"/> Primary: <span className={`font-mono ${theme.text}`}>{maskPhone(lead.phone)}</span></p>
-                        </div>
-                      </div>
+          ) : (
+            <div className="animate-fadeIn space-y-6">
+
+              {/* Stats row */}
+              <div className="grid grid-cols-4 gap-4">
+                {sections.map(sec => (
+                  <div key={sec.key}
+                    onClick={() => setActiveSection(sec.key)}
+                    className={`rounded-2xl p-4 border cursor-pointer transition-all ${
+                      activeSection === sec.key
+                        ? isDark ? "bg-[#9E217B]/20 border-[#9E217B]/50" : "bg-[#9E217B]/10 border-[#9E217B]"
+                        : `${theme.card} hover:opacity-90`
+                    }`}
+                    style={activeSection !== sec.key ? theme.cardGlass : {}}>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-lg">{sec.icon}</span>
+                      <span className={`text-2xl font-black ${isDark ? "text-[#d946a8]" : "text-[#9E217B]"}`}>{sec.count}</span>
                     </div>
-                    <div className={`pt-4 border-t flex justify-between items-center text-sm mt-auto ${theme.tableBorder}`}>
-                      <div className="flex items-center gap-2">
-                        <div className={`w-6 h-6 rounded-full text-white flex items-center justify-center text-[10px] font-bold bg-[#9E217B]`}>{String(lead.assigned_to||"U").charAt(0).toUpperCase()}</div>
-                        <p className={`text-xs ${theme.textMuted}`}>Assigned: <span className={`font-semibold ${theme.text}`}>{lead.assigned_to||"Unassigned"}</span></p>
-                      </div>
-                      <p className={`text-[10px] ${theme.textFaint}`}>{formatDate(lead.created_at)}</p>
-                    </div>
+                    <p className={`text-xs font-bold ${theme.text}`}>{sec.label}</p>
+                    <p className={`text-[10px] mt-0.5 ${theme.textFaint}`}>{sec.desc}</p>
                   </div>
-                );
-              })}
-            </div>
-          ) : subView === "detail" && selectedLead && (
-            <div className="animate-fadeIn max-w-[1200px] mx-auto">
-              <div className={`flex items-center gap-4 mb-6 rounded-2xl border p-5 shadow-xl ${theme.card}`} style={theme.cardGlass}>
-                <button onClick={() => setSubView("cards")} className={`w-10 h-10 flex items-center justify-center border rounded-lg transition-colors cursor-pointer ${theme.innerBlock} ${theme.textMuted}`}><FaChevronLeft className="text-sm"/></button>
-                <div>
-                  <h1 className={`text-2xl font-bold flex items-center gap-3 ${theme.text}`}>
-                    <span className={isDark?"text-[#d946a8]":"text-[#9E217B]"}>#{selectedLead.id}</span>
-                    <span>{selectedLead.name}</span>
-                    <span className={`text-xs font-normal border px-2 py-0.5 rounded-full ${theme.settingsBg}`}>{selectedLead.status}</span>
-                  </h1>
-                  <p className={`text-xs mt-1 ${theme.textMuted}`}>Logged by: {selectedReceptionist.name} on {formatDate(selectedLead.created_at)}</p>
-                </div>
+                ))}
               </div>
-              <div className={`rounded-2xl border p-8 shadow-xl ${theme.card}`} style={theme.cardGlass}>
-                <h3 className={`text-sm font-bold border-b pb-2 mb-6 uppercase tracking-widest ${theme.textMuted} ${theme.tableBorder}`}>Lead Captured Data</h3>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-y-8 gap-x-6">
-                  <div><p className={`text-xs mb-1 ${theme.textMuted}`}>Email</p><p className={`font-medium ${theme.text}`}>{selectedLead.email!=="N/A"?selectedLead.email:"N/A"}</p></div>
-                  <div><p className={`text-xs mb-1 ${theme.textMuted}`}>Phone</p><p className={`font-mono font-medium ${theme.text}`}>{selectedLead.phone}</p></div>
-                  <div><p className={`text-xs mb-1 ${theme.textMuted}`}>Alt Phone</p><p className={`font-mono font-medium ${theme.text}`}>{selectedLead.alt_phone&&selectedLead.alt_phone!=="N/A"?selectedLead.alt_phone:"Not Provided"}</p></div>
-                  <div><p className={`text-xs mb-1 ${theme.textMuted}`}>Occupation</p><p className={`font-medium ${theme.text}`}>{selectedLead.occupation||"N/A"}</p></div>
-                  <div className="col-span-2"><p className={`text-xs mb-1 ${theme.textMuted}`}>Organization / Address</p><p className={`font-medium ${theme.text}`}>{selectedLead.organization} / {selectedLead.address}</p></div>
-                  <div><p className={`text-xs mb-1 ${theme.textMuted}`}>Budget</p><p className="text-green-500 font-bold">{selectedLead.budget||"N/A"}</p></div>
-                  <div><p className={`text-xs mb-1 ${theme.textMuted}`}>Configuration</p><p className={`font-medium ${theme.text}`}>{selectedLead.configuration||"N/A"}</p></div>
-                  <div><p className={`text-xs mb-1 ${theme.textMuted}`}>Purpose</p><p className={`font-medium ${theme.text}`}>{selectedLead.purpose||"N/A"}</p></div>
-                  <div><p className={`text-xs mb-1 ${theme.textMuted}`}>Source</p><p className={`font-medium ${theme.text}`}>{selectedLead.source||"N/A"}</p></div>
-                  <div className="col-span-2">
-                    <p className={`text-xs mb-1 font-bold ${isDark?"text-[#d946a8]":"text-[#9E217B]"}`}>Assigned Sales Manager</p>
-                    <p className={`font-bold ${theme.text}`}>{selectedLead.assigned_to||"N/A"}</p>
+
+              {/* Section tabs */}
+              <div className={`flex gap-2 p-1.5 rounded-xl border ${theme.tableWrap}`}>
+                {sections.map(sec => (
+                  <button key={sec.key} onClick={() => setActiveSection(sec.key)}
+                    className={`flex-1 py-2.5 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5
+                      ${activeSection === sec.key ? "bg-[#9E217B] text-white shadow-md" : `${theme.textMuted} hover:opacity-80`}`}>
+                    <span>{sec.icon}</span>
+                    <span className="hidden sm:inline truncate">{sec.label}</span>
+                    <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-black ${activeSection === sec.key ? "bg-white/20 text-white" : isDark ? "bg-[#333] text-gray-300" : "bg-gray-100 text-gray-600"}`}>
+                      {sec.count}
+                    </span>
+                  </button>
+                ))}
+              </div>
+
+              {/* Section content */}
+              <div className="animate-fadeIn">
+
+                {/* 1. All Logged Enquiries */}
+                {activeSection === "enquiries" && (
+                  <div>
+                    <div className="flex items-center gap-3 mb-4">
+                      <span className="text-lg">🗒️</span>
+                      <div>
+                        <h3 className={`font-bold text-base ${theme.text}`}>All Logged Enquiries</h3>
+                        <p className={`text-xs ${theme.textFaint}`}>All walk-in forms in the system — {allEnquiries.length} total</p>
+                      </div>
+                    </div>
+                    {renderTable(allEnquiries, true, true)}
                   </div>
-                </div>
+                )}
+
+                {/* 2. Assigned Lead Table */}
+                {/* 2. Assigned Lead Table */}
+                {activeSection === "assignedTable" && (
+                  <div>
+                    <div className="flex items-center gap-3 mb-4 flex-wrap">
+                      <span className="text-lg">🗃️</span>
+                      <div>
+                        <h3 className={`font-bold text-base ${theme.text}`}>Assigned Lead Table</h3>
+                        <p className={`text-xs ${theme.textFaint}`}>
+                          Leads where <code className="px-1 py-0.5 rounded text-[10px] bg-gray-100 dark:bg-gray-800">assigned_to = {recepName}</code>
+                        </p>
+                      </div>
+
+                      {/* ── Filter toggle ── */}
+                      <div className={`ml-auto flex items-center gap-2 p-1 rounded-xl border ${theme.tableWrap}`}>
+                        <button
+                          onClick={() => setAssignedTableFilter("working")}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                            assignedTableFilter === "working"
+                              ? "bg-[#9E217B] text-white shadow-md"
+                              : `${theme.textMuted} hover:opacity-80`
+                          }`}
+                        >
+                          🔄 Working Leads
+                          <span className={`ml-1.5 text-[9px] px-1.5 py-0.5 rounded-full font-black ${
+                            assignedTableFilter === "working"
+                              ? "bg-white/20 text-white"
+                              : isDark ? "bg-[#333] text-gray-300" : "bg-gray-100 text-gray-600"
+                          }`}>
+                            {assignedLeads.filter((l: any) => l.status !== "Closing" && l.status !== "Closed" && !l.closingDate).length}
+                          </span>
+                        </button>
+                        <button
+                          onClick={() => setAssignedTableFilter("all")}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                            assignedTableFilter === "all"
+                              ? "bg-[#9E217B] text-white shadow-md"
+                              : `${theme.textMuted} hover:opacity-80`
+                          }`}
+                        >
+                          📋 All Leads
+                          <span className={`ml-1.5 text-[9px] px-1.5 py-0.5 rounded-full font-black ${
+                            assignedTableFilter === "all"
+                              ? "bg-white/20 text-white"
+                              : isDark ? "bg-[#333] text-gray-300" : "bg-gray-100 text-gray-600"
+                          }`}>
+                            {assignedLeads.length}
+                          </span>
+                        </button>
+                      </div>
+
+                      {/* Count pill */}
+                      <span className={`text-xs px-3 py-1 rounded-full border font-bold ${
+                        isDark ? "text-[#d946a8] border-[#9E217B]/30 bg-[#9E217B]/10" : "text-[#9E217B] border-[#9E217B]/20 bg-pink-50"
+                      }`}>
+                        {assignedTableFilter === "working"
+                          ? `${assignedLeads.filter((l: any) => l.status !== "Closing" && l.status !== "Closed" && !l.closingDate).length} working`
+                          : `${assignedLeads.length} total`}
+                      </span>
+                    </div>
+
+                    {/* Info strip */}
+                    {assignedTableFilter === "all" && (
+                      <div className={`rounded-xl px-4 py-2.5 border mb-4 flex items-center gap-2 text-xs font-medium ${
+                        isDark ? "bg-yellow-900/10 border-yellow-500/20 text-yellow-400" : "bg-amber-50 border-amber-200 text-amber-600"
+                      }`}>
+                        ⚠️ Showing all leads including closed ones. Switch to <strong>"Working Leads"</strong> to hide closed leads.
+                      </div>
+                    )}
+
+                    {renderTable(
+                      assignedTableFilter === "working"
+                        ? assignedLeads.filter((l: any) => l.status !== "Closing" && l.status !== "Closed" && !l.closingDate)
+                        : assignedLeads
+                    )}
+                  </div>
+                )}
+
+
+                {activeSection === "assignedForm" && (
+                  <div>
+                    <div className="flex items-center gap-3 mb-4">
+                      <span className="text-lg">📋</span>
+                      <div>
+                        <h3 className={`font-bold text-base ${theme.text}`}>Assigned Lead Form</h3>
+                        <p className={`text-xs ${theme.textFaint}`}>Leads self-assigned by {recepName} — acting as Sales Manager</p>
+                      </div>
+                      <span className={`ml-auto text-xs px-3 py-1 rounded-full border font-bold ${isDark ? "text-purple-400 border-purple-500/30 bg-purple-500/10" : "text-purple-700 border-purple-200 bg-purple-50"}`}>
+                        {assignedFormLeads.length} leads
+                      </span>
+                    </div>
+
+                    {/* Summary banner */}
+                    {assignedFormLeads.length > 0 && (
+                      <div className={`rounded-xl p-4 border mb-6 flex gap-6 ${isDark ? "bg-purple-900/10 border-purple-500/20" : "bg-purple-50 border-purple-200"}`}>
+                        <div><p className={`text-[10px] font-bold uppercase ${isDark ? "text-purple-400" : "text-purple-600"}`}>Total Managed</p><p className={`text-2xl font-black ${isDark ? "text-purple-300" : "text-purple-700"}`}>{assignedFormLeads.length}</p></div>
+                        <div><p className={`text-[10px] font-bold uppercase ${isDark ? "text-purple-400" : "text-purple-600"}`}>Visit Scheduled</p><p className={`text-2xl font-black ${isDark ? "text-purple-300" : "text-purple-700"}`}>{assignedFormLeads.filter((l: any) => l.mongoVisitDate).length}</p></div>
+                        <div><p className={`text-[10px] font-bold uppercase ${isDark ? "text-purple-400" : "text-purple-600"}`}>Interested</p><p className={`text-2xl font-black ${isDark ? "text-purple-300" : "text-purple-700"}`}>{assignedFormLeads.filter((l: any) => l.leadInterestStatus === "Interested").length}</p></div>
+                        <div><p className={`text-[10px] font-bold uppercase ${isDark ? "text-purple-400" : "text-purple-600"}`}>Follow-ups Total</p><p className={`text-2xl font-black ${isDark ? "text-purple-300" : "text-purple-700"}`}>{assignedFormLeads.reduce((sum: number, l: any) => sum + (l.allFollowUps?.length || 0), 0)}</p></div>
+                      </div>
+                    )}
+
+                    {/* Card Grid */}
+                    {isLoading ? (
+                      <div className={`text-center py-10 ${theme.textMuted}`}>Syncing…</div>
+                    ) : assignedFormLeads.length === 0 ? (
+                      <div className={`text-center py-20 ${theme.textMuted}`}>
+                        <FaClipboardList className="text-4xl mx-auto mb-4 opacity-20" />
+                        <p className="text-sm font-semibold">No self-assigned leads yet.</p>
+                            </div>
+                          ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                              {assignedFormLeads.map((lead: any) => {
+                                const isClosing = lead.status === "Closing" || lead.status === "Closed" || !!lead.closingDate;
+                                const isVisit   = lead.status === "Visit Scheduled";
+                                const statusCls = isClosing
+                                  ? isDark ? "text-yellow-400 border-yellow-500/40 bg-yellow-500/10" : "text-amber-600 border-amber-400/50 bg-amber-50"
+                                  : isVisit
+                                  ? isDark ? "text-orange-400 border-orange-500/30 bg-orange-500/10" : "text-orange-500 border-orange-400/40 bg-orange-50"
+                                  : isDark ? "text-[#d946a8] border-[#9E217B]/30 bg-[#9E217B]/10" : "text-[#9E217B] border-[#9E217B]/30 bg-[#9E217B]/10";
+
+                                return (
+                                  <div
+                                    key={lead.id}
+                                    onClick={() => { setSelectedLead(lead); setSubView("detail"); }}
+                                    className={`rounded-2xl p-6 border cursor-pointer group flex flex-col justify-between transition-all duration-300
+                                      ${isClosing
+                                        ? isDark
+                                          ? "bg-yellow-900/10 border-yellow-500/30 hover:-translate-y-1.5 hover:scale-[1.02] hover:border-yellow-400/60 hover:shadow-xl"
+                                          : "bg-amber-50 border-amber-200 hover:-translate-y-1.5 hover:scale-[1.02] hover:border-amber-400 hover:shadow-xl"
+                                        : theme.card
+                                      }`}
+                                    style={theme.cardGlass}
+                                  >
+                                    {/* Top */}
+                                    <div>
+                                      <div className={`flex justify-between items-start mb-4 pb-4 border-b ${theme.tableBorder}`}>
+                                        <h3 className={`text-base font-bold line-clamp-1 pr-2 transition-colors ${theme.text} ${isDark ? "group-hover:text-[#d946a8]" : "group-hover:text-[#9E217B]"}`}>
+                                          <span className={`mr-1.5 ${isDark ? "text-[#d946a8]" : "text-[#9E217B]"}`}>#{lead.id}</span>
+                                          {lead.name}
+                                        </h3>
+                                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase border flex-shrink-0 ${statusCls}`}>
+                                          {lead.status || "Routed"}
+                                        </span>
+                                      </div>
+
+                                      <div className="space-y-2.5 mb-4">
+                                        {/* Budget */}
+                                        <div>
+                                          <p className={`text-[10px] font-medium ${theme.textFaint}`}>Budget</p>
+                                          <p className={`text-sm font-semibold ${isDark ? "text-green-400" : "text-emerald-600"}`}>
+                                            {lead.salesBudget || lead.budget || "N/A"}
+                                          </p>
+                                        </div>
+
+                                        {/* Property */}
+                                        {lead.propType && lead.propType !== "Pending" && (
+                                          <div>
+                                            <p className={`text-[10px] font-medium ${theme.textFaint}`}>Property</p>
+                                            <p className={`text-sm font-medium ${theme.text}`}>{lead.propType}</p>
+                                          </div>
+                                        )}
+
+                                        {/* Phone */}
+                                        <div className={`p-2.5 rounded-lg border flex items-center gap-2 ${theme.settingsBg}`} style={theme.settingsBgGl}>
+                                          <FaPhoneAlt className={`text-[10px] ${theme.textFaint}`} />
+                                          <span className={`text-xs ${theme.textMuted}`}>Ph No.</span>
+                                          <span className={`text-xs font-mono ${theme.text}`}>{maskPhone(lead.phone)}</span>
+                                        </div>
+
+                                        {/* Site visit + interest */}
+                                        {(lead.mongoVisitDate || (lead.leadInterestStatus && lead.leadInterestStatus !== "Pending")) && (
+                                          <div className="flex items-center justify-between gap-2 flex-wrap">
+                                            {lead.mongoVisitDate && (
+                                              <div className="flex items-center gap-1 text-xs font-semibold text-orange-400">
+                                                <FaCalendarAlt className="text-[9px]" />
+                                                {formatDate(lead.mongoVisitDate).split(",")[0]}
+                                              </div>
+                                            )}
+                                            {lead.leadInterestStatus && lead.leadInterestStatus !== "Pending" && (
+                                              <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold border flex-shrink-0 ${
+                                                lead.leadInterestStatus === "Interested"
+                                                  ? isDark ? "text-green-400 border-green-500/30 bg-green-500/10" : "text-green-700 border-green-200 bg-green-50"
+                                                  : lead.leadInterestStatus === "Not Interested"
+                                                  ? isDark ? "text-red-400 border-red-500/30 bg-red-500/10" : "text-red-700 border-red-200 bg-red-50"
+                                                  : isDark ? "text-yellow-400 border-yellow-500/30 bg-yellow-500/10" : "text-yellow-700 border-yellow-200 bg-yellow-50"
+                                              }`}>
+                                                {lead.leadInterestStatus}
+                                              </span>
+                                            )}
+                                          </div>
+                                        )}
+
+                                        {/* Closing badge */}
+                                        {isClosing && (
+                                          <div className={`flex items-center gap-2 text-[10px] font-bold px-3 py-1.5 rounded-lg ${
+                                            isDark ? "text-yellow-400 bg-yellow-500/10 border border-yellow-500/20" : "text-amber-600 bg-amber-50 border border-amber-200"
+                                          }`}>
+                                            <FaHandshake /> Deal in Closing Stage
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+
+                                    {/* Bottom */}
+                                    <div className={`pt-3 border-t mt-auto flex justify-between items-center ${theme.tableBorder}`}>
+                                      <div className="flex items-center gap-1.5">
+                                        <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold border ${
+                                          isDark ? "text-[#d946a8] bg-[#9E217B]/10 border-[#9E217B]/20" : "text-[#9E217B] bg-pink-50 border-pink-200"
+                                        }`}>
+                                          {(lead.allFollowUps || []).length} follow-ups
+                                        </span>
+                                      </div>
+                                      <div className="flex items-center gap-2">
+                                        <span className={`text-[10px] ${theme.textFaint}`}>{formatDate(lead.created_at).split(",")[0]}</span>
+                                        <span className={`text-[10px] font-bold uppercase tracking-widest transition-colors ${
+                                          isDark ? "text-gray-500 group-hover:text-[#d946a8]" : "text-[#9E217B]/50 group-hover:text-[#9E217B]"
+                                        }`}>View →</span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                )}
+                {/* 4. Closed Leads */}
+                {activeSection === "closed" && (
+                  <div>
+                    <div className="flex items-center gap-3 mb-4">
+                      <span className="text-lg">✅</span>
+                      <div>
+                        <h3 className={`font-bold text-base ${theme.text}`}>Closed Leads by Receptionist</h3>
+                        <p className={`text-xs ${theme.textFaint}`}>Leads closed by {recepName} while acting as Sales Manager</p>
+                      </div>
+                      <span className={`ml-auto text-xs px-3 py-1 rounded-full border font-bold ${isDark ? "text-yellow-400 border-yellow-500/30 bg-yellow-500/10" : "text-amber-700 border-amber-200 bg-amber-50"}`}>
+                        {closedLeads.length} closed
+                      </span>
+                    </div>
+                    {renderTable(closedLeads)}
+                  </div>
+                )}
+
               </div>
             </div>
           )}
