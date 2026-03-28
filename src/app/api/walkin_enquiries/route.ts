@@ -42,35 +42,41 @@ export async function POST(req: Request) {
     }
 
     const rows = await query(
-      `INSERT INTO walkin_enquiries (
-        name, phone, email, address, occupation, organization,
-        budget, configuration, purpose, source,
-        alt_phone, source_other, cp_name, cp_company, cp_phone, loan_planned,
-        assigned_to, assigned_receptionist, status
-      )
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)
-      RETURNING *`,
-      [
-        name, phone,
-        email         || "N/A",
-        address       || "N/A",
-        occupation    || "N/A",
-        organization  || "N/A",
-        budget        || "Pending",
-        configuration || "N/A",
-        purpose       || "N/A",
-        source        || "Direct Walk-in",
-        alt_phone     || null,
-        source_other  || null,
-        cp_name       || null,
-        cp_company    || null,
-        cp_phone      || null,
-        loan_planned  || "Pending",
-        assignedTo,
-        assigned_receptionist || null, // ← NEW param at position $18
-        status        || "Routed",
-      ]
-    );
+    `INSERT INTO walkin_enquiries (
+      name, phone, email, address, occupation, organization,
+      budget, configuration, purpose, source,
+      alt_phone, source_other, cp_name, cp_company, cp_phone,
+      loan_planned, assigned_to, assigned_receptionist, status
+    )
+    VALUES (
+      $1, $2, $3, $4, $5, $6,
+      $7, $8, $9, $10,
+      $11, $12, $13, $14, $15,
+      $16, $17, $18, $19
+    )
+    RETURNING *`,
+    [
+      name,                          // $1
+      phone,                         // $2
+      email         || "N/A",        // $3
+      address       || "N/A",        // $4
+      occupation    || "N/A",        // $5
+      organization  || "N/A",        // $6
+      budget        || "Pending",    // $7
+      configuration || "N/A",        // $8
+      purpose       || "N/A",        // $9
+      source        || "Direct Walk-in", // $10
+      alt_phone     || null,         // $11
+      source_other  || null,         // $12
+      cp_name       || null,         // $13
+      cp_company    || null,         // $14
+      cp_phone      || null,         // $15
+      loan_planned  || "Pending",    // $16
+      assignedTo,                    // $17
+      assigned_receptionist || null, // $18
+      status        || "Routed",     // $19
+    ]
+  );
 
     return NextResponse.json({ success: true, data: rows[0] }, { status: 201 });
   } catch (error: any) {
