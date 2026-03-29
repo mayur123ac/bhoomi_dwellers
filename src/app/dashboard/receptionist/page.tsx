@@ -1,3 +1,4 @@
+//receptionist frontend
 "use client";
 
 import { useEffect, useState, useRef, useCallback, useMemo } from "react";
@@ -208,7 +209,12 @@ export default function ReceptionistDashboard() {
 
   // ── Data ──
   const [salesManagers, setSalesManagers]     = useState<any[]>([]);
+
   const [isFetchingManagers, setIsFetchingManagers] = useState(true);
+  const [siteHeads, setSiteHeads]             = useState<any[]>([]);
+  const combinedAssignees = useMemo(() => {
+    return [...salesManagers, ...siteHeads];
+  }, [salesManagers, siteHeads]);
   const [enquiries, setEnquiries]             = useState<any[]>([]);
   const [followUps, setFollowUps]             = useState<any[]>([]);
   const [isFetchingEnquiries, setIsFetchingEnquiries] = useState(true);
@@ -427,14 +433,26 @@ export default function ReceptionistDashboard() {
   const fetchSalesManagers = async () => {
     setIsFetchingManagers(true);
     try {
-      const res = await fetch("/api/users/sales-manager");
-      if (res.ok) {
-        const json = await res.json();
-        const arr  = json.data || json;
+      const [resSM, resSH] = await Promise.all([
+        fetch("/api/users/sales-manager"),
+        fetch("/api/users/site-head")
+      ]);
+
+      if (resSM.ok) {
+        const json = await resSM.json();
+        const arr = json.data || json;
         if (Array.isArray(arr)) setSalesManagers(arr);
       }
-    } catch(e) { console.error("fetchManagers error",e); }
-    finally { setIsFetchingManagers(false); }
+      if (resSH.ok) {
+        const json = await resSH.json();
+        const arr = json.data || json;
+        if (Array.isArray(arr)) setSiteHeads(arr);
+      }
+    } catch (e) {
+      console.error("fetchManagers error", e);
+    } finally {
+      setIsFetchingManagers(false);
+    }
   };
 
   const refetchAll = async () => {
@@ -2227,10 +2245,10 @@ export default function ReceptionistDashboard() {
                       ) : (
                        <div>
                           <label className={`block text-xs mb-1.5 font-medium ${isDark?"text-[#d4006e]":"text-[#00AEEF]"}`}>Assign To *</label>
-                          <select required={!enquiryForm.selfAssign} value={enquiryForm.assignedTo} onChange={e=>setEnquiryForm({...enquiryForm,assignedTo:e.target.value})}
-                            className={`w-full rounded-lg p-3 text-sm outline-none transition-colors cursor-pointer border-2 ${isDark?"bg-[#14141B] border-[#9E217B]/50":"bg-white border-[#00AEEF]/50"} ${t.text}`}>
+                         <select required value={enquiryForm.assignedTo} onChange={e=>setEnquiryForm({...enquiryForm, assignedTo: e.target.value})}
+                            className={`w-full rounded-xl p-3 text-sm outline-none transition-colors border-2 cursor-pointer ${isDark?"bg-[#14141B] border-purple-500/40 text-white":"bg-white border-purple-300 text-[#1A1A1A]"}`}>
                             <option value="" disabled>-- Select Manager --</option>
-                            {isFetchingManagers ? <option disabled>Loading…</option> : salesManagers.length > 0 ? salesManagers.map((m:any,idx:number)=><option key={idx} value={m.name}>{m.name}</option>) : <option disabled>No Managers Available</option>}
+                            {isFetchingManagers ? <option disabled>Loading managers…</option> : combinedAssignees.length > 0 ? combinedAssignees.map((m:any,i:number)=><option key={i} value={m.name}>{m.name} ({String(m.role || "Sales Manager").replace("_", " ")})</option>) : <option disabled>No assignees available</option>}
                           </select>
                         </div>
                       )}
@@ -2343,10 +2361,10 @@ export default function ReceptionistDashboard() {
               {/* Transfer target */}
               <div className="mb-5">
                 <label className={`block text-sm font-bold mb-2 ${isDark?"text-purple-400":"text-purple-700"}`}>Transfer to Sales Manager *</label>
-                <select required value={transferTarget} onChange={e=>setTransferTarget(e.target.value)}
+                <select required value={enquiryForm.assignedTo} onChange={e=>setEnquiryForm({...enquiryForm, assignedTo: e.target.value})}
                   className={`w-full rounded-xl p-3 text-sm outline-none transition-colors border-2 cursor-pointer ${isDark?"bg-[#14141B] border-purple-500/40 text-white":"bg-white border-purple-300 text-[#1A1A1A]"}`}>
                   <option value="" disabled>-- Select Sales Manager --</option>
-                  {isFetchingManagers ? <option disabled>Loading managers…</option> : salesManagers.length > 0 ? salesManagers.map((m:any,i:number)=><option key={i} value={m.name}>{m.name}</option>) : <option disabled>No managers available</option>}
+                  {isFetchingManagers ? <option disabled>Loading managers…</option> : combinedAssignees.length > 0 ? combinedAssignees.map((m:any,i:number)=><option key={i} value={m.name}>{m.name} ({String(m.role || "Sales Manager").replace("_", " ")})</option>) : <option disabled>No assignees available</option>}
                 </select>
               </div>
 
