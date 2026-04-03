@@ -2225,8 +2225,8 @@ export default function ReceptionistDashboard() {
                                     {selectedLead.source==="Others"&&(<div><p className={`text-xs font-medium mb-1 ${t.textFaint}`}>Specified Name</p><p className={`font-medium text-sm ${t.text}`}>{selectedLead.sourceOther}</p></div>)}
                                   </div>
                                   {selectedLead.source==="Channel Partner"&&(
-                                    <div className={`mt-2 pt-2 border-t grid grid-cols-1 sm:grid-cols-3 gap-3 ${t.tableBorder}`}>
-                                      {[{label:"CP Name",val:selectedLead.cpName},{label:"CP Company",val:selectedLead.cpCompany},{label:"CP Phone",val:selectedLead.cpPhone}].map(({label,val})=>(
+                                    <div className={`mt-2 pt-2 border-t grid grid-cols-1 sm:grid-cols-2 gap-3 ${t.tableBorder}`}>
+                                      {[{label:"CP Company",val:selectedLead.cpCompany},{label:"CP Phone",val:selectedLead.cpPhone}].map(({label,val})=>(
                                         <div key={label}><p className={`text-xs font-medium mb-1 ${t.textFaint}`}>{label}</p><p className={`font-medium text-sm ${t.text}`}>{val||"N/A"}</p></div>
                                       ))}
                                     </div>
