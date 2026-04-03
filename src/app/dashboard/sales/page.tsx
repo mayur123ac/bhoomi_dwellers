@@ -56,13 +56,13 @@ function buildTheme(isDark: boolean) {
 
     // ── Header ──
     header:        isDark ? "bg-[#1a1a1a] border-[#2a2a2a]"             : "bg-white border-[#9CA3AF]",
-    headerGlass:   isDark ? {}                                          : { boxShadow: "0 1px 0 #9CA3AF, 0 4px 16px rgba(0,174,239,0.06)" },
+    headerGlass:   isDark ? {}                                          : { boxShadow: "0 1px 0 #9CA3AF, 0 4px 16px rgba(158,33,123,0.06)" },
 
     // ── Cards (Hover color and shadow only, no size increase) ──
     card: isDark
       ? "bg-[#1a1a1a] border border-[#2a2a2a] transition-all duration-300 hover:border-[#d946a8]/50 hover:bg-[#1e1e1e] hover:shadow-2xl hover:shadow-[#d946a8]/20"
       : "bg-gradient-to-r from-[#f1f5ff] via-[#eef2ff] to-[#f5f3ff] border border-indigo-300 transition-all duration-300 hover:border-[#9E217B]/50 hover:shadow-2xl hover:shadow-[#9E217B]/20",
-    cardGlass:     isDark ? {}                                          : { boxShadow: "0 1px 2px rgba(0,0,0,0.04), 0 4px 12px rgba(0,174,239,0.07), 0 12px 28px rgba(0,0,0,0.08)" },
+    cardGlass:     isDark ? {}                                          : { boxShadow: "0 1px 2px rgba(0,0,0,0.04), 0 4px 12px rgba(158,33,123,0.07), 0 12px 28px rgba(0,0,0,0.08)" },
     cardClosing:   isDark ? "bg-yellow-900/10 border-yellow-500/30 transition-all duration-300 hover:border-yellow-400/60 hover:shadow-2xl hover:shadow-yellow-500/20" : "bg-amber-50 border-amber-200 transition-all duration-300 hover:border-amber-400/60 hover:shadow-2xl hover:shadow-[0_0_20px_4px_rgba(251,191,36,0.15)]",
 
     // ── Tables ──
@@ -74,9 +74,9 @@ function buildTheme(isDark: boolean) {
     tableBorder:   isDark ? "border-[#2a2a2a]"                          : "border-[#D1D5DB]",
 
     // ── Inputs ──
-    inputBg:       isDark ? "bg-[#1a1a1a] border-[#333]"                : "bg-white border border-indigo-300]",
+    inputBg:       isDark ? "bg-[#1a1a1a] border-[#333]"                : "bg-white border border-indigo-300",
     inputInner:    isDark ? "bg-[#121212] border-[#333]"                : "bg-white border border-indigo-300",
-    inputFocus:    isDark ? "focus:border-purple-500"                   : "focus:border-[#00AEEF]",
+    inputFocus:    isDark ? "focus:border-[#d946a8]"                    : "focus:border-[#00AEEF]",
 
     // ── Inner blocks / settings bg ──
     settingsBg:    isDark ? "bg-[#222] border-[#2a2a2a]"                : "bg-[#F8FAFC] border border-indigo-300",
@@ -85,107 +85,88 @@ function buildTheme(isDark: boolean) {
 
     // ── Modals / panels ──
     modalCard:     isDark ? "bg-[#1a1a1a] border-[#2a2a2a]"             : "bg-white border border-indigo-300",
-    modalGlass:    isDark ? {}                                          : { boxShadow: "0 2px 4px rgba(0,0,0,0.04), 0 8px 24px rgba(0,174,239,0.08), 0 32px 72px rgba(0,0,0,0.16)" },
+    modalGlass:    isDark ? {}                                          : { boxShadow: "0 2px 4px rgba(0,0,0,0.04), 0 8px 24px rgba(158,33,123,0.08), 0 32px 72px rgba(0,0,0,0.16)" },
     modalInner:    isDark ? "bg-[#121212]"                              : "bg-[#F8FAFC] border border-indigo-300",
     modalHeader:   isDark ? "bg-[#151515]"                              : "bg-[#F1F5F9]",
 
     // ── Dropdowns / Notifications ──
     dropdown:      isDark ? "bg-[#1a1a1a] border-[#2a2a2a]"             : "bg-white border-[#9CA3AF]",
-    dropdownGlass: isDark ? {}                                          : { boxShadow: "0 2px 4px rgba(0,0,0,0.04), 0 8px 20px rgba(0,174,239,0.08), 0 20px 40px rgba(0,0,0,0.10)" },
+    dropdownGlass: isDark ? {}                                          : { boxShadow: "0 2px 4px rgba(0,0,0,0.04), 0 8px 20px rgba(158,33,123,0.08), 0 20px 40px rgba(0,0,0,0.10)" },
     dropdownItem:  isDark ? "hover:bg-[#222] border-[#222]"             : "hover:bg-[#F8FAFC] border-[#F0F0F0]",
 
     // ── Typography ──
     text:          isDark ? "text-white"                                : "text-[#0f172a]",
-    textMuted:     isDark ? "text-gray-400"                             : "text-[#334155]", // Darker gray for light mode visibility
-    textFaint:     isDark ? "text-gray-500"                             : "text-[#475569]", // Darker faint text
+    textMuted:     isDark ? "text-gray-400"                             : "text-[#334155]", 
+    textFaint:     isDark ? "text-gray-500"                             : "text-[#475569]", 
     textHeader:    isDark ? "text-xs text-gray-500 uppercase"           : "text-xs text-[#334155] font-bold uppercase",
 
-    // ── Navigation (sidebar stays dark, active uses same purple/magenta pattern) ──
-    navActive:     isDark ? "bg-purple-900/20 border-purple-800 text-purple-400" : "bg-[#9E217B]/20 text-[#d946a8] border-transparent",
+    // ── Navigation ──
+    navActive:     isDark ? "bg-[#9E217B]/20 border-[#9E217B]/60 text-[#d946a8]" : "bg-[#9E217B]/20 text-[#d946a8] border-transparent",
     navInactive:   isDark ? "text-gray-500 hover:text-gray-300 hover:bg-white/5 border-transparent" : "text-[#9CA3AF] hover:bg-[#2A2A2A] hover:text-white border-transparent",
-    navIndicator:  isDark ? "bg-purple-500 shadow-[0_0_10px_2px_rgba(168,85,247,0.5)]" : "bg-[#9E217B] shadow-[0_0_8px_rgba(158,33,123,0.4)]",
+    navIndicator:  isDark ? "bg-[#d946a8] shadow-[0_0_10px_2px_rgba(158,33,123,0.5)]" : "bg-[#9E217B] shadow-[0_0_8px_rgba(158,33,123,0.4)]",
 
     // ── Theme Toggle ──
     toggleWrap:    isDark ? "bg-[#1C1C2A] border-[#2A2A38] text-yellow-300" : "bg-[#F1F5F9] border-[#9CA3AF] text-[#1A1A1A]",
 
     // ── Chat ──
-   chatArea: isDark 
-      ? "bg-[#0a0a0a]" 
-      : "bg-[#EDEFF3]",
-
-    chatBubbleAi: isDark 
-      ? "bg-[#141414] border border-[#262626] text-gray-200" 
-      : "bg-[#F3F4F6] border border-[#E2E8F0] text-gray-900 font-medium shadow-sm",
-
-    chatBubbleUser: isDark 
-      ? "bg-purple-600 text-white" 
-      : "bg-[#9E217B] text-white shadow-md",
-
+    chatArea: isDark ? "bg-[#0a0a0a]" : "bg-[#EDEFF3]",
+    chatBubbleAi: isDark ? "bg-[#141414] border border-[#262626] text-gray-200" : "bg-[#F3F4F6] border border-[#E2E8F0] text-gray-900 font-medium shadow-sm",
+    chatBubbleUser: isDark ? "bg-[#9E217B] text-white" : "bg-[#9E217B] text-white shadow-md",
+   // Find this line inside buildTheme:
     chatInput: isDark 
-      ? "bg-[#111] border border-[#2a2a2a] hover:border-[#3a3a3a] focus-within:border-purple-500/50" 
-      : "bg-[#F3F4F6] border border-[#CBD5E1] hover:border-[#64748B] focus-within:bg-white focus-within:border-[#9E217B] shadow-inner",
-
-    chatInputInner: isDark 
-      ? "bg-[#111] border border-[#2a2a2a]" 
-      : "bg-white border border-[#E5E7EB]",
-
-    chatPanel: isDark 
-      ? "bg-[#1a1a1a] border border-[#2a2a2a]" 
-      : "bg-white border border-[#E5E7EB]",
-
-    chatPanelGl: isDark 
-      ? {} 
-      : { 
-          boxShadow: "0 2px 6px rgba(0,0,0,0.05), 0 8px 24px rgba(158,33,123,0.08)" 
-        },
+      ? "bg-[#111] border border-[#2a2a2a] hover:border-[#3a3a3a]" // Remove focus-within:border-purple-500/50
+      : "bg-[#F3F4F6] border border-[#CBD5E1] hover:border-[#64748B] shadow-inner", // Remove focus-within:border-[#9E217B]focus-within:bg-white focus-within:border-[#9E217B] shadow-inner",
+    chatInputInner: isDark ? "bg-[#111] border border-[#2a2a2a]" : "bg-white border border-[#E5E7EB]",
+    chatPanel: isDark ? "bg-[#1a1a1a] border border-[#2a2a2a]" : "bg-white border border-[#E5E7EB]",
+    chatPanelGl: isDark ? {} : { boxShadow: "0 2px 6px rgba(0,0,0,0.05), 0 8px 24px rgba(158,33,123,0.08)" },
 
     // ── Stat glow orbs ──
-    statGlow1:     isDark ? "bg-purple-600/10"                          : "bg-[#00AEEF]/10",
+    statGlow1:     isDark ? "bg-[#d946a8]/10"                           : "bg-[#00AEEF]/10",
     statGlow2:     isDark ? "bg-blue-600/10"                            : "bg-[#9E217B]/10",
     statGlow3:     isDark ? "bg-blue-600/10"                            : "bg-indigo-400/10",
     statGlow4:     isDark ? "bg-yellow-500/10"                          : "bg-amber-400/10",
     statGlow5:     isDark ? "bg-green-600/10"                           : "bg-emerald-400/10",
 
     // ── Brand accent ──
-    accentText:    isDark ? "text-purple-400"                           : "text-[#00AEEF]",
-    accentBg:      isDark ? "bg-purple-500/10 text-purple-400 border border-purple-500/30" : "bg-[#00AEEF]/10 text-[#00AEEF] border border-[#00AEEF]/30",
-    sectionTitle:  isDark ? "text-purple-400"                           : "text-[#9E217B]",
-    sectionBorder: isDark ? "border-purple-500/20"                      : "border-[#9E217B]/25",
+    accentText:    isDark ? "text-[#d946a8]"                            : "text-[#00AEEF]",
+    accentBg:      isDark ? "bg-[#d946a8]/10 text-[#d946a8] border border-[#d946a8]/30" : "bg-[#00AEEF]/10 text-[#00AEEF] border border-[#00AEEF]/30",
+    sectionTitle:  isDark ? "text-[#d946a8]"                            : "text-[#9E217B]",
+    sectionBorder: isDark ? "border-[#d946a8]/20"                       : "border-[#9E217B]/25",
 
-    // ── Buttons (Added Hover Pop-out transforms) ──
-    btnPrimary:    isDark ? "bg-purple-600 hover:bg-purple-500 text-white shadow-md transform transition-all duration-300 hover:-translate-y-1 hover:scale-[1.03] hover:shadow-lg" : "bg-[#9E217B] hover:bg-[#0099d4] text-white shadow-sm transform transition-all duration-300 hover:-translate-y-1 hover:scale-[1.03] hover:shadow-lg",
+    // ── Buttons ──
+    btnPrimary:    isDark ? "bg-[#9E217B] hover:bg-[#b8268f] text-white shadow-md transform transition-all duration-300 hover:-translate-y-1 hover:scale-[1.03] hover:shadow-lg" : "bg-[#9E217B] hover:bg-[#0099d4] text-white shadow-sm transform transition-all duration-300 hover:-translate-y-1 hover:scale-[1.03] hover:shadow-lg",
     btnSecondary:  isDark ? "bg-[#00AEEF] hover:bg-[#0099d4] text-white shadow-md transform transition-all duration-300 hover:-translate-y-1 hover:scale-[1.03] hover:shadow-lg" : "bg-[#00AEEF] hover:bg-[#0099d4] text-white shadow-sm transform transition-all duration-300 hover:-translate-y-1 hover:scale-[1.03] hover:shadow-lg",
     btnDanger:     isDark ? "bg-[#3B1F1F] text-[#F28B82] hover:bg-red-900/40 border border-red-900/30 transform transition-all duration-300 hover:-translate-y-1 hover:scale-[1.03] hover:shadow-lg" : "bg-[#9E217B]/10 text-[#9E217B] hover:bg-[#9E217B] hover:text-white border border-[#9E217B]/30 transform transition-all duration-300 hover:-translate-y-1 hover:scale-[1.03] hover:shadow-lg",
     btnWarning:    isDark ? "bg-yellow-600 hover:bg-yellow-500 text-white shadow-md transform transition-all duration-300 hover:-translate-y-1 hover:scale-[1.03] hover:shadow-lg" : "bg-amber-500 hover:bg-amber-400 text-white shadow-sm transform transition-all duration-300 hover:-translate-y-1 hover:scale-[1.03] hover:shadow-lg",
     btnClosingBadge: isDark ? "bg-yellow-900/20 border border-yellow-500/40 text-yellow-400" : "bg-amber-50 border border-amber-400/60 text-amber-600",
 
     // ── Logo ──
-    logoBg:        isDark ? "bg-purple-600 shadow-lg shadow-purple-600/30" : "bg-[#9E217B] shadow-lg shadow-[#9E217B]/30",
+    logoBg:        isDark ? "bg-[#9E217B] shadow-lg shadow-[#9E217B]/30" : "bg-[#9E217B] shadow-lg shadow-[#9E217B]/30",
 
     // ── Chart colors ──
     chartColors:   isDark
-      ? ["#d946ef","#8b5cf6","#3b82f6","#0ea5e9","#6b7280"]
+      ? ["#d946a8","#8b5cf6","#3b82f6","#0ea5e9","#6b7280"]
       : ["#00AEEF","#9E217B","#0077b6","#d4006e","#9CA3AF"],
 
     // ── Pie/chart tooltip ──
     tooltipBg:     isDark ? "#1a1a1a" : "rgba(255,255,255,0.98)",
     tooltipColor:  isDark ? "#fff" : "#1A1A1A",
-    tooltipBorder: isDark ? "1px solid rgba(150,100,255,0.3)" : "1px solid #E5E7EB",
+    tooltipBorder: isDark ? "1px solid rgba(158,33,123,0.3)" : "1px solid #E5E7EB",
     legendColor:   isDark ? "#9ca3af" : "#6B7280",
 
     // ── Follow-up bubble backgrounds ──
-    fupDefault:    isDark ? "bg-[#2a2135] border border-[#4c1d95]" : "bg-indigo-50 border border-indigo-200",
+    fupDefault:    isDark ? "bg-[#1f0a18] border border-[#9E217B]/30" : "bg-indigo-50 border border-indigo-200",
     fupLoan:       isDark ? "bg-blue-900/20 border border-blue-600/40" : "bg-blue-50 border border-blue-200",
     fupSalesform:  isDark ? "bg-[#222] border border-[#444]" : "bg-white border border-[#D1D5DB]",
     fupClosing:    isDark ? "bg-yellow-900/20 border border-yellow-600/40" : "bg-amber-50 border border-amber-300",
 
     // ── Pill/badge status ──
-    statusRouted:  isDark ? "text-blue-400 border-blue-500/30 bg-blue-500/10" : "text-[#00AEEF] border-[#00AEEF]/30 bg-[#00AEEF]/10",
+    statusRouted:  isDark ? "text-[#d946a8] border-[#9E217B]/30 bg-[#9E217B]/10" : "text-[#00AEEF] border-[#00AEEF]/30 bg-[#00AEEF]/10",
     statusVisit:   isDark ? "text-orange-400 border-orange-500/30 bg-orange-500/10" : "text-orange-500 border-orange-400/40 bg-orange-50",
     statusClosing: isDark ? "text-yellow-400 border-yellow-500/40 bg-yellow-500/10" : "text-amber-600 border-amber-400/50 bg-amber-50",
 
     // ── Select / form elements ──
-    select:        isDark ? "bg-[#121212] border-[#333] text-white focus:border-purple-500" : "bg-white border-[#9CA3AF] text-[#1A1A1A] focus:border-[#00AEEF]",
+    select:        isDark ? "bg-[#121212] border-[#333] text-white focus:border-[#d946a8]" : "bg-white border-[#9CA3AF] text-[#1A1A1A] focus:border-[#00AEEF]",
     selectSmall:   isDark ? "bg-[#222] border-[#333] text-white" : "bg-white border-[#D1D5DB] text-[#6B7280]",
 
     // ── Scroll ──
@@ -589,7 +570,7 @@ export default function SalesDashboard() {
         .animate-fadeIn{animation:fadeIn 0.2s ease-out}
         @keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
         .animate-bounce{animation:bounce 0.7s infinite}
-        input:focus,select:focus,textarea:focus{box-shadow:0 0 0 3px rgba(0,174,239,0.12)}
+      
       `}}/>
     </div>
   );
@@ -682,7 +663,7 @@ function DashboardAnalytics({ leads, isDark, t }: { leads: any[]; isDark: boolea
                 <CartesianGrid strokeDasharray="3 3" stroke={gridColor}/>
                 <XAxis dataKey="day" tick={{fill:axisColor,fontSize:11}} axisLine={false} tickLine={false}/>
                 <YAxis tick={{fill:axisColor,fontSize:11}} axisLine={false} tickLine={false} allowDecimals={false}/>
-                <RTooltip content={<BarTip/>}/>
+                <RTooltip content={<BarTip/>} cursor={{ fill: 'transparent' }}/>
                 <Bar dataKey="leads" radius={[6,6,0,0]}>{weeklyData.map((_:any,i:number)=><Cell key={i} fill={BAR_COLORS[i%7]}/>)}</Bar>
               </BarChart>
             ) : (
@@ -690,7 +671,7 @@ function DashboardAnalytics({ leads, isDark, t }: { leads: any[]; isDark: boolea
                 <CartesianGrid strokeDasharray="3 3" stroke={gridColor} horizontal={false}/>
                 <XAxis type="number" tick={{fill:axisColor,fontSize:11}} axisLine={false} tickLine={false} allowDecimals={false}/>
                 <YAxis type="category" dataKey="source" width={100} tick={{fill:axisColor,fontSize:10}} axisLine={false} tickLine={false}/>
-                <RTooltip content={<BarTip/>}/>
+                <RTooltip content={<BarTip/>} cursor={{ fill: 'transparent' }}/>
                 <Bar dataKey="count" radius={[0,6,6,0]}>{sourceData.map((_:any,i:number)=><Cell key={i} fill={SRC_COLORS[i%6]}/>)}</Bar>
               </BarChart>
             )}
@@ -756,6 +737,11 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
   const [showLoanForm, setShowLoanForm]     = useState(false);
   const [loanForm, setLoanForm]             = useState({ loanRequired:"",status:"",bank:"",amountReq:"",amountApp:"",cibil:"",agent:"",agentContact:"",empType:"",income:"",emi:"",docPan:"Pending",docAadhaar:"Pending",docSalary:"Pending",docBank:"Pending",docProperty:"Pending",notes:"" });
   const [customNote, setCustomNote]         = useState("");
+
+  // ── WhatsApp States ──
+  const [isWaModalOpen, setIsWaModalOpen] = useState(false);
+  const [waMessage, setWaMessage] = useState("");
+  const [isSendingWa, setIsSendingWa] = useState(false);
   const followUpEndRef = useRef<HTMLDivElement>(null);
   const [toastMsg, setToastMsg]             = useState<{title:string;icon:any;color:string}|null>(null);
 
@@ -870,6 +856,52 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
       Loading more leads…
     </div>
   );
+  const handleSendWhatsApp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedLead || !waMessage.trim()) return;
+
+    setIsSendingWa(true);
+    try {
+      // 1. Send message via WhatsApp API
+      const waRes = await fetch("/api/whatsapp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          phone: selectedLead.phone || selectedLead.contact_no, 
+          message: waMessage.trim() 
+        })
+      });
+
+      if (!waRes.ok) throw new Error("Failed to send WhatsApp message");
+
+      // 2. SIMULTANEOUSLY log to the CRM Follow-up Timeline
+      const followUpMsg = `🟢 Sent via WhatsApp Business:\n"${waMessage.trim()}"`;
+      const nm = { 
+        leadId: String(selectedLead.id), 
+        salesManagerName: adminUser.name || "Sales Manager", 
+        createdBy: adminUser.role?.toLowerCase() === "admin" ? "admin" : "sales", 
+        message: followUpMsg, 
+        siteVisitDate: null, 
+        createdAt: new Date().toISOString() 
+      };
+      
+      await fetch("/api/followups", { 
+        method: "POST", 
+        headers: { "Content-Type": "application/json" }, 
+        body: JSON.stringify(nm) 
+      });
+
+      setToastMsg({ title: "WhatsApp Sent & Logged!", icon: <FaCheckCircle/>, color: "green" });
+      setTimeout(() => setToastMsg(null), 3000);
+      setIsWaModalOpen(false);
+      setWaMessage("");
+      refetch(); // Instantly refreshes the timeline for everyone to see
+    } catch (err) {
+      alert("Error sending WhatsApp message. Check API credentials.");
+    } finally {
+      setIsSendingWa(false);
+    }
+  };
 
   // ── Shared input class for forms ──
   const formInput = `w-full rounded-lg px-4 py-2 text-sm outline-none transition-colors border ${t.inputInner} ${t.text} ${t.inputFocus}`;
@@ -1380,7 +1412,13 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
                     </div>
                     <div className="grid grid-cols-2 gap-3 mt-4 flex-shrink-0">
                       <button className={`border flex flex-col items-center justify-center py-3 rounded-xl transition-all cursor-pointer gap-1 ${isDark?"bg-[#00AEEF]/10 border-[#00AEEF]/30 hover:bg-[#00AEEF] text-[#00AEEF] hover:text-white":"bg-[#00AEEF]/10 border-[#00AEEF]/30 hover:bg-[#00AEEF] text-[#00AEEF] hover:text-white"}`}><FaMicrophone className="text-lg"/><span className="font-bold text-[10px]">Browser Call</span></button>
-                      <button className="bg-green-600/10 border border-green-500/30 hover:bg-green-600 text-green-400 hover:text-white flex flex-col items-center justify-center py-3 rounded-xl transition-all cursor-pointer gap-1"><FaWhatsapp className="text-xl"/><span className="font-bold text-[10px]">WhatsApp</span></button>
+                     <button 
+                        onClick={() => setIsWaModalOpen(true)}
+                        className="bg-green-600/10 border border-green-500/30 hover:bg-green-600 text-green-400 hover:text-white flex flex-col items-center justify-center py-3 rounded-xl transition-all cursor-pointer gap-1"
+                      >
+                        <FaWhatsapp className="text-xl"/>
+                        <span className="font-bold text-[10px]">WhatsApp</span>
+                      </button>
                     </div>
                   </div>
                 )}
@@ -1427,6 +1465,47 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
                   <button type="submit" className={`w-12 h-12 text-white rounded-xl flex items-center justify-center cursor-pointer transition-colors shadow-lg ${isDark?"bg-purple-600 hover:bg-purple-500":"bg-[#00AEEF] hover:bg-[#0099d4]"}`}><FaPaperPlane className="text-sm ml-[-2px]"/></button>
                 </form>
               </div>
+            </div>
+          </div>
+        )}
+        {/* ── WHATSAPP MODAL ── */}
+        {isWaModalOpen && selectedLead && (
+          <div className="fixed inset-0 bg-black/75 z-[200] flex justify-center items-center p-4 sm:p-6 animate-fadeIn" style={{backdropFilter:"blur(8px)"}}>
+            <div className={`rounded-2xl w-full max-w-lg shadow-2xl border overflow-hidden ${t.modalCard}`} style={t.modalGlass}>
+              
+              <div className="p-5 border-b border-green-500/20 bg-green-500/10 flex justify-between items-center">
+                <div>
+                  <h2 className="text-lg font-bold flex items-center gap-2 text-green-500"><FaWhatsapp/> Send WhatsApp Message</h2>
+                  <p className={`text-xs mt-1 ${t.textMuted}`}>To: <strong>{selectedLead.name}</strong> ({maskPhone(selectedLead.phone || selectedLead.contact_no)})</p>
+                </div>
+                <button onClick={() => { setIsWaModalOpen(false); setWaMessage(""); }} className={`p-2 ${t.textMuted} hover:text-red-500 transition-colors`}><FaTimes/></button>
+              </div>
+
+              <form onSubmit={handleSendWhatsApp}>
+                <div className={`p-6 ${t.modalInner}`}>
+                  <label className={`block text-sm font-bold mb-2 ${isDark?"text-green-400":"text-green-600"}`}>
+                    Message (will be logged in CRM timeline)
+                  </label>
+                  <textarea 
+                    required 
+                    value={waMessage} 
+                    onChange={e => setWaMessage(e.target.value)} 
+                    rows={6}
+                    placeholder="Type your message here..."
+                    className={`w-full rounded-xl px-4 py-3 text-sm outline-none resize-none leading-relaxed border-2 transition-colors custom-scrollbar ${isDark?"bg-[#14141B] border-green-500/30 text-white focus:border-green-500":"bg-white border-green-200 text-[#1A1A1A] focus:border-green-500"}`}
+                  />
+                </div>
+                
+                <div className={`p-5 border-t flex justify-end gap-3 ${t.modalHeader} ${t.tableBorder}`}>
+                  <button type="button" onClick={() => { setIsWaModalOpen(false); setWaMessage(""); }}
+                    className={`px-6 py-2.5 rounded-lg font-bold cursor-pointer transition-colors ${t.textMuted} hover:text-red-500`}>Cancel</button>
+                  <button type="submit" disabled={isSendingWa || !waMessage.trim()}
+                    className={`px-8 py-2.5 rounded-lg font-bold transition-colors flex items-center gap-2 ${isSendingWa||!waMessage.trim()?"opacity-50 cursor-not-allowed bg-green-600/50 text-white":"cursor-pointer bg-[#25D366] hover:bg-green-500 text-white shadow-lg shadow-green-600/20"}`}>
+                    {isSendingWa ? "Sending..." : <><FaPaperPlane/> Send WhatsApp</>}
+                  </button>
+                </div>
+              </form>
+
             </div>
           </div>
         )}
@@ -1481,6 +1560,7 @@ function AssistantView({ allLeads, isDark, t }: { allLeads: any[]; isDark: boole
   };
 
   const handleSubmit  = (e: React.FormEvent) => { e.preventDefault(); sendMessage(chatInput); };
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => { if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendMessage(chatInput);} };
 
   const suggestions = [
@@ -1579,7 +1659,7 @@ function AssistantView({ allLeads, isDark, t }: { allLeads: any[]; isDark: boole
                 onKeyDown={handleKeyDown}
                 placeholder="Ask about leads, loans, or type a client name..."
                 disabled={isLoading} rows={1}
-                className={`flex-1 bg-transparent text-sm outline-none resize-none placeholder:${t.textFaint} disabled:opacity-50 leading-relaxed self-center ${t.text}`}
+                className={`flex-1 bg-transparent text-sm outline-none resize-none focus:ring-0 placeholder:${t.textFaint} disabled:opacity-50 leading-relaxed self-center ${t.text}`}
                 style={{maxHeight:"160px",minHeight:"24px"}}
               />
               <button type="submit" disabled={isLoading||!chatInput.trim()} className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all cursor-pointer flex-shrink-0 ${chatInput.trim()&&!isLoading ? (isDark?"bg-purple-600 hover:bg-purple-500 text-white shadow-lg shadow-purple-600/20":"bg-[#00AEEF] hover:bg-[#0099d4] text-white shadow-lg shadow-[#00AEEF]/20") : `${t.settingsBg} ${t.textFaint} cursor-not-allowed`}`}>

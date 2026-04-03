@@ -133,7 +133,7 @@ function buildTheme(isDark: boolean) {
     btnWarning:    isDark ? "bg-yellow-600 hover:bg-yellow-500 text-white shadow-md transform transition-all duration-300 hover:-translate-y-1 hover:scale-[1.03] hover:shadow-lg" : "bg-amber-500 hover:bg-amber-400 text-white shadow-sm transform transition-all duration-300 hover:-translate-y-1 hover:scale-[1.03] hover:shadow-lg",
     btnDanger:     isDark ? "bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white border border-red-500/30 transform transition-all duration-300 hover:-translate-y-1 hover:scale-[1.03] hover:shadow-lg" : "bg-[#9E217B]/10 text-[#9E217B] hover:bg-[#9E217B] hover:text-white border border-[#9E217B]/30 transform transition-all duration-300 hover:-translate-y-1 hover:scale-[1.03] hover:shadow-lg",
     btnTransfer:   isDark ? "bg-purple-600 hover:bg-purple-500 text-white shadow-md transform transition-all duration-300 hover:-translate-y-1 hover:scale-[1.03] hover:shadow-lg" : "bg-purple-600 hover:bg-purple-700 text-white shadow-sm transform transition-all duration-300 hover:-translate-y-1 hover:scale-[1.03] hover:shadow-lg",
-    
+    scroll: isDark ? "custom-scrollbar" : "custom-scrollbar",
     logoBg:        isDark ? "bg-[#9E217B] shadow-lg shadow-[#9E217B]/30" : "bg-[#9E217B] shadow-lg shadow-[#9E217B]/30",
     selectSmall:   isDark ? "bg-[#1A1A28] border-[#2A2A35] text-white" : "bg-white border-[#D1D5DB] text-[#6B7280]",
     chartColors:   isDark
@@ -194,6 +194,12 @@ export default function ReceptionistDashboard() {
   const [currentTime, setCurrentTime]     = useState(new Date());
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [toastMsg, setToastMsg]           = useState<{ title: string; color: string } | null>(null);
+
+  type CrmNotif = { id: string; line1: string; line2: string; type: "lead" | "visit" };
+  const [notifQueue, setNotifQueue] = useState<CrmNotif[]>([]);
+  const [activeNotif, setActiveNotif] = useState<CrmNotif | null>(null);
+  const [notifCount, setNotifCount] = useState(0);
+  const [notificationHistory, setNotificationHistory] = useState<(CrmNotif & { rawDate: number })[]>([]);
 
   // ── Enquiry (new-entry) modal ──
   const [isEnquiryModalOpen, setIsEnquiryModalOpen] = useState(false);
@@ -304,6 +310,89 @@ export default function ReceptionistDashboard() {
   // ─────────────────────────────────────────────────────────────────────────
   // EFFECTS
   // ─────────────────────────────────────────────────────────────────────────
+  // ── Notification Queue & History Handler ──
+  useEffect(() => {
+    if (isFetchingEnquiries || enquiries.length === 0) return;
+
+    const checkNotifs = () => {
+      const storedIds = typeof window !== "undefined" ? JSON.parse(localStorage.getItem("crm_shown_notif_ids") || "[]") : [];
+      const seenSet = new Set(storedIds);
+      const fresh: CrmNotif[] = [];
+      const history: (CrmNotif & { rawDate: number })[] = [];
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      mergedLeads.forEach((lead: any) => {
+        const formattedId = String(lead.id).padStart(3, '0');
+        
+        // 1. New Lead Notification (Entered by anyone, 1-Day Expiry)
+        const createdDate = new Date(lead.created_at || 0);
+        createdDate.setHours(0, 0, 0, 0);
+        const createdDiffDays = (today.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24);
+
+        if (createdDiffDays <= 1) {
+          const leadNotif = {
+            id: `lead_${lead.id}`,
+            line1: `New Lead · ${formattedId} - ${lead.name}`,
+            line2: lead.assigned_receptionist ? `Entered by ${lead.assigned_receptionist} (Receptionist)` : `Entered by ${lead.assignedTo} (Manager)`,
+            type: "lead" as const
+          };
+          history.push({ ...leadNotif, id: `hist_lead_${lead.id}`, rawDate: new Date(lead.created_at || 0).getTime() });
+          if (!seenSet.has(leadNotif.id)) {
+            fresh.push(leadNotif);
+            seenSet.add(leadNotif.id);
+          }
+        }
+
+        // 2. Site Visit Notification (For Receptionist's leads, 2 days before, 3 days duration)
+        if (lead.mongoVisitDate && (lead.assignedReceptionist === user.name || lead.assigned_to === user.name)) {
+          const visitDateObj = new Date(lead.mongoVisitDate);
+          visitDateObj.setHours(0, 0, 0, 0);
+          const diffDays = (visitDateObj.getTime() - today.getTime()) / (1000 * 60 * 60 * 24);
+
+          // Trigger if visit is within 2 days from now, and keep in history for 3 days total
+          if (diffDays >= -3 && diffDays <= 2) {
+            const visitDate = new Date(lead.mongoVisitDate).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+            
+            // Determine Role
+            const isSiteHead = siteHeads.some((sh: any) => sh.name === lead.assignedTo);
+            const role = isSiteHead ? "Site Head" : "Manager";
+
+            const visitNotif = {
+              id: `visit_${lead.id}_${lead.mongoVisitDate}`,
+              line1: `Site Visit · ${visitDate}`,
+              line2: `${lead.assignedTo} (${role}) - ${lead.name}`,
+              type: "visit" as const
+            };
+            history.push({ ...visitNotif, id: `hist_visit_${lead.id}`, rawDate: new Date(lead.mongoVisitDate).getTime() });
+            if (!seenSet.has(visitNotif.id)) {
+              fresh.push(visitNotif);
+              seenSet.add(visitNotif.id);
+            }
+          }
+        }
+      });
+
+      setNotificationHistory(history.sort((a, b) => b.rawDate - a.rawDate).slice(0, 20));
+      if (fresh.length > 0) {
+        setNotifQueue(prev => [...prev, ...fresh]);
+        setNotifCount(c => c + fresh.length);
+        localStorage.setItem("crm_shown_notif_ids", JSON.stringify(Array.from(seenSet)));
+      }
+    };
+
+    checkNotifs();
+  }, [user.name, siteHeads]);
+
+  // Toast Display Logic (2 Seconds)
+  useEffect(() => {
+    if (activeNotif || notifQueue.length === 0) return;
+    const next = notifQueue[0];
+    setActiveNotif(next);
+    setNotifQueue(prev => prev.slice(1));
+    const timer = setTimeout(() => setActiveNotif(null), 2000);
+    return () => clearTimeout(timer);
+  }, [activeNotif, notifQueue]);
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
@@ -458,6 +547,88 @@ export default function ReceptionistDashboard() {
   const refetchAll = async () => {
     await Promise.all([initialLoad(), fetchFollowUps()]);
   };
+  // ── Notification Queue & History Handler ──
+  useEffect(() => {
+    if (isFetchingEnquiries || enquiries.length === 0) return;
+
+    const checkNotifs = () => {
+      let storedIds: string[] = [];
+      try {
+        const item = localStorage.getItem("crm_shown_notif_ids");
+        storedIds = item ? JSON.parse(item) : [];
+      } catch (e) { storedIds = []; }
+      
+      const seenSet = new Set(storedIds);
+      const fresh: CrmNotif[] = [];
+      const history: (CrmNotif & { rawDate: number })[] = [];
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      mergedLeads.forEach((lead: any) => {
+        const formattedId = String(lead.id).padStart(3, '0');
+        
+        // 1. New Lead Notification (1-Day Expiry)
+        const createdDate = new Date(lead.created_at || 0);
+        createdDate.setHours(0, 0, 0, 0);
+        const createdDiffDays = (today.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24);
+
+        if (createdDiffDays <= 1) {
+          const leadNotif = {
+            id: `lead_${lead.id}`,
+            line1: `New Lead · ${formattedId} - ${lead.name}`,
+            line2: lead.assigned_receptionist ? `Entered by ${lead.assigned_receptionist} (Receptionist)` : `Entered by ${lead.assignedTo} (Manager)`,
+            type: "lead" as const
+          };
+          history.push({ ...leadNotif, id: `hist_lead_${lead.id}`, rawDate: new Date(lead.created_at || 0).getTime() });
+          if (!seenSet.has(leadNotif.id)) {
+            fresh.push(leadNotif);
+            seenSet.add(leadNotif.id);
+          }
+        }
+
+        // 2. Site Visit Notification (2 days before, 3 days duration)
+        const vDate = lead.mongoVisitDate || lead.siteVisitDate;
+        if (vDate && (lead.assignedReceptionist === user.name || lead.assigned_to === user.name)) {
+          const visitDateObj = new Date(vDate);
+          visitDateObj.setHours(0, 0, 0, 0);
+          const diffDays = (visitDateObj.getTime() - today.getTime()) / (1000 * 60 * 60 * 24);
+
+          if (diffDays >= -3 && diffDays <= 2) {
+            const visitDate = new Date(vDate).toLocaleDateString("en-IN", { day: "2-digit", month: "short" });
+            const visitNotif = {
+              id: `visit_${lead.id}_${vDate}`,
+              line1: `Site Visit · ${visitDate}`,
+              line2: `${lead.assignedTo} - ${lead.name}`,
+              type: "visit" as const
+            };
+            history.push({ ...visitNotif, id: `hist_visit_${lead.id}`, rawDate: new Date(vDate).getTime() });
+            if (!seenSet.has(visitNotif.id)) {
+              fresh.push(visitNotif);
+              seenSet.add(visitNotif.id);
+            }
+          }
+        }
+      });
+
+      setNotificationHistory(history.sort((a, b) => b.rawDate - a.rawDate).slice(0, 20));
+      if (fresh.length > 0) {
+        setNotifQueue(prev => [...prev, ...fresh]);
+        setNotifCount(c => c + fresh.length);
+        localStorage.setItem("crm_shown_notif_ids", JSON.stringify(Array.from(seenSet)));
+      }
+    };
+    checkNotifs();
+  }, [enquiries, user.name, siteHeads]);
+
+  // Trigger Popup Logic (2 Seconds)
+  useEffect(() => {
+    if (activeNotif || notifQueue.length === 0) return;
+    const next = notifQueue[0];
+    setActiveNotif(next);
+    setNotifQueue(prev => prev.slice(1));
+    const timer = setTimeout(() => setActiveNotif(null), 2000);
+    return () => clearTimeout(timer);
+  }, [activeNotif, notifQueue]);
 
   // ─────────────────────────────────────────────────────────────────────────
   // MERGED LEADS (enrich with follow-up data, same as Sales Manager)
@@ -932,11 +1103,49 @@ export default function ReceptionistDashboard() {
               className={`w-9 h-9 rounded-xl border flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm ${t.toggleWrap}`}>
               {isDark ? <SunIcon/> : <MoonIcon/>}
             </button>
-            <button onClick={() => setIsNotificationsOpen(!isNotificationsOpen)} className={`${t.textMuted} transition-colors relative`}
-              style={{color:isNotificationsOpen?(isDark?"#d4006e":"#00AEEF"):undefined}}>
-              <FaBell className="w-5 h-5"/>
-            </button>
-            {isNotificationsOpen && (
+           {/* ── NOTIFICATION BELL & DROPDOWN ── */}
+            <div className="relative">
+              <button 
+                onClick={() => { setIsNotificationsOpen(!isNotificationsOpen); setNotifCount(0); setIsProfileOpen(false); }} 
+                className={`${t.textMuted} transition-colors relative cursor-pointer`}
+              >
+                <FaBell className="w-5 h-5"/>
+                {notifCount > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-[#9E217B] rounded-full text-[9px] font-black text-white flex items-center justify-center">
+                    {notifCount > 9 ? "9+" : notifCount}
+                  </span>
+                )}
+              </button>
+
+              {isNotificationsOpen && (
+                <div className={`absolute top-12 right-0 w-[320px] border rounded-xl shadow-2xl flex flex-col z-50 animate-fadeIn ${t.dropdown}`} style={t.dropdownGlass}>
+                  <div className={`p-4 border-b flex justify-between items-center ${t.tableBorder}`}>
+                    <h3 className={`font-bold text-sm flex items-center gap-2 ${t.text}`}>
+                      <FaBell className="text-[#9E217B]"/> Recent Notifications
+                    </h3>
+                    <button onClick={() => setIsNotificationsOpen(false)} className={`${t.textMuted} hover:text-red-500`}><FaTimes className="text-xs"/></button>
+                  </div>
+                  <div className={`max-h-[360px] overflow-y-auto ${t.scroll}`}>
+                    {notificationHistory.length === 0 ? (
+                      <p className={`p-6 text-center text-xs ${t.textMuted}`}>No notifications yet.</p>
+                    ) : (
+                      notificationHistory.map((n) => (
+                        <div key={n.id} className={`p-4 border-b last:border-b-0 transition-colors flex items-start gap-3 ${isDark ? "hover:bg-white/5 border-[#333]" : "hover:bg-black/5 border-[#E5E7EB]"}`}>
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-white ${n.type === "visit" ? "bg-orange-500" : "bg-[#25D366]"}`}>
+                            {n.type === "visit" ? <FaCalendarAlt className="text-[12px]"/> : <FaBriefcase className="text-[12px]" />}
+                          </div>
+                          <div>
+                            <p className={`text-xs font-bold ${t.text}`}>{n.line1}</p>
+                            <p className={`text-[10px] mt-1 ${t.textMuted}`}>{n.line2}</p>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+            {/* {isNotificationsOpen && (
               <div className={`absolute top-12 right-12 w-72 rounded-xl shadow-2xl p-4 z-50 animate-fadeIn border ${t.dropdown}`} style={t.dropdownGlass}>
                 <h3 className={`font-bold text-sm mb-3 border-b pb-2 ${t.text} ${t.tableBorder}`}>Notifications</h3>
                 {myAssignedLeads.length > 0 ? (
@@ -945,7 +1154,7 @@ export default function ReceptionistDashboard() {
                   <p className={`text-xs italic ${t.textFaint}`}>All caught up! No new notifications.</p>
                 )}
               </div>
-            )}
+            )} */}
             <div onClick={() => setIsProfileOpen(!isProfileOpen)}
               className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm cursor-pointer shadow-md hover:scale-105 transition-transform ${isDark?"border border-[#9E217B]/40 text-[#d4006e] bg-[#9E217B]/15":"border border-[#00AEEF]/40 text-[#00AEEF] bg-[#00AEEF]/10"}`}>
               {String(user?.name||"U").charAt(0).toUpperCase()}
@@ -972,7 +1181,26 @@ export default function ReceptionistDashboard() {
                 <button onClick={handleLogout} className={`w-full py-2.5 rounded-lg font-semibold transition-colors cursor-pointer ${t.btnDanger}`}>Logout</button>
               </div>
             )}
+            {/* ── TOAST NOTIFICATION POPUP ── */}
+          {/* 👇 TOAST POPUP 👇 */}
+            {activeNotif && (
+              <div className="absolute top-[68px] right-0 z-[999] animate-fadeIn">
+                <div className={`flex items-start gap-3 px-4 py-3 rounded-2xl shadow-2xl border min-w-[280px] max-w-[360px] ${isDark ? "bg-[#1a1a1a] border-[#333]" : "bg-white border-[#E5E7EB]"}`}>
+                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5 ${activeNotif.type === "visit" ? "bg-orange-500" : "bg-[#25D366]"}`}>
+                    {activeNotif.type === "visit" ? <FaCalendarAlt className="text-white text-lg" /> : <FaBriefcase className="text-white text-lg" />}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-xs font-bold truncate ${isDark ? "text-white" : "text-[#1A1A1A]"}`}>{activeNotif.line1}</p>
+                    <p className={`text-[11px] mt-0.5 truncate ${isDark ? "text-gray-400" : "text-[#6B7280]"}`}>{activeNotif.line2}</p>
+                  </div>
+                  <button onClick={() => setActiveNotif(null)} className={`flex-shrink-0 mt-0.5 p-0.5 rounded cursor-pointer ${t.textMuted}`}>
+                    <FaTimes className="text-[10px]"/>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
+        
         </header>
 
         {/* ── MAIN SCROLL AREA ── */}
@@ -1012,35 +1240,313 @@ export default function ReceptionistDashboard() {
               AI ASSISTANT
           ──────────────────────────────────────────────────────────── */}
           {activeTab === "assistant" && (
-            <div className="animate-fadeIn max-w-4xl mx-auto h-[80vh] flex flex-col pb-4">
-              <div className="flex items-center gap-4 mb-6">
-                <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-2xl ${isDark?"bg-[#9E217B]/20 text-[#d4006e]":"bg-[#00AEEF]/10 text-[#00AEEF]"}`}><FaRobot/></div>
+            <div className="animate-fadeIn h-[calc(100vh-130px)] flex flex-col pb-2">
+              {/* ── Gemini-style Header ── */}
+              <div className="flex items-center gap-4 mb-4 flex-shrink-0">
+                <div style={{
+                  width: 44, height: 44, borderRadius: 14, flexShrink: 0,
+                  background: "linear-gradient(135deg, #4285f4 0%, #34a853 40%, #fbbc04 70%, #ea4335 100%)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 20, boxShadow: "0 4px 16px rgba(66,133,244,0.35)",
+                }}>✦</div>
                 <div>
-                  <h1 className={`text-2xl font-bold ${t.text}`}>CRM AI Assistant</h1>
-                  <p className={`text-sm ${t.textMuted}`}>Ask questions about your data or retrieve specific client details.</p>
+                  <h1 className={`text-xl font-bold tracking-tight ${t.text}`}
+                    style={{ fontFamily: "'DM Sans', sans-serif", letterSpacing: "-0.02em" }}>
+                    CRM AI Assistant
+                  </h1>
+                  <p className={`text-xs mt-0.5 ${t.textMuted}`}>
+                    Ask about leads, stats, or client details
+                  </p>
+                </div>
+                {/* Live indicator */}
+                <div className="ml-auto flex items-center gap-2">
+                  <span className={`w-2 h-2 rounded-full animate-pulse ${isDark ? "bg-green-400" : "bg-green-500"}`}/>
+                  <span className={`text-[10px] font-semibold uppercase tracking-widest ${t.textMuted}`}>Live</span>
                 </div>
               </div>
-              <div className={`flex-1 rounded-2xl shadow-xl flex flex-col overflow-hidden border ${t.chatPanel}`} style={t.chatPanelGl}>
-                <div className={`flex-1 p-6 overflow-y-auto custom-scrollbar space-y-6 ${t.chatArea}`}>
-                  {chatMessages.map((msg,idx) => (
-                    <div key={idx} className={`flex ${msg.sender==="user"?"justify-end":"justify-start"}`}>
-                      <div className={`flex gap-3 max-w-[85%] ${msg.sender==="user"?"flex-row-reverse":"flex-row"}`}>
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${msg.sender==="user"?(isDark?"bg-purple-600 text-white":"bg-[#9E217B] text-white"):"bg-[#141414] text-white border border-gray-700"}`}>
-                          {msg.sender==="user" ? <FaUserCircle className="text-lg"/> : <FaRobot className="text-lg"/>}
+
+              {/* ── Chat container ── */}
+              <div className="flex-1 flex flex-col overflow-hidden rounded-2xl border min-h-0"
+                style={{
+                  background: isDark ? "#0f0f11" : "#f8fafc",
+                  border: isDark ? "1px solid #1e1e26" : "1px solid #cbd5e1",
+                  boxShadow: isDark
+                    ? "0 0 0 1px rgba(66,133,244,0.06), 0 8px 32px rgba(0,0,0,0.5)"
+                    : "0 2px 8px rgba(0,0,0,0.06), 0 16px 40px rgba(0,0,0,0.08)",
+                }}>
+
+                {/* ── Messages area ── */}
+                <div className="flex-1 overflow-y-auto custom-scrollbar px-4 py-6 flex flex-col gap-5"
+                  style={{ background: isDark ? "#0f0f11" : "#f8fafc" }}>
+
+                  {chatMessages.map((msg, idx) => {
+                    const isUser = msg.sender === "user";
+                    return (
+                      <div key={idx} className={`flex gap-3 ${isUser ? "justify-end" : "justify-start"}`}
+                        style={{ animation: "fadeUp 0.25s ease both" }}>
+
+                        {/* AI avatar */}
+                        {!isUser && (
+                          <div style={{
+                            width: 32, height: 32, borderRadius: "50%", flexShrink: 0,
+                            background: "linear-gradient(135deg,#4285f4,#34a853)",
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                            fontSize: 13, marginTop: 2,
+                            boxShadow: "0 2px 8px rgba(66,133,244,0.3)",
+                          }}>✦</div>
+                        )}
+
+                        {/* Bubble */}
+                        <div style={{
+                          maxWidth: "78%",
+                          padding: isUser ? "10px 16px" : "14px 18px",
+                          borderRadius: isUser
+                            ? "18px 18px 4px 18px"
+                            : "4px 18px 18px 18px",
+                          background: isUser
+                            ? (isDark
+                              ? "linear-gradient(135deg,#1a73e8,#1558b0)"
+                              : "linear-gradient(135deg,#9E217B,#7a1a5e)")
+                            : (isDark ? "#1a1a22" : "#ffffff"),
+                          border: isUser
+                            ? "none"
+                            : (isDark ? "1px solid #2a2a35" : "1px solid #e2e8f0"),
+                          color: isUser
+                            ? "#ffffff"
+                            : (isDark ? "#e8eaed" : "#1e293b"),
+                          fontSize: 13.5,
+                          lineHeight: 1.75,
+                          whiteSpace: "pre-wrap",
+                          fontFamily: "'DM Sans', sans-serif",
+                          fontWeight: isUser ? 500 : 400,
+                          boxShadow: isUser
+                            ? (isDark ? "0 4px 16px rgba(26,115,232,0.35)" : "0 4px 16px rgba(158,33,123,0.3)")
+                            : (isDark ? "0 2px 8px rgba(0,0,0,0.3)" : "0 1px 4px rgba(0,0,0,0.06)"),
+                        }}>
+                          {/* Bold **text** renderer */}
+                          {msg.text.split("\n").map((line, li) => {
+                            const parts = line.split(/(\*\*[^*]+\*\*)/g);
+                            return (
+                              <div key={li} style={{ minHeight: line === "" ? "0.6em" : undefined }}>
+                                {parts.map((part, pi) =>
+                                  part.startsWith("**") && part.endsWith("**")
+                                    ? <span key={pi} style={{
+                                        fontWeight: 700,
+                                        color: isUser ? "#fff" : (isDark ? "#8ab4f8" : "#9E217B"),
+                                      }}>{part.slice(2, -2)}</span>
+                                    : <span key={pi}>{part}</span>
+                                )}
+                              </div>
+                            );
+                          })}
                         </div>
-                        <div className={`p-4 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap ${msg.sender==="user"?(isDark?"bg-purple-600 text-white rounded-tr-none":"bg-[#9E217B] text-white rounded-tr-none"):`${t.chatBubbleAi} rounded-tl-none`}`}>{msg.text}</div>
+
+                        {/* User avatar */}
+                        {isUser && (
+                          <div style={{
+                            width: 32, height: 32, borderRadius: "50%", flexShrink: 0,
+                            background: isDark
+                              ? "linear-gradient(135deg,#7c3aed,#4f46e5)"
+                              : "linear-gradient(135deg,#9E217B,#d4006e)",
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                            fontSize: 13, marginTop: 2, color: "#fff", fontWeight: 700,
+                          }}>
+                            {String(user?.name || "U").charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+
+                  {/* Typing indicator */}
+                  {false /* replace with your typing state if needed */ && (
+                    <div className="flex gap-3 justify-start">
+                      <div style={{
+                        width: 32, height: 32, borderRadius: "50%",
+                        background: "linear-gradient(135deg,#4285f4,#34a853)",
+                        display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13,
+                      }}>✦</div>
+                      <div style={{
+                        padding: "12px 16px", borderRadius: "4px 18px 18px 18px",
+                        background: isDark ? "#1a1a22" : "#ffffff",
+                        border: isDark ? "1px solid #2a2a35" : "1px solid #e2e8f0",
+                        display: "flex", gap: 5, alignItems: "center",
+                      }}>
+                        {[0,1,2].map(i => (
+                          <span key={i} style={{
+                            width: 7, height: 7, borderRadius: "50%",
+                            background: isDark ? "#8ab4f8" : "#9E217B",
+                            animation: `bounce 1.2s ease-in-out ${i * 0.2}s infinite`,
+                            display: "block",
+                          }}/>
+                        ))}
                       </div>
                     </div>
-                  ))}
+                  )}
+
+                  {/* Suggestion chips — only shown when conversation is fresh */}
+                  {chatMessages.length <= 2 && (
+                    <div className="mt-2">
+                      <p className={`text-[10px] font-bold uppercase tracking-widest mb-3 ${t.textFaint}`}>
+                        Try asking
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {[
+                          "My assigned leads",
+                          "Total leads this week",
+                          "How many today?",
+                          `Show ${myAssignedLeads[0]?.name?.split(" ")[0] || "a client"}`,
+                          "Leads with site visits",
+                          "Total all time",
+                        ].map(chip => (
+                          <button key={chip}
+                            onClick={() => {
+                              setChatInput(chip);
+                              // Directly trigger submit
+                              const syntheticEvent = { preventDefault: () => {} } as React.FormEvent;
+                              const saved = chatInput;
+                              setChatInput(chip);
+                              setTimeout(() => {
+                                const q = chip;
+                                setChatMessages(prev => [...prev, { sender: "user", text: q }]);
+                                setChatInput("");
+                                setTimeout(() => {
+                                  let aiResponse = "I can help you analyze your CRM data. Try asking about total leads or a specific client's name.";
+                                  const userMsg = q.toLowerCase();
+                                  const matchedClient = mergedLeads.find((l: any) =>
+                                    userMsg.includes((l.name || "").toLowerCase().split(" ")[0])
+                                  );
+                                  if (matchedClient) {
+                                    aiResponse = `**Lead Found — ${matchedClient.name}**\n━━━━━━━━━━━━━━━━━\n📅 Entered: ${matchedClient.date}\n📞 Phone: ${maskPhone(matchedClient.phone)}\n💰 Budget: ${matchedClient.salesBudget || matchedClient.budget}\n🏗️ Config: ${matchedClient.propType || matchedClient.configuration || "N/A"}\n📊 Status: ${matchedClient.status}\n👤 Assigned: ${matchedClient.assignedTo}`;
+                                  } else if (userMsg.includes("total") || userMsg.includes("how many") || userMsg.includes("all time")) {
+                                    aiResponse = `**📊 Lead Count Overview**\n━━━━━━━━━━━━━━━━━\nTotal in system: **${totalCount}**\nAssigned to you: **${myAssignedLeads.length}**\nWith site visits: **${myAssignedLeads.filter((l: any) => l.status === "Visit Scheduled").length}**\nClosing stage: **${closedLeads.length}**`;
+                                  } else if (userMsg.includes("my") || userMsg.includes("assigned")) {
+                                    aiResponse = `**📋 Your Assigned Leads (${myAssignedLeads.length})**\n━━━━━━━━━━━━━━━━━\n${myAssignedLeads.slice(0, 5).map((l: any, i: number) => `${i + 1}. **${l.name}** — ${l.status} | ${l.salesBudget || l.budget}`).join("\n")}${myAssignedLeads.length > 5 ? `\n…and ${myAssignedLeads.length - 5} more.` : ""}`;
+                                  } else if (userMsg.includes("site visit")) {
+                                    const sv = myAssignedLeads.filter((l: any) => l.status === "Visit Scheduled");
+                                    aiResponse = sv.length > 0
+                                      ? `**🏠 Site Visit Leads (${sv.length})**\n━━━━━━━━━━━━━━━━━\n${sv.map((l: any) => `• **${l.name}** — ${formatDate(l.mongoVisitDate)}`).join("\n")}`
+                                      : "No site visits currently scheduled.";
+                                  } else if (userMsg.includes("week")) {
+                                    const weekStart = new Date(); weekStart.setDate(weekStart.getDate() - 7);
+                                    const thisWeek = mergedLeads.filter((l: any) => l.created_at && new Date(l.created_at) >= weekStart);
+                                    aiResponse = `**📅 This Week's Activity**\n━━━━━━━━━━━━━━━━━\nLeads entered: **${thisWeek.length}**\nYour leads this week: **${thisWeek.filter((l: any) => l.assignedReceptionist === user.name || l.assigned_to === user.name).length}**`;
+                                  }
+                                  setChatMessages(prev => [...prev, { sender: "ai", text: aiResponse }]);
+                                }, 650);
+                              }, 0);
+                            }}
+                            style={{
+                              padding: "7px 14px",
+                              borderRadius: 20,
+                              fontSize: 12,
+                              fontWeight: 500,
+                              cursor: "pointer",
+                              transition: "all 0.15s",
+                              fontFamily: "'DM Sans', sans-serif",
+                              background: isDark ? "rgba(138,180,248,0.08)" : "rgba(0,0,0,0.04)",
+                              color: isDark ? "#8ab4f8" : "#475569",
+                              border: isDark ? "1px solid rgba(138,180,248,0.15)" : "1px solid #cbd5e1",
+                            }}
+                            onMouseEnter={e => {
+                              (e.currentTarget as HTMLElement).style.background = isDark ? "rgba(138,180,248,0.18)" : "#fff";
+                              (e.currentTarget as HTMLElement).style.borderColor = isDark ? "rgba(138,180,248,0.4)" : "#9E217B";
+                              (e.currentTarget as HTMLElement).style.color = isDark ? "#fff" : "#9E217B";
+                            }}
+                            onMouseLeave={e => {
+                              (e.currentTarget as HTMLElement).style.background = isDark ? "rgba(138,180,248,0.08)" : "rgba(0,0,0,0.04)";
+                              (e.currentTarget as HTMLElement).style.borderColor = isDark ? "rgba(138,180,248,0.15)" : "#cbd5e1";
+                              (e.currentTarget as HTMLElement).style.color = isDark ? "#8ab4f8" : "#475569";
+                            }}
+                          >{chip}</button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   <div ref={chatEndRef}/>
                 </div>
-                <form onSubmit={handleChatSubmit} className={`p-4 border-t flex gap-3 ${t.header}`} style={t.headerGlass}>
-                  <input type="text" value={chatInput} onChange={e=>setChatInput(e.target.value)}
-                    placeholder="Type a client's name or ask a question..."
-                    className={`flex-1 rounded-xl p-4 text-sm outline-none transition-colors border ${t.chatInput} ${t.text}`}/>
-                  <button type="submit" className={`w-14 h-14 text-white rounded-xl flex items-center justify-center transition-colors shadow-lg cursor-pointer ${isDark?"bg-purple-600 hover:bg-purple-500":"bg-[#00AEEF] hover:bg-[#0099d4]"}`}><FaPaperPlane className="text-sm ml-[-2px]"/></button>
-                </form>
+
+                {/* ── Input bar ── */}
+                <div style={{
+                  padding: "12px 16px 16px",
+                  borderTop: isDark ? "1px solid #1e1e26" : "1px solid #e2e8f0",
+                  background: isDark ? "rgba(15,15,17,0.98)" : "rgba(248,250,252,0.98)",
+                  backdropFilter: "blur(12px)",
+                  flexShrink: 0,
+                }}>
+                  <form onSubmit={handleChatSubmit} style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                    <div style={{
+                      flex: 1, display: "flex", alignItems: "center",
+                      background: isDark ? "#1a1a22" : "#ffffff",
+                      border: isDark ? "1.5px solid #2a2a35" : "1.5px solid #cbd5e1",
+                      borderRadius: 26, padding: "3px 6px 3px 18px",
+                      transition: "border-color 0.2s",
+                    }}
+                      onFocus={e => (e.currentTarget as HTMLElement).style.borderColor = isDark ? "#8ab4f8" : "#9E217B"}
+                      onBlur={e => (e.currentTarget as HTMLElement).style.borderColor = isDark ? "#2a2a35" : "#cbd5e1"}
+                    >
+                      <input
+                        type="text"
+                        value={chatInput}
+                        onChange={e => setChatInput(e.target.value)}
+                        placeholder="Ask about leads, stats, or client details…"
+                        style={{
+                          flex: 1, background: "transparent", border: "none", outline: "none",
+                          color: isDark ? "#e8eaed" : "#1e293b",
+                          fontSize: 13.5, fontFamily: "'DM Sans', sans-serif",
+                          padding: "10px 0",
+                        }}
+                      />
+                      {chatInput && (
+                        <button type="button" onClick={() => setChatInput("")}
+                          style={{
+                            background: "transparent", border: "none", cursor: "pointer",
+                            color: isDark ? "#5f6368" : "#94a3b8", fontSize: 15, padding: "0 4px",
+                          }}>✕</button>
+                      )}
+                    </div>
+
+                    {/* Send button */}
+                    <button type="submit" disabled={!chatInput.trim()}
+                      style={{
+                        width: 44, height: 44, borderRadius: "50%", border: "none",
+                        cursor: chatInput.trim() ? "pointer" : "not-allowed",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        fontSize: 16, transition: "all 0.2s",
+                        background: chatInput.trim()
+                          ? (isDark
+                            ? "linear-gradient(135deg,#1a73e8,#1558b0)"
+                            : "linear-gradient(135deg,#9E217B,#d4006e)")
+                          : (isDark ? "#1a1a22" : "#f1f5f9"),
+                        color: chatInput.trim() ? "#ffffff" : (isDark ? "#3c3c40" : "#94a3b8"),
+                        boxShadow: chatInput.trim()
+                          ? (isDark ? "0 4px 16px rgba(26,115,232,0.4)" : "0 4px 16px rgba(158,33,123,0.35)")
+                          : "none",
+                        transform: chatInput.trim() ? "scale(1)" : "scale(0.95)",
+                      }}>
+                      <FaPaperPlane style={{ marginLeft: -1 }}/>
+                    </button>
+                  </form>
+
+                  <p style={{
+                    textAlign: "center", marginTop: 10, fontSize: 10,
+                    color: isDark ? "#3c3c40" : "#94a3b8",
+                    fontFamily: "'DM Sans', sans-serif",
+                  }}>
+                    Phone numbers are masked · Transferred leads show role only
+                  </p>
+                </div>
               </div>
+
+              {/* Keyframe for fadeUp */}
+              <style dangerouslySetInnerHTML={{ __html: `
+                @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
+                @keyframes fadeUp {
+                  from { opacity: 0; transform: translateY(8px); }
+                  to   { opacity: 1; transform: translateY(0); }
+                }
+              `}}/>
             </div>
           )}
 

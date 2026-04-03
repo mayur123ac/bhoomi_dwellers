@@ -1,3 +1,4 @@
+//dashboard/page.tsx
 "use client";
 
 import { useState, useEffect, useRef, useMemo } from "react";
@@ -277,17 +278,96 @@ export default function AdminAtlasDashboard() {
   const [isSidebarHovered, setIsSidebarHovered] = useState(false);
   const [user, setUser]                         = useState<any>({ name: "Admin", role: "Admin", email: "", password: "" });
   const [isProfileOpen, setIsProfileOpen]       = useState(false);
+  
+  const [isNotifOpen, setIsNotifOpen]           = useState(false);
   const [showPassword, setShowPassword]         = useState(false);
   const [isDark, setIsDark]                     = useState(false);
-  const theme = useMemo(() => buildTheme(isDark), [isDark]);
 
+  type CrmNotif = { id: string; line1: string; line2: string; type: "lead" | "visit" };
+
+  const [notifQueue, setNotifQueue]   = useState<CrmNotif[]>([]);
+  const [activeNotif, setActiveNotif] = useState<CrmNotif | null>(null);
+  const [notifCount, setNotifCount]   = useState(0);
+
+  const theme = useMemo(() => buildTheme(isDark), [isDark]);
   const { managers, receptionists, siteHeads, allLeads, followUps, isLoading, refetch } = useAdminData();
 
+ // ── Helper to get accurate Creator Name & Role ──
+  const getCreatorInfo = (lead: any) => {
+    if (lead.assigned_receptionist) {
+      return { name: lead.assigned_receptionist, role: "Receptionist" };
+    }
+    if (lead.assigned_to) {
+      const isSiteHead = siteHeads.some((sh: any) => sh.name === lead.assigned_to);
+      return { name: lead.assigned_to, role: isSiteHead ? "Site Head" : "Manager" };
+    }
+    return { name: "System", role: "Admin" };
+  };
+
+  // ── Permanent History List for the Dropdown ──
+ // ── Permanent History List for the Dropdown ──
+  const notificationHistory = useMemo(() => {
+    const history: (CrmNotif & { rawDate: number })[] = [];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); 
+
+    allLeads.forEach((lead: any) => {
+      // 1. Add Leads (1 Day Expiration)
+      const createdDate = new Date(lead.created_at || 0);
+      createdDate.setHours(0, 0, 0, 0);
+      const createdDiffDays = (today.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24);
+
+      if (createdDiffDays <= 1) { 
+        const formattedId = String(lead.id).padStart(3, '0');
+        const creatorInfo = getCreatorInfo(lead);
+        
+        history.push({
+          id: `hist_lead_${lead.id}`,
+          line1: `New Lead · ${formattedId} - ${lead.name}`,
+          line2: `${creatorInfo.name} (${creatorInfo.role})`,
+          type: "lead",
+          rawDate: new Date(lead.created_at || 0).getTime(),
+        });
+      }
+      
+      // 2. Add Site Visits (Visible up to 3 days before, expires 2 days after)
+      if (lead.mongoVisitDate) {
+        const visitDateObj = new Date(lead.mongoVisitDate);
+        visitDateObj.setHours(0, 0, 0, 0);
+        const diffDays = (visitDateObj.getTime() - today.getTime()) / (1000 * 60 * 60 * 24);
+
+        if (diffDays >= -3 && diffDays <= 2) { 
+          const visitDate = new Date(lead.mongoVisitDate).toLocaleDateString("en-IN", { day:"2-digit", month:"short", year: "numeric" });
+          
+          // 👇 FIXED: Determine Accurate Role for Assignee
+          const assigneeName = lead.assigned_to || lead.assigned_receptionist || "Unassigned";
+          let role = "Sales Manager";
+          if (siteHeads.some((sh: any) => sh.name === assigneeName)) {
+            role = "Site Head";
+          } else if (receptionists.some((r: any) => r.name === assigneeName)) {
+            role = "Receptionist";
+          }
+
+          history.push({
+            id: `hist_visit_${lead.id}_${lead.mongoVisitDate}`,
+            line1: `Site Visit · ${visitDate}`,
+            line2: `${assigneeName} (${role}) - ${lead.name}`, 
+            type: "visit",
+            rawDate: new Date(lead.mongoVisitDate).getTime(),
+          });
+        }
+      }
+    });
+    return history.sort((a, b) => b.rawDate - a.rawDate).slice(0, 20);
+  }, [allLeads, siteHeads, receptionists]); // Added receptionists here
+  // ── Load User & Fetch Live Password ──
   useEffect(() => {
     const storedUser = localStorage.getItem("crm_user");
     if (storedUser) {
       const parsedUser = JSON.parse(storedUser);
       setUser(parsedUser);
+      
+      // 👇 THIS IS THE MISSING CODE THAT GETS THE PASSWORD 👇
       const fetchLivePassword = async () => {
         try {
           const res = await fetch("/api/employees");
@@ -295,7 +375,9 @@ export default function AdminAtlasDashboard() {
             const data = await res.json();
             if (Array.isArray(data)) {
               const liveUser = data.find((u: any) => u.email === parsedUser.email);
-              if (liveUser?.password) setUser((prev: any) => ({ ...prev, password: liveUser.password }));
+              if (liveUser?.password) {
+                setUser((prev: any) => ({ ...prev, password: liveUser.password }));
+              }
             }
           }
         } catch {}
@@ -306,25 +388,114 @@ export default function AdminAtlasDashboard() {
     if (returnTab) { setActiveView(returnTab); localStorage.removeItem("return_tab"); }
   }, []);
 
+  // ── Toast Notification Queue Populator ──
+// ── Toast Notification Queue Populator ──
+  useEffect(() => {
+    if (!allLeads || allLeads.length === 0) return;
+    
+    let storedIds: string[] = [];
+    try {
+      const item = localStorage.getItem("crm_shown_notif_ids");
+      storedIds = item ? JSON.parse(item) : [];
+      if (!Array.isArray(storedIds)) storedIds = [];
+    } catch (e) { storedIds = []; }
+
+    const seenSet = new Set(storedIds);
+    const fresh: CrmNotif[] = [];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    allLeads.forEach((lead: any) => {
+      // Notification 1: New Lead (1 Day Expiration)
+      const leadNotifId = `lead_${lead.id}`;
+      if (!seenSet.has(leadNotifId)) {
+        const createdDate = new Date(lead.created_at || 0);
+        createdDate.setHours(0, 0, 0, 0);
+        const createdDiffDays = (today.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24);
+        
+        if (createdDiffDays <= 1) { 
+          const formattedId = String(lead.id).padStart(3, '0');
+          const creatorInfo = getCreatorInfo(lead);
+          
+          fresh.push({
+            id: leadNotifId,
+            line1: `New Lead · ${formattedId} - ${lead.name}`,
+            line2: `${creatorInfo.name} (${creatorInfo.role})`,
+            type: "lead"
+          });
+          seenSet.add(leadNotifId);
+        }
+      }
+
+      // Notification 2: Site Visit
+      const visitNotifId = `visit_${lead.id}_${lead.mongoVisitDate}`;
+      if (!seenSet.has(visitNotifId) && lead.mongoVisitDate) {
+        const visitDateObj = new Date(lead.mongoVisitDate);
+        visitDateObj.setHours(0, 0, 0, 0);
+        const diffDays = (visitDateObj.getTime() - today.getTime()) / (1000 * 60 * 60 * 24);
+
+        if (diffDays >= -3 && diffDays <= 2) {
+          const visitDate = new Date(lead.mongoVisitDate).toLocaleDateString("en-IN", { day:"2-digit", month:"short", year:"numeric" });
+          
+          // 👇 FIXED: Determine Accurate Role
+          const assigneeName = lead.assigned_to || lead.assigned_receptionist || "Unassigned";
+          let role = "Sales Manager";
+          if (siteHeads.some((sh: any) => sh.name === assigneeName)) {
+            role = "Site Head";
+          } else if (receptionists.some((r: any) => r.name === assigneeName)) {
+            role = "Receptionist";
+          }
+
+          fresh.push({
+            id: visitNotifId,
+            line1: `Site Visit · ${visitDate}`,
+            line2: `${assigneeName} (${role}) - ${lead.name}`,
+            type: "visit"
+          });
+          seenSet.add(visitNotifId);
+        }
+      }
+    });
+
+    if (fresh.length > 0) {
+      setNotifQueue(prev => [...prev, ...fresh]);
+      setNotifCount(c => c + fresh.length);
+      try {
+        localStorage.setItem("crm_shown_notif_ids", JSON.stringify(Array.from(seenSet)));
+      } catch (e) {}
+    }
+  }, [allLeads, siteHeads, receptionists]); // Added receptionists here// Added receptionists here
+
+  // ── Trigger Popup Display (2 Seconds) ──
+  useEffect(() => {
+    if (activeNotif || notifQueue.length === 0) return;
+
+    const nextNotif = notifQueue[0];
+    setActiveNotif(nextNotif);
+    setNotifQueue(prev => prev.slice(1));
+
+    const timer = setTimeout(() => {
+      setActiveNotif(null);
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }, [activeNotif, notifQueue]);
+
   const handleLogout = () => { localStorage.removeItem("crm_user"); router.push("/"); };
 
-  // ── Sidebar menu items ──
-  // "employees" → /dashboard/employees (default tab)
-  // "caller"    → /dashboard/employees?tab=callers (auto-opens Caller Panel)
   const menuItems = [
     { id: "dashboard",    icon: FaThLarge,       label: "Overview" },
     { id: "receptionist", icon: FaClipboardList, label: "Receptionist" },
     { id: "sales",        icon: FaUsers,         label: "Sales Managers" },
     { id: "site_head",    icon: FaUniversity,    label: "Site Heads" },
-    { id: "employees",    icon: FaIdCard,        label: "Add Employee" },
     { id: "caller",       icon: FaPhoneAlt,      label: "Caller Panel" },
+    { id: "employees",    icon: FaIdCard,        label: "Add Employee" },
   ];
 
   const handleMenuClick = (itemId: string) => {
     if (itemId === "employees") {
       router.push("/dashboard/employees");
     } else if (itemId === "caller") {
-      // ✅ FIX: redirect to employees page with ?tab=callers so it auto-opens Caller Panel
       router.push("/dashboard/employees?tab=callers");
     } else {
       setActiveView(itemId);
@@ -344,7 +515,6 @@ export default function AdminAtlasDashboard() {
         )}
       </AnimatePresence>
 
-      {/* ── SIDEBAR ── */}
       <motion.aside
         initial={{ width: "80px" }} animate={{ width: isSidebarHovered ? "240px" : "80px" }} transition={{ duration: 0.2, ease: "easeInOut" }}
         onMouseEnter={() => setIsSidebarHovered(true)} onMouseLeave={() => setIsSidebarHovered(false)}
@@ -356,26 +526,19 @@ export default function AdminAtlasDashboard() {
         </div>
         <nav className="flex flex-col gap-2 px-3 flex-1">
           {menuItems.map((item) => {
-            // Active indicator only applies to internal views (not redirects)
             const isActive = activeView === item.id && item.id !== "employees" && item.id !== "caller";
             return (
               <div
                 key={item.id}
                 onClick={() => handleMenuClick(item.id)}
                 className={`flex items-center px-3 py-3.5 rounded-xl cursor-pointer transition-colors whitespace-nowrap relative group
-                  ${isActive
-                    ? "bg-[#9E217B]/20 text-[#d946a8]"
-                    : "text-gray-400 hover:bg-[#252525] hover:text-gray-200"}`}
+                  ${isActive ? "bg-[#9E217B]/20 text-[#d946a8]" : "text-gray-400 hover:bg-[#252525] hover:text-gray-200"}`}
               >
                 {isActive && (
                   <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-[#9E217B] rounded-r-full shadow-[0_0_8px_rgba(158,33,123,0.6)]" />
                 )}
                 <item.icon className="w-5 h-5 min-w-[20px] ml-1" />
-                <motion.span
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: isSidebarHovered ? 1 : 0 }}
-                  className={`ml-5 font-semibold text-sm ${isActive ? "text-[#d946a8]" : ""}`}
-                >
+                <motion.span initial={{ opacity: 0 }} animate={{ opacity: isSidebarHovered ? 1 : 0 }} className={`ml-5 font-semibold text-sm ${isActive ? "text-[#d946a8]" : ""}`}>
                   {item.label}
                 </motion.span>
               </div>
@@ -384,21 +547,60 @@ export default function AdminAtlasDashboard() {
         </nav>
       </motion.aside>
 
-      {/* ── MAIN ── */}
       <div className={`flex-1 flex flex-col pl-[80px] h-screen overflow-hidden ${theme.mainBg}`}>
-        <header className={`h-16 flex items-center justify-between px-8 z-30 transition-colors duration-300 ${theme.header}`} style={theme.headerGlass}>
+        <header className={`h-16 flex items-center justify-between px-8 z-30 transition-colors duration-300 relative ${theme.header}`} style={theme.headerGlass}>
           <h1 className={`font-bold text-lg capitalize tracking-wide flex items-center gap-3 ${theme.text}`}>
             {activeView.replace("_", " ")}
             <span className={`${theme.settingsBg} ${theme.textMuted} px-2 py-0.5 rounded text-xs border`}>Admin</span>
           </h1>
+          
           <div className="flex items-center gap-6">
             <button onClick={() => setIsDark(!isDark)} aria-label="Toggle theme"
-              className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm ${theme.toggleWrap}`}>
+              className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center cursor-pointer justify-center shadow-sm ${theme.toggleWrap}`}>
               {isDark ? <SunIcon /> : <MoonIcon />}
             </button>
-            <FaBell className={`${theme.textMuted} cursor-pointer transition-colors`} />
+            
             <div className="relative">
-              <div onClick={() => setIsProfileOpen(!isProfileOpen)}
+              <div className="relative cursor-pointer" onClick={() => { setIsNotifOpen(!isNotifOpen); setIsProfileOpen(false); setNotifCount(0); }}>
+                <FaBell className={`${theme.textMuted} hover:text-[#9E217B] transition-colors w-5 h-5`} />
+                {notifCount > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-[#9E217B] rounded-full text-[9px] font-black text-white flex items-center justify-center">
+                    {notifCount > 9 ? "9+" : notifCount}
+                  </span>
+                )}
+              </div>
+
+              {isNotifOpen && (
+                <div className={`absolute top-12 right-0 w-[320px] border rounded-xl shadow-2xl flex flex-col z-50 animate-fadeIn ${theme.dropdown}`} style={theme.dropdownGlass}>
+                  <div className={`p-4 border-b flex justify-between items-center ${theme.tableBorder}`}>
+                    <h3 className={`font-bold text-sm flex items-center gap-2 ${theme.text}`}>
+                      <FaBell className="text-[#9E217B]"/> Recent Notifications
+                    </h3>
+                    <button onClick={() => setIsNotifOpen(false)} className={`${theme.textMuted} hover:text-red-500`}><FaTimes className="text-xs"/></button>
+                  </div>
+                  <div className={`max-h-[360px] overflow-y-auto ${theme.scroll}`}>
+                    {notificationHistory.length === 0 ? (
+                      <p className={`p-6 text-center text-xs ${theme.textMuted}`}>No notifications yet.</p>
+                    ) : (
+                      notificationHistory.map((n) => (
+                        <div key={n.id} className={`p-4 border-b last:border-b-0 transition-colors flex items-start gap-3 ${isDark ? "hover:bg-white/5 border-[#333]" : "hover:bg-black/5 border-[#E5E7EB]"}`}>
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-white ${n.type === "visit" ? "bg-orange-500" : "bg-[#25D366]"}`}>
+                            {n.type === "visit" ? <FaCalendarAlt className="text-[12px]"/> : <FaBriefcase className="text-[12px]" />}
+                          </div>
+                          <div>
+                            <p className={`text-xs font-bold ${theme.text}`}>{n.line1}</p>
+                            <p className={`text-[10px] mt-1 ${theme.textMuted}`}>{n.line2}</p>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="relative">
+              <div onClick={() => { setIsProfileOpen(!isProfileOpen); setIsNotifOpen(false); }}
                 className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm cursor-pointer shadow-sm hover:opacity-80 transition-opacity border
                   ${isDark ? "border-[#9E217B]/40 text-[#d946a8] bg-[#9E217B]/15" : "border-[#9E217B]/40 text-[#9E217B] bg-[#9E217B]/10"}`}>
                 {String(user?.name || "A").charAt(0).toUpperCase()}
@@ -428,6 +630,33 @@ export default function AdminAtlasDashboard() {
                 </div>
               )}
             </div>
+
+           {/* 👇 NEW: UPDATED POPUP TOAST WITH DYNAMIC ICONS 👇 */}
+            {activeNotif && (
+              <div className="absolute top-[68px] right-4 z-[999] animate-fadeIn">
+                <div className={`flex items-start gap-3 px-4 py-3 rounded-2xl shadow-2xl border min-w-[280px] max-w-[360px]
+                  ${isDark ? "bg-[#1a1a1a] border-[#333]" : "bg-white border-[#E5E7EB]"}`}
+                  style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.18)" }}>
+                  
+                  {/* Dynamic Icon Box */}
+                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5 ${activeNotif.type === "visit" ? "bg-orange-500" : "bg-[#25D366]"}`}>
+                    {activeNotif.type === "visit" ? (
+                      <FaCalendarAlt className="text-white text-lg" />
+                    ) : (
+                      <FaBriefcase className="text-white text-lg" />
+                    )}
+                  </div>
+                  
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-xs font-bold truncate ${isDark ? "text-white" : "text-[#1A1A1A]"}`}>{activeNotif.line1}</p>
+                    <p className={`text-[11px] mt-0.5 truncate ${isDark ? "text-gray-400" : "text-[#6B7280]"}`}>{activeNotif.line2}</p>
+                  </div>
+                  <button onClick={() => setActiveNotif(null)} className={`flex-shrink-0 mt-0.5 p-0.5 rounded cursor-pointer transition-colors ${isDark ? "text-gray-500 hover:text-gray-300" : "text-gray-400 hover:text-gray-600"}`}>
+                    <FaTimes className="text-[10px]"/>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </header>
 
@@ -449,19 +678,6 @@ export default function AdminAtlasDashboard() {
             )}
         </main>
       </div>
-
-      <style dangerouslySetInnerHTML={{__html: `
-        .scrollbar-dark::-webkit-scrollbar{width:6px;height:6px}
-        .scrollbar-dark::-webkit-scrollbar-track{background:transparent}
-        .scrollbar-dark::-webkit-scrollbar-thumb{background:#3a3a3a;border-radius:10px}
-        .scrollbar-dark::-webkit-scrollbar-thumb:hover{background:#555}
-        .scrollbar-light::-webkit-scrollbar{width:6px;height:6px}
-        .scrollbar-light::-webkit-scrollbar-track{background:transparent}
-        .scrollbar-light::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:10px}
-        .scrollbar-light::-webkit-scrollbar-thumb:hover{background:#94a3b8}
-        @keyframes fadeIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
-        .animate-fadeIn{animation:fadeIn 0.2s ease-out}
-      `}} />
     </div>
   );
 }
@@ -2409,8 +2625,8 @@ function ReceptionistView({ receptionists, allLeads, followUps, isLoading, refet
       ? "text-yellow-400 border-yellow-500/40 bg-yellow-500/10"
       : "text-amber-600 border-amber-400/50 bg-amber-50";
     if (s === "Visit Scheduled") return isDark
-      ? "text-orange-400 border-orange-500/30 bg-orange-500/10"
-      : "text-orange-500 border-orange-400/40 bg-orange-50";
+      ? "text-orange-400 border-orange-500/30 bg-orange-500/10 text-sm font-bold"
+      : "text-orange-500 border-orange-400/40 bg-orange-50 text-sm font-bold";
     return isDark
       ? "text-[#d946a8] border-[#9E217B]/30 bg-[#9E217B]/10"
       : "text-[#9E217B] border-[#9E217B]/30 bg-[#9E217B]/10";

@@ -1,3 +1,4 @@
+//dashboard/employee/page.tsx
 "use client";
 
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
@@ -11,7 +12,7 @@ import {
   FaPhoneAlt, FaSearch, FaChevronLeft, FaComments, FaUpload, FaDownload,
   FaFileExcel, FaDesktop, FaCheckCircle, FaTimes, FaPaperPlane,
   FaCalendarAlt, FaHeart, FaTimesCircle, FaAngleLeft, FaCommentAlt,
-  FaMoneyBillWave, FaMapMarkerAlt, FaBullseye, FaSave,
+  FaMoneyBillWave, FaMapMarkerAlt, FaBullseye, FaSave, FaUniversity, FaBriefcase // ← add this
 } from "react-icons/fa";
 import { useCallerSync } from "@/lib/hooks/useCallerSync";
 import { label } from "framer-motion/client";
@@ -221,18 +222,24 @@ const ADMIN_EMAIL = "admin@bhoomi.com";
 // ============================================================================
 // MAIN PAGE
 // ============================================================================
+// ============================================================================
+// MAIN PAGE
+// ============================================================================
+// ============================================================================
+// MAIN PAGE
+// ============================================================================
 export default function EmployeesPage() {
   const router = useRouter();
 
   const [isDark, setIsDark]                               = useState(false);
   const t = useMemo(() => buildTheme(isDark), [isDark]);
 
-  const [activeSection, setActiveSection]         = useState<"employees"|"callers">("employees");
-  const [isSidebarHovered, setIsSidebarHovered]   = useState(false);
-  const [user, setUser]                           = useState<any>(null);
-  const [isProfileOpen, setIsProfileOpen]         = useState(false);
-  const [showPassword, setShowPassword]           = useState(false);
-  const [isAuthorized, setIsAuthorized]           = useState<boolean|null>(null);
+  const [activeSection, setActiveSection]                 = useState<"employees"|"callers">("employees");
+  const [isSidebarHovered, setIsSidebarHovered]           = useState(false);
+  const [user, setUser]                                   = useState<any>(null);
+  const [isProfileOpen, setIsProfileOpen]                 = useState(false);
+  const [showPassword, setShowPassword]                   = useState(false);
+  const [isAuthorized, setIsAuthorized]                   = useState<boolean|null>(null);
 
   // ── Employee state ──
   const [empName, setEmpName]         = useState("");
@@ -248,6 +255,14 @@ export default function EmployeesPage() {
   const [editSaving, setEditSaving]               = useState(false);
   const [editError, setEditError]                 = useState("");
   const [selectedManageUserId, setSelectedManageUserId] = useState("");
+
+  // 👇 1. CLEAN NOTIFICATION STATES 👇
+  const [isNotifOpen, setIsNotifOpen] = useState(false);
+  type CrmNotif = { id: string; line1: string; line2: string; type: "lead" | "visit" };
+  const [notifQueue, setNotifQueue]   = useState<CrmNotif[]>([]);
+  const [activeNotif, setActiveNotif] = useState<CrmNotif | null>(null);
+  const [notifCount, setNotifCount]   = useState(0);
+  const [notificationHistory, setNotificationHistory] = useState<(CrmNotif & { rawDate: number })[]>([]);
 
   // ── Password Validation Helpers ──
   const validatePassword = (pwd: string) => {
@@ -291,6 +306,17 @@ export default function EmployeesPage() {
   const [controlLeads, setControlLeads]   = useState<any[]>([]);
   const [controlSaved, setControlSaved]   = useState<any[]>([]);
 
+  const [salesManagers, setSalesManagers] = useState<any[]>([]);
+  const [siteHeads, setSiteHeads] = useState<any[]>([]);
+  const [isFetchingManagers, setIsFetchingManagers] = useState(true);
+  const [toastMsg, setToastMsg]           = useState<string|null>(null);
+
+  const combinedAssignees = useMemo(() => {
+    return [...salesManagers, ...siteHeads];
+  }, [salesManagers, siteHeads]);
+
+  const showToast = (msg: string) => { setToastMsg(msg); setTimeout(() => setToastMsg(null), 3000); };
+
   // ── Auth ──
   useEffect(() => {
     const stored = localStorage.getItem("crm_user");
@@ -309,6 +335,151 @@ export default function EmployeesPage() {
       setIsAuthorized(false);
     }
   }, [router]);
+
+  useEffect(() => {
+    setIsFetchingManagers(true);
+    Promise.all([
+      fetch("/api/users/sales-manager"),
+      fetch("/api/users/site-head")
+    ]).then(async ([resSM, resSH]) => {
+      if (resSM.ok) {
+        const j = await resSM.json();
+        setSalesManagers(j.data || j || []);
+      }
+      if (resSH.ok) {
+        const j = await resSH.json();
+        setSiteHeads(j.data || j || []);
+      }
+    }).catch(() => {})
+      .finally(() => setIsFetchingManagers(false));
+  }, []);
+
+  const [isEnquiryView, setIsEnquiryView] = useState(false);
+
+  // 👇 2. UPDATED QUEUE & HISTORY POPULATOR (Safe SSR + Formatted Names + Follow-ups attached) 👇
+  useEffect(() => {
+    const checkNotifs = async () => {
+      try {
+        let storedIds: string[] = [];
+        try {
+          const item = localStorage.getItem("crm_shown_notif_ids");
+          storedIds = item ? JSON.parse(item) : [];
+          if (!Array.isArray(storedIds)) storedIds = [];
+        } catch (e) {
+          storedIds = [];
+        }
+        const seenSet = new Set(storedIds);
+
+        // Fetch BOTH leads and followups so we know the exact site visit dates
+        const [leadsRes, fupsRes] = await Promise.all([
+          fetch("/api/walkin_enquiries"),
+          fetch("/api/followups")
+        ]);
+        if (!leadsRes.ok || !fupsRes.ok) return;
+        
+        const leadsJson = await leadsRes.json();
+        const fupsJson = await fupsRes.json();
+        const leads: any[]  = Array.isArray(leadsJson.data) ? leadsJson.data : [];
+        const fups: any[] = Array.isArray(fupsJson.data) ? fupsJson.data : [];
+
+        const fresh: CrmNotif[] = [];
+        const history: (CrmNotif & { rawDate: number })[] = [];
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        // Helper to get exact Name and Role
+        const getCreatorInfo = (lead: any) => {
+          const assigneeName = lead.assigned_to || lead.assigned_receptionist || "Unassigned";
+          let role = "Sales Manager";
+          if (siteHeads.some((sh: any) => sh.name === assigneeName)) {
+            role = "Site Head";
+          } else if (lead.assigned_receptionist && (!lead.assigned_to || lead.assigned_to === "Unassigned" || lead.assigned_to === "unknown")) {
+            role = "Receptionist";
+          }
+          return { name: assigneeName, role };
+        };
+
+        leads.forEach((lead: any) => {
+          const creatorInfo = getCreatorInfo(lead);
+          const formattedId = String(lead.id).padStart(3, '0');
+
+          // 1. Leads (1 Day Expiry)
+          const createdDate = new Date(lead.created_at || 0);
+          createdDate.setHours(0, 0, 0, 0);
+          const createdDiffDays = (today.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24);
+
+          if (createdDiffDays <= 1) { // Today or Yesterday
+            const leadNotif = {
+              id: `lead_${lead.id}`,
+              line1: `New Lead · ${formattedId} - ${lead.name}`,
+              line2: `${creatorInfo.name} (${creatorInfo.role})`,
+              type: "lead" as const
+            };
+            
+            history.push({ ...leadNotif, id: `hist_lead_${lead.id}`, rawDate: new Date(lead.created_at || 0).getTime() });
+
+            if (!seenSet.has(leadNotif.id)) {
+              fresh.push(leadNotif);
+              seenSet.add(leadNotif.id);
+            }
+          }
+
+          // 2. Site Visits (Visible up to 3 days before, expires 2 days after)
+          // Find the latest site visit date from follow-ups OR fallback to column
+          const leadFups = fups.filter((f: any) => String(f.leadId) === String(lead.id) && f.siteVisitDate?.trim());
+          const vDate = leadFups.length > 0 ? leadFups[leadFups.length - 1].siteVisitDate : lead.site_visit_date;
+
+          if (vDate) {
+            const visitDateObj = new Date(vDate);
+            visitDateObj.setHours(0, 0, 0, 0);
+            const diffDays = (visitDateObj.getTime() - today.getTime()) / (1000 * 60 * 60 * 24);
+
+            if (diffDays >= -3 && diffDays <= 2) {
+              const visitDate = new Date(vDate).toLocaleDateString("en-IN", { day:"2-digit", month:"short", year:"numeric" });
+              
+              const visitNotif = {
+                id: `visit_${lead.id}_${vDate}`,
+                line1: `Site Visit · ${visitDate}`,
+                line2: `${creatorInfo.name} (${creatorInfo.role}) - ${lead.name}`,
+                type: "visit" as const
+              };
+
+              history.push({ ...visitNotif, id: `hist_visit_${lead.id}_${vDate}`, rawDate: new Date(vDate).getTime() });
+
+              if (!seenSet.has(visitNotif.id)) {
+                fresh.push(visitNotif);
+                seenSet.add(visitNotif.id);
+              }
+            }
+          }
+        });
+
+        setNotificationHistory(history.sort((a, b) => b.rawDate - a.rawDate).slice(0, 20));
+
+        if (fresh.length > 0) {
+          setNotifQueue(prev => [...prev, ...fresh]);
+          setNotifCount(c => c + fresh.length);
+          try {
+            localStorage.setItem("crm_shown_notif_ids", JSON.stringify(Array.from(seenSet)));
+          } catch (e) {}
+        }
+      } catch {}
+    };
+
+    checkNotifs();
+    const interval = setInterval(checkNotifs, 10000);
+    return () => clearInterval(interval);
+  }, [siteHeads]);
+
+  // 👇 3. TRIGGER POPUP LOGIC (Exactly 2 Seconds, Duplicates Removed) 👇
+  useEffect(() => {
+    if (activeNotif || notifQueue.length === 0) return;
+    const nextNotif = notifQueue[0];
+    setActiveNotif(nextNotif);
+    setNotifQueue(prev => prev.slice(1));
+    const t = setTimeout(() => setActiveNotif(null), 2000);
+    return () => clearTimeout(t);
+  }, [notifQueue, activeNotif]);
 
   useEffect(() => {
     if (activeSection === "callers") fetchCallerData();
@@ -333,13 +504,10 @@ export default function EmployeesPage() {
 
   const handleAddEmployee = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    // Prevent form submission if password doesn't meet requirements
     if (!isPasswordValid) {
       alert("Password does not meet security requirements");
       return;
     }
-
     const r = await fetch("/api/employees", {
       method: "POST",
       headers: { "Content-Type":"application/json" },
@@ -365,8 +533,6 @@ export default function EmployeesPage() {
   const handleEditCancel = () => { setEditingId(null); setEditForm({}); setEditError(""); };
   const handleEditSave   = async (userId: string) => {
     setEditSaving(true); setEditError("");
-
-    // Strict Password validation for Edit form
     if (editForm.password) {
       const editRules = validatePassword(editForm.password);
       const isValid = editRules.length && editRules.upper && editRules.lower && editRules.number && editRules.special;
@@ -376,7 +542,6 @@ export default function EmployeesPage() {
         return;
       }
     }
-
     try {
       const r = await fetch("/api/employees", { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ userId, editData:editForm }) });
       const d = await r.json();
@@ -534,8 +699,9 @@ export default function EmployeesPage() {
     { id:"dashboard",    icon:FaThLarge,       label:"Overview",      link:"/dashboard",             section:null },
     { id:"receptionist", icon:FaClipboardList, label:"Receptionist",  link:"/dashboard",             section:null },
     { id:"sales",        icon:FaUsers,         label:"Sales Managers",link:"/dashboard",             section:null },
-    { id:"employees",    icon:FaIdCard,        label:"Add Employee",  link:"/dashboard/employees", section:"employees" as const },
+    { id:"site_head",    icon:FaUniversity,    label:"Site Heads",    link:"/dashboard",             section:null }, 
     { id:"callers",      icon:FaPhoneAlt,      label:"Caller Panel",  link:"/dashboard/employees", section:"callers" as const },
+    { id:"employees",    icon:FaIdCard,        label:"Add Employee",  link:"/dashboard/employees", section:"employees" as const },
   ];
 
   if (isAuthorized === null) return <div className="min-h-screen bg-[#0a0a0a]"/>;
@@ -553,7 +719,7 @@ export default function EmployeesPage() {
         )}
       </AnimatePresence>
 
-      {/* ── SIDEBAR (always dark — same as admin panel) ── */}
+      {/* ── SIDEBAR ── */}
       <motion.aside
         initial={{ width:"80px" }} animate={{ width:isSidebarHovered?"240px":"80px" }} transition={{ duration:0.2, ease:"easeInOut" }}
         onMouseEnter={() => setIsSidebarHovered(true)} onMouseLeave={() => setIsSidebarHovered(false)}
@@ -587,7 +753,6 @@ export default function EmployeesPage() {
         <div className="px-3 mt-auto">
           <div className="flex items-center px-3 py-3.5 rounded-xl cursor-pointer text-gray-500 hover:bg-[#1a1a1a] hover:text-gray-300 transition-colors whitespace-nowrap">
             <FaCog className="w-5 h-5 min-w-[20px] ml-1"/>
-            {/* <motion.span initial={{ opacity:0 }} animate={{ opacity:isSidebarHovered?1:0 }} className="ml-5 font-semibold text-sm">Settings</motion.span> */}
           </div>
         </div>
       </motion.aside>
@@ -612,14 +777,54 @@ export default function EmployeesPage() {
             <button
               onClick={() => setIsDark(!isDark)}
               aria-label="Toggle theme"
-              className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm border ${t.toggleBtn}`}
+              className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200 cursor-pointer hover:scale-105 active:scale-95 shadow-sm border ${t.toggleBtn}`}
             >
               {isDark ? <SunIcon /> : <MoonIcon />}
             </button>
 
-            <button className={`${t.textMuted} hover:text-[#9E217B] cursor-pointer transition-colors`}><FaBell className="w-5 h-5"/></button>
+            {/* 👇 NOTIFICATION BELL & DROPDOWN 👇 */}
             <div className="relative">
-              <div onClick={() => setIsProfileOpen(!isProfileOpen)}
+              <div className="relative cursor-pointer" onClick={() => { setIsNotifOpen(!isNotifOpen); setIsProfileOpen(false); setNotifCount(0); }}>
+                <FaBell className={`${t.textMuted} hover:text-[#9E217B] transition-colors w-5 h-5`} />
+                {notifCount > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-[#9E217B] rounded-full text-[9px] font-black text-white flex items-center justify-center">
+                    {notifCount > 9 ? "9+" : notifCount}
+                  </span>
+                )}
+              </div>
+
+              {isNotifOpen && (
+                <div className={`absolute top-12 right-0 w-[320px] border rounded-xl shadow-2xl flex flex-col z-50 animate-fadeIn ${t.dropdown}`}>
+                  <div className={`p-4 border-b flex justify-between items-center ${t.innerBorder}`}>
+                    <h3 className={`font-bold text-sm flex items-center gap-2 ${t.text}`}>
+                      <FaBell className="text-[#9E217B]"/> Recent Notifications
+                    </h3>
+                    <button onClick={() => setIsNotifOpen(false)} className={`${t.textMuted} hover:text-red-500`}><FaTimes className="text-xs"/></button>
+                  </div>
+                  <div className={`max-h-[360px] overflow-y-auto ${t.scroll}`}>
+                    {notificationHistory.length === 0 ? (
+                      <p className={`p-6 text-center text-xs ${t.textMuted}`}>No notifications yet.</p>
+                    ) : (
+                      notificationHistory.map((n) => (
+                        <div key={n.id} className={`p-4 border-b last:border-b-0 transition-colors flex items-start gap-3 ${isDark ? "hover:bg-white/5 border-[#333]" : "hover:bg-black/5 border-[#E5E7EB]"}`}>
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-white ${n.type === "visit" ? "bg-orange-500" : "bg-[#25D366]"}`}>
+                            {n.type === "visit" ? <FaCalendarAlt className="text-[12px]"/> : <FaBriefcase className="text-[12px]" />}
+                          </div>
+                          <div>
+                            <p className={`text-xs font-bold ${t.text}`}>{n.line1}</p>
+                            <p className={`text-[10px] mt-1 ${t.textMuted}`}>{n.line2}</p>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* ── PROFILE BUTTON & DROPDOWN ── */}
+            <div className="relative">
+              <div onClick={() => { setIsProfileOpen(!isProfileOpen); setIsNotifOpen(false); }}
                 className={`w-9 h-9 rounded-full border flex items-center justify-center font-bold text-sm cursor-pointer transition-colors
                   ${isDark ? "bg-[#9E217B]/20 text-[#d946a8] border-[#9E217B]/50 hover:bg-[#9E217B]/30" : "bg-[#9E217B]/10 text-[#9E217B] border-[#9E217B]/40 hover:bg-[#9E217B]/20"}`}>
                 {String(user?.name || "A").charAt(0).toUpperCase()}
@@ -649,7 +854,36 @@ export default function EmployeesPage() {
                 </div>
               )}
             </div>
+
+            {/* 👇 NOTIFICATION POPUP 👇 */}
+            {activeNotif && (
+              <div className="absolute top-[68px] right-4 z-[999] animate-fadeIn">
+                <div className={`flex items-start gap-3 px-4 py-3 rounded-2xl shadow-2xl border min-w-[280px] max-w-[360px]
+                  ${isDark ? "bg-[#1a1a1a] border-[#333]" : "bg-white border-[#E5E7EB]"}`}
+                  style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.18)" }}>
+                  
+                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5 ${activeNotif.type === "visit" ? "bg-orange-500" : "bg-[#25D366]"}`}>
+                    {activeNotif.type === "visit" ? (
+                      <FaCalendarAlt className="text-white text-lg" />
+                    ) : (
+                      <FaBriefcase className="text-white text-lg" />
+                    )}
+                  </div>
+                  
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-xs font-bold truncate ${isDark ? "text-white" : "text-[#1A1A1A]"}`}>{activeNotif.line1}</p>
+                    <p className={`text-[11px] mt-0.5 truncate ${isDark ? "text-gray-400" : "text-[#6B7280]"}`}>{activeNotif.line2}</p>
+                  </div>
+                  <button onClick={() => setActiveNotif(null)}
+                    className={`flex-shrink-0 mt-0.5 p-0.5 rounded cursor-pointer transition-colors ${isDark ? "text-gray-500 hover:text-gray-300" : "text-gray-400 hover:text-gray-600"}`}>
+                    <FaTimes className="text-[10px]"/>
+                  </button>
+                  
+                </div>
+              </div>
+            )}
           </div>
+          
         </header>
 
         {/* ── CONTENT ── */}
@@ -672,9 +906,6 @@ export default function EmployeesPage() {
                 <button className="flex items-center gap-2 bg-[#9E217B] text-white px-5 py-2 rounded-lg border border-[#b8268f] shadow-lg shadow-[#9E217B]/20 font-semibold">
                   <FaUserTie/> Employees
                 </button>
-                {/* <button className={`flex items-center gap-2 px-5 py-2 rounded-lg border font-semibold transition-colors ${t.inner} ${t.textMuted} ${t.pillBorder} hover:opacity-80`}>
-                  <FaListUl/> Lead Statuses
-                </button> */}
               </div>
 
               {/* ── Add Custom Role ── */}
@@ -1157,7 +1388,7 @@ export default function EmployeesPage() {
                     <div className="space-y-5 animate-fadeIn">
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         {[
-                          { label:"Saved Forms",    value:callerSavedFormLeads.length,                                                                                  color:"text-[#d946a8]", bg:isDark?"bg-[#9E217B]/10 border-[#9E217B]/20":"bg-pink-50 border-pink-200" },
+                          { label:"Saved Forms",    value:callerSavedFormLeads.length,                                                                                                                color:"text-[#d946a8]", bg:isDark?"bg-[#9E217B]/10 border-[#9E217B]/20":"bg-pink-50 border-pink-200" },
                           { label:"Interested",     value:callerSavedFormLeads.filter((l: any) => l.interest_status === "Interested").length,                    color:"text-green-400",  bg:"bg-green-500/10 border-green-500/20" },
                           { label:"Not Interested", value:callerSavedFormLeads.filter((l: any) => l.interest_status === "Not Interested").length,                color:"text-red-400",    bg:"bg-red-500/10 border-red-500/20" },
                           { label:"Pending Review", value:callerSavedFormLeads.filter((l: any) => !l.interest_status && l.status === "saved").length,            color:"text-yellow-400", bg:"bg-yellow-500/10 border-yellow-500/20" },
@@ -1214,27 +1445,32 @@ export default function EmployeesPage() {
                                             ? <span className="text-xs text-yellow-600 bg-yellow-500/10 border border-yellow-500/20 rounded-lg px-2 py-1 inline-block truncate max-w-[120px]" title={lead.feedback}>{lead.feedback}</span>
                                             : <span className={`italic text-xs ${t.textLight2}`}>—</span>}
                                         </td>
-                                        <td className="px-4 py-3 align-middle">
-                                          {lead.status === "not_interested"
-                                            ? <span className="text-[10px] font-bold text-red-400 bg-red-500/10 border border-red-500/30 px-2 py-0.5 rounded-full whitespace-nowrap">✗ Rejected</span>
-                                            : <span className="text-[10px] font-bold text-green-400 bg-green-500/10 border border-green-500/30 px-2 py-0.5 rounded-full whitespace-nowrap">✓ Saved</span>}
+                                        <td className="px-4 py-3 align-middle">{interestBadge(lead.interest_status)}</td>
+                                        <td className="px-4 py-3 whitespace-nowrap">
+                                          {lead.status === "saved" || lead.status === "not_interested" || lead.status === "interested" || !!lead.interest_status
+                                            ? <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full flex items-center gap-1 w-fit border ${isDark ? "text-[#d946a8] bg-[#9E217B]/10 border-[#9E217B]/20" : "text-[#9E217B] bg-pink-50 border-pink-200"}`}>
+                                                <FaPhoneAlt className="text-[8px]"/>
+                                                {lead.uploaded_by && lead.uploaded_by !== "admin" && lead.uploaded_by !== "Admin" && lead.uploaded_by !== "unknown"
+                                                  ? `Caller · ${lead.uploaded_by}`
+                                                  : lead.assigned_to && lead.assigned_to !== "admin" && lead.assigned_to !== "Admin" && lead.assigned_to !== "unknown"
+                                                  ? `Caller · ${lead.assigned_to}`
+                                                  : <span className={`italic ${t.textFaint}`}>Not saved yet</span>}
+                                              </span>
+                                            : <span className={`text-[10px] italic ${t.textLight2}`}>Not saved yet</span>}
                                         </td>
-                                        <td className="px-4 py-3 text-[11px] align-middle whitespace-nowrap">
-                                          {lead.site_visit_date
-                                            ? <span className="text-orange-400 font-semibold">{formatDate(lead.site_visit_date).split(",")[0]}</span>
-                                            : <span className={t.textLight2}>—</span>}
-                                        </td>
-                                        <td className="px-4 py-3 align-middle">
-                                          {(lead.follow_ups || []).length > 0
-                                            ? <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${isDark ? "bg-[#9E217B]/10 border border-[#9E217B]/20 text-[#d946a8]" : "bg-pink-50 border border-pink-200 text-[#9E217B]"}`}>{lead.follow_ups.length} notes</span>
-                                            : <span className={`text-[10px] ${t.textLight2}`}>—</span>}
-                                        </td>
-                                        <td className={`px-4 py-3 text-[11px] whitespace-nowrap ${t.textFaint}`}>{formatDate(lead.updated_at || lead.created_at).split(",")[0]}</td>
+                                        <td className={`px-4 py-3 text-[11px] whitespace-nowrap ${isDark ? "text-[#d946a8]/70" : "text-[#9E217B]/60"}`}>{lead.batch_name || "—"}</td>
+                                        <td className={`px-4 py-3 text-[11px] whitespace-nowrap ${t.textFaint}`}>{formatDate(lead.created_at).split(",")[0]}</td>
                                         <td className="px-4 py-3 text-center">
-                                          <button onClick={() => { setSelectedLead(lead); setCallerSubView("detail"); }}
-                                            className={`text-xs flex items-center gap-1 px-2 py-1 rounded-lg border border-transparent cursor-pointer mx-auto transition-colors ${t.textMuted} hover:text-[#9E217B] hover:bg-[#9E217B]/10 hover:border-[#9E217B]/20`}>
-                                            <FaEye className="text-[10px]"/> View
-                                          </button>
+                                          <div className="flex items-center justify-center gap-1">
+                                            <button onClick={() => { setSelectedLead(lead); setCallerSubView("detail"); }}
+                                              className={`text-xs flex items-center gap-1 px-2 py-1 rounded-lg border border-transparent cursor-pointer mx-auto transition-colors ${t.textMuted} hover:text-[#9E217B] hover:bg-[#9E217B]/10 hover:border-[#9E217B]/20`}>
+                                              <FaEye className="text-[10px]"/> View
+                                            </button>
+                                            <button onClick={e => { e.stopPropagation(); handleDeleteLead(lead.id, lead.name); }}
+                                              className={`text-xs flex items-center gap-1 px-2 py-1 rounded-lg border border-transparent cursor-pointer transition-colors ${t.textLight2} hover:text-red-400 hover:bg-red-500/10 hover:border-red-500/20`}>
+                                              <FaTrash className="text-[10px]"/>
+                                            </button>
+                                          </div>
                                         </td>
                                       </tr>
                                     ))
@@ -1272,8 +1508,8 @@ export default function EmployeesPage() {
                             ))}</tr>
                           </thead>
                           <tbody className={`divide-y ${t.tableDivide}`}>
-                            {callerLoading ? <tr><td colSpan={11} className={`px-4 py-8 text-center ${t.textMuted}`}>Loading...</td></tr>
-                            : filteredCallerLeads.length === 0 ? <tr><td colSpan={11} className={`px-4 py-8 text-center ${t.textMuted}`}>No caller leads yet.</td></tr>
+                            {callerLoading ? <tr><td colSpan={12} className={`px-4 py-8 text-center ${t.textMuted}`}>Loading...</td></tr>
+                            : filteredCallerLeads.length === 0 ? <tr><td colSpan={12} className={`px-4 py-8 text-center ${t.textMuted}`}>No caller leads yet.</td></tr>
                             : filteredCallerLeads.map((lead: any) => (
                                 <tr key={lead.id} className={`transition-colors group align-middle ${t.tableRow}`}>
                                   <td className={`px-4 py-3 font-mono font-bold ${t.accentText}`}>#{lead.id}</td>
@@ -1285,7 +1521,7 @@ export default function EmployeesPage() {
                                   <td className="px-4 py-3 max-w-[150px]">
                                     {lead.feedback
                                       ? <span className="text-xs text-yellow-600 bg-yellow-500/10 border border-yellow-500/20 rounded-lg px-2 py-1 inline-block truncate max-w-[130px]" title={lead.feedback}>{lead.feedback}</span>
-                                      : <span className={`text-xs italic ${t.textLight2}`}>—</span>}
+                                      : <span className={`italic text-xs ${t.textLight2}`}>—</span>}
                                   </td>
                                   <td className="px-4 py-3 align-middle">{interestBadge(lead.interest_status)}</td>
                                   <td className="px-4 py-3 whitespace-nowrap">
