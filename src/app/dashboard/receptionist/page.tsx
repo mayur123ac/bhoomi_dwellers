@@ -73,8 +73,8 @@ function buildTheme(isDark: boolean) {
     
     // ── Cards (No intense glow in light mode, border changes to Magenta on hover) ──
     card:          isDark
-      ? "bg-[#121218] border-[#2A2A35] transition-all duration-300 hover:-translate-y-1.5 hover:scale-[1.02] hover:border-[#d4006e]/50 hover:shadow-2xl hover:shadow-[#d4006e]/20"
-      : "bg-gradient-to-r from-[#f1f5ff] via-[#eef2ff] to-[#f5f3ff] border-[#9CA3AF] transition-all duration-300 hover:-translate-y-1.5 hover:scale-[1.02] hover:border-[#9E217B] hover:shadow-xl",
+      ? "bg-[#121218] border-[#2A2A35] transition-all duration-300 hover:border-[#d4006e]/50 hover:shadow-2xl hover:shadow-[#d4006e]/20"
+      : "bg-gradient-to-r from-[#f1f5ff] via-[#eef2ff] to-[#f5f3ff] border-[#9CA3AF] transition-all duration-300 hover:border-[#9E217B] hover:shadow-xl",
     cardGlass:     isDark ? {}                                         : { boxShadow: "0 1px 2px rgba(0,0,0,0.04), 0 4px 12px rgba(0,174,239,0.07)" },
     
     tableWrap:     isDark ? "bg-[#121218] border-[#2A2A35]"            : "bg-white border-[#9CA3AF]",
