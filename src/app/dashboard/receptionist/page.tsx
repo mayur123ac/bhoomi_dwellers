@@ -1957,6 +1957,30 @@ export default function ReceptionistDashboard() {
                       </div>
                     </div>
                   </div>
+
+                  {/* ── Channel Partner Card ── */}
+                  {(selectedLead.cp_company || selectedLead.cpCompany) && (
+                    <div className={`mt-6 rounded-xl border p-5 ${t.settingsBg}`} style={t.settingsBgGl}>
+                      <h3 className={`text-xs font-bold uppercase tracking-widest mb-4 border-b pb-2 ${t.sectionTitle} ${t.tableBorder}`}>
+                        Channel Partner Details
+                      </h3>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <p className={`text-xs font-medium mb-1 ${t.textFaint}`}>CP Company</p>
+                          <p className={`font-semibold text-sm ${t.text}`}>
+                            {selectedLead.cp_company || selectedLead.cpCompany || "N/A"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className={`text-xs font-medium mb-1 ${t.textFaint}`}>CP Phone</p>
+                          <p className="font-semibold text-sm font-mono text-orange-400">
+                            {selectedLead.cp_phone || selectedLead.cpPhone || "N/A"}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                 </div>
               </div>
             </div>
