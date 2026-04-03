@@ -8,7 +8,7 @@ import {
   FaThLarge, FaClipboardList, FaUsers, FaIdCard,
   FaSearch, FaBell, FaChevronLeft, FaPhoneAlt, FaComments,
   FaCheckCircle, FaCalendarAlt, FaTimes,
-  FaFileInvoice, FaPaperPlane, FaMicrophone, FaWhatsapp, FaTable, FaChartPie, FaEyeSlash, FaUniversity, FaFileAlt, FaCheck, FaClock, FaHandshake, FaExchangeAlt, FaBriefcase, 
+  FaFileInvoice, FaPaperPlane, FaMicrophone, FaWhatsapp, FaTable, FaChartPie, FaEyeSlash, FaUniversity, FaFileAlt, FaCheck, FaClock, FaHandshake, FaExchangeAlt, FaBriefcase, FaDownload
 } from "react-icons/fa";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, Cell,
@@ -32,61 +32,62 @@ const MoonIcon = () => (
 );
 
 // ─── THEME TOKEN BUILDER — MAGENTA ACCENT ────────────────────────
+// ─── THEME TOKEN BUILDER — MAGENTA ACCENT ────────────────────────
 function buildTheme(isDark: boolean) {
   return {
-    pageWrap:      isDark ? "bg-[#0A0A0F] text-white"                   : "text-[#1A1A1A]",
-    mainBg:        isDark ? "bg-[#121212]"                              : "bg-transparent",
-    sidebar:       "bg-[#1a1a1a] border-[#2a2a2a]",
-    header:        isDark ? "bg-[#1a1a1a] border-[#2a2a2a]"             : "bg-white border-[#9CA3AF]",
-    headerGlass:   isDark ? {}                                          : { boxShadow: "0 1px 0 #9CA3AF, 0 4px 16px rgba(158,33,123,0.06)" },
+    pageWrap:      isDark ? "bg-[#0A0A0F] text-white"                    : "text-[#1A1A1A]",
+    mainBg:        isDark ? "bg-[#121212]"                               : "bg-transparent",
+    sidebar:       "bg-[#1a1a1a] border-r border-[#2a2a2a]",
+    header:        isDark ? "bg-[#1a1a1a] border-b border-[#2a2a2a]"     : "bg-white border-b border-[#9CA3AF]",
+    headerGlass:   isDark ? {}                                           : { boxShadow: "0 1px 0 #9CA3AF, 0 4px 16px rgba(158,33,123,0.06)" },
     card: isDark
       ? "bg-[#1a1a1a] border border-[#2a2a2a] hover:border-[#9E217B]/50 hover:bg-[#1e1e1e]"
       : "bg-gradient-to-r from-[#f1f5ff] via-[#eef2ff] to-[#f5f3ff] border border-indigo-300 hover:border-[#9E217B]/40 hover:shadow-[0_-4px_16px_2px_rgba(158,33,123,0.2),0_0_24px_6px_rgba(158,33,123,0.12),0_4px_16px_rgba(0,0,0,0.08)]",
-    cardGlass:     isDark ? {}                                          : { boxShadow: "0 1px 2px rgba(0,0,0,0.04), 0 4px 12px rgba(158,33,123,0.07), 0 12px 28px rgba(0,0,0,0.08)" },
-    cardClosing:   isDark ? "bg-yellow-900/10 border-yellow-500/30 hover:border-yellow-400/60" : "bg-amber-50 border-amber-200 hover:border-amber-400/60",
-    tableWrap:     isDark ? "bg-[#1a1a1a] border-[#2a2a2a]"             : "bg-white border border-indigo-300",
-    tableGlass:    isDark ? {}                                          : { boxShadow: "0 1px 2px rgba(0,0,0,0.04), 0 4px 12px rgba(158,33,123,0.06), 0 16px 36px rgba(0,0,0,0.09)" },
-    tableHead:     isDark ? "bg-[#222]"                                 : "bg-[#F1F5F9] border-b border-indigo-300",
-    tableRow:      isDark ? "hover:bg-[#252525]"                        : "hover:bg-[#F8FAFC] border-b border-indigo-200",
-    tableDivide:   isDark ? "divide-[#2a2a2a]"                          : "divide-[#E5E7EB]",
-    tableBorder:   isDark ? "border-[#2a2a2a]"                          : "border-[#D1D5DB]",
-    inputBg:       isDark ? "bg-[#1a1a1a] border-[#333]"                : "bg-white border border-indigo-300",
-    inputInner:    isDark ? "bg-[#121212] border-[#333]"                : "bg-white border border-indigo-300",
-    inputFocus:    isDark ? "focus:border-[#9E217B]"                    : "focus:border-[#9E217B]",
-    settingsBg:    isDark ? "bg-[#222] border-[#2a2a2a]"                : "bg-[#F8FAFC] border border-indigo-300",
-    settingsBgGl:  isDark ? {}                                          : { boxShadow: "inset 0 1px 3px rgba(0,0,0,0.04)" },
-    innerBlock:    isDark ? "bg-[#121212] border-[#333]"                : "bg-white border border-indigo-200",
-    modalCard:     isDark ? "bg-[#1a1a1a] border-[#2a2a2a]"             : "bg-white border border-indigo-300",
-    modalGlass:    isDark ? {}                                          : { boxShadow: "0 2px 4px rgba(0,0,0,0.04), 0 8px 24px rgba(158,33,123,0.08), 0 32px 72px rgba(0,0,0,0.16)" },
-    modalInner:    isDark ? "bg-[#121212]"                              : "bg-[#F8FAFC] border border-indigo-300",
-    modalHeader:   isDark ? "bg-[#151515]"                              : "bg-[#F1F5F9]",
-    dropdown:      isDark ? "bg-[#1a1a1a] border-[#2a2a2a]"             : "bg-white border border-indigo-200",
-    dropdownGlass: isDark ? {}                                          : { boxShadow: "0 2px 4px rgba(0,0,0,0.04), 0 8px 20px rgba(158,33,123,0.08), 0 20px 40px rgba(0,0,0,0.10)" },
-    dropdownItem:  isDark ? "hover:bg-[#222] border-[#222]"             : "hover:bg-[#F8FAFC] border-[#F0F0F0]",
-    text:          isDark ? "text-white"                                : "text-[#1A1A1A]",
-    textMuted:     isDark ? "text-gray-400"                             : "text-[#6B7280]",
-    textFaint:     isDark ? "text-gray-500"                             : "text-[#9CA3AF]",
-    textHeader:    isDark ? "text-xs text-gray-500 uppercase"           : "text-xs text-[#6B7280] uppercase",
+    cardGlass:     isDark ? {}                                           : { boxShadow: "0 1px 2px rgba(0,0,0,0.04), 0 4px 12px rgba(158,33,123,0.07), 0 12px 28px rgba(0,0,0,0.08)" },
+    cardClosing:   isDark ? "bg-yellow-900/10 border border-yellow-500/30 hover:border-yellow-400/60" : "bg-amber-50 border border-amber-200 hover:border-amber-400/60",
+    tableWrap:     isDark ? "bg-[#1a1a1a] border border-[#2a2a2a]"       : "bg-white border border-indigo-300",
+    tableGlass:    isDark ? {}                                           : { boxShadow: "0 1px 2px rgba(0,0,0,0.04), 0 4px 12px rgba(158,33,123,0.06), 0 16px 36px rgba(0,0,0,0.09)" },
+    tableHead:     isDark ? "bg-[#222]"                                  : "bg-[#F1F5F9] border-b border-indigo-300",
+    tableRow:      isDark ? "hover:bg-[#252525]"                         : "hover:bg-[#F8FAFC] border-b border-indigo-200",
+    tableDivide:   isDark ? "divide-[#2a2a2a]"                           : "divide-[#E5E7EB]",
+    tableBorder:   isDark ? "border border-[#2a2a2a]"                    : "border border-[#D1D5DB]",
+    inputBg:       isDark ? "bg-[#1a1a1a] border border-[#333]"          : "bg-white border border-indigo-300",
+    inputInner:    isDark ? "bg-[#121212] border border-[#333]"          : "bg-white border border-indigo-300",
+    inputFocus:    isDark ? "focus:border-[#9E217B]"                     : "focus:border-[#9E217B]",
+    settingsBg:    isDark ? "bg-[#222] border border-[#2a2a2a]"          : "bg-[#F8FAFC] border border-indigo-300",
+    settingsBgGl:  isDark ? {}                                           : { boxShadow: "inset 0 1px 3px rgba(0,0,0,0.04)" },
+    innerBlock:    isDark ? "bg-[#121212] border border-[#333]"          : "bg-white border border-indigo-200",
+    modalCard:     isDark ? "bg-[#1a1a1a] border border-[#2a2a2a]"       : "bg-white border border-indigo-300",
+    modalGlass:    isDark ? {}                                           : { boxShadow: "0 2px 4px rgba(0,0,0,0.04), 0 8px 24px rgba(158,33,123,0.08), 0 32px 72px rgba(0,0,0,0.16)" },
+    modalInner:    isDark ? "bg-[#121212] border border-[#333]"          : "bg-[#F8FAFC] border border-indigo-300",
+    modalHeader:   isDark ? "bg-[#151515]"                               : "bg-[#F1F5F9]",
+    dropdown:      isDark ? "bg-[#1a1a1a] border border-[#2a2a2a]"       : "bg-white border border-indigo-200",
+    dropdownGlass: isDark ? {}                                           : { boxShadow: "0 2px 4px rgba(0,0,0,0.04), 0 8px 20px rgba(158,33,123,0.08), 0 20px 40px rgba(0,0,0,0.10)" },
+    dropdownItem:  isDark ? "hover:bg-[#222] border-[#222]"              : "hover:bg-[#F8FAFC] border-[#F0F0F0]",
+    text:          isDark ? "text-white"                                 : "text-[#1A1A1A]",
+    textMuted:     isDark ? "text-gray-400"                              : "text-[#6B7280]",
+    textFaint:     isDark ? "text-gray-500"                              : "text-[#9CA3AF]",
+    textHeader:    isDark ? "text-xs text-gray-500 uppercase"            : "text-xs text-[#6B7280] uppercase",
     navActive:     isDark ? "bg-[#9E217B]/20 border-[#9E217B]/60 text-[#d946a8]" : "bg-[#2A2A2A] text-[#9E217B] border-transparent",
     navInactive:   isDark ? "text-gray-500 hover:text-gray-300 hover:bg-white/5 border-transparent" : "text-[#9CA3AF] hover:bg-[#2A2A2A] hover:text-white border-transparent",
     navIndicator:  isDark ? "bg-[#9E217B] shadow-[0_0_10px_2px_rgba(158,33,123,0.5)]" : "bg-[#9E217B] shadow-[0_0_8px_rgba(158,33,123,0.4)]",
-    toggleWrap:    isDark ? "bg-[#1C1C2A] border-[#2A2A38] text-yellow-300" : "bg-white border border-indigo-200 text-[#9E217B]",
-    chatArea:      isDark ? "bg-[#0a0a0a]"                              : "bg-[#F8FAFC]",
+    toggleWrap:    isDark ? "bg-[#1C1C2A] border border-[#2A2A38] text-yellow-300" : "bg-white border border-indigo-200 text-[#9E217B]",
+    chatArea:      isDark ? "bg-[#0a0a0a]"                               : "bg-[#F8FAFC]",
     chatBubbleAi:  isDark ? "bg-[#141414] border border-[#1f1f1f] text-gray-200" : "bg-white border border-[#E5E7EB] text-[#1A1A1A] shadow-sm",
-    chatBubbleUser:isDark ? "bg-[#9E217B] text-white"                   : "bg-[#9E217B] text-white",
-    chatInput:     isDark ? "bg-[#111] border-[#222] hover:border-[#333] focus-within:border-[#9E217B]/50" : "bg-white border-[#E5E7EB] hover:border-[#9CA3AF] focus-within:border-[#9E217B]/50",
-    chatInputInner:isDark ? "bg-[#111] border-[#222]"                   : "bg-white border-[#E5E7EB]",
-    chatPanel:     isDark ? "bg-[#1a1a1a] border-[#333]"                : "bg-white border-[#D1D5DB]",
-    chatPanelGl:   isDark ? {}                                          : { boxShadow: "0 1px 2px rgba(0,0,0,0.04), 0 4px 12px rgba(158,33,123,0.06), 0 16px 36px rgba(0,0,0,0.09)" },
-    statGlow1:     isDark ? "bg-[#9E217B]/10"                           : "bg-[#9E217B]/10",
-    statGlow2:     isDark ? "bg-[#d946a8]/10"                           : "bg-[#d946a8]/10",
-    statGlow3:     isDark ? "bg-blue-600/10"                            : "bg-indigo-400/10",
-    statGlow4:     isDark ? "bg-yellow-500/10"                          : "bg-amber-400/10",
-    statGlow5:     isDark ? "bg-green-600/10"                           : "bg-emerald-400/10",
-    accentText:    isDark ? "text-[#d946a8]"                            : "text-[#9E217B]",
+    chatBubbleUser:isDark ? "bg-[#9E217B] text-white"                    : "bg-[#9E217B] text-white",
+    chatInput:     isDark ? "bg-[#111] border border-[#222] hover:border-[#333] focus-within:border-[#9E217B]/50" : "bg-white border-[#E5E7EB] hover:border-[#9CA3AF] focus-within:border-[#9E217B]/50",
+    chatInputInner:isDark ? "bg-[#111] border border-[#222]"             : "bg-white border-[#E5E7EB]",
+    chatPanel:     isDark ? "bg-[#1a1a1a] border border-[#333]"          : "bg-white border-[#D1D5DB]",
+    chatPanelGl:   isDark ? {}                                           : { boxShadow: "0 1px 2px rgba(0,0,0,0.04), 0 4px 12px rgba(158,33,123,0.06), 0 16px 36px rgba(0,0,0,0.09)" },
+    statGlow1:     isDark ? "bg-[#9E217B]/10"                            : "bg-[#9E217B]/10",
+    statGlow2:     isDark ? "bg-[#d946a8]/10"                            : "bg-[#d946a8]/10",
+    statGlow3:     isDark ? "bg-blue-600/10"                             : "bg-indigo-400/10",
+    statGlow4:     isDark ? "bg-yellow-500/10"                           : "bg-amber-400/10",
+    statGlow5:     isDark ? "bg-green-600/10"                            : "bg-emerald-400/10",
+    accentText:    isDark ? "text-[#d946a8]"                             : "text-[#9E217B]",
     accentBg:      isDark ? "bg-[#9E217B]/10 text-[#d946a8] border border-[#9E217B]/30" : "bg-[#9E217B]/10 text-[#9E217B] border border-[#9E217B]/30",
-    sectionTitle:  isDark ? "text-[#d946a8]"                            : "text-[#9E217B]",
-    sectionBorder: isDark ? "border-[#9E217B]/20"                       : "border-[#9E217B]/25",
+    sectionTitle:  isDark ? "text-[#d946a8]"                             : "text-[#9E217B]",
+    sectionBorder: isDark ? "border-[#9E217B]/20"                        : "border-[#9E217B]/25",
     btnPrimary:    isDark ? "bg-[#9E217B] hover:bg-[#b8268f] text-white shadow-md" : "bg-[#9E217B] hover:bg-[#8a1d6b] text-white shadow-sm",
     btnSecondary:  isDark ? "bg-[#00AEEF] hover:bg-[#0099d4] text-white shadow-md" : "bg-[#00AEEF] hover:bg-[#0099d4] text-white shadow-sm",
     btnDanger:     isDark ? "bg-[#3B1F1F] text-[#F28B82] hover:bg-red-900/40 border border-red-900/30" : "bg-[#9E217B]/10 text-[#9E217B] hover:bg-[#9E217B] hover:text-white border border-[#9E217B]/30",
@@ -105,11 +106,11 @@ function buildTheme(isDark: boolean) {
     fupLoan:       isDark ? "bg-blue-900/20 border border-blue-600/40" : "bg-blue-50 border border-blue-200",
     fupSalesform:  isDark ? "bg-[#222] border border-[#444]" : "bg-white border border-[#D1D5DB]",
     fupClosing:    isDark ? "bg-yellow-900/20 border border-yellow-600/40" : "bg-amber-50 border border-amber-300",
-    statusRouted:  isDark ? "text-[#d946a8] border-[#9E217B]/30 bg-[#9E217B]/10" : "text-[#9E217B] border-[#9E217B]/30 bg-[#9E217B]/10",
-    statusVisit:   isDark ? "text-orange-400 border-orange-500/30 bg-orange-500/10" : "text-orange-500 border-orange-400/40 bg-orange-50",
-    statusClosing: isDark ? "text-yellow-400 border-yellow-500/40 bg-yellow-500/10" : "text-amber-600 border-amber-400/50 bg-amber-50",
-    select:        isDark ? "bg-[#121212] border-[#333] text-white focus:border-[#9E217B]" : "bg-white border border-indigo-300 text-[#1A1A1A] focus:border-[#9E217B]",
-    selectSmall:   isDark ? "bg-[#222] border-[#333] text-white" : "bg-white border border-indigo-200 text-[#6B7280]",
+    statusRouted:  isDark ? "text-[#d946a8] border border-[#9E217B]/30 bg-[#9E217B]/10" : "text-[#9E217B] border-[#9E217B]/30 bg-[#9E217B]/10",
+    statusVisit:   isDark ? "text-orange-400 border border-orange-500/30 bg-orange-500/10" : "text-orange-500 border-orange-400/40 bg-orange-50",
+    statusClosing: isDark ? "text-yellow-400 border border-yellow-500/40 bg-yellow-500/10" : "text-amber-600 border-amber-400/50 bg-amber-50",
+    select:        isDark ? "bg-[#121212] border border-[#333] text-white focus:border-[#9E217B]" : "bg-white border border-indigo-300 text-[#1A1A1A] focus:border-[#9E217B]",
+    selectSmall:   isDark ? "bg-[#222] border border-[#333] text-white" : "bg-white border border-indigo-200 text-[#6B7280]",
     scroll:        isDark ? "scrollbar-dark" : "scrollbar-light",
   };
 }
@@ -229,7 +230,7 @@ function InterestBadge({ status, size = "md", isDark }: { status: string; size?:
   };
   const cls = colorMap[status] ?? (isDark ? "border-[#9E217B]/30 text-[#d946a8] bg-[#9E217B]/10" : "border-[#9E217B]/30 text-[#9E217B] bg-[#9E217B]/10");
   const sz  = size === "sm" ? "text-[9px] px-2 py-0.5" : "text-[10px] px-3 py-1";
-  return <span className={`rounded-full font-bold uppercase tracking-wider border flex-shrink-0 ${sz} ${cls}`}>{status}</span>;
+  return <span className={`rounded-full font-bold uppercase tracking-wider border flex-shrink-0 whitespace-nowrap ${sz} ${cls}`}>{status}</span>;
 }
 
 function LoanStatusBadge({ status, isDark }: { status: string; isDark?: boolean }) {
@@ -253,6 +254,44 @@ const formatDate = (ds: string) => {
   if (!ds || ds === "Pending" || ds === "N/A" || ds === "Completed") return "-";
   try { return new Date(ds).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }); } catch { return ds; }
 };
+const downloadCSV = (data: any[], filename: string) => {
+  if (!data || data.length === 0) {
+    alert("No data to export.");
+    return;
+  }
+  const headers = Object.keys(data[0]);
+  const csvRows = data.map(row =>
+    headers.map(fieldName => JSON.stringify(row[fieldName] ?? "")).join(",")
+  );
+  const csvString = [headers.join(","), ...csvRows].join("\r\n");
+  const blob = new Blob([csvString], { type: "text/csv;charset=utf-8;" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.setAttribute("download", filename);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
+
+const formatLeadForExport = (l: any) => ({
+  "Lead ID": l.id,
+  "Client Name": l.name,
+  "Budget": l.salesBudget || l.budget || "N/A",
+  "Configuration": l.propType || l.configuration || "N/A",
+  "Purpose": l.useType || l.purpose || "N/A",
+  "Phone": l.phone,
+  "Alt Phone": l.altPhone || l.alt_phone || "N/A",
+  "Source": l.source || "N/A",
+  "Status": l.status || "Routed",
+  "Interest Level": l.leadInterestStatus || "N/A",
+  "Loan Status": l.loanStatus || "N/A",
+  "CP Name": l.cpName || l.cp_name || "N/A",
+  "CP Phone": l.cpPhone || l.cp_phone || "N/A",
+  "Site Visit Date": l.mongoVisitDate ? new Date(l.mongoVisitDate).toLocaleDateString("en-IN") : "N/A",
+  "Assigned Manager": l.assigned_to || "Unassigned",
+  "Assigned Receptionist": l.assigned_receptionist || "N/A",
+  "Created At": l.created_at ? new Date(l.created_at).toLocaleDateString("en-IN") : "N/A",
+});
 const maskPhone = (phone: any, userRole: string = "admin", isOwner: boolean = true) => {
   if (!phone || phone === "N/A") return "N/A";
   const c = String(phone).replace(/[^a-zA-Z0-9]/g, "");
@@ -661,7 +700,7 @@ export default function AdminAtlasDashboard() {
         </header>
 
         <main className={`flex-1 overflow-hidden transition-colors duration-300 ${theme.mainBg}`}>
-          {activeView === "dashboard" && <DashboardOverview managers={managers} allLeads={allLeads} isLoading={isLoading} user={user} theme={theme} isDark={isDark} receptionists={receptionists} followUps={followUps} />}
+          {activeView === "dashboard" && <DashboardOverview managers={managers} siteHeads={siteHeads} allLeads={allLeads} isLoading={isLoading} user={user} theme={theme} isDark={isDark} receptionists={receptionists} followUps={followUps} />}
           {activeView === "sales"        && <AdminSalesView managers={managers} allLeads={allLeads} followUps={followUps} isLoading={isLoading} adminUser={user} refetch={refetch} theme={theme} isDark={isDark} />}
           {activeView === "site_head"    && <AdminSiteHeadView siteHeads={siteHeads} allLeads={allLeads} followUps={followUps} isLoading={isLoading} adminUser={user} refetch={refetch} theme={theme} isDark={isDark} />}
           {activeView === "receptionist" && (
@@ -744,8 +783,21 @@ function DashboardAnalytics({ leads, theme, isDark }: { leads: any[]; theme: any
   const cpData = useMemo(() => {
   const c: Record<string, number> = {};
   leads.forEach(l => {
-    if (l.source === "Channel Partner" && l.cpName && l.cpName !== "N/A" && l.cpName !== "—") {
-      c[l.cpName] = (c[l.cpName] || 0) + 1;
+    // 1. Grab the name from whichever property exists
+    const actualCpName = l.cpName || l.cp_name;
+
+    // 2. Verify it's a Channel Partner AND that we have a valid name
+    if (
+      l.source === "Channel Partner" && 
+      actualCpName && 
+      actualCpName !== "N/A" && 
+      actualCpName !== "—"
+    ) {
+      // 3. Trim whitespace to prevent duplicates like "Broker" and "Broker "
+      const cleanName = actualCpName.trim();
+      
+      // 4. Increment the count
+      c[cleanName] = (c[cleanName] || 0) + 1;
     }
   });
   return Object.entries(c).map(([cp, count]) => ({ cp, count })).sort((a, b) => b.count - a.count).slice(0, 8);
@@ -784,12 +836,28 @@ function DashboardAnalytics({ leads, theme, isDark }: { leads: any[]; theme: any
             {barMode === "weekly" && <p className="text-[#9E217B] text-xs mt-0.5 font-semibold">{weeklyTotal} total this week</p>}
             {barMode === "cp" && <p className="text-[#9E217B] text-xs mt-0.5 font-semibold">{cpData.reduce((a,b)=>a+b.count,0)} CP leads total</p>}
           </div>
-          <select value={barMode} onChange={e => setBarMode(e.target.value as any)}
-            className={`${theme.select} rounded-lg px-3 py-1.5 text-xs outline-none cursor-pointer appearance-none`}>
-            <option value="weekly">Leads This Week</option>
-            <option value="source">Lead Source Distribution</option>
-            <option value="cp">Channel Partner Leads</option>
-          </select>
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={() => {
+                let data = [];
+                let name = "";
+                if (barMode === "weekly") { data = weeklyData; name = "Weekly_Leads"; }
+                else if (barMode === "cp") { data = cpData; name = "CP_Leads"; }
+                else { data = sourceData; name = "Source_Distribution"; }
+                downloadCSV(data, `${name}.csv`);
+              }}
+              className={`p-2 border rounded-lg transition-colors hover:opacity-80 ${isDark ? 'bg-[#222] border-[#333] text-white' : 'bg-white border-indigo-200 text-indigo-600'}`}
+              title="Export Bar Chart Data"
+            >
+              <FaDownload size={12}/>
+            </button>
+            <select value={barMode} onChange={e => setBarMode(e.target.value as any)}
+              className={`${theme.select} rounded-lg px-3 py-1.5 text-xs outline-none cursor-pointer appearance-none`}>
+              <option value="weekly">Leads This Week</option>
+              <option value="source">Lead Source Distribution</option>
+              <option value="cp">Channel Partner Leads</option>
+            </select>
+          </div>
         </div>
         <ResponsiveContainer width="100%" height={220}>
           {barMode === "weekly" ? (
@@ -837,14 +905,23 @@ function DashboardAnalytics({ leads, theme, isDark }: { leads: any[]; theme: any
              pieMode==="loanrequired" ? "Loan Required?" :
              "Visit Scheduled vs Pending"}
           </h3>
-          <select value={pieMode} onChange={e => setPieMode(e.target.value as any)}
-            className={`${theme.select} rounded-lg px-3 py-1.5 text-xs outline-none cursor-pointer appearance-none`}>
-            <option value="interest">Lead Interest</option>
-            <option value="loan">Loan Status</option>
-            <option value="usetype">Self-Use vs Investment</option>
-            <option value="loanrequired">Loan Required?</option>
-            <option value="visits">Visit Scheduled vs Pending</option>
-          </select>
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={() => downloadCSV(pieData, `${pieMode}_chart_data.csv`)}
+              className={`p-2 border rounded-lg transition-colors hover:opacity-80 ${isDark ? 'bg-[#222] border-[#333] text-white' : 'bg-white border-indigo-200 text-indigo-600'}`}
+              title="Export Pie Chart Data"
+            >
+              <FaDownload size={12}/>
+            </button>
+            <select value={pieMode} onChange={e => setPieMode(e.target.value as any)}
+              className={`${theme.select} rounded-lg px-3 py-1.5 text-xs outline-none cursor-pointer appearance-none`}>
+              <option value="interest">Lead Interest</option>
+              <option value="loan">Loan Status</option>
+              <option value="usetype">Self-Use vs Investment</option>
+              <option value="loanrequired">Loan Required?</option>
+              <option value="visits">Visit Scheduled vs Pending</option>
+            </select>
+          </div>
         </div>
         <div className="flex items-center gap-4">
           <ResponsiveContainer width="55%" height={200}>
@@ -882,10 +959,11 @@ function DashboardAnalytics({ leads, theme, isDark }: { leads: any[]; theme: any
 // ============================================================================
 // DASHBOARD OVERVIEW
 // ============================================================================
-function DashboardOverview({ managers, allLeads, isLoading, user, theme, isDark, receptionists, followUps }: any) {
+function DashboardOverview({ managers, siteHeads, allLeads, isLoading, user, theme, isDark, receptionists, followUps }: any) {
   const [selectedManagerName, setSelectedManagerName]           = useState("");
   const [hasAutoSelected, setHasAutoSelected]                   = useState(false);
-  const [perfMode, setPerfMode]                                 = useState<"manager" | "receptionist">("manager");
+  const [perfMode, setPerfMode]                                 = useState<"overall" | "manager" | "receptionist" | "site_head">("overall");
+  const [selectedSiteHeadName, setSelectedSiteHeadName]         = useState("");
   const [selectedReceptionistName, setSelectedReceptionistName] = useState("");
   const [hasAutoSelectedRecep, setHasAutoSelectedRecep]         = useState(false);
 
@@ -920,6 +998,9 @@ function DashboardOverview({ managers, allLeads, isLoading, user, theme, isDark,
     const unique = [...new Map(rLeads.map((l: any) => [l.id, l])).values()];
     return { name: r.name, activeLeads: unique.length, siteVisits: unique.filter((l: any) => !!l.mongoVisitDate).length };
   }).sort((a: any, b: any) => b.activeLeads - a.activeLeads);
+  // ── Site Head performance data ──────────────────────────────────────────
+  const activeSiteHeadLeads = allLeads.filter((l: any) => l.assigned_to === selectedSiteHeadName);
+  const siteHeadVisitCount = activeSiteHeadLeads.filter((l: any) => l.status === "Visit Scheduled" || !!l.mongoVisitDate).length;
 
   const pieData      = managerStats.filter((m: any) => m.siteVisits > 0);
   const VISIT_COLORS = theme.visitPieColors;
@@ -998,57 +1079,277 @@ function DashboardOverview({ managers, allLeads, isLoading, user, theme, isDark,
     <div className={`${theme.card} rounded-2xl p-6 mb-8`} style={theme.cardGlass}>
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-5">
         <div>
-          <h2 className={`text-xl font-bold flex items-center gap-2 ${theme.text}`}><FaTable className="text-[#9E217B]"/> Team Performance Table</h2>
+         <h2 className={`text-xl font-bold flex items-center gap-2 ${theme.text}`}>
+            <FaTable className="text-[#9E217B]"/> 
+            {perfMode === "overall" ? "Team Performance" : "Individual Performance Table"}
+          </h2>
           <p className={`text-sm mt-1 ${theme.textMuted}`}>
-            {perfMode === "manager" ? "Select a sales manager to view their real-time data." : "Select a receptionist to view their real-time data."}
+            {perfMode === "overall" ? "Viewing analytics and data for all logged in enquiries." : perfMode === "manager" ? "Select a sales manager to view their real-time data." : "Select a receptionist to view their real-time data."}
           </p>
         </div>
 
         {/* Mode toggle */}
-        <div className={`flex items-center gap-1 p-1 rounded-xl border ${theme.tableWrap}`}>
-          <button
-            onClick={() => setPerfMode("manager")}
-            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5
-              ${perfMode === "manager" ? "bg-[#9E217B] text-white shadow-md" : `${theme.textMuted} hover:opacity-80`}`}>
-            <FaUsers className="text-[10px]"/> Sales Managers
-          </button>
-          <button
-            onClick={() => setPerfMode("receptionist")}
-            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5
-              ${perfMode === "receptionist" ? "bg-[#00AEEF] text-white shadow-md" : `${theme.textMuted} hover:opacity-80`}`}>
-            <FaClipboardList className="text-[10px]"/> Receptionists
-          </button>
+        {/* Mode toggle */}
+        <div className="w-full sm:w-72 relative">
+          <select value={perfMode} onChange={(e) => setPerfMode(e.target.value as any)}
+            className={`w-full text-sm font-bold rounded-xl px-4 py-3 outline-none cursor-pointer appearance-none border-2 transition-colors ${isDark ? "bg-[#14141B] border-[#9E217B]/40 text-[#d946a8]" : "bg-white border-[#9E217B]/40 text-[#9E217B]"}`}>
+            <option value="overall">Overall Team Performance</option>
+            <option value="manager">Sales Managers</option>
+            <option value="site_head">Site Heads</option>
+            <option value="receptionist">Receptionists</option>
+          </select>
         </div>
       </div>
 
       {/* Selector dropdown */}
-    {perfMode === "manager" ? (
-      <div className="w-full sm:w-72 relative">
-        <FaChevronLeft className={`absolute left-3 top-1/2 -translate-y-1/2 text-xs z-10 ${theme.textFaint}`}/>
-        <select value={selectedManagerName} onChange={e => setSelectedManagerName(e.target.value)}
-          className={`w-full text-sm font-bold rounded-xl pl-9 pr-4 py-3 outline-none cursor-pointer appearance-none ${theme.select}`}>
-          <option value="" disabled>-- Select Sales Manager --</option>
-          {managers.map((m: any) => <option key={m.id||m._id||m.name} value={m.name}>{m.name}</option>)}
-        </select>
-      </div>
-    ) : (
-      <div className="w-full sm:w-72 relative">
-        <FaChevronLeft className={`absolute left-3 top-1/2 -translate-y-1/2 text-xs z-10 ${theme.textFaint}`}/>
-        <select value={selectedReceptionistName} onChange={e => setSelectedReceptionistName(e.target.value)}
-          className={`w-full text-sm font-bold rounded-xl pl-9 pr-4 py-3 outline-none cursor-pointer appearance-none ${theme.select}`}>
-          <option value="" disabled>-- Select Receptionist --</option>
-          {(receptionists || []).map((r: any) => <option key={r.id||r._id||r.name} value={r.name}>{r.name}</option>)}
-        </select>
-      </div>
-    )}
-    </div>
+    {perfMode === "manager" && (
+        <div className="w-full sm:w-72 relative mb-4">
+          <FaChevronLeft className={`absolute left-3 top-1/2 -translate-y-1/2 text-xs z-10 ${theme.textFaint}`}/>
+          <select value={selectedManagerName} onChange={e => setSelectedManagerName(e.target.value)}
+            className={`w-full text-sm font-bold rounded-xl pl-9 pr-4 py-3 outline-none cursor-pointer appearance-none ${theme.select}`}>
+            <option value="" disabled>-- Select Sales Manager --</option>
+            {managers.map((m: any) => <option key={m.id||m._id||m.name} value={m.name}>{m.name}</option>)}
+          </select>
+        </div>
+      )}
+      {perfMode === "receptionist" && (
+        <div className="w-full sm:w-72 relative mb-4">
+          <FaChevronLeft className={`absolute left-3 top-1/2 -translate-y-1/2 text-xs z-10 ${theme.textFaint}`}/>
+          <select value={selectedReceptionistName} onChange={e => setSelectedReceptionistName(e.target.value)}
+            className={`w-full text-sm font-bold rounded-xl pl-9 pr-4 py-3 outline-none cursor-pointer appearance-none ${theme.select}`}>
+            <option value="" disabled>-- Select Receptionist --</option>
+            {(receptionists || []).map((r: any) => <option key={r.id||r._id||r.name} value={r.name}>{r.name}</option>)}
+          </select>
+        </div>
+      )}
+      {perfMode === "site_head" && (
+        <div className="w-full sm:w-72 relative mb-4">
+          <FaChevronLeft className={`absolute left-3 top-1/2 -translate-y-1/2 text-xs z-10 ${theme.textFaint}`}/>
+          <select value={selectedSiteHeadName} onChange={e => setSelectedSiteHeadName(e.target.value)}
+            className={`w-full text-sm font-bold rounded-xl pl-9 pr-4 py-3 outline-none cursor-pointer appearance-none ${theme.select}`}>
+            <option value="" disabled>-- Select Site Head --</option>
+            {(siteHeads || []).map((sh: any) => <option key={sh.id||sh._id||sh.name} value={sh.name}>{sh.name}</option>)}
+          </select>
+        </div>
+      )}
 
-      {perfMode === "manager" && !selectedManagerName ? (
+    </div>
+    
+
+      {perfMode === "overall" ? (
+        <div className="animate-fadeIn space-y-6">
+          {/* OVERALL ANALYTICS CHARTS */}
+          {allLeads.length > 0 && (
+            <div>
+              <div className="flex items-center gap-3 mb-4">
+                <FaChartPie className="text-[#00AEEF]"/>
+                <h3 className={`font-bold text-sm uppercase tracking-wider ${theme.text}`}>Overall Lead Analytics</h3>
+                <span className={`text-xs px-2 py-0.5 rounded border ${theme.settingsBg} ${theme.textMuted}`}>{allLeads.length} leads</span>
+              </div>
+              <DashboardAnalytics leads={allLeads} theme={theme} isDark={isDark} />
+            </div>
+          )}
+          <div className={`${theme.tableWrap} rounded-2xl overflow-hidden`} style={theme.tableGlass}>
+            <div className={`p-5 flex flex-wrap justify-between items-center gap-4 ${theme.tableHead}`}>
+              <h3 className={`font-bold flex items-center gap-2 ${theme.text}`}>
+                <FaTable className="text-[#00AEEF]"/> Enquiry Overview
+              </h3>
+              <div className="flex items-center gap-3">
+                <button 
+                  onClick={() => downloadCSV(allLeads.map(formatLeadForExport), "Overall_Enquiries.csv")}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold border rounded-lg transition-colors hover:opacity-80 ${isDark ? 'bg-[#222] border-[#333] text-white' : 'bg-white border-indigo-200 text-indigo-600'}`}
+                >
+                  <FaDownload size={12}/> Export CSV
+                </button>
+                <span className={`text-xs px-3 py-1 rounded-full ${theme.btnClosingBadge}`}>Total: {allLeads.length}</span>
+              </div>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead className={`text-xs uppercase ${theme.tableHead} ${theme.textHeader}`}>
+                  <tr>
+                    {["LEAD NO.","NAME","PROP. TYPE","BUDGET","SOURCE","CP NAME","CP PHONE","STATUS","INTEREST","SITE VISIT","ASSIGNED TO","DATE"].map(h => (
+                      <th key={h} className="px-4 py-4">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className={`divide-y ${theme.tableDivide}`}>
+                  {isLoading ? (
+                    <tr><td colSpan={10} className={`text-center py-8 ${theme.textMuted}`}>Syncing...</td></tr>
+                  ) : allLeads.length === 0 ? (
+                    <tr><td colSpan={10} className={`text-center py-8 ${theme.textMuted}`}>No leads found.</td></tr>
+                  ) : allLeads.map((lead: any) => {
+                    // Logic to determine accurate Role and Assignee
+                    let assignedRole = "Unassigned";
+                    let assignedName = lead.assigned_receptionist || lead.assigned_to || "";
+                    if (lead.assigned_receptionist) {
+                      assignedRole = "Receptionist";
+                    } else if (siteHeads?.some((sh: any) => sh.name === lead.assigned_to)) {
+                      assignedRole = "Site Head";
+                    } else if (lead.assigned_to) {
+                      assignedRole = "Sales Manager";
+                    }
+
+                    return (
+                      <tr key={lead.id} className={`transition-colors ${theme.tableRow}`}>
+                        <td className={`px-6 py-4 font-bold ${isDark ? "text-[#d946a8]" : "text-[#9E217B]"}`}>#{lead.id}</td>
+                        <td className={`px-4 py-4 font-medium ${theme.text}`}>{lead.name}</td>
+                        <td className={`px-4 py-4 ${theme.textMuted}`}>{lead.propType || lead.configuration || "Pending"}</td>
+                        <td className={`px-4 py-4 font-semibold ${isDark ? "text-green-400" : "text-emerald-600"}`}>{lead.salesBudget || lead.budget || "N/A"}</td>
+                      
+
+                        {/* --- NEW COLUMNS ADDED HERE --- */}
+                        <td className={`px-4 py-4 text-xs ${theme.textMuted}`}>{lead.source || "—"}</td>
+                        <td className={`px-4 py-4 ${theme.textMuted}`}>{lead.cpName || lead.cp_name || "—"}</td>
+                        <td className={`px-4 py-4 font-mono text-xs ${theme.textMuted}`}>{lead.cpPhone || lead.cp_phone || "—"}</td>
+                        {/* ------------------------------ */}
+                        <td className="px-4 py-4">
+                          <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase border flex-shrink-0 whitespace-nowrap ${
+                            lead.status === "Closing" ? theme.statusClosing : lead.status === "Visit Scheduled" ? theme.statusVisit : theme.statusRouted
+                          }`}>
+                            {lead.status || "Routed"}
+                          </span>
+                        </td>
+                        <td className="px-4 py-4">
+                          {lead.leadInterestStatus && lead.leadInterestStatus !== "Pending" ? (
+                            <InterestBadge status={lead.leadInterestStatus} size="sm" isDark={isDark}/>
+                          ) : <span className={`text-xs italic ${theme.textFaint}`}>—</span>}
+                        </td>
+                        <td className="px-6 py-4">
+                          {lead.mongoVisitDate ? <span className="text-orange-500 font-medium">{formatDate(lead.mongoVisitDate).split(",")[0]}</span> : <span className={`text-xs italic ${theme.textFaint}`}>Pending</span>}
+                        </td>
+                        
+                        {/* THE NEW ASSIGNED TO COLUMN */}
+                        <td className={`px-4 py-4 ${theme.textMuted}`}>
+                           {assignedName ? (
+                             <div className="flex flex-col gap-0.5">
+                               <span className={`font-semibold ${theme.text}`}>{assignedName}</span>
+                               <span className={`text-[9px] px-1.5 py-0.5 rounded border inline-block w-fit ${isDark ? "bg-[#222] border-[#333]" : "bg-gray-50 border-gray-200"}`}>
+                                 {assignedRole}
+                               </span>
+                             </div>
+                           ) : "—"}
+                        </td>
+
+                        <td className={`px-4 py-4 text-xs whitespace-nowrap ${theme.textFaint}`}>{formatDate(lead.created_at).split(",")[0]}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      ) : perfMode === "manager" && !selectedManagerName ? (
         <div className={`flex-1 flex flex-col items-center justify-center border-2 border-dashed rounded-2xl min-h-[300px] ${theme.textMuted} ${theme.tableBorder}`}>
           <FaTable className="text-4xl mb-4 opacity-20"/>
           <p>Select a manager to view their table.</p>
         </div>
-      ) : perfMode === "receptionist" && !selectedReceptionistName ? (
+      ) : perfMode === "site_head" && !selectedSiteHeadName ? (
+        <div className={`flex-1 flex flex-col items-center justify-center border-2 border-dashed rounded-2xl min-h-[300px] ${theme.textMuted} ${theme.tableBorder}`}>
+          <FaTable className="text-4xl mb-4 opacity-20"/>
+          <p>Select a site head to view their table.</p>
+        </div>
+      ) : perfMode === "site_head" ? (
+        <div className="animate-fadeIn space-y-8">
+          {/* Site Head Stat cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className={`${theme.innerBlock} rounded-2xl p-5`} style={theme.settingsBgGl}>
+              <p className={`text-xs font-bold uppercase tracking-wider mb-1 ${theme.textMuted}`}>Total Assigned</p>
+              <p className={`text-3xl font-black ${theme.text}`}>{activeSiteHeadLeads.length}</p>
+            </div>
+            <div className={`${theme.innerBlock} rounded-2xl p-5`} style={theme.settingsBgGl}>
+              <p className={`text-xs font-bold uppercase tracking-wider mb-1 ${theme.textMuted}`}>Site Visits</p>
+              <p className="text-3xl font-black text-orange-500">{siteHeadVisitCount}</p>
+            </div>
+            <div className={`${theme.innerBlock} rounded-2xl p-5`} style={theme.settingsBgGl}>
+              <p className={`text-xs font-bold uppercase tracking-wider mb-1 ${theme.textMuted}`}>Loans Active</p>
+              <p className={`text-3xl font-black ${isDark ? "text-[#d946a8]" : "text-[#9E217B]"}`}>
+                {activeSiteHeadLeads.filter((l: any) => l.loanPlanned === "Yes").length}
+              </p>
+            </div>
+          </div>
+
+          {/* Analytics Charts */}
+          {activeSiteHeadLeads.length > 0 && (
+            <div>
+              <div className="flex items-center gap-3 mb-4">
+                <FaChartPie className="text-[#9E217B]"/>
+                <h3 className={`font-bold text-sm uppercase tracking-wider ${theme.text}`}>Lead Analytics — {selectedSiteHeadName}</h3>
+                <span className={`text-xs px-2 py-0.5 rounded border ${theme.settingsBg} ${theme.textMuted}`}>{activeSiteHeadLeads.length} leads</span>
+              </div>
+              <DashboardAnalytics leads={activeSiteHeadLeads} theme={theme} isDark={isDark} />
+            </div>
+          )}
+
+          {/* Leads table */}
+          <div className={`${theme.tableWrap} rounded-2xl overflow-hidden`} style={theme.tableGlass}>
+            <div className={`p-5 flex justify-between items-center ${theme.tableHead}`}>
+              <h3 className={`font-bold flex items-center gap-2 ${theme.text}`}>
+                <FaUsers className="text-[#9E217B]"/> Leads Database ({selectedSiteHeadName})
+              </h3>
+              <div className="flex items-center gap-3">
+                <button 
+                  onClick={() => downloadCSV(activeSiteHeadLeads.map(formatLeadForExport), `${selectedSiteHeadName}_Leads.csv`)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold border rounded-lg transition-colors hover:opacity-80 ${isDark ? 'bg-[#222] border-[#333] text-white' : 'bg-white border-indigo-200 text-indigo-600'}`}
+                >
+                  <FaDownload size={12}/> Export CSV
+                </button>
+                <span className={`text-xs px-3 py-1 rounded-full ${theme.btnClosingBadge}`}>Live Sync Active</span>
+              </div>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead className={`text-xs uppercase ${theme.tableHead} ${theme.textHeader}`}>
+                  <tr>
+                    {["LEAD NO.","NAME","PROP. TYPE","BUDGET","USE TYPE","LOAN?","LOAN STATUS","AMT REQ / APP","CP NAME","CP PHONE","SITE VISIT"].map(h => (
+                      <th key={h} className="px-4 py-4">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className={`divide-y ${theme.tableDivide}`}>
+                  {isLoading
+                    ? <tr><td colSpan={9} className={`text-center py-8 ${theme.textMuted}`}>Syncing...</td></tr>
+                    : activeSiteHeadLeads.length === 0
+                      ? <tr><td colSpan={9} className={`text-center py-8 ${theme.textMuted}`}>No leads for {selectedSiteHeadName}.</td></tr>
+                      : activeSiteHeadLeads.map((lead: any) => (
+                          <tr key={lead.id} className={`transition-colors ${theme.tableRow}`}>
+                            <td className={`px-6 py-4 font-bold ${isDark ? "text-[#d946a8]" : "text-[#9E217B]"}`}>#{lead.id}</td>
+                            <td className={`px-4 py-4 font-medium ${theme.text}`}>{lead.name}</td>
+                            
+                            <td className={`px-4 py-4 ${theme.textMuted}`}>{lead.propType || "Pending"}</td>
+                            <td className={`px-4 py-4 font-semibold ${isDark ? "text-green-400" : "text-emerald-600"}`}>{lead.salesBudget}</td>
+                            <td className={`px-4 py-4 ${theme.textMuted}`}>{lead.useType || "Pending"}</td>
+                            <td className={`px-4 py-4 ${theme.textMuted}`}>{lead.loanPlanned || "Pending"}</td>
+                            <td className="px-4 py-4">
+                              {lead.loanStatus && lead.loanStatus !== "N/A"
+                                ? <LoanStatusBadge status={lead.loanStatus} isDark={isDark}/>
+                                : <span className={`text-xs italic ${theme.textFaint}`}>N/A</span>}
+                            </td>
+                            <td className="px-4 py-4">
+                              {lead.loanAmtReq && lead.loanAmtReq !== "N/A"
+                                ? <div className="flex flex-col gap-0.5">
+                                    <span className="text-[11px] text-orange-500 font-medium">Req: {lead.loanAmtReq}</span>
+                                    <span className={`text-[11px] font-medium ${isDark ? "text-green-400" : "text-emerald-600"}`}>App: {lead.loanAmtApp !== "N/A" ? lead.loanAmtApp : "—"}</span>
+                                  </div>
+                                : <span className={`text-xs italic ${theme.textFaint}`}>N/A</span>}
+                            </td>
+                            <td className={`px-4 py-4 ${theme.textMuted}`}>{lead.cpName || lead.cp_name || "—"}</td>
+                            <td className={`px-4 py-4 font-mono text-xs ${theme.textMuted}`}>{lead.cpPhone || lead.cp_phone||  "—"}</td>
+                            <td className="px-6 py-4">
+                              {lead.mongoVisitDate
+                                ? <span className="text-orange-500 font-medium">{formatDate(lead.mongoVisitDate).split(",")[0]}</span>
+                                : <span className={`text-xs italic ${theme.textFaint}`}>Pending</span>}
+                            </td>
+                          </tr>
+                        ))
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>)
+         : perfMode === "receptionist" && !selectedReceptionistName ? (
         <div className={`flex-1 flex flex-col items-center justify-center border-2 border-dashed rounded-2xl min-h-[300px] ${theme.textMuted} ${theme.tableBorder}`}>
           <FaTable className="text-4xl mb-4 opacity-20"/>
           <p>Select a receptionist to view their table.</p>
@@ -1089,14 +1390,22 @@ function DashboardOverview({ managers, allLeads, isLoading, user, theme, isDark,
 
           {/* Leads table */}
           <div className={`${theme.tableWrap} rounded-2xl overflow-hidden`} style={theme.tableGlass}>
-            <div className={`p-5 flex justify-between items-center ${theme.tableHead}`}>
-              <h3 className={`font-bold flex items-center gap-2 ${theme.text}`}><FaClipboardList className="text-[#00AEEF]"/> All Leads — {selectedReceptionistName}</h3>
-              <div className="flex items-center gap-3">
-                <span className={`text-xs px-2 py-0.5 rounded border ${theme.settingsBg} ${theme.textMuted}`}>
-                  {recepAssignedLeads.length} assigned · {recepSelfLeads.length} self-managed
-                </span>
-                <span className={`text-xs px-3 py-1 rounded-full ${theme.btnClosingBadge}`}>Live Sync Active</span>
-              </div>
+           <div className={`p-5 flex flex-wrap justify-between items-center gap-4 ${theme.tableHead}`}>
+            <h3 className={`font-bold flex items-center gap-2 ${theme.text}`}>
+              <FaClipboardList className="text-[#00AEEF]"/> All Leads — {selectedReceptionistName}
+            </h3>
+            <div className="flex items-center gap-3">
+              <button 
+                onClick={() => downloadCSV(recepAllLeads.map(formatLeadForExport), `${selectedReceptionistName}_Leads.csv`)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold border rounded-lg transition-colors hover:opacity-80 ${isDark ? 'bg-[#222] border-[#333] text-white' : 'bg-white border-indigo-200 text-indigo-600'}`}
+              >
+                <FaDownload size={12}/> Export CSV
+              </button>
+              <span className={`text-xs px-2 py-0.5 rounded border ${theme.settingsBg} ${theme.textMuted}`}>
+                {recepAssignedLeads.length} assigned · {recepSelfLeads.length} self-managed
+              </span>
+              <span className={`text-xs px-3 py-1 rounded-full ${theme.btnClosingBadge}`}>Live Sync Active</span>
+            </div>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
@@ -1187,8 +1496,18 @@ function DashboardOverview({ managers, allLeads, isLoading, user, theme, isDark,
           {/* Leads table */}
           <div className={`${theme.tableWrap} rounded-2xl overflow-hidden`} style={theme.tableGlass}>
             <div className={`p-5 flex justify-between items-center ${theme.tableHead}`}>
-              <h3 className={`font-bold flex items-center gap-2 ${theme.text}`}><FaUsers className="text-[#9E217B]"/> Leads Database ({selectedManagerName})</h3>
-              <span className={`text-xs px-3 py-1 rounded-full ${theme.btnClosingBadge}`}>Live Sync Active</span>
+              <h3 className={`font-bold flex items-center gap-2 ${theme.text}`}>
+                <FaUsers className="text-[#9E217B]"/> Leads Database ({selectedManagerName})
+              </h3>
+              <div className="flex items-center gap-3">
+                <button 
+                  onClick={() => downloadCSV(activeManagerLeads.map(formatLeadForExport), `${selectedManagerName}_Leads.csv`)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold border rounded-lg transition-colors hover:opacity-80 ${isDark ? 'bg-[#222] border-[#333] text-white' : 'bg-white border-indigo-200 text-indigo-600'}`}
+                >
+                  <FaDownload size={12}/> Export CSV
+                </button>
+                <span className={`text-xs px-3 py-1 rounded-full ${theme.btnClosingBadge}`}>Live Sync Active</span>
+              </div>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
@@ -1405,33 +1724,35 @@ function AdminSalesView({ managers, allLeads, followUps, isLoading, adminUser, r
               className={`w-full rounded-lg pl-9 pr-4 py-2 text-sm outline-none transition-colors ${theme.inputInner} ${theme.text} ${theme.inputFocus}`}/>
           </div>
         </div>
-        <div className={`flex-1 overflow-y-auto ${theme.scroll}`}>
-          {isLoading ? <div className={`p-8 text-center text-sm ${theme.textMuted}`}>Loading managers...</div>
-          : filteredManagers.length === 0 ? <div className={`p-8 text-center text-sm ${theme.textMuted}`}>No managers found.</div>
-          : filteredManagers.map((manager: any) => {
-            const isSelected = selectedManager?.id === manager.id || selectedManager?.name === manager.name;
-            const count = allLeads.filter((l: any) => l.assigned_to === manager.name).length;
-            return (
-              <div key={manager.id||manager._id||manager.name}
-                onClick={() => { setSelectedManager(manager); setSubView("cards"); setSelectedLead(null); }}
-                className={`p-4 flex items-center gap-4 cursor-pointer transition-all border-b ${theme.tableBorder}
-                  ${isSelected
-                    ? isDark ? "border-l-4 border-l-[#9E217B] bg-[#9E217B]/10" : "border-l-4 border-l-[#9E217B] bg-pink-50"
-                    : "hover:opacity-80 border-l-4 border-l-transparent"}`}
-              >
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-white shadow-sm flex-shrink-0 ${isSelected ? "bg-[#9E217B]" : isDark ? "bg-[#333] text-gray-400" : "bg-gray-400"}`}>
-                  {manager.name?.charAt(0).toUpperCase()}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex justify-between items-center mb-1">
-                    <h3 className={`font-bold truncate text-sm ${theme.text}`}>{manager.name}</h3>
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${isDark ? "text-[#d946a8] bg-[#9E217B]/10" : "text-[#9E217B] bg-pink-100"}`}>{count} leads</span>
+        <div className={`flex-1 overflow-y-auto ${theme.scroll}`} dir="rtl">
+          <div dir="ltr" className="min-h-full">
+            {isLoading ? <div className={`p-8 text-center text-sm ${theme.textMuted}`}>Loading managers...</div>
+            : filteredManagers.length === 0 ? <div className={`p-8 text-center text-sm ${theme.textMuted}`}>No managers found.</div>
+            : filteredManagers.map((manager: any) => {
+              const isSelected = selectedManager?.id === manager.id || selectedManager?.name === manager.name;
+              const count = allLeads.filter((l: any) => l.assigned_to === manager.name).length;
+              return (
+                <div key={manager.id||manager._id||manager.name}
+                  onClick={() => { setSelectedManager(manager); setSubView("cards"); setSelectedLead(null); }}
+                  className={`p-4 flex items-center gap-4 cursor-pointer transition-all border-b ${theme.tableBorder}
+                    ${isSelected
+                      ? isDark ? "border-r-4 border-r-[#9E217B] bg-[#9E217B]/10" : "border-r-4 border-r-[#9E217B] bg-pink-50"
+                      : "hover:opacity-80 border-r-4 border-r-transparent"}`}
+                >
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-white shadow-sm flex-shrink-0 ${isSelected ? "bg-[#9E217B]" : isDark ? "bg-[#333] text-gray-400" : "bg-gray-400"}`}>
+                    {manager.name?.charAt(0).toUpperCase()}
                   </div>
-                  <p className={`text-xs truncate capitalize ${theme.textFaint}`}>{manager.role?.replace("_", " ")}</p>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex justify-between items-center mb-1">
+                      <h3 className={`font-bold truncate text-sm ${theme.text}`}>{manager.name}</h3>
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${isDark ? "text-[#d946a8] bg-[#9E217B]/10" : "text-[#9E217B] bg-pink-100"}`}>{count} leads</span>
+                    </div>
+                    <p className={`text-xs truncate capitalize ${theme.textFaint}`}>{manager.role?.replace("_", " ")}</p>
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
       </div>
 
@@ -1484,7 +1805,7 @@ function AdminSalesView({ managers, allLeads, followUps, isLoading, adminUser, r
                           onClick={() => { setSelectedLead(lead); setSubView("detail"); }}
                         >
                           <div>
-                            <div className={`flex justify-between items-start mb-5 pb-4 border-b ${theme.tableBorder}`}>
+                            <div className={`flex justify-between items-start mb-2 mt-2 pb-4 border-b  ${theme.tableBorder}`}>
                               <h3 className={`text-xl font-bold transition-colors line-clamp-1 pr-2 group-hover:text-[#9E217B] ${theme.text}`}>
                                 <span className={`mr-2 ${isDark ? "text-[#d946a8]" : "text-[#9E217B]"}`}>#{lead.id}</span>{lead.name}
                               </h3>
@@ -2053,9 +2374,9 @@ function AdminSiteHeadView({ siteHeads, allLeads, followUps, isLoading, adminUse
   // Status Classes & Sections
   const statusCls = (status: string) => {
     const s = status || "Routed";
-    if (s === "Closing" || s === "Closed") return isDark ? "text-yellow-400 border-yellow-500/40 bg-yellow-500/10" : "text-amber-600 border-amber-400/50 bg-amber-50";
-    if (s === "Visit Scheduled") return isDark ? "text-orange-400 border-orange-500/30 bg-orange-500/10" : "text-orange-500 border-orange-400/40 bg-orange-50";
-    return isDark ? "text-[#d946a8] border-[#9E217B]/30 bg-[#9E217B]/10" : "text-[#9E217B] border-[#9E217B]/30 bg-[#9E217B]/10";
+    if (s === "Closing" || s === "Closed") return isDark ? "whitespace-nowrap text-yellow-400 border-yellow-500/40 bg-yellow-500/10" : "whitespace-nowrap text-amber-600 border-amber-400/50 bg-amber-50";
+    if (s === "Visit Scheduled") return isDark ? "whitespace-nowrap text-orange-400 border-orange-500/30 bg-orange-500/10" : "whitespace-nowrap text-orange-500 border-orange-400/40 bg-orange-50";
+    return isDark ? "whitespace-nowrap text-[#d946a8] border-[#9E217B]/30 bg-[#9E217B]/10" : "whitespace-nowrap text-[#9E217B] border-[#9E217B]/30 bg-[#9E217B]/10";
   };
 
   const sections = [
@@ -2144,28 +2465,30 @@ function AdminSiteHeadView({ siteHeads, allLeads, followUps, isLoading, adminUse
               className={`w-full rounded-lg pl-9 pr-4 py-2 text-sm outline-none transition-colors ${theme.inputInner} ${theme.text} ${theme.inputFocus}`}/>
           </div>
         </div>
-        <div className={`flex-1 overflow-y-auto custom-scrollbar ${theme.scroll}`}>
-          {isLoading ? <div className={`p-8 text-center text-sm ${theme.textMuted}`}>Loading...</div>
-          : filteredSiteHeads.length === 0 ? <div className={`p-8 text-center text-sm ${theme.textMuted}`}>No Site Heads found.</div>
-          : filteredSiteHeads.map((sh: any) => {
-            const isSelected = selectedSiteHead?.id === sh.id || selectedSiteHead?.name === sh.name;
-            const count = allLeads.filter((l: any) => l.assigned_to === sh.name).length;
-            return (
-              <div key={sh.id || sh.name} onClick={() => { setSelectedSiteHead(sh); setSubView("list"); setActiveSection("assignedTable"); setSelectedLead(null); }}
-                className={`p-4 flex items-center gap-4 cursor-pointer transition-all border-b ${theme.tableBorder} ${isSelected ? (isDark ? "border-l-4 border-l-[#9E217B] bg-[#9E217B]/10" : "border-l-4 border-l-[#9E217B] bg-pink-50") : "hover:opacity-80 border-l-4 border-l-transparent"}`}>
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-white shadow-sm flex-shrink-0 ${isSelected ? "bg-[#9E217B]" : isDark ? "bg-[#333] text-gray-400" : "bg-gray-400"}`}>
-                  {sh.name?.charAt(0).toUpperCase()}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex justify-between items-center mb-1">
-                    <h3 className={`font-bold truncate text-sm ${theme.text}`}>{sh.name}</h3>
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${isDark ? "text-[#d946a8] bg-[#9E217B]/10" : "text-[#9E217B] bg-pink-100"}`}>{count} leads</span>
+        <div className={`flex-1 overflow-y-auto custom-scrollbar ${theme.scroll}`} dir="rtl">
+          <div dir="ltr" className="min-h-full">
+            {isLoading ? <div className={`p-8 text-center text-sm ${theme.textMuted}`}>Loading...</div>
+            : filteredSiteHeads.length === 0 ? <div className={`p-8 text-center text-sm ${theme.textMuted}`}>No Site Heads found.</div>
+            : filteredSiteHeads.map((sh: any) => {
+              const isSelected = selectedSiteHead?.id === sh.id || selectedSiteHead?.name === sh.name;
+              const count = allLeads.filter((l: any) => l.assigned_to === sh.name).length;
+              return (
+                <div key={sh.id || sh.name} onClick={() => { setSelectedSiteHead(sh); setSubView("list"); setActiveSection("assignedTable"); setSelectedLead(null); }}
+                  className={`p-4 flex items-center gap-4 cursor-pointer transition-all border-b ${theme.tableBorder} ${isSelected ? (isDark ? "border-r-4 border-r-[#9E217B] bg-[#9E217B]/10" : "border-r-4 border-r-[#9E217B] bg-pink-50") : "hover:opacity-80 border-r-4 border-r-transparent"}`}>
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-white shadow-sm flex-shrink-0 ${isSelected ? "bg-[#9E217B]" : isDark ? "bg-[#333] text-gray-400" : "bg-gray-400"}`}>
+                    {sh.name?.charAt(0).toUpperCase()}
                   </div>
-                  <p className={`text-xs truncate capitalize ${theme.textFaint}`}>Site Head</p>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex justify-between items-center mb-1">
+                      <h3 className={`font-bold truncate text-sm ${theme.text}`}>{sh.name}</h3>
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${isDark ? "text-[#d946a8] bg-[#9E217B]/10" : "text-[#9E217B] bg-pink-100"}`}>{count} leads</span>
+                    </div>
+                    <p className={`text-xs truncate capitalize ${theme.textFaint}`}>Site Head</p>
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
       </div>
 
@@ -2212,12 +2535,18 @@ function AdminSiteHeadView({ siteHeads, allLeads, followUps, isLoading, adminUse
                    </div>
 
                    {/* Table Rendering */}
-                   <div className="mt-8">
-                     <h3 className={`text-lg font-bold mb-4 ${theme.text}`}>
-                       {activeSection === "assignedTable" ? "Currently Assigned Leads" : "Successfully Closed Leads"}
-                     </h3>
-                     {renderTable(activeSection === "assignedTable" ? assignedLeads : closedLeads)}
-                   </div>
+                   <div className="flex items-center justify-between mb-4">
+                      <h3 className={`text-lg font-bold ${theme.text}`}>
+                        {activeSection === "assignedTable" ? "Currently Assigned Leads" : "Successfully Closed Leads"}
+                      </h3>
+                      <button 
+                        onClick={() => downloadCSV((activeSection === "assignedTable" ? assignedLeads : closedLeads).map(formatLeadForExport), `SiteHead_${activeSection}.csv`)}
+                        className={`flex items-center gap-2 px-4 py-2 text-xs font-bold border rounded-lg transition-colors hover:opacity-80 ${isDark ? 'bg-[#222] border-[#333] text-white' : 'bg-white border-indigo-200 text-indigo-600'}`}
+                      >
+                        <FaDownload size={14}/> Export to CSV
+                      </button>
+                    </div>
+                    {renderTable(activeSection === "assignedTable" ? assignedLeads : closedLeads)}
 
                  </div>
                </div>
@@ -3406,46 +3735,48 @@ function ReceptionistView({ receptionists, allLeads, followUps, isLoading, refet
               className={`w-full rounded-lg pl-9 pr-4 py-2 text-sm outline-none transition-colors ${theme.inputInner} ${theme.text} ${theme.inputFocus}`}/>
           </div>
         </div>
-        <div className={`flex-1 overflow-y-auto ${theme.scroll}`}>
-          {isLoading ? (
-            <div className={`p-8 text-center text-sm ${theme.textMuted}`}>Loading staff…</div>
-          ) : filteredRecep.length === 0 ? (
-            <div className={`p-8 text-center text-sm ${theme.textMuted}`}>No receptionists found.</div>
-          ) : filteredRecep.map((recep: any) => {
-            const isSelected = selectedReceptionist?.id === recep.id || selectedReceptionist?.name === recep.name;
-            const recepAssigned = mergedLeads.filter((l: any) => l.assigned_to === recep.name).length;
-            const recepCreated  = mergedLeads.filter((l: any) => l.assigned_receptionist === recep.name).length;
-            const recepClosed   = mergedLeads.filter((l: any) => l.assigned_receptionist === recep.name && (l.status === "Closing" || !!l.closingDate)).length;
+        <div className={`flex-1 overflow-y-auto ${theme.scroll}`} dir="rtl">
+          <div dir="ltr" className="min-h-full">
+            {isLoading ? (
+              <div className={`p-8 text-center text-sm ${theme.textMuted}`}>Loading staff…</div>
+            ) : filteredRecep.length === 0 ? (
+              <div className={`p-8 text-center text-sm ${theme.textMuted}`}>No receptionists found.</div>
+            ) : filteredRecep.map((recep: any) => {
+              const isSelected = selectedReceptionist?.id === recep.id || selectedReceptionist?.name === recep.name;
+              const recepAssigned = mergedLeads.filter((l: any) => l.assigned_to === recep.name).length;
+              const recepCreated  = mergedLeads.filter((l: any) => l.assigned_receptionist === recep.name).length;
+              const recepClosed   = mergedLeads.filter((l: any) => l.assigned_receptionist === recep.name && (l.status === "Closing" || !!l.closingDate)).length;
 
-            return (
-              <div key={recep.id || recep.name}
-                onClick={() => { setSelectedReceptionist(recep); setActiveSection("enquiries"); setSubView("list"); setSelectedLead(null); }}
-                className={`p-4 flex items-start gap-3 cursor-pointer transition-all border-b ${theme.tableBorder}
-                  ${isSelected
-                    ? isDark ? "border-l-4 border-l-[#9E217B] bg-[#9E217B]/10" : "border-l-4 border-l-[#9E217B] bg-pink-50"
-                    : "hover:opacity-80 border-l-4 border-l-transparent"}`}>
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-white shadow-sm flex-shrink-0
-                  ${isSelected ? "bg-[#9E217B]" : isDark ? "bg-[#333] text-gray-400" : "bg-gray-400"}`}>
-                  {recep.name?.charAt(0).toUpperCase()}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className={`font-bold truncate text-sm mb-0.5 ${theme.text}`}>{recep.name}</h3>
-                  <p className={`text-xs capitalize mb-2 ${theme.textFaint}`}>{recep.role?.replace("_", " ")}</p>
-                  <div className="flex gap-1.5 flex-wrap">
-                    <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold border ${isDark ? "text-[#d946a8] bg-[#9E217B]/10 border-[#9E217B]/20" : "text-[#9E217B] bg-pink-50 border-pink-200"}`}>
-                      {recepAssigned} assigned
-                    </span>
-                    <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold border ${isDark ? "text-purple-400 bg-purple-500/10 border-purple-500/20" : "text-purple-700 bg-purple-50 border-purple-200"}`}>
-                      {recepCreated} self-mgd
-                    </span>
-                    <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold border ${isDark ? "text-yellow-400 bg-yellow-500/10 border-yellow-500/20" : "text-amber-700 bg-amber-50 border-amber-200"}`}>
-                      {recepClosed} closed
-                    </span>
+              return (
+                <div key={recep.id || recep.name}
+                  onClick={() => { setSelectedReceptionist(recep); setActiveSection("enquiries"); setSubView("list"); setSelectedLead(null); }}
+                  className={`p-4 flex items-start gap-3 cursor-pointer transition-all border-b ${theme.tableBorder}
+                    ${isSelected
+                      ? isDark ? "border-r-4 border-r-[#9E217B] bg-[#9E217B]/10" : "border-r-4 border-r-[#9E217B] bg-pink-50"
+                      : "hover:opacity-80 border-r-4 border-r-transparent"}`}>
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-white shadow-sm flex-shrink-0
+                    ${isSelected ? "bg-[#9E217B]" : isDark ? "bg-[#333] text-gray-400" : "bg-gray-400"}`}>
+                    {recep.name?.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className={`font-bold truncate text-sm mb-0.5 ${theme.text}`}>{recep.name}</h3>
+                    <p className={`text-xs capitalize mb-2 ${theme.textFaint}`}>{recep.role?.replace("_", " ")}</p>
+                    <div className="flex gap-1.5 flex-wrap">
+                      <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold border ${isDark ? "text-[#d946a8] bg-[#9E217B]/10 border-[#9E217B]/20" : "text-[#9E217B] bg-pink-50 border-pink-200"}`}>
+                        {recepAssigned} assigned
+                      </span>
+                      <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold border ${isDark ? "text-purple-400 bg-purple-500/10 border-purple-500/20" : "text-purple-700 bg-purple-50 border-purple-200"}`}>
+                        {recepCreated} self-mgd
+                      </span>
+                      <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold border ${isDark ? "text-yellow-400 bg-yellow-500/10 border-yellow-500/20" : "text-amber-700 bg-amber-50 border-amber-200"}`}>
+                        {recepClosed} closed
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
       </div>
 
@@ -3520,12 +3851,15 @@ function ReceptionistView({ receptionists, allLeads, followUps, isLoading, refet
                 {/* 1. All Logged Enquiries */}
                 {activeSection === "enquiries" && (
                   <div>
-                    <div className="flex items-center gap-3 mb-4">
-                      <span className="text-lg">🗒️</span>
-                      <div>
-                        <h3 className={`font-bold text-base ${theme.text}`}>All Logged Enquiries</h3>
-                        <p className={`text-xs ${theme.textFaint}`}>All walk-in forms in the system — {allEnquiries.length} total</p>
+                    <div className="flex justify-between items-start w-full mb-4">
+                      <div className="flex items-center gap-3">
+                        <span className="text-lg">🗒️</span>
+                        <div>
+                          <h3 className={`font-bold text-base ${theme.text}`}>All Logged Enquiries</h3>
+                          <p className={`text-xs ${theme.textFaint}`}>All walk-in forms in the system — {allEnquiries.length} total</p>
+                        </div>
                       </div>
+                      <button onClick={() => downloadCSV(allEnquiries.map(formatLeadForExport), "All_Enquiries.csv")} className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold border rounded-lg hover:opacity-80 transition-colors ${isDark ? 'bg-[#222] border-[#333] text-white' : 'bg-white border-indigo-200 text-[#9E217B]'}`}><FaDownload/> Export</button>
                     </div>
                     {renderTable(allEnquiries, true, true)}
                   </div>
@@ -3536,11 +3870,12 @@ function ReceptionistView({ receptionists, allLeads, followUps, isLoading, refet
                 {activeSection === "assignedTable" && (
                   <div>
                     <div className="flex items-center gap-3 mb-4 flex-wrap">
+                      <button onClick={() => downloadCSV((assignedTableFilter === "working" ? assignedLeads.filter((l: any) => l.status !== "Closing" && l.status !== "Closed" && !l.closingDate) : assignedLeads).map(formatLeadForExport), "Assigned_Leads.csv")} className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold border rounded-lg hover:opacity-80 transition-colors ${isDark ? 'bg-[#222] border-[#333] text-white' : 'bg-white border-indigo-200 text-[#9E217B]'}`}><FaDownload/> Export</button>
                       <span className="text-lg">🗃️</span>
                       <div>
                         <h3 className={`font-bold text-base ${theme.text}`}>Assigned Lead Table</h3>
                         <p className={`text-xs ${theme.textFaint}`}>
-                          Leads where <code className="px-1 py-0.5 rounded text-[10px] bg-gray-100 dark:bg-gray-800">assigned_to = {recepName}</code>
+                          Leads of <code className="px-1 py-0.5 rounded text-[10px] bg-gray-100 dark:bg-gray-800">{recepName}</code>
                         </p>
                       </div>
 
@@ -3616,7 +3951,7 @@ function ReceptionistView({ receptionists, allLeads, followUps, isLoading, refet
                       <span className="text-lg">📋</span>
                       <div>
                         <h3 className={`font-bold text-base ${theme.text}`}>Assigned Lead Form</h3>
-                        <p className={`text-xs ${theme.textFaint}`}>Leads self-assigned by {recepName} — acting as Sales Manager</p>
+                        <p className={`text-xs ${theme.textFaint}`}>Leads self-assigned by {recepName}</p>
                       </div>
                       <span className={`ml-auto text-xs px-3 py-1 rounded-full border font-bold ${isDark ? "text-purple-400 border-purple-500/30 bg-purple-500/10" : "text-purple-700 border-purple-200 bg-purple-50"}`}>
                         {assignedFormLeads.length} leads
@@ -3764,16 +4099,19 @@ function ReceptionistView({ receptionists, allLeads, followUps, isLoading, refet
                 {/* 4. Closed Leads */}
                 {activeSection === "closed" && (
                   <div>
-                    <div className="flex items-center gap-3 mb-4">
-                      <span className="text-lg">✅</span>
-                      <div>
-                        <h3 className={`font-bold text-base ${theme.text}`}>Closed Leads by Receptionist</h3>
-                        <p className={`text-xs ${theme.textFaint}`}>Leads closed by {recepName} while acting as Sales Manager</p>
-                      </div>
-                      <span className={`ml-auto text-xs px-3 py-1 rounded-full border font-bold ${isDark ? "text-yellow-400 border-yellow-500/30 bg-yellow-500/10" : "text-amber-700 border-amber-200 bg-amber-50"}`}>
+                   <div className="flex items-center gap-3 mb-4">
+                    <span className="text-lg">✅</span>
+                    <div>
+                      <h3 className={`font-bold text-base ${theme.text}`}>Closed Leads by Receptionist</h3>
+                      <p className={`text-xs ${theme.textFaint}`}>Leads closed by {recepName}</p>
+                    </div>
+                    <div className="ml-auto flex items-center gap-3">
+                      <button onClick={() => downloadCSV(closedLeads.map(formatLeadForExport), "Closed_Leads.csv")} className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold border rounded-lg hover:opacity-80 transition-colors ${isDark ? 'bg-[#222] border-[#333] text-white' : 'bg-white border-indigo-200 text-[#9E217B]'}`}><FaDownload/> Export</button>
+                      <span className={`text-xs px-3 py-1 rounded-full border font-bold ${isDark ? "text-yellow-400 border-yellow-500/30 bg-yellow-500/10" : "text-amber-700 border-amber-200 bg-amber-50"}`}>
                         {closedLeads.length} closed
                       </span>
                     </div>
+                  </div>
                     {renderTable(closedLeads)}
                   </div>
                 )}
