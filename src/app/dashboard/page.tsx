@@ -661,7 +661,7 @@ export default function AdminAtlasDashboard() {
         </header>
 
         <main className={`flex-1 overflow-hidden transition-colors duration-300 ${theme.mainBg}`}>
-          {activeView === "dashboard"    && <DashboardOverview managers={managers} allLeads={allLeads} isLoading={isLoading} user={user} theme={theme} isDark={isDark} />}
+          {activeView === "dashboard" && <DashboardOverview managers={managers} allLeads={allLeads} isLoading={isLoading} user={user} theme={theme} isDark={isDark} receptionists={receptionists} followUps={followUps} />}
           {activeView === "sales"        && <AdminSalesView managers={managers} allLeads={allLeads} followUps={followUps} isLoading={isLoading} adminUser={user} refetch={refetch} theme={theme} isDark={isDark} />}
           {activeView === "site_head"    && <AdminSiteHeadView siteHeads={siteHeads} allLeads={allLeads} followUps={followUps} isLoading={isLoading} adminUser={user} refetch={refetch} theme={theme} isDark={isDark} />}
           {activeView === "receptionist" && (
@@ -687,7 +687,7 @@ export default function AdminAtlasDashboard() {
 // ============================================================================
 function DashboardAnalytics({ leads, theme, isDark }: { leads: any[]; theme: any; isDark: boolean }) {
   const [pieMode, setPieMode] = useState<"interest"|"loan"|"usetype"|"loanrequired"|"visits">("interest");
-  const [barMode, setBarMode] = useState<"weekly"|"source">("weekly");
+  const [barMode, setBarMode] = useState<"weekly"|"source"|"cp">("weekly");
 
   const interestData = useMemo(() => {
     const c: Record<string,number> = { Interested:0,"Not Interested":0,Maybe:0,Pending:0 };
@@ -741,6 +741,15 @@ function DashboardAnalytics({ leads, theme, isDark }: { leads: any[]; theme: any
     leads.forEach(l => { const src = l.source || "Unknown"; c[src] = (c[src] || 0) + 1; });
     return Object.entries(c).map(([source, count]) => ({ source, count })).sort((a, b) => b.count - a.count).slice(0, 6);
   }, [leads]);
+  const cpData = useMemo(() => {
+  const c: Record<string, number> = {};
+  leads.forEach(l => {
+    if (l.source === "Channel Partner" && l.cpName && l.cpName !== "N/A" && l.cpName !== "—") {
+      c[l.cpName] = (c[l.cpName] || 0) + 1;
+    }
+  });
+  return Object.entries(c).map(([cp, count]) => ({ cp, count })).sort((a, b) => b.count - a.count).slice(0, 8);
+}, [leads]);
 
   const interestColors: Record<string,string> = { Interested:"#4ade80","Not Interested":"#f87171",Maybe:"#fbbf24",Pending:"#6b7280" };
   const loanColors:     Record<string,string> = { Approved:"#4ade80","In Progress":"#fbbf24",Rejected:"#f87171","N/A":"#6b7280" };
@@ -770,14 +779,16 @@ function DashboardAnalytics({ leads, theme, isDark }: { leads: any[]; theme: any
           <div>
             <h3 className={`${theme.text} font-bold text-sm flex items-center gap-2`}>
               <FaChartPie className={`text-[#9E217B] text-xs`}/>
-              {barMode === "weekly" ? "Leads Added This Week" : "Lead Source Distribution"}
+              {barMode === "weekly" ? "Leads Added This Week" : barMode === "cp" ? "Leads by Channel Partner" : "Lead Source Distribution"}
             </h3>
             {barMode === "weekly" && <p className="text-[#9E217B] text-xs mt-0.5 font-semibold">{weeklyTotal} total this week</p>}
+            {barMode === "cp" && <p className="text-[#9E217B] text-xs mt-0.5 font-semibold">{cpData.reduce((a,b)=>a+b.count,0)} CP leads total</p>}
           </div>
           <select value={barMode} onChange={e => setBarMode(e.target.value as any)}
             className={`${theme.select} rounded-lg px-3 py-1.5 text-xs outline-none cursor-pointer appearance-none`}>
             <option value="weekly">Leads This Week</option>
             <option value="source">Lead Source Distribution</option>
+            <option value="cp">Channel Partner Leads</option>
           </select>
         </div>
         <ResponsiveContainer width="100%" height={220}>
@@ -791,7 +802,17 @@ function DashboardAnalytics({ leads, theme, isDark }: { leads: any[]; theme: any
                 {weeklyData.map((_: any, i: number) => <Cell key={i} fill={BAR_COLORS[i % BAR_COLORS.length]}/>)}
               </Bar>
             </BarChart>
-          ) : (
+          ) : barMode === "cp" ? (
+            <BarChart data={cpData} margin={{ top:4, right:8, left:-20, bottom:0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke={isDark ? "#2a2a2a" : "#E5E7EB"}/>
+              <XAxis dataKey="cp" tick={{ fill:theme.legendColor, fontSize:10 }} axisLine={false} tickLine={false}/>
+              <YAxis tick={{ fill:theme.legendColor, fontSize:11 }} axisLine={false} tickLine={false} allowDecimals={false}/>
+              <RechartsTooltip content={<BarTip/>}/>
+              <Bar dataKey="count" radius={[6,6,0,0]}>
+                {cpData.map((_: any, i: number) => <Cell key={i} fill={BAR_COLORS[i % BAR_COLORS.length]}/>)}
+              </Bar>
+            </BarChart>
+          ) :  (
             <BarChart data={sourceData} layout="vertical" margin={{ top:0, right:16, left:0, bottom:0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke={isDark ? "#2a2a2a" : "#E5E7EB"} horizontal={false}/>
               <XAxis type="number" tick={{ fill:theme.legendColor, fontSize:11 }} axisLine={false} tickLine={false} allowDecimals={false}/>
@@ -861,9 +882,12 @@ function DashboardAnalytics({ leads, theme, isDark }: { leads: any[]; theme: any
 // ============================================================================
 // DASHBOARD OVERVIEW
 // ============================================================================
-function DashboardOverview({ managers, allLeads, isLoading, user, theme, isDark }: any) {
-  const [selectedManagerName, setSelectedManagerName] = useState("");
-  const [hasAutoSelected, setHasAutoSelected]         = useState(false);
+function DashboardOverview({ managers, allLeads, isLoading, user, theme, isDark, receptionists, followUps }: any) {
+  const [selectedManagerName, setSelectedManagerName]           = useState("");
+  const [hasAutoSelected, setHasAutoSelected]                   = useState(false);
+  const [perfMode, setPerfMode]                                 = useState<"manager" | "receptionist">("manager");
+  const [selectedReceptionistName, setSelectedReceptionistName] = useState("");
+  const [hasAutoSelectedRecep, setHasAutoSelectedRecep]         = useState(false);
 
   const managerStats = managers.map((m: any) => {
     const mLeads = allLeads.filter((l: any) => l.assigned_to === m.name);
@@ -875,14 +899,27 @@ function DashboardOverview({ managers, allLeads, isLoading, user, theme, isDark 
   }).sort((a: any, b: any) => b.activeLeads - a.activeLeads);
 
   useEffect(() => {
-    if (!hasAutoSelected && managerStats.length > 0 && !isLoading) {
-      setSelectedManagerName(managerStats[0].name);
-      setHasAutoSelected(true);
+    if (!hasAutoSelectedRecep && receptionists?.length > 0 && !isLoading) {
+      setSelectedReceptionistName(receptionists[0].name);
+      setHasAutoSelectedRecep(true);
     }
-  }, [managerStats, isLoading, hasAutoSelected]);
+  }, [receptionists, isLoading, hasAutoSelectedRecep]);
 
   const activeManagerLeads = allLeads.filter((l: any) => l.assigned_to === selectedManagerName);
   const visitCount         = activeManagerLeads.filter((l: any) => l.status === "Visit Scheduled" || !!l.mongoVisitDate).length;
+  // ── Receptionist performance data ──────────────────────────────────────────
+  const recepAssignedLeads = allLeads.filter((l: any) => l.assigned_to === selectedReceptionistName);
+  const recepSelfLeads     = allLeads.filter((l: any) => l.assigned_receptionist === selectedReceptionistName);
+  const recepAllLeads      = [...new Map([...recepAssignedLeads, ...recepSelfLeads].map(l => [l.id, l])).values()];
+  const recepVisits        = recepAllLeads.filter((l: any) => !!l.mongoVisitDate).length;
+  const recepLoans         = recepAllLeads.filter((l: any) => l.loanPlanned === "Yes").length;
+  const recepClosed        = recepAllLeads.filter((l: any) => l.status === "Closing" || l.status === "Closed").length;
+
+  const recepStats = (receptionists || []).map((r: any) => {
+    const rLeads = allLeads.filter((l: any) => l.assigned_to === r.name || l.assigned_receptionist === r.name);
+    const unique = [...new Map(rLeads.map((l: any) => [l.id, l])).values()];
+    return { name: r.name, activeLeads: unique.length, siteVisits: unique.filter((l: any) => !!l.mongoVisitDate).length };
+  }).sort((a: any, b: any) => b.activeLeads - a.activeLeads);
 
   const pieData      = managerStats.filter((m: any) => m.siteVisits > 0);
   const VISIT_COLORS = theme.visitPieColors;
@@ -957,26 +994,163 @@ function DashboardOverview({ managers, allLeads, isLoading, user, theme, isDark 
         </div>
       </div>
 
-      {/* Team Performance Table */}
-      <div className={`${theme.card} rounded-2xl p-6 mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4`} style={theme.cardGlass}>
+     {/* Team Performance Table */}
+    <div className={`${theme.card} rounded-2xl p-6 mb-8`} style={theme.cardGlass}>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-5">
         <div>
           <h2 className={`text-xl font-bold flex items-center gap-2 ${theme.text}`}><FaTable className="text-[#9E217B]"/> Team Performance Table</h2>
-          <p className={`text-sm mt-1 ${theme.textMuted}`}>Select a manager to view their real-time data.</p>
+          <p className={`text-sm mt-1 ${theme.textMuted}`}>
+            {perfMode === "manager" ? "Select a sales manager to view their real-time data." : "Select a receptionist to view their real-time data."}
+          </p>
         </div>
-        <div className="w-full sm:w-72 relative">
-          <FaChevronLeft className={`absolute left-3 top-1/2 -translate-y-1/2 text-xs z-10 ${theme.textFaint}`}/>
-          <select value={selectedManagerName} onChange={e => setSelectedManagerName(e.target.value)}
-            className={`w-full text-sm font-bold rounded-xl pl-9 pr-4 py-3 outline-none cursor-pointer appearance-none ${theme.select}`}>
-            <option value="" disabled>-- Select Sales Manager --</option>
-            {managers.map((m: any) => <option key={m.id||m._id||m.name} value={m.name}>{m.name}</option>)}
-          </select>
+
+        {/* Mode toggle */}
+        <div className={`flex items-center gap-1 p-1 rounded-xl border ${theme.tableWrap}`}>
+          <button
+            onClick={() => setPerfMode("manager")}
+            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5
+              ${perfMode === "manager" ? "bg-[#9E217B] text-white shadow-md" : `${theme.textMuted} hover:opacity-80`}`}>
+            <FaUsers className="text-[10px]"/> Sales Managers
+          </button>
+          <button
+            onClick={() => setPerfMode("receptionist")}
+            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5
+              ${perfMode === "receptionist" ? "bg-[#00AEEF] text-white shadow-md" : `${theme.textMuted} hover:opacity-80`}`}>
+            <FaClipboardList className="text-[10px]"/> Receptionists
+          </button>
         </div>
       </div>
 
-      {!selectedManagerName ? (
+      {/* Selector dropdown */}
+    {perfMode === "manager" ? (
+      <div className="w-full sm:w-72 relative">
+        <FaChevronLeft className={`absolute left-3 top-1/2 -translate-y-1/2 text-xs z-10 ${theme.textFaint}`}/>
+        <select value={selectedManagerName} onChange={e => setSelectedManagerName(e.target.value)}
+          className={`w-full text-sm font-bold rounded-xl pl-9 pr-4 py-3 outline-none cursor-pointer appearance-none ${theme.select}`}>
+          <option value="" disabled>-- Select Sales Manager --</option>
+          {managers.map((m: any) => <option key={m.id||m._id||m.name} value={m.name}>{m.name}</option>)}
+        </select>
+      </div>
+    ) : (
+      <div className="w-full sm:w-72 relative">
+        <FaChevronLeft className={`absolute left-3 top-1/2 -translate-y-1/2 text-xs z-10 ${theme.textFaint}`}/>
+        <select value={selectedReceptionistName} onChange={e => setSelectedReceptionistName(e.target.value)}
+          className={`w-full text-sm font-bold rounded-xl pl-9 pr-4 py-3 outline-none cursor-pointer appearance-none ${theme.select}`}>
+          <option value="" disabled>-- Select Receptionist --</option>
+          {(receptionists || []).map((r: any) => <option key={r.id||r._id||r.name} value={r.name}>{r.name}</option>)}
+        </select>
+      </div>
+    )}
+    </div>
+
+      {perfMode === "manager" && !selectedManagerName ? (
         <div className={`flex-1 flex flex-col items-center justify-center border-2 border-dashed rounded-2xl min-h-[300px] ${theme.textMuted} ${theme.tableBorder}`}>
           <FaTable className="text-4xl mb-4 opacity-20"/>
           <p>Select a manager to view their table.</p>
+        </div>
+      ) : perfMode === "receptionist" && !selectedReceptionistName ? (
+        <div className={`flex-1 flex flex-col items-center justify-center border-2 border-dashed rounded-2xl min-h-[300px] ${theme.textMuted} ${theme.tableBorder}`}>
+          <FaTable className="text-4xl mb-4 opacity-20"/>
+          <p>Select a receptionist to view their table.</p>
+        </div>
+      ) : perfMode === "receptionist" ? (
+        <div className="animate-fadeIn space-y-8">
+          {/* Receptionist stat cards */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div className={`${theme.innerBlock} rounded-2xl p-5`} style={theme.settingsBgGl}>
+              <p className={`text-xs font-bold uppercase tracking-wider mb-1 ${theme.textMuted}`}>Total Leads</p>
+              <p className={`text-3xl font-black ${theme.text}`}>{recepAllLeads.length}</p>
+            </div>
+            <div className={`${theme.innerBlock} rounded-2xl p-5`} style={theme.settingsBgGl}>
+              <p className={`text-xs font-bold uppercase tracking-wider mb-1 ${theme.textMuted}`}>Assigned To</p>
+              <p className={`text-3xl font-black text-[#00AEEF]`}>{recepAssignedLeads.length}</p>
+            </div>
+            <div className={`${theme.innerBlock} rounded-2xl p-5`} style={theme.settingsBgGl}>
+              <p className={`text-xs font-bold uppercase tracking-wider mb-1 ${theme.textMuted}`}>Self-Managed</p>
+              <p className={`text-3xl font-black text-orange-500`}>{recepSelfLeads.length}</p>
+            </div>
+            <div className={`${theme.innerBlock} rounded-2xl p-5`} style={theme.settingsBgGl}>
+              <p className={`text-xs font-bold uppercase tracking-wider mb-1 ${theme.textMuted}`}>Closed</p>
+              <p className={`text-3xl font-black ${isDark ? "text-yellow-400" : "text-amber-500"}`}>{recepClosed}</p>
+            </div>
+          </div>
+
+          {/* Analytics charts for receptionist */}
+          {recepAllLeads.length > 0 && (
+            <div>
+              <div className="flex items-center gap-3 mb-4">
+                <FaChartPie className="text-[#00AEEF]"/>
+                <h3 className={`font-bold text-sm uppercase tracking-wider ${theme.text}`}>Lead Analytics — {selectedReceptionistName}</h3>
+                <span className={`text-xs px-2 py-0.5 rounded border ${theme.settingsBg} ${theme.textMuted}`}>{recepAllLeads.length} leads</span>
+              </div>
+              <DashboardAnalytics leads={recepAllLeads} theme={theme} isDark={isDark} />
+            </div>
+          )}
+
+          {/* Leads table */}
+          <div className={`${theme.tableWrap} rounded-2xl overflow-hidden`} style={theme.tableGlass}>
+            <div className={`p-5 flex justify-between items-center ${theme.tableHead}`}>
+              <h3 className={`font-bold flex items-center gap-2 ${theme.text}`}><FaClipboardList className="text-[#00AEEF]"/> All Leads — {selectedReceptionistName}</h3>
+              <div className="flex items-center gap-3">
+                <span className={`text-xs px-2 py-0.5 rounded border ${theme.settingsBg} ${theme.textMuted}`}>
+                  {recepAssignedLeads.length} assigned · {recepSelfLeads.length} self-managed
+                </span>
+                <span className={`text-xs px-3 py-1 rounded-full ${theme.btnClosingBadge}`}>Live Sync Active</span>
+              </div>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead className={`text-xs uppercase ${theme.tableHead} ${theme.textHeader}`}>
+                  <tr>
+                    {["LEAD NO.","NAME","PROP. TYPE","BUDGET","USE TYPE","LOAN?","LOAN STATUS","CP NAME","CP PHONE","SITE VISIT","Assigned to"].map(h => (
+                      <th key={h} className="px-4 py-4">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className={`divide-y ${theme.tableDivide}`}>
+                  {isLoading
+                    ? <tr><td colSpan={9} className={`text-center py-8 ${theme.textMuted}`}>Syncing...</td></tr>
+                    : recepAllLeads.length === 0
+                      ? <tr><td colSpan={9} className={`text-center py-8 ${theme.textMuted}`}>No leads for {selectedReceptionistName}.</td></tr>
+                      : recepAllLeads.map((lead: any) => {
+                          const isAssigned = lead.assigned_to === selectedReceptionistName;
+                          return (
+                            <tr key={lead.id} className={`transition-colors ${theme.tableRow}`}>
+                              <td className={`px-6 py-4 font-bold ${isDark ? "text-[#d946a8]" : "text-[#9E217B]"}`}>#{lead.id}</td>
+                              <td className={`px-4 py-4 font-medium ${theme.text}`}>{lead.name}</td>
+                              <td className={`px-4 py-4 ${theme.textMuted}`}>{lead.propType || "Pending"}</td>
+                              <td className={`px-4 py-4 font-semibold ${isDark ? "text-green-400" : "text-emerald-600"}`}>{lead.salesBudget}</td>
+                              <td className={`px-4 py-4 ${theme.textMuted}`}>{lead.useType || "Pending"}</td>
+                              <td className={`px-4 py-4 ${theme.textMuted}`}>{lead.loanPlanned || "Pending"}</td>
+                              <td className="px-4 py-4">
+                                {lead.loanStatus && lead.loanStatus !== "N/A"
+                                  ? <LoanStatusBadge status={lead.loanStatus} isDark={isDark}/>
+                                  : <span className={`text-xs italic ${theme.textFaint}`}>N/A</span>}
+                              </td>
+                              <td className={`px-4 py-4 ${theme.textMuted}`}>{lead.cpName || "—"}</td>
+                              <td className={`px-4 py-4 font-mono text-xs ${theme.textMuted}`}>{lead.cpPhone || "—"}</td>
+                              <td className="px-6 py-4">
+                                {lead.mongoVisitDate
+                                  ? <span className="text-orange-500 font-medium">{new Date(lead.mongoVisitDate).toLocaleDateString("en-IN", {day:"2-digit",month:"short"})}</span>
+                                  : <span className={`text-xs italic ${theme.textFaint}`}>Pending</span>}
+                              </td>
+                              <td className="px-4 py-4">
+                                <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold border ${
+                                  isAssigned
+                                    ? isDark ? "text-[#00AEEF] border-[#00AEEF]/30 bg-[#00AEEF]/10" : "text-[#00AEEF] border-[#00AEEF]/30 bg-blue-50"
+                                    : isDark ? "text-purple-400 border-purple-500/30 bg-purple-500/10" : "text-purple-700 border-purple-200 bg-purple-50"
+                                }`}>
+                                  {isAssigned ? "Receptionist" : "Self-Managed"}
+                                </span>
+                              </td>
+                            </tr>
+                          );
+                        })
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       ) : (
         <div className="animate-fadeIn space-y-8">
@@ -1020,7 +1194,7 @@ function DashboardOverview({ managers, allLeads, isLoading, user, theme, isDark 
               <table className="w-full text-left text-sm">
                 <thead className={`text-xs uppercase ${theme.tableHead} ${theme.textHeader}`}>
                   <tr>
-                    {["LEAD NO.","NAME","PROP. TYPE","BUDGET","USE TYPE","LOAN?","LOAN STATUS","AMT REQ / APP","SITE VISIT"].map(h => (
+                    {["LEAD NO.","NAME","PROP. TYPE","BUDGET","USE TYPE","LOAN?","LOAN STATUS","AMT REQ / APP","CP NAME","CP PHONE","SITE VISIT"].map(h => (
                       <th key={h} className="px-4 py-4">{h}</th>
                     ))}
                   </tr>
@@ -1034,6 +1208,7 @@ function DashboardOverview({ managers, allLeads, isLoading, user, theme, isDark 
                           <tr key={lead.id} className={`transition-colors ${theme.tableRow}`}>
                             <td className={`px-6 py-4 font-bold ${isDark ? "text-[#d946a8]" : "text-[#9E217B]"}`}>#{lead.id}</td>
                             <td className={`px-4 py-4 font-medium ${theme.text}`}>{lead.name}</td>
+                            
                             <td className={`px-4 py-4 ${theme.textMuted}`}>{lead.propType || "Pending"}</td>
                             <td className={`px-4 py-4 font-semibold ${isDark ? "text-green-400" : "text-emerald-600"}`}>{lead.salesBudget}</td>
                             <td className={`px-4 py-4 ${theme.textMuted}`}>{lead.useType || "Pending"}</td>
@@ -1051,6 +1226,8 @@ function DashboardOverview({ managers, allLeads, isLoading, user, theme, isDark 
                                   </div>
                                 : <span className={`text-xs italic ${theme.textFaint}`}>N/A</span>}
                             </td>
+                            <td className={`px-4 py-4 ${theme.textMuted}`}>{lead.cpName || lead.cp_name || "—"}</td>
+                            <td className={`px-4 py-4 font-mono text-xs ${theme.textMuted}`}>{lead.cpPhone || lead.cp_phone||  "—"}</td>
                             <td className="px-6 py-4">
                               {lead.mongoVisitDate
                                 ? <span className="text-orange-500 font-medium">{formatDate(lead.mongoVisitDate).split(",")[0]}</span>
@@ -2874,7 +3051,6 @@ function ReceptionistView({ receptionists, allLeads, followUps, isLoading, refet
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   {[
-                    { label: "CP Name",    val: selectedLead.cp_name    || selectedLead.cpName },
                     { label: "CP Company", val: selectedLead.cp_company || selectedLead.cpCompany },
                     { label: "CP Phone",   val: selectedLead.cp_phone   || selectedLead.cpPhone },
                   ].map(({ label, val }) => (
