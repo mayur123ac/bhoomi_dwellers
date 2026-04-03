@@ -1566,7 +1566,7 @@ function AdminSalesView({ managers, allLeads, followUps, isLoading, adminUser, r
                                   </div>
                                   {selectedLead.source==="Channel Partner"&&(
                                     <div className={`mt-4 pt-4 border-t grid grid-cols-1 sm:grid-cols-3 gap-4 ${theme.tableBorder}`}>
-                                      {[{label:"CP Name",val:selectedLead.cpName},{label:"CP Company",val:selectedLead.cpCompany},{label:"CP Phone",val:selectedLead.cpPhone}].map(({label,val}) => (
+                                      {[{label:"CP Company",val:selectedLead.cp_company || selectedLead.cpCompany},{label:"CP Phone",val:selectedLead.cp_phone || selectedLead.cpPhone}].map(({label,val}) => (
                                         <div key={label}><p className={`text-xs font-medium mb-1 ${theme.textMuted}`}>{label}</p><p className={`font-medium text-sm ${theme.text}`}>{val||"N/A"}</p></div>
                                       ))}
                                     </div>
@@ -2224,7 +2224,7 @@ function AdminSiteHeadView({ siteHeads, allLeads, followUps, isLoading, adminUse
                                    </div>
                                    {selectedLead.source==="Channel Partner"&&(
                                      <div className={`mt-2 pt-2 border-t grid grid-cols-1 sm:grid-cols-3 gap-3 ${theme.tableBorder}`}>
-                                       {[{label:"CP Name",val:selectedLead.cpName},{label:"CP Company",val:selectedLead.cpCompany},{label:"CP Phone",val:selectedLead.cpPhone}].map(({label,val})=>(
+                                       {[{label:"CP Company",val:selectedLead.cp_company || selectedLead.cpCompany},{label:"CP Phone",val:selectedLead.cp_phone || selectedLead.cpPhone}].map(({label,val})=>(
                                          <div key={label}><p className={`text-xs font-medium mb-1 ${theme.textFaint}`}>{label}</p><p className={`font-medium text-sm ${theme.text}`}>{val||"N/A"}</p></div>
                                        ))}
                                      </div>

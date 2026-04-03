@@ -2226,7 +2226,7 @@ export default function ReceptionistDashboard() {
                                   </div>
                                   {selectedLead.source==="Channel Partner"&&(
                                     <div className={`mt-2 pt-2 border-t grid grid-cols-1 sm:grid-cols-2 gap-3 ${t.tableBorder}`}>
-                                      {[{label:"CP Company",val:selectedLead.cpCompany},{label:"CP Phone",val:selectedLead.cpPhone}].map(({label,val})=>(
+                                      {[{label:"CP Company",val:selectedLead.cp_company || selectedLead.cpCompany},{label:"CP Phone",val:selectedLead.cp_phone || selectedLead.cpPhone}].map(({label,val})=>(
                                         <div key={label}><p className={`text-xs font-medium mb-1 ${t.textFaint}`}>{label}</p><p className={`font-medium text-sm ${t.text}`}>{val||"N/A"}</p></div>
                                       ))}
                                     </div>
@@ -2349,7 +2349,7 @@ export default function ReceptionistDashboard() {
                 <div className="overflow-x-auto custom-scrollbar">
                   <table className="w-full text-left border-collapse whitespace-nowrap">
                     <thead><tr className={t.tableHead}>
-                      {["Lead No.","Client Name","CP Company","Budget","Phone","Alt. Phone","Date Created","Assigned to Receptionist","Status","Actions"].map(h => (
+                      {["Lead No.","Client Name","CP Details","Budget","Phone","Alt. Phone","Date Created","Assigned to Receptionist","Status","Actions"].map(h => (
                         <th key={h} className={`px-3 py-3 md:p-4 font-bold uppercase tracking-wider border-b ${t.textHeader} ${t.tableBorder}`}>{h}</th>
                       ))}
                     </tr></thead>
@@ -2366,7 +2366,16 @@ export default function ReceptionistDashboard() {
                         <tr key={lead.id} className={`transition-colors ${t.tableRow}`}>
                           <td className={`px-3 py-3 md:p-4 text-xs md:text-sm font-bold ${t.accentText}`}>#{lead.id}</td>
                           <td className={`px-3 py-3 md:p-4 text-xs md:text-sm font-semibold ${t.text}`}>{lead.name}</td>
-                          <td className={`px-3 py-3 md:p-4 text-[10px] md:text-sm truncate max-w-[100px] ${t.textMuted}`}>{lead.cp_company||<span className="italic text-[10px]">—</span>}</td>
+                          <td className={`px-3 py-3 md:p-4 text-[10px] md:text-sm ${t.textMuted}`}>
+                            {(lead.cp_company || lead.cpCompany) ? (
+                              <div className="flex flex-col gap-0.5">
+                                <span className={`font-semibold text-xs ${t.text}`}>{lead.cp_company || lead.cpCompany}</span>
+                                {(lead.cp_phone || lead.cpPhone) && (
+                                  <span className="font-mono text-[10px] text-orange-400">{lead.cp_phone || lead.cpPhone}</span>
+                                )}
+                              </div>
+                            ) : <span className="italic text-[10px]">—</span>}
+                          </td>
                           <td className={`px-3 py-3 md:p-4 text-xs md:text-sm font-bold ${isDark?"text-green-700":"text-emerald-600"}`}>{lead.salesBudget||lead.budget}</td>
                           <td className={`px-3 py-3 md:p-4 text-[10px] md:text-sm font-mono ${t.text}`}>{maskPhone(lead.phone)}</td>
                           <td className={`px-3 py-3 md:p-4 text-[10px] md:text-sm font-mono ${t.textMuted}`}>{maskPhone(lead.altPhone)}</td>
