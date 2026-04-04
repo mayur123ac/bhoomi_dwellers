@@ -1595,6 +1595,11 @@ function CallerControlMode({ leads, savedLeads, setSavedLeads, adminName, onExit
   const [noteInput, setNoteInput]   = useState("");
   const [searchTerm, setSearchTerm] = useState("");
 
+    // ── Lazy load state ───────────────────────────────────────────────────────────
+  const [visibleCount, setVisibleCount] = useState(20);
+  const loadMoreRef                     = useRef<HTMLDivElement>(null);
+  const loadLessRef                     = useRef<HTMLDivElement>(null);
+
   const fmtDate = (ds?: string) => {
     if (!ds) return "—";
     try { return new Date(ds).toLocaleDateString("en-IN", { day:"2-digit", month:"short", year:"numeric", hour:"2-digit", minute:"2-digit" }); }
@@ -1652,7 +1657,47 @@ function CallerControlMode({ leads, savedLeads, setSavedLeads, adminName, onExit
   const interestedLeads = savedLeads.filter(l => l.interestStatus === "Interested");
   const notIntLeads     = savedLeads.filter(l => l.status === "not_interested");
   const filtered        = leads.filter(l => (l.name||"").toLowerCase().includes(searchTerm.toLowerCase()) || String(l.id).includes(searchTerm));
+  // ── Current section total (drives the bottom sentinel) ───────────────────────
+const currentSectionTotal = useMemo(() => {
+  if (section === "dashboard")     return filtered.length;
+  if (section === "forms")         return formLeads.length;
+  if (section === "interested")    return interestedLeads.length;
+  if (section === "not_interested") return notIntLeads.length;
+  return 0;
+}, [section, filtered.length, formLeads.length, interestedLeads.length, notIntLeads.length]);
 
+// ── Bottom sentinel: load 20 more on scroll down ──────────────────────────────
+useEffect(() => {
+  const observer = new IntersectionObserver(
+    (entries) => {
+      if (entries[0].isIntersecting) {
+        setVisibleCount(prev => Math.min(prev + 20, currentSectionTotal));
+      }
+    },
+    { threshold: 0.1 }
+  );
+  if (loadMoreRef.current) observer.observe(loadMoreRef.current);
+  return () => observer.disconnect();
+}, [currentSectionTotal]);
+
+  // ── Top sentinel: unload back to 20 when scrolled fully back up ───────────────
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && visibleCount > 20) {
+          setVisibleCount(20);
+        }
+      },
+      { threshold: 1.0 }
+    );
+    if (loadLessRef.current) observer.observe(loadLessRef.current);
+    return () => observer.disconnect();
+  }, [visibleCount]);
+
+  // ── Reset count when section changes ─────────────────────────────────────────
+  useEffect(() => {
+    setVisibleCount(20);
+  }, [section]);
   const sidebarItems = [
     { id:"dashboard",      icon:FaThLarge,       label:"Dashboard",     badge:null,                   dot:"bg-orange-500" },
     { id:"forms",          icon:FaClipboardList, label:"Forms",         badge:formLeads.length,       dot:"bg-orange-500" },
@@ -1739,14 +1784,15 @@ function CallerControlMode({ leads, savedLeads, setSavedLeads, adminName, onExit
         <main className="flex-1 overflow-y-auto p-6 bg-[#0a0a0a] custom-scrollbar">
 
           {/* DASHBOARD */}
+       
           {section === "dashboard" && !detailLead && (
             <div className="animate-fadeIn space-y-6">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {[
-                  { label:"Total Leads",   value:leads.length,          color:"text-white",      bg:"bg-orange-500/10 border-orange-500/20" },
-                  { label:"Saved to Forms",value:savedLeads.length,     color:"text-orange-400", bg:"bg-orange-500/10 border-orange-500/20" },
-                  { label:"Interested",    value:interestedLeads.length, color:"text-green-400",  bg:"bg-green-500/10 border-green-500/20" },
-                  { label:"Not Interested",value:notIntLeads.length,    color:"text-red-400",    bg:"bg-red-500/10 border-red-500/20" },
+                  { label:"Total Leads",    value:leads.length,           color:"text-white",      bg:"bg-orange-500/10 border-orange-500/20" },
+                  { label:"Saved to Forms", value:savedLeads.length,      color:"text-orange-400", bg:"bg-orange-500/10 border-orange-500/20" },
+                  { label:"Interested",     value:interestedLeads.length,  color:"text-green-400",  bg:"bg-green-500/10 border-green-500/20" },
+                  { label:"Not Interested", value:notIntLeads.length,     color:"text-red-400",    bg:"bg-red-500/10 border-red-500/20" },
                 ].map(s => (
                   <div key={s.label} className={`rounded-2xl p-5 border ${s.bg}`}>
                     <p className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-2">{s.label}</p>
@@ -1765,6 +1811,10 @@ function CallerControlMode({ leads, savedLeads, setSavedLeads, adminName, onExit
                   <span className="text-[10px] text-gray-500 bg-[#222] px-2 py-0.5 rounded border border-[#333]">{filtered.length} leads · Click any row to open ticket</span>
                 </div>
                 <div className="overflow-x-auto">
+
+                  {/* ── TOP SENTINEL ── */}
+                  <div ref={loadLessRef} style={{ height: "1px", width: "100%" }} />
+
                   <table className="w-full text-left text-sm text-gray-400">
                     <thead className="text-[11px] uppercase bg-[#1a1a1a] text-gray-500">
                       <tr>{["#","Name","Contact No.","Source","Channel Partner","Assign Manager","Feedback","Interest","Status"].map(h => (
@@ -1772,37 +1822,240 @@ function CallerControlMode({ leads, savedLeads, setSavedLeads, adminName, onExit
                       ))}</tr>
                     </thead>
                     <tbody className="divide-y divide-[#1a1a1a]">
-                      {filtered.length === 0 ? <tr><td colSpan={9} className="px-4 py-8 text-center text-gray-600">No leads found.</td></tr>
-                      : filtered.map((lead: any) => {
-                          const saved = isLeadSaved(lead.id);
-                          const sl    = savedLeads.find(l => l.id === lead.id);
-                          return (
-                            <tr key={lead.id} onClick={() => setTicketLead(lead)} className="hover:bg-[#1a1a1a] transition-colors cursor-pointer group align-middle">
-                              <td className="px-4 py-3 font-mono text-orange-400 font-bold">#{lead.id}</td>
-                              <td className="px-4 py-3 text-white font-semibold group-hover:text-orange-300 whitespace-nowrap">{lead.name}</td>
-                              <td className="px-4 py-3 font-mono text-sm">{mPhone(lead.contact_no||lead.phone)}</td>
-                              <td className="px-4 py-3 text-gray-300">{lead.source || "—"}</td>
-                              <td className="px-4 py-3 text-gray-300 whitespace-nowrap">{lead.channel_partner || "—"}</td>
-                              <td className="px-4 py-3 text-gray-300 whitespace-nowrap">{lead.assign_manager||lead.assignManager||"—"}</td>
-                              <td className="px-4 py-3 max-w-[150px]">
-                                {lead.feedback
-                                  ? <span className="text-xs text-yellow-300 bg-yellow-500/10 border border-yellow-500/20 rounded-lg px-2 py-1 inline-block truncate max-w-[130px]" title={lead.feedback}>{lead.feedback}</span>
-                                  : <span className="text-gray-600 italic text-xs">—</span>}
-                              </td>
-                              <td className="px-4 py-3 align-middle">{iBadge(sl?.interestStatus)}</td>
-                              <td className="px-4 py-3">
-                                {saved
-                                  ? <span className="text-[10px] font-bold text-green-400 bg-green-500/10 border border-green-500/30 px-2 py-0.5 rounded-full">Saved</span>
-                                  : <span className="text-[10px] font-bold text-gray-500 bg-[#222] border border-[#333] px-2 py-0.5 rounded-full">New</span>}
-                              </td>
-                            </tr>
-                          );
-                        })
+                      {filtered.length === 0
+                        ? <tr><td colSpan={9} className="px-4 py-8 text-center text-gray-600">No leads found.</td></tr>
+                        : filtered.slice(0, visibleCount).map((lead: any) => {
+                            const saved = isLeadSaved(lead.id);
+                            const sl    = savedLeads.find(l => l.id === lead.id);
+                            return (
+                              <tr key={lead.id} onClick={() => setTicketLead(lead)} className="hover:bg-[#1a1a1a] transition-colors cursor-pointer group align-middle">
+                                <td className="px-4 py-3 font-mono text-orange-400 font-bold">#{lead.id}</td>
+                                <td className="px-4 py-3 text-white font-semibold group-hover:text-orange-300 whitespace-nowrap">{lead.name}</td>
+                                <td className="px-4 py-3 font-mono text-sm">{mPhone(lead.contact_no||lead.phone)}</td>
+                                <td className="px-4 py-3 text-gray-300">{lead.source || "—"}</td>
+                                <td className="px-4 py-3 text-gray-300 whitespace-nowrap">{lead.channel_partner || "—"}</td>
+                                <td className="px-4 py-3 text-gray-300 whitespace-nowrap">{lead.assign_manager||lead.assignManager||"—"}</td>
+                                <td className="px-4 py-3 max-w-[150px]">
+                                  {lead.feedback
+                                    ? <span className="text-xs text-yellow-300 bg-yellow-500/10 border border-yellow-500/20 rounded-lg px-2 py-1 inline-block truncate max-w-[130px]" title={lead.feedback}>{lead.feedback}</span>
+                                    : <span className="text-gray-600 italic text-xs">—</span>}
+                                </td>
+                                <td className="px-4 py-3 align-middle">{iBadge(sl?.interestStatus)}</td>
+                                <td className="px-4 py-3">
+                                  {saved
+                                    ? <span className="text-[10px] font-bold text-green-400 bg-green-500/10 border border-green-500/30 px-2 py-0.5 rounded-full">Saved</span>
+                                    : <span className="text-[10px] font-bold text-gray-500 bg-[#222] border border-[#333] px-2 py-0.5 rounded-full">New</span>}
+                                </td>
+                              </tr>
+                            );
+                          })
                       }
                     </tbody>
                   </table>
+
+                  {/* ── BOTTOM SENTINEL ── */}
+                  {visibleCount < filtered.length && (
+                    <div ref={loadMoreRef} className="flex items-center justify-center gap-3 py-6 text-gray-500">
+                      <div className="w-4 h-4 rounded-full border-2 border-orange-500 border-t-transparent animate-spin"/>
+                      <span className="text-xs font-medium">Loading more… ({visibleCount} of {filtered.length})</span>
+                    </div>
+                  )}
+                  {visibleCount >= filtered.length && filtered.length > 20 && (
+                    <div className="text-center py-4 text-xs font-medium text-gray-600">
+                      ✓ All {filtered.length} leads loaded
+                    </div>
+                  )}
+
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* FORMS — card grid with slice */}
+          {section === "forms" && !detailLead && (
+            <div className="animate-fadeIn">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-bold text-white flex items-center gap-2"><FaClipboardList className="text-orange-400"/> Saved Forms</h2>
+                <span className="text-xs text-gray-500 bg-[#1a1a1a] border border-[#222] px-3 py-1.5 rounded-full">{formLeads.length} leads</span>
+              </div>
+              {formLeads.length === 0
+                ? <div className="border-2 border-dashed border-[#2a2a2a] rounded-2xl p-16 text-center text-gray-600"><FaSave className="text-5xl mx-auto mb-4 opacity-20"/><p className="font-semibold mb-1">No saved leads yet</p></div>
+                : <>
+                    {/* ── TOP SENTINEL ── */}
+                    <div ref={loadLessRef} style={{ height: "1px", width: "100%" }} />
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+                      {formLeads.slice(0, visibleCount).map((lead: any) => (
+                        <div key={lead.id} onClick={() => setDetailLead(lead)}
+                          className="bg-[#1a1a1a] border border-[#2a2a2a] hover:border-orange-500/50 rounded-2xl p-5 cursor-pointer transition-all group">
+                          <div className="flex justify-between items-start mb-4 pb-3 border-b border-[#2a2a2a]">
+                            <div>
+                              <p className="text-[10px] text-orange-400 font-bold mb-1">#{lead.id}</p>
+                              <h3 className="text-white font-bold group-hover:text-orange-300 transition-colors">{lead.name}</h3>
+                            </div>
+                            {lead.interestStatus ? iBadge(lead.interestStatus) : <span className="text-[10px] font-bold text-gray-500 bg-[#222] border border-[#333] px-2 py-0.5 rounded-full">Pending</span>}
+                          </div>
+                          <div className="space-y-2 text-sm">
+                            <p className="text-gray-400 flex items-center gap-2 text-xs"><FaPhoneAlt className="text-[10px]"/>{mPhone(lead.contact_no||lead.phone)}</p>
+                            {(lead.channel_partner||lead.channelPartner) && <p className="text-gray-400 text-xs flex items-center gap-2"><FaUserTie className="text-[10px]"/>{lead.channel_partner||lead.channelPartner}</p>}
+                            {lead.feedback && <p className="text-yellow-400 text-xs truncate">{lead.feedback}</p>}
+                            {lead.siteVisitDate && <p className="text-orange-400 text-xs flex items-center gap-1"><FaCalendarAlt className="text-[9px]"/>{fmtDate(lead.siteVisitDate).split(",")[0]}</p>}
+                            {(lead.followUps||[]).length > 0 && <p className="text-[#d946a8] text-xs">{lead.followUps.length} follow-up{lead.followUps.length>1?"s":""}</p>}
+                          </div>
+                          <div className="mt-4 pt-3 border-t border-[#2a2a2a] flex justify-between items-center">
+                            <span className="text-[10px] text-gray-600">{fmtDate(lead.savedAt).split(",")[0]}</span>
+                            <span className="text-[10px] font-bold text-gray-500 group-hover:text-orange-400 transition-colors">Open →</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* ── BOTTOM SENTINEL ── */}
+                    {visibleCount < formLeads.length && (
+                      <div ref={loadMoreRef} className="flex items-center justify-center gap-3 py-6 text-gray-500 mt-4">
+                        <div className="w-4 h-4 rounded-full border-2 border-orange-500 border-t-transparent animate-spin"/>
+                        <span className="text-xs font-medium">Loading more… ({visibleCount} of {formLeads.length})</span>
+                      </div>
+                    )}
+                    {visibleCount >= formLeads.length && formLeads.length > 20 && (
+                      <div className="text-center py-4 text-xs font-medium text-gray-600 mt-2">
+                        ✓ All {formLeads.length} leads loaded
+                      </div>
+                    )}
+                  </>
+              }
+            </div>
+          )}
+
+          {/* INTERESTED */}
+          {section === "interested" && !detailLead && (
+            <div className="animate-fadeIn">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-bold text-white flex items-center gap-2"><FaHeart className="text-green-400"/> Interested Leads</h2>
+                <span className="text-xs text-gray-500 bg-[#1a1a1a] border border-[#222] px-3 py-1.5 rounded-full">{interestedLeads.length} leads</span>
+              </div>
+              {interestedLeads.length === 0
+                ? <div className="border-2 border-dashed border-[#2a2a2a] rounded-2xl p-16 text-center text-gray-600"><FaHeart className="text-5xl mx-auto mb-4 opacity-20"/><p className="font-semibold">No interested leads yet</p></div>
+                : <div className="bg-[#111111] border border-[#222] rounded-2xl overflow-hidden">
+                    <div className="overflow-x-auto">
+
+                      {/* ── TOP SENTINEL ── */}
+                      <div ref={loadLessRef} style={{ height: "1px", width: "100%" }} />
+
+                      <table className="w-full text-left text-sm text-gray-400">
+                        <thead className="text-[11px] uppercase bg-[#1a1a1a] text-gray-500">
+                          <tr>{["#","Name","Contact No.","Source","Channel Partner","Assign Manager","Feedback","Follow-ups","Site Visit","Saved On","Actions"].map(h => (
+                            <th key={h} className={`px-4 py-3 border-b border-[#222] whitespace-nowrap ${h==="Actions"?"text-center":""}`}>{h}</th>
+                          ))}</tr>
+                        </thead>
+                        <tbody className="divide-y divide-[#1a1a1a]">
+                          {interestedLeads.slice(0, visibleCount).map((lead: any) => (
+                            <tr key={lead.id} className="hover:bg-[#1a1a1a] transition-colors group align-middle">
+                              <td className="px-4 py-3 font-mono text-green-400 font-bold">#{lead.id}</td>
+                              <td className="px-4 py-3 text-white font-semibold whitespace-nowrap">{lead.name}</td>
+                              <td className="px-4 py-3 font-mono text-sm">{mPhone(lead.contact_no||lead.phone)}</td>
+                              <td className="px-4 py-3 text-gray-300">{lead.source||"—"}</td>
+                              <td className="px-4 py-3 text-gray-300 whitespace-nowrap">{lead.channel_partner||lead.channelPartner||"—"}</td>
+                              <td className="px-4 py-3 text-gray-300 whitespace-nowrap">{lead.assign_manager||lead.assignManager||"—"}</td>
+                              <td className="px-4 py-3 max-w-[150px]">
+                                {lead.feedback ? <span className="text-xs text-yellow-300 bg-yellow-500/10 border border-yellow-500/20 rounded-lg px-2 py-1 inline-block truncate max-w-[130px]" title={lead.feedback}>{lead.feedback}</span> : <span className="text-gray-600 italic text-xs">—</span>}
+                              </td>
+                              <td className="px-4 py-3"><span className="text-[10px] bg-[#222] border border-[#333] px-2 py-0.5 rounded-full font-bold">{(lead.followUps||[]).length} notes</span></td>
+                              <td className="px-4 py-3 text-[11px]">{lead.siteVisitDate ? <span className="text-orange-400">{fmtDate(lead.siteVisitDate).split(",")[0]}</span> : <span className="text-gray-600">—</span>}</td>
+                              <td className="px-4 py-3 text-[11px] text-gray-500 whitespace-nowrap">{fmtDate(lead.savedAt).split(",")[0]}</td>
+                              <td className="px-4 py-3 text-center">
+                                <button onClick={() => setDetailLead(lead)} className="text-gray-500 hover:text-green-400 cursor-pointer text-xs flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-green-500/10 border border-transparent hover:border-green-500/20 mx-auto">
+                                  <FaEye className="text-[10px]"/> View
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+
+                      {/* ── BOTTOM SENTINEL ── */}
+                      {visibleCount < interestedLeads.length && (
+                        <div ref={loadMoreRef} className="flex items-center justify-center gap-3 py-6 text-gray-500">
+                          <div className="w-4 h-4 rounded-full border-2 border-green-500 border-t-transparent animate-spin"/>
+                          <span className="text-xs font-medium">Loading more… ({visibleCount} of {interestedLeads.length})</span>
+                        </div>
+                      )}
+                      {visibleCount >= interestedLeads.length && interestedLeads.length > 20 && (
+                        <div className="text-center py-4 text-xs font-medium text-gray-600">
+                          ✓ All {interestedLeads.length} leads loaded
+                        </div>
+                      )}
+
+                    </div>
+                  </div>
+              }
+            </div>
+          )}
+
+          {/* NOT INTERESTED */}
+          {section === "not_interested" && !detailLead && (
+            <div className="animate-fadeIn">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-bold text-white flex items-center gap-2"><FaTimesCircle className="text-red-400"/> Not Interested</h2>
+                <span className="text-xs text-gray-500 bg-[#1a1a1a] border border-[#222] px-3 py-1.5 rounded-full">{notIntLeads.length} leads</span>
+              </div>
+              {notIntLeads.length === 0
+                ? <div className="border-2 border-dashed border-[#2a2a2a] rounded-2xl p-16 text-center text-gray-600"><FaTimesCircle className="text-5xl mx-auto mb-4 opacity-20"/><p className="font-semibold">No rejected leads</p></div>
+                : <div className="bg-[#111111] border border-[#222] rounded-2xl overflow-hidden">
+                    <div className="overflow-x-auto">
+
+                      {/* ── TOP SENTINEL ── */}
+                      <div ref={loadLessRef} style={{ height: "1px", width: "100%" }} />
+
+                      <table className="w-full text-left text-sm text-gray-400">
+                        <thead className="text-[11px] uppercase bg-[#1a1a1a] text-gray-500">
+                          <tr>{["#","Name","Contact No.","Source","Channel Partner","Assign Manager","Feedback","Follow-ups","Saved On","Actions"].map(h => (
+                            <th key={h} className={`px-5 py-3 border-b border-[#222] whitespace-nowrap ${h==="Actions"?"text-center":""}`}>{h}</th>
+                          ))}</tr>
+                        </thead>
+                        <tbody className="divide-y divide-[#1a1a1a]">
+                          {notIntLeads.slice(0, visibleCount).map((lead: any) => (
+                            <tr key={lead.id} className="hover:bg-[#1a1a1a] transition-colors group">
+                              <td className="px-5 py-3 font-mono text-red-400 font-bold">#{lead.id}</td>
+                              <td className="px-5 py-3 text-white font-semibold whitespace-nowrap">{lead.name}</td>
+                              <td className="px-5 py-3 font-mono text-sm">{mPhone(lead.contact_no||lead.phone)}</td>
+                              <td className="px-5 py-3 text-gray-300">{lead.source||"—"}</td>
+                              <td className="px-5 py-3 text-gray-300 whitespace-nowrap">{lead.channel_partner||lead.channelPartner||"—"}</td>
+                              <td className="px-5 py-3 text-gray-300 whitespace-nowrap">{lead.assign_manager||lead.assignManager||"—"}</td>
+                              <td className="px-5 py-3 max-w-[150px] truncate text-yellow-300 text-xs">{lead.feedback||"—"}</td>
+                              <td className="px-5 py-3"><span className="text-[10px] bg-[#222] border border-[#333] px-2 py-0.5 rounded-full font-bold">{(lead.followUps||[]).length} notes</span></td>
+                              <td className="px-5 py-3 text-[11px] text-gray-500 whitespace-nowrap">{fmtDate(lead.savedAt).split(",")[0]}</td>
+                              <td className="px-5 py-3">
+                                <div className="flex items-center gap-2 justify-center">
+                                  <button onClick={() => setDetailLead(lead)} className="text-gray-500 hover:text-[#d946a8] cursor-pointer text-xs flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-[#9E217B]/10 border border-transparent hover:border-[#9E217B]/20">
+                                    <FaEye className="text-[10px]"/> View
+                                  </button>
+                                  <button onClick={() => revertLead(lead.id)} className="text-gray-500 hover:text-green-400 cursor-pointer text-xs flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-green-500/10 border border-transparent hover:border-green-500/20">
+                                    <FaAngleLeft className="text-[10px]"/> Revert
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+
+                      {/* ── BOTTOM SENTINEL ── */}
+                      {visibleCount < notIntLeads.length && (
+                        <div ref={loadMoreRef} className="flex items-center justify-center gap-3 py-6 text-gray-500">
+                          <div className="w-4 h-4 rounded-full border-2 border-red-500 border-t-transparent animate-spin"/>
+                          <span className="text-xs font-medium">Loading more… ({visibleCount} of {notIntLeads.length})</span>
+                        </div>
+                      )}
+                      {visibleCount >= notIntLeads.length && notIntLeads.length > 20 && (
+                        <div className="text-center py-4 text-xs font-medium text-gray-600">
+                          ✓ All {notIntLeads.length} leads loaded
+                        </div>
+                      )}
+
+                    </div>
+                  </div>
+              }
             </div>
           )}
 
