@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import twilio from "twilio";
+const twilio = (await import("twilio")).default;
 
 const { AccessToken } = twilio.jwt;
 const { VoiceGrant }  = AccessToken;
