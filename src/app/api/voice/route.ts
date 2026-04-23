@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 const twilio = (await import("twilio")).default;
-
+export const runtime = "nodejs";
 export async function POST(req: NextRequest) {
   const body  = await req.formData();
   const to    = body.get("To") as string;
