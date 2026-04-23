@@ -23,40 +23,40 @@ const PAGE_SIZE = 20;
 const CARDS_PER_PAGE = 20;
 
 const MONTH_NAMES = [
-  "January","February","March","April","May","June",
-  "July","August","September","October","November","December"
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December"
 ];
 
 const NAV_ITEMS = [
-  { id: "overview",      icon: <FaThLarge className="w-5 h-5" />,       title: "Dashboard" },
-  { id: "forms",         icon: <FaClipboardList className="w-5 h-5" />, title: "Forms List" },
-  { id: "assigned",      icon: <FaFileInvoice className="w-5 h-5" />,   title: "Assigned Forms" },
-  { id: "recep-leads",   icon: <FaUsers className="w-5 h-5" />,         title: "Receptionist Leads" },
-  { id: "closed-leads",  icon: <FaCheckCircle className="w-5 h-5" />,   title: "Closed Leads" },
-  { id: "assistant",     icon: <FaRobot className="w-5 h-5" />,         title: "CRM AI Assistant" },
+  { id: "overview", icon: <FaThLarge className="w-5 h-5" />, title: "Dashboard" },
+  { id: "forms", icon: <FaClipboardList className="w-5 h-5" />, title: "Forms List" },
+  { id: "assigned", icon: <FaFileInvoice className="w-5 h-5" />, title: "Assigned Forms" },
+  { id: "recep-leads", icon: <FaUsers className="w-5 h-5" />, title: "Receptionist Leads" },
+  { id: "closed-leads", icon: <FaCheckCircle className="w-5 h-5" />, title: "Closed Leads" },
+  { id: "assistant", icon: <FaRobot className="w-5 h-5" />, title: "CRM AI Assistant" },
 ];
 
 const LEAD_SOURCES = [
-  "Advertisement","Referral","Exhibition","Channel Partner","Website","Call Center","Others"
+  "Advertisement", "Referral", "Exhibition", "Channel Partner", "Website", "Call Center", "Others"
 ];
 
-const CONFIG_KEYS = ["1 RK","1 BHK","2 BHK","3 BHK","4 BHK","4+ BHK","Other"];
+const CONFIG_KEYS = ["1 RK", "1 BHK", "2 BHK", "3 BHK", "4 BHK", "4+ BHK", "Other"];
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SVG ICONS
 // ─────────────────────────────────────────────────────────────────────────────
 const SunIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="5"/>
-    <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
-    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
-    <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
-    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+    <circle cx="12" cy="12" r="5" />
+    <line x1="12" y1="1" x2="12" y2="3" /><line x1="12" y1="21" x2="12" y2="23" />
+    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" /><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+    <line x1="1" y1="12" x2="3" y2="12" /><line x1="21" y1="12" x2="23" y2="12" />
+    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" /><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
   </svg>
 );
 const MoonIcon = () => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
   </svg>
 );
 
@@ -65,87 +65,87 @@ const MoonIcon = () => (
 // ─────────────────────────────────────────────────────────────────────────────
 function buildTheme(isDark: boolean) {
   return {
-    pageWrap:      isDark ? "bg-[#0A0A0F] text-white"                  : "text-[#1A1A1A]",
-    mainBg:        isDark ? "bg-[#0A0A0F]"                             : "bg-transparent",
-    sidebar:       isDark ? "bg-[#121218] border-[#2A2A35]"            : "bg-[#1A1A1A] border-[#2A2A2A]",
-    header:        isDark ? "bg-[#121218] border-[#2A2A35]"            : "bg-white border-[#9CA3AF]",
-    headerGlass:   isDark ? {}                                         : { boxShadow: "0 1px 0 #9CA3AF, 0 4px 16px rgba(0,174,239,0.06)" },
-    
+    pageWrap: isDark ? "bg-[#0A0A0F] text-white" : "text-[#1A1A1A]",
+    mainBg: isDark ? "bg-[#0A0A0F]" : "bg-transparent",
+    sidebar: isDark ? "bg-[#121218] border-[#2A2A35]" : "bg-[#1A1A1A] border-[#2A2A2A]",
+    header: isDark ? "bg-[#121218] border-[#2A2A35]" : "bg-white border-[#9CA3AF]",
+    headerGlass: isDark ? {} : { boxShadow: "0 1px 0 #9CA3AF, 0 4px 16px rgba(0,174,239,0.06)" },
+
     // ── Cards (No intense glow in light mode, border changes to Magenta on hover) ──
-    card:          isDark
+    card: isDark
       ? "bg-[#121218] border-[#2A2A35] transition-all duration-300 hover:border-[#d4006e]/50 hover:shadow-2xl hover:shadow-[#d4006e]/20"
       : "bg-gradient-to-r from-[#f1f5ff] via-[#eef2ff] to-[#f5f3ff] border-[#9CA3AF] transition-all duration-300 hover:border-[#9E217B] hover:shadow-xl",
-    cardGlass:     isDark ? {}                                         : { boxShadow: "0 1px 2px rgba(0,0,0,0.04), 0 4px 12px rgba(0,174,239,0.07)" },
-    
-    tableWrap:     isDark ? "bg-[#121218] border-[#2A2A35]"            : "bg-white border-[#9CA3AF]",
-    tableGlass:    isDark ? {}                                         : { boxShadow: "0 1px 2px rgba(0,0,0,0.04), 0 4px 12px rgba(158,33,123,0.06), 0 16px 36px rgba(0,0,0,0.09)" },
-    tableHead:     isDark ? "bg-[#1A1A28]"                             : "bg-[#F1F5F9]",
-    tableRow:      isDark ? "hover:bg-[#1C1C2A]"                       : "hover:bg-[#F8FAFC]",
-    tableDivide:   isDark ? "divide-[#1E1E2A]"                         : "divide-[#9CA3AF]",
-    tableBorder:   isDark ? "border-[#2A2A35]"                         : "border-[#9CA3AF]",
-    inputBg:       isDark ? "bg-[#14141B] border-[#2A2A35]"            : "bg-white border-[#9CA3AF]",
-    modalCard:     isDark ? "bg-[#121218] border-[#2A2A35]"            : "bg-white border-[#9CA3AF]",
-    modalGlass:    isDark ? {}                                         : { boxShadow: "0 2px 4px rgba(0,0,0,0.04), 0 8px 24px rgba(0,174,239,0.08), 0 32px 72px rgba(0,0,0,0.16)" },
-    modalInner:    isDark ? "bg-[#0A0A0F]"                             : "bg-[#F8FAFC]",
-    modalHeader:   isDark ? "bg-[#1A1A28]"                             : "bg-[#F1F5F9]",
-    modalBlock:    isDark ? "bg-[#14141B] border-[#1E1E2A]"            : "bg-white border-[#9CA3AF]",
-    modalBlockGl:  isDark ? {}                                         : { boxShadow: "0 1px 2px rgba(0,0,0,0.03), 0 3px 8px rgba(0,174,239,0.05)" },
-    modalInput:    isDark ? "bg-[#14141B] border-[#2A2A35]"            : "bg-white border-[#9CA3AF]",
-    settingsBg:    isDark ? "bg-[#14141B] border-[#2A2A35]"            : "bg-[#F8FAFC] border-[#9CA3AF]",
-    settingsBgGl:  isDark ? {}                                         : { boxShadow: "inset 0 1px 3px rgba(0,0,0,0.04)" },
-    innerBlock:    isDark ? "bg-[#121212] border-[#333]"               : "bg-white border-[#D1D5DB]",
-    inputInner:    isDark ? "bg-[#14141B] border-[#2A2A35]"            : "bg-white border-[#9CA3AF]",
-    inputFocus:    isDark ? "focus:border-[#9E217B]"                   : "focus:border-[#00AEEF]",
-    dropdown:      isDark ? "bg-[#121218] border-[#2A2A35]"            : "bg-white border-[#9CA3AF]",
-    dropdownGlass: isDark ? {}                                         : { boxShadow: "0 2px 4px rgba(0,0,0,0.04), 0 8px 20px rgba(0,174,239,0.08), 0 20px 40px rgba(0,0,0,0.10)" },
-    
+    cardGlass: isDark ? {} : { boxShadow: "0 1px 2px rgba(0,0,0,0.04), 0 4px 12px rgba(0,174,239,0.07)" },
+
+    tableWrap: isDark ? "bg-[#121218] border-[#2A2A35]" : "bg-white border-[#9CA3AF]",
+    tableGlass: isDark ? {} : { boxShadow: "0 1px 2px rgba(0,0,0,0.04), 0 4px 12px rgba(158,33,123,0.06), 0 16px 36px rgba(0,0,0,0.09)" },
+    tableHead: isDark ? "bg-[#1A1A28]" : "bg-[#F1F5F9]",
+    tableRow: isDark ? "hover:bg-[#1C1C2A]" : "hover:bg-[#F8FAFC]",
+    tableDivide: isDark ? "divide-[#1E1E2A]" : "divide-[#9CA3AF]",
+    tableBorder: isDark ? "border-[#2A2A35]" : "border-[#9CA3AF]",
+    inputBg: isDark ? "bg-[#14141B] border-[#2A2A35]" : "bg-white border-[#9CA3AF]",
+    modalCard: isDark ? "bg-[#121218] border-[#2A2A35]" : "bg-white border-[#9CA3AF]",
+    modalGlass: isDark ? {} : { boxShadow: "0 2px 4px rgba(0,0,0,0.04), 0 8px 24px rgba(0,174,239,0.08), 0 32px 72px rgba(0,0,0,0.16)" },
+    modalInner: isDark ? "bg-[#0A0A0F]" : "bg-[#F8FAFC]",
+    modalHeader: isDark ? "bg-[#1A1A28]" : "bg-[#F1F5F9]",
+    modalBlock: isDark ? "bg-[#14141B] border-[#1E1E2A]" : "bg-white border-[#9CA3AF]",
+    modalBlockGl: isDark ? {} : { boxShadow: "0 1px 2px rgba(0,0,0,0.03), 0 3px 8px rgba(0,174,239,0.05)" },
+    modalInput: isDark ? "bg-[#14141B] border-[#2A2A35]" : "bg-white border-[#9CA3AF]",
+    settingsBg: isDark ? "bg-[#14141B] border-[#2A2A35]" : "bg-[#F8FAFC] border-[#9CA3AF]",
+    settingsBgGl: isDark ? {} : { boxShadow: "inset 0 1px 3px rgba(0,0,0,0.04)" },
+    innerBlock: isDark ? "bg-[#121212] border-[#333]" : "bg-white border-[#D1D5DB]",
+    inputInner: isDark ? "bg-[#14141B] border-[#2A2A35]" : "bg-white border-[#9CA3AF]",
+    inputFocus: isDark ? "focus:border-[#9E217B]" : "focus:border-[#00AEEF]",
+    dropdown: isDark ? "bg-[#121218] border-[#2A2A35]" : "bg-white border-[#9CA3AF]",
+    dropdownGlass: isDark ? {} : { boxShadow: "0 2px 4px rgba(0,0,0,0.04), 0 8px 20px rgba(0,174,239,0.08), 0 20px 40px rgba(0,0,0,0.10)" },
+
     // ── Chat (Gray background, dark border, black text in light mode) ──
-    chatArea:      isDark ? "bg-[#0A0A0F]"                             : "bg-[#F1F5F9]",
-    chatBubbleAi:  isDark ? "bg-[#1A1A28] text-white border border-[#2A2A35]" : "bg-[#F3F4F6] border border-[#CBD5E1] text-gray-900 font-medium shadow-sm",
-    chatInput:     isDark ? "bg-[#14141B] border-[#2A2A35]"            : "bg-[#F3F4F6] border border-[#64748B] hover:border-[#475569] focus-within:bg-white focus-within:border-[#475569] shadow-inner",
-    chatPanel:     isDark ? "bg-[#121218] border-[#2A2A35]"            : "bg-white border border-[#94A3B8]",
-    chatPanelGl:   isDark ? {}                                         : { boxShadow: "0 1px 2px rgba(0,0,0,0.04), 0 4px 12px rgba(158,33,123,0.06), 0 16px 36px rgba(0,0,0,0.09)" },
-    
-    fupDefault:    isDark ? "bg-[#2a2135] border border-[#4c1d95]"     : "bg-indigo-50 border border-indigo-200",
-    fupLoan:       isDark ? "bg-blue-900/20 border border-blue-600/40" : "bg-blue-50 border border-blue-200",
-    fupSalesform:  isDark ? "bg-[#222] border border-[#444]"           : "bg-white border border-[#D1D5DB]",
-    fupClosing:    isDark ? "bg-yellow-900/20 border border-yellow-600/40" : "bg-amber-50 border border-amber-300",
-    fupTransfer:   isDark ? "bg-purple-900/20 border border-purple-600/40" : "bg-purple-50 border border-purple-300",
-    
-    text:          isDark ? "text-white"                               : "text-[#1A1A1A]",
-    textMuted:     isDark ? "text-[#888899]"                           : "text-[#334155]", // Darker text
-    textFaint:     isDark ? "text-[#55556A]"                           : "text-[#475569]", // Darker faint
-    textHeader:    isDark ? "text-xs text-[#B0B0C4]"                   : "text-xs font-bold text-[#334155]", // Darker headers
-    
-    navActive:     isDark ? "bg-[#1A1A28] text-white"                  : "bg-[#2A2A2A] text-[#9E217B]",
-    navInactive:   isDark ? "text-[#888899] hover:bg-[#1A1A28] hover:text-white" : "text-[#9CA3AF] hover:bg-[#2A2A2A] hover:text-white",
-    navIndicator:  isDark ? "bg-[#9E217B] shadow-[0_0_10px_2px_rgba(158,33,123,0.5)]" : "bg-[#9E217B] shadow-[0_0_8px_rgba(158,33,123,0.4)]",
-    toggleWrap:    isDark ? "bg-[#1C1C2A] border-[#2A2A38] text-yellow-300" : "bg-[#F1F5F9] border-[#9CA3AF] text-[#1A1A1A]",
-    
-    accentText:    isDark ? "text-[#d4006e]"                           : "text-[#00AEEF]",
-    accentBg:      isDark ? "bg-[#9E217B]/10 text-[#d4006e] border border-[#9E217B]/30" : "bg-[#00AEEF]/10 text-[#00AEEF] border border-[#00AEEF]/30",
-    sectionTitle:  isDark ? "text-[#d4006e]"                           : "text-[#9E217B]",
-    sectionBorder: isDark ? "border-[#9E217B]/20"                      : "border-[#9E217B]/25",
-    
+    chatArea: isDark ? "bg-[#0A0A0F]" : "bg-[#F1F5F9]",
+    chatBubbleAi: isDark ? "bg-[#1A1A28] text-white border border-[#2A2A35]" : "bg-[#F3F4F6] border border-[#CBD5E1] text-gray-900 font-medium shadow-sm",
+    chatInput: isDark ? "bg-[#14141B] border-[#2A2A35]" : "bg-[#F3F4F6] border border-[#64748B] hover:border-[#475569] focus-within:bg-white focus-within:border-[#475569] shadow-inner",
+    chatPanel: isDark ? "bg-[#121218] border-[#2A2A35]" : "bg-white border border-[#94A3B8]",
+    chatPanelGl: isDark ? {} : { boxShadow: "0 1px 2px rgba(0,0,0,0.04), 0 4px 12px rgba(158,33,123,0.06), 0 16px 36px rgba(0,0,0,0.09)" },
+
+    fupDefault: isDark ? "bg-[#2a2135] border border-[#4c1d95]" : "bg-indigo-50 border border-indigo-200",
+    fupLoan: isDark ? "bg-blue-900/20 border border-blue-600/40" : "bg-blue-50 border border-blue-200",
+    fupSalesform: isDark ? "bg-[#222] border border-[#444]" : "bg-white border border-[#D1D5DB]",
+    fupClosing: isDark ? "bg-yellow-900/20 border border-yellow-600/40" : "bg-amber-50 border border-amber-300",
+    fupTransfer: isDark ? "bg-purple-900/20 border border-purple-600/40" : "bg-purple-50 border border-purple-300",
+
+    text: isDark ? "text-white" : "text-[#1A1A1A]",
+    textMuted: isDark ? "text-[#888899]" : "text-[#334155]", // Darker text
+    textFaint: isDark ? "text-[#55556A]" : "text-[#475569]", // Darker faint
+    textHeader: isDark ? "text-xs text-[#B0B0C4]" : "text-xs font-bold text-[#334155]", // Darker headers
+
+    navActive: isDark ? "bg-[#1A1A28] text-white" : "bg-[#2A2A2A] text-[#9E217B]",
+    navInactive: isDark ? "text-[#888899] hover:bg-[#1A1A28] hover:text-white" : "text-[#9CA3AF] hover:bg-[#2A2A2A] hover:text-white",
+    navIndicator: isDark ? "bg-[#9E217B] shadow-[0_0_10px_2px_rgba(158,33,123,0.5)]" : "bg-[#9E217B] shadow-[0_0_8px_rgba(158,33,123,0.4)]",
+    toggleWrap: isDark ? "bg-[#1C1C2A] border-[#2A2A38] text-yellow-300" : "bg-[#F1F5F9] border-[#9CA3AF] text-[#1A1A1A]",
+
+    accentText: isDark ? "text-[#d4006e]" : "text-[#00AEEF]",
+    accentBg: isDark ? "bg-[#9E217B]/10 text-[#d4006e] border border-[#9E217B]/30" : "bg-[#00AEEF]/10 text-[#00AEEF] border border-[#00AEEF]/30",
+    sectionTitle: isDark ? "text-[#d4006e]" : "text-[#9E217B]",
+    sectionBorder: isDark ? "border-[#9E217B]/20" : "border-[#9E217B]/25",
+
     // ── Buttons (Hover Scale & Shadow Pop-out) ──
-    btnPrimary:    isDark ? "bg-[#9E217B] hover:bg-[#7a1a5e] text-white shadow-md transform transition-all duration-300 hover:-translate-y-1 hover:scale-[1.03] hover:shadow-lg" : "bg-[#00AEEF] hover:bg-[#0099d4] text-white shadow-sm transform transition-all duration-300 hover:-translate-y-1 hover:scale-[1.03] hover:shadow-lg",
-    btnSecondary:  isDark ? "bg-blue-700 hover:bg-blue-600 text-white shadow-md transform transition-all duration-300 hover:-translate-y-1 hover:scale-[1.03] hover:shadow-lg" : "bg-[#9E217B] hover:bg-[#8a1d6b] text-white shadow-sm transform transition-all duration-300 hover:-translate-y-1 hover:scale-[1.03] hover:shadow-lg",
-    btnWarning:    isDark ? "bg-yellow-600 hover:bg-yellow-500 text-white shadow-md transform transition-all duration-300 hover:-translate-y-1 hover:scale-[1.03] hover:shadow-lg" : "bg-amber-500 hover:bg-amber-400 text-white shadow-sm transform transition-all duration-300 hover:-translate-y-1 hover:scale-[1.03] hover:shadow-lg",
-    btnDanger:     isDark ? "bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white border border-red-500/30 transform transition-all duration-300 hover:-translate-y-1 hover:scale-[1.03] hover:shadow-lg" : "bg-[#9E217B]/10 text-[#9E217B] hover:bg-[#9E217B] hover:text-white border border-[#9E217B]/30 transform transition-all duration-300 hover:-translate-y-1 hover:scale-[1.03] hover:shadow-lg",
-    btnTransfer:   isDark ? "bg-purple-600 hover:bg-purple-500 text-white shadow-md transform transition-all duration-300 hover:-translate-y-1 hover:scale-[1.03] hover:shadow-lg" : "bg-purple-600 hover:bg-purple-700 text-white shadow-sm transform transition-all duration-300 hover:-translate-y-1 hover:scale-[1.03] hover:shadow-lg",
+    btnPrimary: isDark ? "bg-[#9E217B] hover:bg-[#7a1a5e] text-white shadow-md transform transition-all duration-300 hover:-translate-y-1 hover:scale-[1.03] hover:shadow-lg" : "bg-[#00AEEF] hover:bg-[#0099d4] text-white shadow-sm transform transition-all duration-300 hover:-translate-y-1 hover:scale-[1.03] hover:shadow-lg",
+    btnSecondary: isDark ? "bg-blue-700 hover:bg-blue-600 text-white shadow-md transform transition-all duration-300 hover:-translate-y-1 hover:scale-[1.03] hover:shadow-lg" : "bg-[#9E217B] hover:bg-[#8a1d6b] text-white shadow-sm transform transition-all duration-300 hover:-translate-y-1 hover:scale-[1.03] hover:shadow-lg",
+    btnWarning: isDark ? "bg-yellow-600 hover:bg-yellow-500 text-white shadow-md transform transition-all duration-300 hover:-translate-y-1 hover:scale-[1.03] hover:shadow-lg" : "bg-amber-500 hover:bg-amber-400 text-white shadow-sm transform transition-all duration-300 hover:-translate-y-1 hover:scale-[1.03] hover:shadow-lg",
+    btnDanger: isDark ? "bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white border border-red-500/30 transform transition-all duration-300 hover:-translate-y-1 hover:scale-[1.03] hover:shadow-lg" : "bg-[#9E217B]/10 text-[#9E217B] hover:bg-[#9E217B] hover:text-white border border-[#9E217B]/30 transform transition-all duration-300 hover:-translate-y-1 hover:scale-[1.03] hover:shadow-lg",
+    btnTransfer: isDark ? "bg-purple-600 hover:bg-purple-500 text-white shadow-md transform transition-all duration-300 hover:-translate-y-1 hover:scale-[1.03] hover:shadow-lg" : "bg-purple-600 hover:bg-purple-700 text-white shadow-sm transform transition-all duration-300 hover:-translate-y-1 hover:scale-[1.03] hover:shadow-lg",
     scroll: isDark ? "custom-scrollbar" : "custom-scrollbar",
-    logoBg:        isDark ? "bg-[#9E217B] shadow-lg shadow-[#9E217B]/30" : "bg-[#9E217B] shadow-lg shadow-[#9E217B]/30",
-    selectSmall:   isDark ? "bg-[#1A1A28] border-[#2A2A35] text-white" : "bg-white border-[#D1D5DB] text-[#6B7280]",
-    chartColors:   isDark
-      ? ["#d946ef","#8b5cf6","#3b82f6","#0ea5e9","#6b7280","#f59e0b","#10b981"]
-      : ["#00AEEF","#9E217B","#0077b6","#d4006e","#9CA3AF","#f59e0b","#10b981"],
-    tooltipBg:     isDark ? "#1a1a1a" : "rgba(255,255,255,0.98)",
-    tooltipColor:  isDark ? "#fff" : "#1A1A1A",
+    logoBg: isDark ? "bg-[#9E217B] shadow-lg shadow-[#9E217B]/30" : "bg-[#9E217B] shadow-lg shadow-[#9E217B]/30",
+    selectSmall: isDark ? "bg-[#1A1A28] border-[#2A2A35] text-white" : "bg-white border-[#D1D5DB] text-[#6B7280]",
+    chartColors: isDark
+      ? ["#d946ef", "#8b5cf6", "#3b82f6", "#0ea5e9", "#6b7280", "#f59e0b", "#10b981"]
+      : ["#00AEEF", "#9E217B", "#0077b6", "#d4006e", "#9CA3AF", "#f59e0b", "#10b981"],
+    tooltipBg: isDark ? "#1a1a1a" : "rgba(255,255,255,0.98)",
+    tooltipColor: isDark ? "#fff" : "#1A1A1A",
     tooltipBorder: isDark ? "1px solid rgba(158,33,123,0.3)" : "1px solid #E5E7EB",
-    legendColor:   isDark ? "#9ca3af" : "#6B7280",
-    exportBtn:     isDark ? "border-[#2A2A35] hover:border-[#9E217B] hover:text-[#d4006e] text-[#888899]" : "border-[#9CA3AF] hover:border-[#9E217B] hover:text-[#9E217B] text-[#6B7280]",
-    statusRouted:  isDark ? "text-blue-400 border-blue-500/30 bg-blue-500/10"   : "text-[#00AEEF] border-[#00AEEF]/30 bg-[#00AEEF]/10",
-    statusVisit:   isDark ? "text-orange-400 border-orange-500/30 bg-orange-500/10" : "text-orange-500 border-orange-400/40 bg-orange-50",
+    legendColor: isDark ? "#9ca3af" : "#6B7280",
+    exportBtn: isDark ? "border-[#2A2A35] hover:border-[#9E217B] hover:text-[#d4006e] text-[#888899]" : "border-[#9CA3AF] hover:border-[#9E217B] hover:text-[#9E217B] text-[#6B7280]",
+    statusRouted: isDark ? "text-blue-400 border-blue-500/30 bg-blue-500/10" : "text-[#00AEEF] border-[#00AEEF]/30 bg-[#00AEEF]/10",
+    statusVisit: isDark ? "text-orange-400 border-orange-500/30 bg-orange-500/10" : "text-orange-500 border-orange-400/40 bg-orange-50",
     statusClosing: isDark ? "text-yellow-400 border-yellow-500/40 bg-yellow-500/10" : "text-amber-600 border-amber-400/50 bg-amber-50",
   };
 }
@@ -153,14 +153,14 @@ function buildTheme(isDark: boolean) {
 // ─────────────────────────────────────────────────────────────────────────────
 // HELPER BADGES
 // ─────────────────────────────────────────────────────────────────────────────
-function InterestBadge({ status, size = "md" }: { status: string; size?: "sm"|"md" }) {
-  const colorMap: Record<string,string> = {
-    Interested:       "border-green-500/40 text-green-400 bg-green-500/10",
+function InterestBadge({ status, size = "md" }: { status: string; size?: "sm" | "md" }) {
+  const colorMap: Record<string, string> = {
+    Interested: "border-green-500/40 text-green-400 bg-green-500/10",
     "Not Interested": "border-red-500/40 text-red-400 bg-red-500/10",
-    Maybe:            "border-yellow-500/40 text-yellow-400 bg-yellow-500/10",
+    Maybe: "border-yellow-500/40 text-yellow-400 bg-yellow-500/10",
   };
   const cls = colorMap[status] ?? "border-blue-500/30 text-blue-400 bg-blue-500/10";
-  const sz  = size === "sm" ? "text-[9px] px-2 py-0.5" : "text-[10px] px-3 py-1";
+  const sz = size === "sm" ? "text-[9px] px-2 py-0.5" : "text-[10px] px-3 py-1";
   return <span className={`rounded-full font-bold uppercase tracking-wider border flex-shrink-0 ${sz} ${cls}`}>{status}</span>;
 }
 
@@ -168,12 +168,12 @@ function LoanStatusBadge({ status }: { status: string }) {
   const s = (status || "").toLowerCase();
   if (!s || s === "n/a") return null;
   let cls = "border-gray-500/30 text-gray-400 bg-gray-500/10";
-  if (s === "approved")    cls = "border-green-500/40 text-green-400 bg-green-500/10";
-  if (s === "rejected")    cls = "border-red-500/40 text-red-400 bg-red-500/10";
+  if (s === "approved") cls = "border-green-500/40 text-green-400 bg-green-500/10";
+  if (s === "rejected") cls = "border-red-500/40 text-red-400 bg-red-500/10";
   if (s === "in progress") cls = "border-yellow-500/40 text-yellow-400 bg-yellow-500/10";
   return (
     <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider border flex items-center gap-1 flex-shrink-0 ${cls}`}>
-      <FaUniversity className="text-[7px]"/>{status}
+      <FaUniversity className="text-[7px]" />{status}
     </span>
   );
 }
@@ -187,13 +187,13 @@ export default function ReceptionistDashboard() {
   const t = buildTheme(isDark);
 
   // ── User & UI state ──
-  const [user, setUser]                   = useState({ name: "Loading...", role: "Receptionist", email: "", password: "" });
+  const [user, setUser] = useState({ name: "Loading...", role: "Receptionist", email: "", password: "" });
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [activeTab, setActiveTab]         = useState("overview");
-  const [showPassword, setShowPassword]   = useState(false);
-  const [currentTime, setCurrentTime]     = useState(new Date());
+  const [activeTab, setActiveTab] = useState("overview");
+  const [showPassword, setShowPassword] = useState(false);
+  const [currentTime, setCurrentTime] = useState(new Date());
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
-  const [toastMsg, setToastMsg]           = useState<{ title: string; color: string } | null>(null);
+  const [toastMsg, setToastMsg] = useState<{ title: string; color: string } | null>(null);
 
   type CrmNotif = { id: string; line1: string; line2: string; type: "lead" | "visit" };
   const [notifQueue, setNotifQueue] = useState<CrmNotif[]>([]);
@@ -203,8 +203,8 @@ export default function ReceptionistDashboard() {
 
   // ── Enquiry (new-entry) modal ──
   const [isEnquiryModalOpen, setIsEnquiryModalOpen] = useState(false);
-  const [isSubmitting, setIsSubmitting]             = useState(false);
-  const [enquiryForm, setEnquiryForm]               = useState({
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [enquiryForm, setEnquiryForm] = useState({
     fullName: "", mobile: "", altMobile: "", email: "", address: "",
     occupation: "", organization: "", budget: "", configuration: "",
     purpose: "", source: "", assignedTo: "", loanPlanned: "", sourceOther: "",
@@ -214,93 +214,98 @@ export default function ReceptionistDashboard() {
   const [showCpDropdown, setShowCpDropdown] = useState(false);
 
   // ── Data ──
-  const [salesManagers, setSalesManagers]     = useState<any[]>([]);
+  const [salesManagers, setSalesManagers] = useState<any[]>([]);
 
   const [isFetchingManagers, setIsFetchingManagers] = useState(true);
-  const [siteHeads, setSiteHeads]             = useState<any[]>([]);
+  const [siteHeads, setSiteHeads] = useState<any[]>([]);
   const combinedAssignees = useMemo(() => {
     return [...salesManagers, ...siteHeads];
   }, [salesManagers, siteHeads]);
-  const [enquiries, setEnquiries]             = useState<any[]>([]);
-  const [followUps, setFollowUps]             = useState<any[]>([]);
+  const [enquiries, setEnquiries] = useState<any[]>([]);
+  const [followUps, setFollowUps] = useState<any[]>([]);
   const [isFetchingEnquiries, setIsFetchingEnquiries] = useState(true);
-  const [totalCount, setTotalCount]           = useState(0);
-  const [offset, setOffset]                   = useState(0);
-  const [hasMore, setHasMore]                 = useState(true);
-  const [isLoadingMore, setIsLoadingMore]     = useState(false);
-  const [searchRecep, setSearchRecep]         = useState("");
+  const [totalCount, setTotalCount] = useState(0);
+  const [offset, setOffset] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [searchRecep, setSearchRecep] = useState("");
 
   // ── Overview chart state ──
-  const [chartMode1, setChartMode1]           = useState<"today"|"monthly"|"3months"|"6months"|"yearly"|"inception">("today");
+  const [chartMode1, setChartMode1] = useState<"today" | "monthly" | "3months" | "6months" | "yearly" | "inception">("today");
   const [configChartMonth, setConfigChartMonth] = useState(new Date().getMonth());
-  const [card2Mode, setCard2Mode]             = useState<"today"|"monthly"|"3months"|"6months"|"yearly"|"alltime">("monthly");
+  const [card2Mode, setCard2Mode] = useState<"today" | "monthly" | "3months" | "6months" | "yearly" | "alltime">("monthly");
   const [selectedMonthCard, setSelectedMonthCard] = useState(new Date().getMonth());
-  const [card3Mode, setCard3Mode]             = useState<"today"|"monthly"|"3months"|"6months"|"yearly"|"inception">("today");
-  const [card3Month, setCard3Month]           = useState(new Date().getMonth());
-  const [card4Mode, setCard4Mode]             = useState<"today"|"monthly"|"3months"|"6months"|"yearly"|"inception">("monthly");
-  const [card4Month, setCard4Month]           = useState(new Date().getMonth());
+  const [card3Mode, setCard3Mode] = useState<"today" | "monthly" | "3months" | "6months" | "yearly" | "inception">("today");
+  const [card3Month, setCard3Month] = useState(new Date().getMonth());
+  const [card4Mode, setCard4Mode] = useState<"today" | "monthly" | "3months" | "6months" | "yearly" | "inception">("monthly");
+  const [card4Month, setCard4Month] = useState(new Date().getMonth());
 
   // ── Assigned tab (full Sales-Manager panel) ──
-  const [assignedSubView, setAssignedSubView] = useState<"cards"|"detail">("cards");
-  const [selectedLead, setSelectedLead]       = useState<any>(null);
-  const [detailTab, setDetailTab]             = useState<"personal"|"loan">("personal");
-  const [showSalesForm, setShowSalesForm]     = useState(false);
-  const [showLoanForm, setShowLoanForm]       = useState(false);
-  const [salesForm, setSalesForm]             = useState({ propertyType:"",location:"",budget:"",useType:"",purchaseDate:"",loanPlanned:"",siteVisit:"",leadStatus:"" });
-  const [loanForm, setLoanForm]               = useState({ loanRequired:"",status:"",bank:"",amountReq:"",amountApp:"",cibil:"",agent:"",agentContact:"",empType:"",income:"",emi:"",docPan:"Pending",docAadhaar:"Pending",docSalary:"Pending",docBank:"Pending",docProperty:"Pending",notes:"" });
-  const [customNote, setCustomNote]           = useState("");
-  const followUpEndRef                        = useRef<HTMLDivElement>(null);
-  const inputRef                              = useRef<HTMLInputElement>(null);
-  const [searchAssigned, setSearchAssigned]   = useState("");
+  const [assignedSubView, setAssignedSubView] = useState<"cards" | "detail">("cards");
+  const [selectedLead, setSelectedLead] = useState<any>(null);
+  const [detailTab, setDetailTab] = useState<"personal" | "loan">("personal");
+  const [showSalesForm, setShowSalesForm] = useState(false);
+  const [showLoanForm, setShowLoanForm] = useState(false);
+  const [salesForm, setSalesForm] = useState({ propertyType: "", location: "", budget: "", useType: "", purchaseDate: "", loanPlanned: "", siteVisit: "", leadStatus: "" });
+  const [loanForm, setLoanForm] = useState({ loanRequired: "", status: "", bank: "", amountReq: "", amountApp: "", cibil: "", agent: "", agentContact: "", empType: "", income: "", emi: "", docPan: "Pending", docAadhaar: "Pending", docSalary: "Pending", docBank: "Pending", docProperty: "Pending", notes: "" });
+  const [customNote, setCustomNote] = useState("");
+  const followUpEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [searchAssigned, setSearchAssigned] = useState("");
   const [assignedCardsPage, setAssignedCardsPage] = useState(1);
-  const assignedSentinelRef                   = useRef<HTMLDivElement>(null);
+  const assignedSentinelRef = useRef<HTMLDivElement>(null);
 
   // ── Transfer modal ──
-  const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
-  const [transferNote, setTransferNote]       = useState("");
-  const [transferTarget, setTransferTarget]   = useState("");
-  const [isTransferring, setIsTransferring]   = useState(false);
 
+  // const [transferNote, setTransferNote]       = useState("");
+  // const [transferTarget, setTransferTarget]   = useState("");
+  // const [isTransferring, setIsTransferring]   = useState(false);
+  const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);  // keep existing
+
+  // Transfer state (Receptionist Lead → Manager)
+  const [transferNote, setTransferNote] = useState("");
+  const [transferTarget, setTransferTarget] = useState("");
+  const [isTransferring, setIsTransferring] = useState(false);
   // ── Receptionist Leads tab ──
   const [searchRecepLeads, setSearchRecepLeads] = useState("");
-  const recepLeadsSentinelRef                   = useRef<HTMLDivElement>(null);
+  const recepLeadsSentinelRef = useRef<HTMLDivElement>(null);
   // ── Closed Leads tab ──
   const [selectedClosedLead, setSelectedClosedLead] = useState<any>(null);
-  const [closedLeadView, setClosedLeadView]         = useState<"table"|"detail">("table");
-  const [searchClosedLeads, setSearchClosedLeads]   = useState("");
+  const [closedLeadView, setClosedLeadView] = useState<"table" | "detail">("table");
+  const [searchClosedLeads, setSearchClosedLeads] = useState("");
 
   // ── Chat ──
-  const [chatInput, setChatInput]     = useState("");
+  const [chatInput, setChatInput] = useState("");
   const [chatMessages, setChatMessages] = useState([
     { sender: "ai", text: "Hello! I am your CRM Assistant. Ask me about your total leads, or type a client's name to pull up their details!" }
   ]);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
-  const tableSentinelRef  = useRef<HTMLDivElement>(null);
-  const cardsSentinelRef  = useRef<HTMLDivElement>(null);
+  const tableSentinelRef = useRef<HTMLDivElement>(null);
+  const cardsSentinelRef = useRef<HTMLDivElement>(null);
 
   // ─────────────────────────────────────────────────────────────────────────
   // DATE CONSTANTS
   // ─────────────────────────────────────────────────────────────────────────
-  const now            = new Date();
-  const todayStart     = new Date(); todayStart.setHours(0,0,0,0);
-  const threeMonthsAgo = new Date(now.getFullYear(), now.getMonth()-2, 1);
-  const sixMonthsAgo   = new Date(now.getFullYear(), now.getMonth()-5, 1);
-  const yearStart      = new Date(now.getFullYear(), 0, 1);
+  const now = new Date();
+  const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
+  const threeMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+  const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+  const yearStart = new Date(now.getFullYear(), 0, 1);
 
   // ─────────────────────────────────────────────────────────────────────────
   // HELPERS
   // ─────────────────────────────────────────────────────────────────────────
   const formatDate = (ds: string) => {
     if (!ds) return "N/A";
-    try { return new Date(ds).toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"}); }
+    try { return new Date(ds).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }); }
     catch { return "Invalid"; }
   };
   const maskPhone = (phone: any) => {
     if (!phone || phone === "N/A") return "N/A";
-    const c = String(phone).replace(/[^a-zA-Z0-9]/g,"");
+    const c = String(phone).replace(/[^a-zA-Z0-9]/g, "");
     if (c.length <= 5) return c;
-    return `${c.slice(0,2)}${"*".repeat(c.length-5)}${c.slice(-3)}`;
+    return `${c.slice(0, 2)}${"*".repeat(c.length - 5)}${c.slice(-3)}`;
   };
   const showToast = (title: string, color = "green") => {
     setToastMsg({ title, color });
@@ -324,7 +329,7 @@ export default function ReceptionistDashboard() {
 
       mergedLeads.forEach((lead: any) => {
         const formattedId = String(lead.id).padStart(3, '0');
-        
+
         // 1. New Lead Notification (Entered by anyone, 1-Day Expiry)
         const createdDate = new Date(lead.created_at || 0);
         createdDate.setHours(0, 0, 0, 0);
@@ -353,7 +358,7 @@ export default function ReceptionistDashboard() {
           // Trigger if visit is within 2 days from now, and keep in history for 3 days total
           if (diffDays >= -3 && diffDays <= 2) {
             const visitDate = new Date(lead.mongoVisitDate).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
-            
+
             // Determine Role
             const isSiteHead = siteHeads.some((sh: any) => sh.name === lead.assignedTo);
             const role = isSiteHead ? "Site Head" : "Manager";
@@ -399,7 +404,7 @@ export default function ReceptionistDashboard() {
   }, []);
 
   useEffect(() => {
-    if (activeTab === "assistant") chatEndRef.current?.scrollIntoView({ behavior:"smooth" });
+    if (activeTab === "assistant") chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chatMessages, activeTab]);
 
   useEffect(() => {
@@ -407,8 +412,8 @@ export default function ReceptionistDashboard() {
     if (stored) {
       try {
         const p = JSON.parse(stored);
-        setUser({ ...p, name: p.name||"User", password: p.password||"********" });
-        const role = (p.role||"").toLowerCase();
+        setUser({ ...p, name: p.name || "User", password: p.password || "********" });
+        const role = (p.role || "").toLowerCase();
         if (role === "receptionist" || role === "admin") {
           fetchSalesManagers();
           initialLoad();
@@ -445,7 +450,7 @@ export default function ReceptionistDashboard() {
     const sentinel = assignedSentinelRef.current;
     if (!sentinel || assignedSubView !== "cards") return;
     const obs = new IntersectionObserver(entries => {
-      if (entries[0].isIntersecting) setAssignedCardsPage(p => p+1);
+      if (entries[0].isIntersecting) setAssignedCardsPage(p => p + 1);
     }, { threshold: 0.1 });
     obs.observe(sentinel);
     return () => obs.disconnect();
@@ -453,13 +458,13 @@ export default function ReceptionistDashboard() {
 
   // Follow-up scroll
   useEffect(() => {
-    if (assignedSubView === "detail") followUpEndRef.current?.scrollIntoView({ behavior:"smooth" });
+    if (assignedSubView === "detail") followUpEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [followUps, assignedSubView, selectedLead, detailTab]);
 
   // Update selected lead when data changes
   useEffect(() => {
     if (selectedLead) {
-      const updated = mergedLeads.find((l:any) => String(l.id) === String(selectedLead.id));
+      const updated = mergedLeads.find((l: any) => String(l.id) === String(selectedLead.id));
       if (updated) setSelectedLead(updated);
     }
   }, [enquiries, followUps]);
@@ -483,14 +488,14 @@ export default function ReceptionistDashboard() {
         status: item.status || "Routed",
       }));
       setEnquiries(prev => {
-        const base   = append ? prev : [];
+        const base = append ? prev : [];
         const merged = [...base, ...formatted];
-        const seen   = new Set<string>();
-        return merged.filter(e => { const k=String(e.id); if(seen.has(k))return false; seen.add(k); return true; });
+        const seen = new Set<string>();
+        return merged.filter(e => { const k = String(e.id); if (seen.has(k)) return false; seen.add(k); return true; });
       });
       setTotalCount(total);
-      setHasMore(formatted.length === PAGE_SIZE && (currentOffset+PAGE_SIZE) < total);
-    } catch(e) { console.error("fetchPage error",e); }
+      setHasMore(formatted.length === PAGE_SIZE && (currentOffset + PAGE_SIZE) < total);
+    } catch (e) { console.error("fetchPage error", e); }
   };
 
   const fetchFollowUps = async () => {
@@ -500,7 +505,7 @@ export default function ReceptionistDashboard() {
         const json = await res.json();
         setFollowUps(Array.isArray(json.data) ? json.data : []);
       }
-    } catch(e) { console.error("fetchFollowUps error",e); }
+    } catch (e) { console.error("fetchFollowUps error", e); }
   };
 
   const initialLoad = async () => {
@@ -557,7 +562,7 @@ export default function ReceptionistDashboard() {
         const item = localStorage.getItem("crm_shown_notif_ids");
         storedIds = item ? JSON.parse(item) : [];
       } catch (e) { storedIds = []; }
-      
+
       const seenSet = new Set(storedIds);
       const fresh: CrmNotif[] = [];
       const history: (CrmNotif & { rawDate: number })[] = [];
@@ -566,7 +571,7 @@ export default function ReceptionistDashboard() {
 
       mergedLeads.forEach((lead: any) => {
         const formattedId = String(lead.id).padStart(3, '0');
-        
+
         // 1. New Lead Notification (1-Day Expiry)
         const createdDate = new Date(lead.created_at || 0);
         createdDate.setHours(0, 0, 0, 0);
@@ -635,24 +640,24 @@ export default function ReceptionistDashboard() {
   // ─────────────────────────────────────────────────────────────────────────
   const mergedLeads = useMemo(() => {
     return enquiries.map((lead: any) => {
-      const lf        = followUps.filter((f:any) => String(f.leadId) === String(lead.id));
-      const salesForms = lf.filter((f:any) => f.message?.includes("Detailed Salesform Submitted"));
-      const latestMsg  = salesForms.length > 0 ? salesForms[salesForms.length-1].message : "";
-      const g          = (field: string) => { if(!latestMsg)return"Pending"; const m=latestMsg.match(new RegExp(`• ${field}: (.*)`)); return m?m[1].trim():"Pending"; };
+      const lf = followUps.filter((f: any) => String(f.leadId) === String(lead.id));
+      const salesForms = lf.filter((f: any) => f.message?.includes("Detailed Salesform Submitted"));
+      const latestMsg = salesForms.length > 0 ? salesForms[salesForms.length - 1].message : "";
+      const g = (field: string) => { if (!latestMsg) return "Pending"; const m = latestMsg.match(new RegExp(`• ${field}: (.*)`)); return m ? m[1].trim() : "Pending"; };
 
-      const loanUpdates = lf.filter((f:any) => f.message?.includes("🏦 Loan Update:"));
-      let loanStatus="N/A", loanAmtReq="N/A", loanAmtApp="N/A";
+      const loanUpdates = lf.filter((f: any) => f.message?.includes("🏦 Loan Update:"));
+      let loanStatus = "N/A", loanAmtReq = "N/A", loanAmtApp = "N/A";
       if (loanUpdates.length > 0) {
-        const msg = loanUpdates[loanUpdates.length-1].message;
-        const mS  = msg.match(/• Status: (.*)/);    if(mS) loanStatus=mS[1].trim();
-        const mR  = msg.match(/• Amount Requested: (.*)/); if(mR) loanAmtReq=mR[1].trim();
-        const mA  = msg.match(/• Amount Approved: (.*)/);  if(mA) loanAmtApp=mA[1].trim();
+        const msg = loanUpdates[loanUpdates.length - 1].message;
+        const mS = msg.match(/• Status: (.*)/); if (mS) loanStatus = mS[1].trim();
+        const mR = msg.match(/• Amount Requested: (.*)/); if (mR) loanAmtReq = mR[1].trim();
+        const mA = msg.match(/• Amount Approved: (.*)/); if (mA) loanAmtApp = mA[1].trim();
       }
 
-      const visitsWithDate  = lf.filter((f:any) => f.siteVisitDate?.trim());
-      const mongoVisitDate  = visitsWithDate.length > 0 ? visitsWithDate[visitsWithDate.length-1].siteVisitDate : null;
-      const closingFups     = lf.filter((f:any) => f.message?.includes("✅ Lead Marked as Closing"));
-      const closingDate     = closingFups.length > 0 ? closingFups[closingFups.length-1].createdAt : null;
+      const visitsWithDate = lf.filter((f: any) => f.siteVisitDate?.trim());
+      const mongoVisitDate = visitsWithDate.length > 0 ? visitsWithDate[visitsWithDate.length - 1].siteVisitDate : null;
+      const closingFups = lf.filter((f: any) => f.message?.includes("✅ Lead Marked as Closing"));
+      const closingDate = closingFups.length > 0 ? closingFups[closingFups.length - 1].createdAt : null;
       const sfBudget = g("Budget");
       const activeBudget = (sfBudget !== "Pending" && sfBudget !== "N/A")
         ? sfBudget
@@ -663,12 +668,12 @@ export default function ReceptionistDashboard() {
         propType: (g("Property Type") !== "Pending" && g("Property Type") !== "N/A")
           ? g("Property Type")
           : (lead.configuration && lead.configuration !== "N/A" ? lead.configuration : "Pending"),
-        salesBudget:        activeBudget,
+        salesBudget: activeBudget,
         useType: (g("Use Type") !== "Pending" && g("Use Type") !== "N/A")
           ? g("Use Type")
           : (lead.purpose || "Pending"),
-        planningPurchase:   g("Planning to Purchase"),
-        loanPlanned:        g("Loan Planned") !== "Pending" ? g("Loan Planned") : (lead.loan_planned||"Pending"),
+        planningPurchase: g("Planning to Purchase"),
+        loanPlanned: g("Loan Planned") !== "Pending" ? g("Loan Planned") : (lead.loan_planned || "Pending"),
         leadInterestStatus: g("Lead Status"),
         loanStatus, loanAmtReq, loanAmtApp,
         mongoVisitDate, closingDate,
@@ -679,16 +684,16 @@ export default function ReceptionistDashboard() {
 
   // Receptionist-owned leads = assigned_receptionist === user.name OR assigned_to === user.name
   const myAssignedLeads = useMemo(() =>
-    mergedLeads.filter((l:any) =>
+    mergedLeads.filter((l: any) =>
       (l.assignedReceptionist === user.name || l.assigned_to === user.name) &&
-      l.status !== "Closing" && 
+      l.status !== "Closing" &&
       !l.closingDate
     )
-  , [mergedLeads, user.name]);
+    , [mergedLeads, user.name]);
 
   const currentLeadFollowUps = useMemo(() =>
-    followUps.filter((f:any) => String(f.leadId) === String(selectedLead?.id))
-  , [followUps, selectedLead]);
+    followUps.filter((f: any) => String(f.leadId) === String(selectedLead?.id))
+    , [followUps, selectedLead]);
 
   // ─────────────────────────────────────────────────────────────────────────
   // CSV EXPORT
@@ -697,9 +702,9 @@ export default function ReceptionistDashboard() {
     if (!data?.length) { alert("No data to export."); return; }
     const headers = Object.keys(data[0]);
     const rows = data.map(r => headers.map(k => JSON.stringify(r[k] ?? "", null)).join(","));
-    const csv     = [headers.join(","),...rows].join("\r\n");
-    const a       = document.createElement("a");
-    a.href        = URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8;"}));
+    const csv = [headers.join(","), ...rows].join("\r\n");
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8;" }));
     a.setAttribute("download", filename);
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
   };
@@ -710,10 +715,10 @@ export default function ReceptionistDashboard() {
       (l.status === "Closing" || !!l.closingDate) &&
       (l.assignedReceptionist === user.name || l.assigned_to === user.name)
     )
-  , [mergedLeads, user.name]);
+    , [mergedLeads, user.name]);
 
   const filteredClosedLeads = closedLeads.filter((l: any) =>
-    (l.name||"").toLowerCase().includes(searchClosedLeads.toLowerCase()) ||
+    (l.name || "").toLowerCase().includes(searchClosedLeads.toLowerCase()) ||
     String(l.id).includes(searchClosedLeads)
   );
 
@@ -725,141 +730,141 @@ export default function ReceptionistDashboard() {
     if (isSubmitting) return;
     setIsSubmitting(true);
 
-    const assignTo        = enquiryForm.selfAssign ? user.name : enquiryForm.assignedTo;
-    const isReceptionist  = enquiryForm.selfAssign;
+    const assignTo = enquiryForm.selfAssign ? user.name : enquiryForm.assignedTo;
+    const isReceptionist = enquiryForm.selfAssign;
 
     const newEntry = {
-      name:            enquiryForm.fullName,
-      phone:           enquiryForm.mobile,
-      alt_phone:       enquiryForm.altMobile || null,
-      email:           enquiryForm.email || "N/A",
-      address:         enquiryForm.address || "N/A",
-      occupation:      enquiryForm.occupation || "N/A",
-      organization:    enquiryForm.organization || "N/A",
-      budget:          enquiryForm.budget || "Pending",
-      configuration:   enquiryForm.configuration || "N/A",
-      purpose:         enquiryForm.purpose || "N/A",
-      source:          enquiryForm.source,
-      source_other:    enquiryForm.source === "Others" ? enquiryForm.sourceOther : null,
-      cp_name:         enquiryForm.source === "Channel Partner" ? enquiryForm.cpDetails.name : null,
-      cp_company:      enquiryForm.source === "Channel Partner" ? enquiryForm.cpDetails.company : null,
-      cp_phone:        enquiryForm.source === "Channel Partner" ? enquiryForm.cpDetails.phone : null,
-      loan_planned:    enquiryForm.loanPlanned || "Pending",
-      assignedTo:      assignTo,
+      name: enquiryForm.fullName,
+      phone: enquiryForm.mobile,
+      alt_phone: enquiryForm.altMobile || null,
+      email: enquiryForm.email || "N/A",
+      address: enquiryForm.address || "N/A",
+      occupation: enquiryForm.occupation || "N/A",
+      organization: enquiryForm.organization || "N/A",
+      budget: enquiryForm.budget || "Pending",
+      configuration: enquiryForm.configuration || "N/A",
+      purpose: enquiryForm.purpose || "N/A",
+      source: enquiryForm.source,
+      source_other: enquiryForm.source === "Others" ? enquiryForm.sourceOther : null,
+      cp_name: enquiryForm.source === "Channel Partner" ? enquiryForm.cpDetails.name : null,
+      cp_company: enquiryForm.source === "Channel Partner" ? enquiryForm.cpDetails.company : null,
+      cp_phone: enquiryForm.source === "Channel Partner" ? enquiryForm.cpDetails.phone : null,
+      loan_planned: enquiryForm.loanPlanned || "Pending",
+      assignedTo: assignTo,
       assigned_receptionist: isReceptionist ? user.name : null,
-      status:          "Routed",
+      status: "Routed",
     };
 
     try {
       const res = await fetch("/api/walkin_enquiries", {
-        method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(newEntry),
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(newEntry),
       });
       if (res.ok) {
         showToast(isReceptionist ? `Lead self-assigned to you!` : `Lead routed to ${assignTo}!`);
         setIsEnquiryModalOpen(false);
-        setEnquiryForm({ fullName:"",mobile:"",altMobile:"",email:"",address:"",occupation:"",organization:"",budget:"",configuration:"",purpose:"",source:"",assignedTo:"",loanPlanned:"",sourceOther:"",cpDetails:{name:"",company:"",phone:""},selfAssign:false });
+        setEnquiryForm({ fullName: "", mobile: "", altMobile: "", email: "", address: "", occupation: "", organization: "", budget: "", configuration: "", purpose: "", source: "", assignedTo: "", loanPlanned: "", sourceOther: "", cpDetails: { name: "", company: "", phone: "" }, selfAssign: false });
         refetchAll();
       } else { alert("Server Error. Please check DB schema."); }
     } catch { alert("Network Error while submitting."); }
     finally { setIsSubmitting(false); }
   };
-  
+
   const existingCPs = useMemo(() => {
-      const map = new Map();
-      mergedLeads.forEach((l: any) => {
-        if (l.source === "Channel Partner" && l.cp_company && l.cp_company !== "N/A") {
-          if (!map.has(l.cp_company)) {
-            map.set(l.cp_company, { company: l.cp_company, phone: l.cp_phone || "" });
-          }
+    const map = new Map();
+    mergedLeads.forEach((l: any) => {
+      if (l.source === "Channel Partner" && l.cp_company && l.cp_company !== "N/A") {
+        if (!map.has(l.cp_company)) {
+          map.set(l.cp_company, { company: l.cp_company, phone: l.cp_phone || "" });
         }
-      });
-      return Array.from(map.values());
-    }, [mergedLeads]);
+      }
+    });
+    return Array.from(map.values());
+  }, [mergedLeads]);
 
   // ─────────────────────────────────────────────────────────────────────────
   // SALES WORKFLOW ACTIONS
   // ─────────────────────────────────────────────────────────────────────────
   const getLatestLoanDetails = () => {
     if (!selectedLead) return null;
-    let ex: Record<string,any> = { loanRequired:selectedLead.loanPlanned||"N/A",status:"Pending",bankName:"N/A",amountReq:"N/A",amountApp:"N/A",cibil:"N/A",agent:"N/A",agentContact:"N/A",empType:"N/A",income:"N/A",emi:"N/A",docPan:"Pending",docAadhaar:"Pending",docSalary:"Pending",docBank:"Pending",docProperty:"Pending",notes:"N/A" };
-    const lu = currentLeadFollowUps.filter((f:any) => f.message?.includes("🏦 Loan Update:"));
+    let ex: Record<string, any> = { loanRequired: selectedLead.loanPlanned || "N/A", status: "Pending", bankName: "N/A", amountReq: "N/A", amountApp: "N/A", cibil: "N/A", agent: "N/A", agentContact: "N/A", empType: "N/A", income: "N/A", emi: "N/A", docPan: "Pending", docAadhaar: "Pending", docSalary: "Pending", docBank: "Pending", docProperty: "Pending", notes: "N/A" };
+    const lu = currentLeadFollowUps.filter((f: any) => f.message?.includes("🏦 Loan Update:"));
     if (lu.length > 0) {
-      const msg = lu[lu.length-1].message;
-      const g   = (l:string) => { const m=msg.match(new RegExp(`• ${l}: (.*)`)); return m?m[1].trim():"N/A"; };
-      ex = { loanRequired:g("Loan Required"),status:g("Status"),bankName:g("Bank Name"),amountReq:g("Amount Requested"),amountApp:g("Amount Approved"),cibil:g("CIBIL Score"),agent:g("Agent Name"),agentContact:g("Agent Contact"),empType:g("Employment Type"),income:g("Monthly Income"),emi:g("Existing EMIs"),docPan:g("PAN Card"),docAadhaar:g("Aadhaar Card"),docSalary:g("Salary Slips"),docBank:g("Bank Statements"),docProperty:g("Property Docs"),notes:g("Notes") };
+      const msg = lu[lu.length - 1].message;
+      const g = (l: string) => { const m = msg.match(new RegExp(`• ${l}: (.*)`)); return m ? m[1].trim() : "N/A"; };
+      ex = { loanRequired: g("Loan Required"), status: g("Status"), bankName: g("Bank Name"), amountReq: g("Amount Requested"), amountApp: g("Amount Approved"), cibil: g("CIBIL Score"), agent: g("Agent Name"), agentContact: g("Agent Contact"), empType: g("Employment Type"), income: g("Monthly Income"), emi: g("Existing EMIs"), docPan: g("PAN Card"), docAadhaar: g("Aadhaar Card"), docSalary: g("Salary Slips"), docBank: g("Bank Statements"), docProperty: g("Property Docs"), notes: g("Notes") };
     }
     return ex;
   };
 
   const getLoanStatusColor = (s: string) => {
-    const sl = (s||"").toLowerCase();
-    if (sl==="approved")    return isDark?"bg-green-900/20 text-green-400 border-green-500/30":"bg-green-50 text-green-700 border-green-300";
-    if (sl==="rejected")    return isDark?"bg-red-900/20 text-red-400 border-red-500/30":"bg-red-50 text-red-700 border-red-300";
-    if (sl==="in progress") return isDark?"bg-yellow-900/20 text-yellow-400 border-yellow-500/30":"bg-yellow-50 text-yellow-700 border-yellow-300";
-    return isDark?"bg-gray-900/20 text-gray-400 border-gray-500/30":"bg-gray-50 text-gray-600 border-gray-300";
+    const sl = (s || "").toLowerCase();
+    if (sl === "approved") return isDark ? "bg-green-900/20 text-green-400 border-green-500/30" : "bg-green-50 text-green-700 border-green-300";
+    if (sl === "rejected") return isDark ? "bg-red-900/20 text-red-400 border-red-500/30" : "bg-red-50 text-red-700 border-red-300";
+    if (sl === "in progress") return isDark ? "bg-yellow-900/20 text-yellow-400 border-yellow-500/30" : "bg-yellow-50 text-yellow-700 border-yellow-300";
+    return isDark ? "bg-gray-900/20 text-gray-400 border-gray-500/30" : "bg-gray-50 text-gray-600 border-gray-300";
   };
 
   const prefillSalesForm = () => {
     if (!selectedLead) return;
-    const sf  = currentLeadFollowUps.filter((f:any) => f.message?.includes("Detailed Salesform Submitted"));
+    const sf = currentLeadFollowUps.filter((f: any) => f.message?.includes("Detailed Salesform Submitted"));
     if (sf.length === 0) return;
-    const msg = sf[sf.length-1].message;
-    const g   = (label:string) => { const m=msg.match(new RegExp(`• ${label}: (.*)`)); return m&&m[1].trim()!=="N/A"?m[1].trim():""; };
-    setSalesForm({ propertyType:g("Property Type"),location:g("Location"),budget:g("Budget"),useType:g("Use Type"),purchaseDate:g("Planning to Purchase"),loanPlanned:g("Loan Planned"),leadStatus:g("Lead Status"),siteVisit:"" });
+    const msg = sf[sf.length - 1].message;
+    const g = (label: string) => { const m = msg.match(new RegExp(`• ${label}: (.*)`)); return m && m[1].trim() !== "N/A" ? m[1].trim() : ""; };
+    setSalesForm({ propertyType: g("Property Type"), location: g("Location"), budget: g("Budget"), useType: g("Use Type"), purchaseDate: g("Planning to Purchase"), loanPlanned: g("Loan Planned"), leadStatus: g("Lead Status"), siteVisit: "" });
   };
 
   const prefillLoanForm = () => {
     const cur = getLatestLoanDetails();
     if (!cur) return;
-    const n = (v:string) => v!=="N/A"?v:"";
-    setLoanForm({ loanRequired:n(cur.loanRequired),status:cur.status!=="Pending"?cur.status:"",bank:n(cur.bankName),amountReq:n(cur.amountReq),amountApp:n(cur.amountApp),cibil:n(cur.cibil),agent:n(cur.agent),agentContact:n(cur.agentContact),empType:n(cur.empType),income:n(cur.income),emi:n(cur.emi),docPan:cur.docPan!=="N/A"?cur.docPan:"Pending",docAadhaar:cur.docAadhaar!=="N/A"?cur.docAadhaar:"Pending",docSalary:cur.docSalary!=="N/A"?cur.docSalary:"Pending",docBank:cur.docBank!=="N/A"?cur.docBank:"Pending",docProperty:cur.docProperty!=="N/A"?cur.docProperty:"Pending",notes:n(cur.notes) });
+    const n = (v: string) => v !== "N/A" ? v : "";
+    setLoanForm({ loanRequired: n(cur.loanRequired), status: cur.status !== "Pending" ? cur.status : "", bank: n(cur.bankName), amountReq: n(cur.amountReq), amountApp: n(cur.amountApp), cibil: n(cur.cibil), agent: n(cur.agent), agentContact: n(cur.agentContact), empType: n(cur.empType), income: n(cur.income), emi: n(cur.emi), docPan: cur.docPan !== "N/A" ? cur.docPan : "Pending", docAadhaar: cur.docAadhaar !== "N/A" ? cur.docAadhaar : "Pending", docSalary: cur.docSalary !== "N/A" ? cur.docSalary : "Pending", docBank: cur.docBank !== "N/A" ? cur.docBank : "Pending", docProperty: cur.docProperty !== "N/A" ? cur.docProperty : "Pending", notes: n(cur.notes) });
   };
 
   const handleSendCustomNote = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!customNote.trim() || !selectedLead) return;
-    const nm = { leadId:String(selectedLead.id),salesManagerName:user.name,createdBy:"receptionist",message:customNote,siteVisitDate:null,createdAt:new Date().toISOString() };
+    const nm = { leadId: String(selectedLead.id), salesManagerName: user.name, createdBy: "receptionist", message: customNote, siteVisitDate: null, createdAt: new Date().toISOString() };
     setCustomNote("");
-    try { await fetch("/api/followups",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(nm)}); fetchFollowUps(); } catch(e){console.error(e);}
+    try { await fetch("/api/followups", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(nm) }); fetchFollowUps(); } catch (e) { console.error(e); }
   };
 
   const handleSalesFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedLead) return;
-    const msg = `📝 Detailed Salesform Submitted:\n• Property Type: ${salesForm.propertyType||"N/A"}\n• Location: ${salesForm.location||"N/A"}\n• Budget: ${salesForm.budget||"N/A"}\n• Use Type: ${salesForm.useType||"N/A"}\n• Planning to Purchase: ${salesForm.purchaseDate||"N/A"}\n• Loan Planned: ${salesForm.loanPlanned||"N/A"}\n• Lead Status: ${salesForm.leadStatus||"N/A"}\n• Site Visit Requested: ${salesForm.siteVisit?formatDate(salesForm.siteVisit):"No"}`;
-    const nm  = { leadId:String(selectedLead.id),salesManagerName:user.name,createdBy:"receptionist",message:msg,siteVisitDate:salesForm.siteVisit||null,createdAt:new Date().toISOString() };
-    const ns  = salesForm.siteVisit ? "Visit Scheduled" : selectedLead.status;
+    const msg = `📝 Detailed Salesform Submitted:\n• Property Type: ${salesForm.propertyType || "N/A"}\n• Location: ${salesForm.location || "N/A"}\n• Budget: ${salesForm.budget || "N/A"}\n• Use Type: ${salesForm.useType || "N/A"}\n• Planning to Purchase: ${salesForm.purchaseDate || "N/A"}\n• Loan Planned: ${salesForm.loanPlanned || "N/A"}\n• Lead Status: ${salesForm.leadStatus || "N/A"}\n• Site Visit Requested: ${salesForm.siteVisit ? formatDate(salesForm.siteVisit) : "No"}`;
+    const nm = { leadId: String(selectedLead.id), salesManagerName: user.name, createdBy: "receptionist", message: msg, siteVisitDate: salesForm.siteVisit || null, createdAt: new Date().toISOString() };
+    const ns = salesForm.siteVisit ? "Visit Scheduled" : selectedLead.status;
     setShowSalesForm(false);
-    setSalesForm({ propertyType:"",location:"",budget:"",useType:"",purchaseDate:"",loanPlanned:"",siteVisit:"",leadStatus:"" });
+    setSalesForm({ propertyType: "", location: "", budget: "", useType: "", purchaseDate: "", loanPlanned: "", siteVisit: "", leadStatus: "" });
     try {
-      await fetch("/api/followups",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(nm)});
-      await fetch(`/api/walkin_enquiries/${selectedLead.id}`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:selectedLead.name,status:ns})});
+      await fetch("/api/followups", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(nm) });
+      await fetch(`/api/walkin_enquiries/${selectedLead.id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: selectedLead.name, status: ns }) });
       refetchAll();
-    } catch(e){console.error(e);}
+    } catch (e) { console.error(e); }
   };
 
   const handleLoanFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedLead) return;
-    const msg = `🏦 Loan Update:\n• Loan Required: ${loanForm.loanRequired||"N/A"}\n• Status: ${loanForm.status||"N/A"}\n• Bank Name: ${loanForm.bank||"N/A"}\n• Amount Requested: ${loanForm.amountReq||"N/A"}\n• Amount Approved: ${loanForm.amountApp||"N/A"}\n• CIBIL Score: ${loanForm.cibil||"N/A"}\n• Agent Name: ${loanForm.agent||"N/A"}\n• Agent Contact: ${loanForm.agentContact||"N/A"}\n• Employment Type: ${loanForm.empType||"N/A"}\n• Monthly Income: ${loanForm.income||"N/A"}\n• Existing EMIs: ${loanForm.emi||"N/A"}\n• PAN Card: ${loanForm.docPan||"Pending"}\n• Aadhaar Card: ${loanForm.docAadhaar||"Pending"}\n• Salary Slips: ${loanForm.docSalary||"Pending"}\n• Bank Statements: ${loanForm.docBank||"Pending"}\n• Property Docs: ${loanForm.docProperty||"Pending"}\n• Notes: ${loanForm.notes||"N/A"}`;
-    const nm  = { leadId:String(selectedLead.id),salesManagerName:user.name,createdBy:"receptionist",message:msg,siteVisitDate:null,createdAt:new Date().toISOString() };
+    const msg = `🏦 Loan Update:\n• Loan Required: ${loanForm.loanRequired || "N/A"}\n• Status: ${loanForm.status || "N/A"}\n• Bank Name: ${loanForm.bank || "N/A"}\n• Amount Requested: ${loanForm.amountReq || "N/A"}\n• Amount Approved: ${loanForm.amountApp || "N/A"}\n• CIBIL Score: ${loanForm.cibil || "N/A"}\n• Agent Name: ${loanForm.agent || "N/A"}\n• Agent Contact: ${loanForm.agentContact || "N/A"}\n• Employment Type: ${loanForm.empType || "N/A"}\n• Monthly Income: ${loanForm.income || "N/A"}\n• Existing EMIs: ${loanForm.emi || "N/A"}\n• PAN Card: ${loanForm.docPan || "Pending"}\n• Aadhaar Card: ${loanForm.docAadhaar || "Pending"}\n• Salary Slips: ${loanForm.docSalary || "Pending"}\n• Bank Statements: ${loanForm.docBank || "Pending"}\n• Property Docs: ${loanForm.docProperty || "Pending"}\n• Notes: ${loanForm.notes || "N/A"}`;
+    const nm = { leadId: String(selectedLead.id), salesManagerName: user.name, createdBy: "receptionist", message: msg, siteVisitDate: null, createdAt: new Date().toISOString() };
     setShowLoanForm(false);
     showToast(`Loan Data Logged for ${selectedLead.name}`, "blue");
     try {
-      await fetch("/api/followups",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(nm)});
+      await fetch("/api/followups", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(nm) });
       fetchFollowUps();
-    } catch(e){console.error(e);}
+    } catch (e) { console.error(e); }
   };
 
   const handleMarkAsClosing = async () => {
-    if (!selectedLead || selectedLead.status==="Closing") return;
-    const nm = { leadId:String(selectedLead.id),salesManagerName:user.name,createdBy:"receptionist",message:`✅ Lead Marked as Closing by ${user.name} (Receptionist)`,siteVisitDate:null,createdAt:new Date().toISOString() };
+    if (!selectedLead || selectedLead.status === "Closing") return;
+    const nm = { leadId: String(selectedLead.id), salesManagerName: user.name, createdBy: "receptionist", message: `✅ Lead Marked as Closing by ${user.name} (Receptionist)`, siteVisitDate: null, createdAt: new Date().toISOString() };
     try {
-      await fetch("/api/followups",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(nm)});
-      await fetch(`/api/walkin_enquiries/${selectedLead.id}`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:selectedLead.name,status:"Closing"})});
+      await fetch("/api/followups", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(nm) });
+      await fetch(`/api/walkin_enquiries/${selectedLead.id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: selectedLead.name, status: "Closing" }) });
       showToast(`🎉 ${selectedLead.name} marked as Closing!`);
       refetchAll();
-    } catch(e){console.error(e);}
+    } catch (e) { console.error(e); }
   };
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -874,9 +879,9 @@ export default function ReceptionistDashboard() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          lead_id:        selectedLead.id,
-          transfer_to:    transferTarget,
-          transfer_note:  transferNote,
+          lead_id: selectedLead.id,
+          transfer_to: transferTarget,
+          transfer_note: transferNote,
           transferred_by: user.name,
         }),
       });
@@ -889,7 +894,7 @@ export default function ReceptionistDashboard() {
       setIsTransferModalOpen(false);
       setTransferNote("");
       setTransferTarget("");
-      showToast(`Lead #${selectedLead.id} transferred to ${transferTarget}!`);
+      showToast(`✅ Lead #${selectedLead.id} transferred to ${transferTarget}!`);
       setAssignedSubView("cards");
       refetchAll();
     } catch (e: any) {
@@ -906,19 +911,19 @@ export default function ReceptionistDashboard() {
     e.preventDefault();
     if (!chatInput.trim()) return;
     const userMsg = chatInput.toLowerCase();
-    setChatMessages(prev => [...prev, { sender:"user", text:chatInput }]);
+    setChatMessages(prev => [...prev, { sender: "user", text: chatInput }]);
     setChatInput("");
     setTimeout(() => {
       let aiResponse = "I can help you analyze your CRM data. Ask me about total leads or interested clients.";
-      const matchedClient = mergedLeads.find((l:any) => userMsg.includes((l.name||"").toLowerCase().split(" ")[0]));
+      const matchedClient = mergedLeads.find((l: any) => userMsg.includes((l.name || "").toLowerCase().split(" ")[0]));
       if (matchedClient) {
         aiResponse = `Here is the data for ${matchedClient.name}:\n\n• Phone: ${maskPhone(matchedClient.phone)}\n• Email: ${matchedClient.email !== "N/A" ? matchedClient.email : "Not Provided"}\n• Budget: ${matchedClient.salesBudget}\n• Config: ${matchedClient.propType}\n• Status: ${matchedClient.status}\n• Created On: ${matchedClient.date}\n• Assigned To: ${matchedClient.assignedTo}`;
       } else if (userMsg.includes("total") || userMsg.includes("how many")) {
         aiResponse = `You currently have ${totalCount} total leads in the system. You personally handle ${myAssignedLeads.length} leads.`;
       } else if (userMsg.includes("my leads") || userMsg.includes("assigned")) {
-        aiResponse = `You have ${myAssignedLeads.length} leads assigned to you. ${myAssignedLeads.filter((l:any)=>l.status==="Visit Scheduled").length} have a site visit scheduled.`;
+        aiResponse = `You have ${myAssignedLeads.length} leads assigned to you. ${myAssignedLeads.filter((l: any) => l.status === "Visit Scheduled").length} have a site visit scheduled.`;
       }
-      setChatMessages(prev => [...prev, { sender:"ai", text:aiResponse }]);
+      setChatMessages(prev => [...prev, { sender: "ai", text: aiResponse }]);
     }, 600);
   };
 
@@ -927,108 +932,108 @@ export default function ReceptionistDashboard() {
   // ─────────────────────────────────────────────────────────────────────────
   // FILTERED SETS
   // ─────────────────────────────────────────────────────────────────────────
-  const receptionistLeads = mergedLeads.filter((e:any) =>
-    (e.name||"").toLowerCase().includes(searchRecep.toLowerCase()) ||
+  const receptionistLeads = mergedLeads.filter((e: any) =>
+    (e.name || "").toLowerCase().includes(searchRecep.toLowerCase()) ||
     String(e.id).includes(searchRecep) ||
-    (e.phone||"").includes(searchRecep)
+    (e.phone || "").includes(searchRecep)
   );
 
-  const filteredAssigned = myAssignedLeads.filter((l:any) =>
-    (l.name||"").toLowerCase().includes(searchAssigned.toLowerCase()) ||
+  const filteredAssigned = myAssignedLeads.filter((l: any) =>
+    (l.name || "").toLowerCase().includes(searchAssigned.toLowerCase()) ||
     String(l.id).includes(searchAssigned)
   );
   const paginatedAssigned = filteredAssigned.slice(0, assignedCardsPage * CARDS_PER_PAGE);
-  const hasMoreAssigned   = paginatedAssigned.length < filteredAssigned.length;
+  const hasMoreAssigned = paginatedAssigned.length < filteredAssigned.length;
 
-  const filteredRecepLeads = myAssignedLeads.filter((l:any) =>
-    (l.name||"").toLowerCase().includes(searchRecepLeads.toLowerCase()) ||
+  const filteredRecepLeads = myAssignedLeads.filter((l: any) =>
+    (l.name || "").toLowerCase().includes(searchRecepLeads.toLowerCase()) ||
     String(l.id).includes(searchRecepLeads) ||
-    (l.phone||"").includes(searchRecepLeads)
+    (l.phone || "").includes(searchRecepLeads)
   );
 
   // ─────────────────────────────────────────────────────────────────────────
   // CHART DATA
   // ─────────────────────────────────────────────────────────────────────────
   const configTodayBarData = useMemo(() => {
-    const filtered = mergedLeads.filter((e:any) => e.created_at && new Date(e.created_at) >= todayStart);
-    const cc: Record<string,number> = {}; CONFIG_KEYS.forEach(k=>cc[k]=0);
-    filtered.forEach((item:any) => { const c=String(item.configuration||"").trim(); if(cc[c]!==undefined)cc[c]++;else cc["Other"]++; });
-    return CONFIG_KEYS.map((name,i) => ({name,count:cc[name],color:t.chartColors[i%t.chartColors.length]})).filter(d=>d.count>0);
+    const filtered = mergedLeads.filter((e: any) => e.created_at && new Date(e.created_at) >= todayStart);
+    const cc: Record<string, number> = {}; CONFIG_KEYS.forEach(k => cc[k] = 0);
+    filtered.forEach((item: any) => { const c = String(item.configuration || "").trim(); if (cc[c] !== undefined) cc[c]++; else cc["Other"]++; });
+    return CONFIG_KEYS.map((name, i) => ({ name, count: cc[name], color: t.chartColors[i % t.chartColors.length] })).filter(d => d.count > 0);
   }, [mergedLeads, todayStart, t.chartColors]);
 
   const configMonthlyBarData = useMemo(() => {
-    const filtered = mergedLeads.filter((e:any) => { if(!e.created_at)return false; const d=new Date(e.created_at); return d.getMonth()===configChartMonth&&d.getFullYear()===now.getFullYear(); });
-    const cc: Record<string,number> = {}; CONFIG_KEYS.forEach(k=>cc[k]=0);
-    filtered.forEach((item:any) => { const c=String(item.configuration||"").trim(); if(cc[c]!==undefined)cc[c]++;else cc["Other"]++; });
-    return CONFIG_KEYS.map((name,i) => ({name,count:cc[name],color:t.chartColors[i%t.chartColors.length]})).filter(d=>d.count>0);
+    const filtered = mergedLeads.filter((e: any) => { if (!e.created_at) return false; const d = new Date(e.created_at); return d.getMonth() === configChartMonth && d.getFullYear() === now.getFullYear(); });
+    const cc: Record<string, number> = {}; CONFIG_KEYS.forEach(k => cc[k] = 0);
+    filtered.forEach((item: any) => { const c = String(item.configuration || "").trim(); if (cc[c] !== undefined) cc[c]++; else cc["Other"]++; });
+    return CONFIG_KEYS.map((name, i) => ({ name, count: cc[name], color: t.chartColors[i % t.chartColors.length] })).filter(d => d.count > 0);
   }, [mergedLeads, configChartMonth, isDark]);
 
   const configInceptionBarData = useMemo(() => {
-    const cc: Record<string,number> = {}; CONFIG_KEYS.forEach(k=>cc[k]=0);
-    mergedLeads.forEach((item:any) => { const c=String(item.configuration||"").trim(); if(cc[c]!==undefined)cc[c]++;else cc["Other"]++; });
-    return CONFIG_KEYS.map((name,i) => ({name,count:cc[name],color:t.chartColors[i%t.chartColors.length]})).filter(d=>d.count>0);
+    const cc: Record<string, number> = {}; CONFIG_KEYS.forEach(k => cc[k] = 0);
+    mergedLeads.forEach((item: any) => { const c = String(item.configuration || "").trim(); if (cc[c] !== undefined) cc[c]++; else cc["Other"]++; });
+    return CONFIG_KEYS.map((name, i) => ({ name, count: cc[name], color: t.chartColors[i % t.chartColors.length] })).filter(d => d.count > 0);
   }, [mergedLeads, t.chartColors]);
 
   const buildMonthStackedData = (numMonths: number) => {
-    return Array.from({length:numMonths},(_,i)=>numMonths-1-i).map(offset => {
-      const d = new Date(now.getFullYear(), now.getMonth()-offset, 1);
+    return Array.from({ length: numMonths }, (_, i) => numMonths - 1 - i).map(offset => {
+      const d = new Date(now.getFullYear(), now.getMonth() - offset, 1);
       const monthIdx = d.getMonth(); const year = d.getFullYear();
-      const filtered = mergedLeads.filter((e:any) => { if(!e.created_at)return false; const dd=new Date(e.created_at); return dd.getMonth()===monthIdx&&dd.getFullYear()===year; });
-      const entry: Record<string,any> = { month: MONTH_NAMES[monthIdx].slice(0,3) };
-      CONFIG_KEYS.forEach(k => { entry[k]=filtered.filter((e:any)=>{const c=String(e.configuration||"").trim();return k==="Other"?!CONFIG_KEYS.slice(0,-1).includes(c):c===k;}).length; });
+      const filtered = mergedLeads.filter((e: any) => { if (!e.created_at) return false; const dd = new Date(e.created_at); return dd.getMonth() === monthIdx && dd.getFullYear() === year; });
+      const entry: Record<string, any> = { month: MONTH_NAMES[monthIdx].slice(0, 3) };
+      CONFIG_KEYS.forEach(k => { entry[k] = filtered.filter((e: any) => { const c = String(e.configuration || "").trim(); return k === "Other" ? !CONFIG_KEYS.slice(0, -1).includes(c) : c === k; }).length; });
       return entry;
     });
   };
 
-  const config3MonthBarData  = useMemo(() => buildMonthStackedData(3), [mergedLeads]);
-  const config6MonthBarData  = useMemo(() => buildMonthStackedData(6), [mergedLeads]);
-  const configYearlyBarData  = useMemo(() => buildMonthStackedData(12), [mergedLeads]);
+  const config3MonthBarData = useMemo(() => buildMonthStackedData(3), [mergedLeads]);
+  const config6MonthBarData = useMemo(() => buildMonthStackedData(6), [mergedLeads]);
+  const configYearlyBarData = useMemo(() => buildMonthStackedData(12), [mergedLeads]);
 
-  const enquiriesToday            = useMemo(() => mergedLeads.filter((e:any)=>e.created_at&&new Date(e.created_at)>=todayStart).length, [mergedLeads]);
-  const monthlyEnquiriesSelected  = useMemo(() => mergedLeads.filter((e:any)=>{if(!e.created_at)return false;const d=new Date(e.created_at);return d.getMonth()===selectedMonthCard&&d.getFullYear()===now.getFullYear();}).length, [mergedLeads,selectedMonthCard]);
-  const enquiries3Months          = useMemo(() => mergedLeads.filter((e:any)=>e.created_at&&new Date(e.created_at)>=threeMonthsAgo).length, [mergedLeads]);
-  const enquiries6Months          = useMemo(() => mergedLeads.filter((e:any)=>e.created_at&&new Date(e.created_at)>=sixMonthsAgo).length, [mergedLeads]);
-  const enquiriesYear             = useMemo(() => mergedLeads.filter((e:any)=>e.created_at&&new Date(e.created_at)>=yearStart).length, [mergedLeads]);
+  const enquiriesToday = useMemo(() => mergedLeads.filter((e: any) => e.created_at && new Date(e.created_at) >= todayStart).length, [mergedLeads]);
+  const monthlyEnquiriesSelected = useMemo(() => mergedLeads.filter((e: any) => { if (!e.created_at) return false; const d = new Date(e.created_at); return d.getMonth() === selectedMonthCard && d.getFullYear() === now.getFullYear(); }).length, [mergedLeads, selectedMonthCard]);
+  const enquiries3Months = useMemo(() => mergedLeads.filter((e: any) => e.created_at && new Date(e.created_at) >= threeMonthsAgo).length, [mergedLeads]);
+  const enquiries6Months = useMemo(() => mergedLeads.filter((e: any) => e.created_at && new Date(e.created_at) >= sixMonthsAgo).length, [mergedLeads]);
+  const enquiriesYear = useMemo(() => mergedLeads.filter((e: any) => e.created_at && new Date(e.created_at) >= yearStart).length, [mergedLeads]);
 
   const managerLeadCountsFiltered = useMemo(() => {
     let filtered = mergedLeads;
-    if (card3Mode==="today")    filtered=mergedLeads.filter((e:any)=>e.created_at&&new Date(e.created_at)>=todayStart);
-    else if (card3Mode==="monthly") filtered=mergedLeads.filter((e:any)=>{if(!e.created_at)return false;const d=new Date(e.created_at);return d.getMonth()===card3Month&&d.getFullYear()===now.getFullYear();});
-    else if (card3Mode==="3months") filtered=mergedLeads.filter((e:any)=>e.created_at&&new Date(e.created_at)>=threeMonthsAgo);
-    else if (card3Mode==="6months") filtered=mergedLeads.filter((e:any)=>e.created_at&&new Date(e.created_at)>=sixMonthsAgo);
-    else if (card3Mode==="yearly")  filtered=mergedLeads.filter((e:any)=>e.created_at&&new Date(e.created_at)>=yearStart);
-    const c: Record<string,number> = {};
-    filtered.forEach((e:any)=>{const m=e.assignedTo||"Unassigned";c[m]=(c[m]||0)+1;});
-    return Object.entries(c).map(([name,count])=>({name,count})).sort((a,b)=>b.count-a.count);
-  }, [mergedLeads,card3Mode,card3Month]);
+    if (card3Mode === "today") filtered = mergedLeads.filter((e: any) => e.created_at && new Date(e.created_at) >= todayStart);
+    else if (card3Mode === "monthly") filtered = mergedLeads.filter((e: any) => { if (!e.created_at) return false; const d = new Date(e.created_at); return d.getMonth() === card3Month && d.getFullYear() === now.getFullYear(); });
+    else if (card3Mode === "3months") filtered = mergedLeads.filter((e: any) => e.created_at && new Date(e.created_at) >= threeMonthsAgo);
+    else if (card3Mode === "6months") filtered = mergedLeads.filter((e: any) => e.created_at && new Date(e.created_at) >= sixMonthsAgo);
+    else if (card3Mode === "yearly") filtered = mergedLeads.filter((e: any) => e.created_at && new Date(e.created_at) >= yearStart);
+    const c: Record<string, number> = {};
+    filtered.forEach((e: any) => { const m = e.assignedTo || "Unassigned"; c[m] = (c[m] || 0) + 1; });
+    return Object.entries(c).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count);
+  }, [mergedLeads, card3Mode, card3Month]);
 
   const sourceDataFiltered = useMemo(() => {
     let filtered = mergedLeads;
-    if (card4Mode==="today")    filtered=mergedLeads.filter((e:any)=>e.created_at&&new Date(e.created_at)>=todayStart);
-    else if (card4Mode==="monthly") filtered=mergedLeads.filter((e:any)=>{if(!e.created_at)return false;const d=new Date(e.created_at);return d.getMonth()===card4Month&&d.getFullYear()===now.getFullYear();});
-    else if (card4Mode==="3months") filtered=mergedLeads.filter((e:any)=>e.created_at&&new Date(e.created_at)>=threeMonthsAgo);
-    else if (card4Mode==="6months") filtered=mergedLeads.filter((e:any)=>e.created_at&&new Date(e.created_at)>=sixMonthsAgo);
-    else if (card4Mode==="yearly")  filtered=mergedLeads.filter((e:any)=>e.created_at&&new Date(e.created_at)>=yearStart);
-    const counts: Record<string,number> = {}; LEAD_SOURCES.forEach(s=>counts[s]=0);
-    filtered.forEach((e:any)=>{const s=String(e.source||"Others").trim();if(counts[s]!==undefined)counts[s]++;else counts["Others"]=(counts["Others"]||0)+1;});
-    return LEAD_SOURCES.map((name,i)=>({name,count:counts[name],color:t.chartColors[i%t.chartColors.length]})).filter(d=>d.count>0).sort((a,b)=>b.count-a.count);
-  }, [mergedLeads,card4Mode,card4Month,t.chartColors]);
+    if (card4Mode === "today") filtered = mergedLeads.filter((e: any) => e.created_at && new Date(e.created_at) >= todayStart);
+    else if (card4Mode === "monthly") filtered = mergedLeads.filter((e: any) => { if (!e.created_at) return false; const d = new Date(e.created_at); return d.getMonth() === card4Month && d.getFullYear() === now.getFullYear(); });
+    else if (card4Mode === "3months") filtered = mergedLeads.filter((e: any) => e.created_at && new Date(e.created_at) >= threeMonthsAgo);
+    else if (card4Mode === "6months") filtered = mergedLeads.filter((e: any) => e.created_at && new Date(e.created_at) >= sixMonthsAgo);
+    else if (card4Mode === "yearly") filtered = mergedLeads.filter((e: any) => e.created_at && new Date(e.created_at) >= yearStart);
+    const counts: Record<string, number> = {}; LEAD_SOURCES.forEach(s => counts[s] = 0);
+    filtered.forEach((e: any) => { const s = String(e.source || "Others").trim(); if (counts[s] !== undefined) counts[s]++; else counts["Others"] = (counts["Others"] || 0) + 1; });
+    return LEAD_SOURCES.map((name, i) => ({ name, count: counts[name], color: t.chartColors[i % t.chartColors.length] })).filter(d => d.count > 0).sort((a, b) => b.count - a.count);
+  }, [mergedLeads, card4Mode, card4Month, t.chartColors]);
 
   const isConfigChartEmpty = (() => {
-    if (chartMode1==="today")     return configTodayBarData.length===0;
-    if (chartMode1==="monthly")   return configMonthlyBarData.length===0;
-    if (chartMode1==="inception") return configInceptionBarData.length===0;
-    const data = chartMode1==="3months"?config3MonthBarData:chartMode1==="6months"?config6MonthBarData:configYearlyBarData;
-    return !data.some((d:any)=>CONFIG_KEYS.some(k=>d[k]>0));
+    if (chartMode1 === "today") return configTodayBarData.length === 0;
+    if (chartMode1 === "monthly") return configMonthlyBarData.length === 0;
+    if (chartMode1 === "inception") return configInceptionBarData.length === 0;
+    const data = chartMode1 === "3months" ? config3MonthBarData : chartMode1 === "6months" ? config6MonthBarData : configYearlyBarData;
+    return !data.some((d: any) => CONFIG_KEYS.some(k => d[k] > 0));
   })();
 
   const axisColor = isDark ? "#9ca3af" : "#6B7280";
 
-  const CustomTooltip = ({active,payload,label}:any) => active&&payload?.length
-    ? <div style={{background:t.tooltipBg,border:t.tooltipBorder,borderRadius:8,padding:"8px 12px",color:t.tooltipColor,fontSize:12,boxShadow:"0 4px 12px rgba(0,0,0,0.1)"}}>
-        <p style={{color:t.legendColor,marginBottom:4}}>{label}</p>
-        {payload.map((p:any,i:number) => <p key={i} style={{fontWeight:700,color:p.fill||p.color}}>{p.name}: {p.value}</p>)}
-      </div>
+  const CustomTooltip = ({ active, payload, label }: any) => active && payload?.length
+    ? <div style={{ background: t.tooltipBg, border: t.tooltipBorder, borderRadius: 8, padding: "8px 12px", color: t.tooltipColor, fontSize: 12, boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}>
+      <p style={{ color: t.legendColor, marginBottom: 4 }}>{label}</p>
+      {payload.map((p: any, i: number) => <p key={i} style={{ fontWeight: 700, color: p.fill || p.color }}>{p.name}: {p.value}</p>)}
+    </div>
     : null;
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -1037,7 +1042,7 @@ export default function ReceptionistDashboard() {
   const LoaderRow = () => (
     <tr><td colSpan={9} className="p-6 text-center">
       <div className={`flex items-center justify-center gap-3 text-sm ${t.textMuted}`}>
-        <div className="flex gap-1">{[0,150,300].map(d=><span key={d} className={`w-2 h-2 rounded-full animate-bounce ${isDark?"bg-[#9E217B]":"bg-[#00AEEF]"}`} style={{animationDelay:`${d}ms`}}/>)}</div>
+        <div className="flex gap-1">{[0, 150, 300].map(d => <span key={d} className={`w-2 h-2 rounded-full animate-bounce ${isDark ? "bg-[#9E217B]" : "bg-[#00AEEF]"}`} style={{ animationDelay: `${d}ms` }} />)}</div>
         Loading more…
       </div>
     </td></tr>
@@ -1045,25 +1050,24 @@ export default function ReceptionistDashboard() {
 
   const CardsLoader = () => (
     <div className={`col-span-full flex items-center justify-center gap-3 text-sm py-10 ${t.textMuted}`}>
-      <div className="flex gap-1.5">{[0,150,300].map(d=><span key={d} className={`w-2 h-2 rounded-full animate-bounce ${isDark?"bg-[#9E217B]":"bg-[#00AEEF]"}`} style={{animationDelay:`${d}ms`}}/>)}</div>
+      <div className="flex gap-1.5">{[0, 150, 300].map(d => <span key={d} className={`w-2 h-2 rounded-full animate-bounce ${isDark ? "bg-[#9E217B]" : "bg-[#00AEEF]"}`} style={{ animationDelay: `${d}ms` }} />)}</div>
       Loading more leads…
     </div>
   );
 
   // Shared form input classes
-  const formInput  = `w-full rounded-lg px-4 py-2 text-sm outline-none transition-colors border ${t.inputInner} ${t.text} ${t.inputFocus}`;
+  const formInput = `w-full rounded-lg px-4 py-2 text-sm outline-none transition-colors border ${t.inputInner} ${t.text} ${t.inputFocus}`;
   const formSelect = `w-full rounded-lg px-4 py-2.5 text-sm outline-none cursor-pointer border ${t.inputInner} ${t.text} ${t.inputFocus}`;
 
   return (
     <div
       className={`flex flex-col md:flex-row h-screen font-sans overflow-hidden ${t.pageWrap}`}
-      style={isDark ? {} : { background:"linear-gradient(135deg, #e8f6fd 0%, #f8fafc 30%, #faf0fb 62%, #f8fafc 78%, #e6fafe 100%)" }}
+      style={isDark ? {} : { background: "linear-gradient(135deg, #e8f6fd 0%, #f8fafc 30%, #faf0fb 62%, #f8fafc 78%, #e6fafe 100%)" }}
     >
       {/* ── TOAST ── */}
       {toastMsg && (
-        <div className={`fixed top-6 left-1/2 -translate-x-1/2 z-[200] px-6 py-3 rounded-xl shadow-lg flex items-center gap-4 animate-fadeIn border ${
-          toastMsg.color==="green"?"bg-green-600 border-green-400 text-white":"bg-blue-600 border-blue-400 text-white"
-        }`}>
+        <div className={`fixed top-6 left-1/2 -translate-x-1/2 z-[200] px-6 py-3 rounded-xl shadow-lg flex items-center gap-4 animate-fadeIn border ${toastMsg.color === "green" ? "bg-green-600 border-green-400 text-white" : "bg-blue-600 border-blue-400 text-white"
+          }`}>
           <span className="text-sm font-bold">{toastMsg.title}</span>
         </div>
       )}
@@ -1075,17 +1079,17 @@ export default function ReceptionistDashboard() {
         <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xl font-bold text-white mb-10 cursor-pointer ${t.logoBg}`}>B</div>
         <nav className="flex flex-col space-y-4 w-full items-center flex-1">
           {NAV_ITEMS.map(({ id, icon, title }) => {
-            const active = activeTab === id || (id==="forms"&&activeTab==="detail");
+            const active = activeTab === id || (id === "forms" && activeTab === "detail");
             return (
               <div key={id} onClick={() => setActiveTab(id)} className="group relative flex justify-center cursor-pointer w-full" title={title}>
-                {active && <div className={`absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 rounded-r ${t.navIndicator}`}/>}
+                {active && <div className={`absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 rounded-r ${t.navIndicator}`} />}
                 <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${active ? t.navActive : t.navInactive}`}>{icon}</div>
               </div>
             );
           })}
           <div onClick={() => setActiveTab("settings")} className="group relative flex justify-center cursor-pointer w-full mt-auto" title="Settings">
-            {activeTab==="settings" && <div className={`absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 rounded-r ${t.navIndicator}`}/>}
-            <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${activeTab==="settings" ? t.navActive : t.navInactive}`}><FaCog className="w-5 h-5"/></div>
+            {activeTab === "settings" && <div className={`absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 rounded-r ${t.navIndicator}`} />}
+            <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${activeTab === "settings" ? t.navActive : t.navInactive}`}><FaCog className="w-5 h-5" /></div>
           </div>
         </nav>
       </aside>
@@ -1101,15 +1105,15 @@ export default function ReceptionistDashboard() {
           <div className="flex items-center space-x-4 relative">
             <button onClick={() => setIsDark(!isDark)} aria-label="Toggle theme"
               className={`w-9 h-9 rounded-xl border flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm ${t.toggleWrap}`}>
-              {isDark ? <SunIcon/> : <MoonIcon/>}
+              {isDark ? <SunIcon /> : <MoonIcon />}
             </button>
-           {/* ── NOTIFICATION BELL & DROPDOWN ── */}
+            {/* ── NOTIFICATION BELL & DROPDOWN ── */}
             <div className="relative">
-              <button 
-                onClick={() => { setIsNotificationsOpen(!isNotificationsOpen); setNotifCount(0); setIsProfileOpen(false); }} 
+              <button
+                onClick={() => { setIsNotificationsOpen(!isNotificationsOpen); setNotifCount(0); setIsProfileOpen(false); }}
                 className={`${t.textMuted} transition-colors relative cursor-pointer`}
               >
-                <FaBell className="w-5 h-5"/>
+                <FaBell className="w-5 h-5" />
                 {notifCount > 0 && (
                   <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-[#9E217B] rounded-full text-[9px] font-black text-white flex items-center justify-center">
                     {notifCount > 9 ? "9+" : notifCount}
@@ -1121,9 +1125,9 @@ export default function ReceptionistDashboard() {
                 <div className={`absolute top-12 right-0 w-[320px] border rounded-xl shadow-2xl flex flex-col z-50 animate-fadeIn ${t.dropdown}`} style={t.dropdownGlass}>
                   <div className={`p-4 border-b flex justify-between items-center ${t.tableBorder}`}>
                     <h3 className={`font-bold text-sm flex items-center gap-2 ${t.text}`}>
-                      <FaBell className="text-[#9E217B]"/> Recent Notifications
+                      <FaBell className="text-[#9E217B]" /> Recent Notifications
                     </h3>
-                    <button onClick={() => setIsNotificationsOpen(false)} className={`${t.textMuted} hover:text-red-500`}><FaTimes className="text-xs"/></button>
+                    <button onClick={() => setIsNotificationsOpen(false)} className={`${t.textMuted} hover:text-red-500`}><FaTimes className="text-xs" /></button>
                   </div>
                   <div className={`max-h-[360px] overflow-y-auto ${t.scroll}`}>
                     {notificationHistory.length === 0 ? (
@@ -1132,7 +1136,7 @@ export default function ReceptionistDashboard() {
                       notificationHistory.map((n) => (
                         <div key={n.id} className={`p-4 border-b last:border-b-0 transition-colors flex items-start gap-3 ${isDark ? "hover:bg-white/5 border-[#333]" : "hover:bg-black/5 border-[#E5E7EB]"}`}>
                           <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-white ${n.type === "visit" ? "bg-orange-500" : "bg-[#25D366]"}`}>
-                            {n.type === "visit" ? <FaCalendarAlt className="text-[12px]"/> : <FaBriefcase className="text-[12px]" />}
+                            {n.type === "visit" ? <FaCalendarAlt className="text-[12px]" /> : <FaBriefcase className="text-[12px]" />}
                           </div>
                           <div>
                             <p className={`text-xs font-bold ${t.text}`}>{n.line1}</p>
@@ -1156,25 +1160,25 @@ export default function ReceptionistDashboard() {
               </div>
             )} */}
             <div onClick={() => setIsProfileOpen(!isProfileOpen)}
-              className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm cursor-pointer shadow-md hover:scale-105 transition-transform ${isDark?"border border-[#9E217B]/40 text-[#d4006e] bg-[#9E217B]/15":"border border-[#00AEEF]/40 text-[#00AEEF] bg-[#00AEEF]/10"}`}>
-              {String(user?.name||"U").charAt(0).toUpperCase()}
+              className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm cursor-pointer shadow-md hover:scale-105 transition-transform ${isDark ? "border border-[#9E217B]/40 text-[#d4006e] bg-[#9E217B]/15" : "border border-[#00AEEF]/40 text-[#00AEEF] bg-[#00AEEF]/10"}`}>
+              {String(user?.name || "U").charAt(0).toUpperCase()}
             </div>
             {isProfileOpen && (
               <div className={`absolute top-12 right-0 w-64 rounded-xl shadow-2xl p-5 z-50 animate-fadeIn border ${t.dropdown}`} style={t.dropdownGlass}>
                 <div className="mb-4">
-                  <h3 className={`font-bold text-lg ${t.text}`}>{user?.name||"User"}</h3>
-                  <p className={`text-sm truncate ${t.textMuted}`}>{user?.email||"No email"}</p>
+                  <h3 className={`font-bold text-lg ${t.text}`}>{user?.name || "User"}</h3>
+                  <p className={`text-sm truncate ${t.textMuted}`}>{user?.email || "No email"}</p>
                 </div>
-                <hr className={`mb-4 border-0 border-t ${t.tableBorder}`}/>
+                <hr className={`mb-4 border-0 border-t ${t.tableBorder}`} />
                 <div className="space-y-4 mb-6 text-sm">
                   <p className={`flex justify-between items-center ${t.textMuted}`}>Role:
-                    <span className={`font-bold capitalize px-2 py-0.5 rounded text-xs ${isDark?"text-[#d4006e] bg-[#9E217B]/10":"text-[#00AEEF] bg-[#00AEEF]/10"}`}>{user?.role}</span>
+                    <span className={`font-bold capitalize px-2 py-0.5 rounded text-xs ${isDark ? "text-[#d4006e] bg-[#9E217B]/10" : "text-[#00AEEF] bg-[#00AEEF]/10"}`}>{user?.role}</span>
                   </p>
                   <div>
                     <p className={`text-xs mb-1 ${t.textFaint}`}>Password</p>
                     <div className={`flex items-center justify-between p-2 rounded-md border ${t.settingsBg}`} style={t.settingsBgGl}>
                       <span className={`font-mono tracking-widest ${t.text}`}>{showPassword ? user.password : "••••••••••••"}</span>
-                      <button onClick={() => setShowPassword(!showPassword)} className={`${t.textMuted} cursor-pointer`}><FaEyeSlash/></button>
+                      <button onClick={() => setShowPassword(!showPassword)} className={`${t.textMuted} cursor-pointer`}><FaEyeSlash /></button>
                     </div>
                   </div>
                 </div>
@@ -1182,7 +1186,7 @@ export default function ReceptionistDashboard() {
               </div>
             )}
             {/* ── TOAST NOTIFICATION POPUP ── */}
-          {/* 👇 TOAST POPUP 👇 */}
+            {/* 👇 TOAST POPUP 👇 */}
             {activeNotif && (
               <div className="absolute top-[68px] right-0 z-[999] animate-fadeIn">
                 <div className={`flex items-start gap-3 px-4 py-3 rounded-2xl shadow-2xl border min-w-[280px] max-w-[360px] ${isDark ? "bg-[#1a1a1a] border-[#333]" : "bg-white border-[#E5E7EB]"}`}>
@@ -1194,13 +1198,13 @@ export default function ReceptionistDashboard() {
                     <p className={`text-[11px] mt-0.5 truncate ${isDark ? "text-gray-400" : "text-[#6B7280]"}`}>{activeNotif.line2}</p>
                   </div>
                   <button onClick={() => setActiveNotif(null)} className={`flex-shrink-0 mt-0.5 p-0.5 rounded cursor-pointer ${t.textMuted}`}>
-                    <FaTimes className="text-[10px]"/>
+                    <FaTimes className="text-[10px]" />
                   </button>
                 </div>
               </div>
             )}
           </div>
-        
+
         </header>
 
         {/* ── MAIN SCROLL AREA ── */}
@@ -1214,20 +1218,20 @@ export default function ReceptionistDashboard() {
               <h1 className={`text-3xl font-bold mb-8 ${t.text}`}>Settings & Profile</h1>
               <div className="w-full lg:w-2/3 grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className={`rounded-2xl p-8 border flex flex-col items-center justify-center ${t.card}`} style={t.cardGlass}>
-                  <FaCalendarAlt className={`text-5xl mb-4 ${t.accentText}`}/>
-                  <h2 className={`text-3xl lg:text-4xl font-black tracking-tight mb-2 ${t.text}`}>{currentTime.toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit",second:"2-digit"})}</h2>
-                  <p className={`font-medium text-sm lg:text-lg ${t.textMuted}`}>{currentTime.toLocaleDateString("en-IN",{weekday:"long",year:"numeric",month:"long",day:"numeric"})}</p>
+                  <FaCalendarAlt className={`text-5xl mb-4 ${t.accentText}`} />
+                  <h2 className={`text-3xl lg:text-4xl font-black tracking-tight mb-2 ${t.text}`}>{currentTime.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}</h2>
+                  <p className={`font-medium text-sm lg:text-lg ${t.textMuted}`}>{currentTime.toLocaleDateString("en-IN", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</p>
                 </div>
                 <div className={`rounded-2xl p-8 border ${t.card}`} style={t.cardGlass}>
                   <h3 className={`text-lg font-bold border-b pb-2 mb-6 uppercase tracking-wider ${t.sectionTitle} ${t.tableBorder}`}>Account Details</h3>
                   <div className="space-y-6">
                     <div><p className={`text-xs font-medium mb-1 ${t.textFaint}`}>Full Name</p><p className={`font-semibold text-lg ${t.text}`}>{user?.name}</p></div>
-                    <div><p className={`text-xs font-medium mb-1 ${t.textFaint}`}>Registered Email</p><p className={`font-medium ${t.text}`}>{user?.email||"No Email"}</p></div>
+                    <div><p className={`text-xs font-medium mb-1 ${t.textFaint}`}>Registered Email</p><p className={`font-medium ${t.text}`}>{user?.email || "No Email"}</p></div>
                     <div>
                       <p className={`text-xs font-medium mb-1 ${t.textFaint}`}>System Password</p>
                       <div className={`flex items-center justify-between p-3 rounded-lg border ${t.settingsBg}`} style={t.settingsBgGl}>
                         <span className={`font-mono tracking-widest ${t.text}`}>{showPassword ? user.password : "••••••••••••"}</span>
-                        <button onClick={() => setShowPassword(!showPassword)} className={`${t.textMuted} cursor-pointer`}><FaEyeSlash/></button>
+                        <button onClick={() => setShowPassword(!showPassword)} className={`${t.textMuted} cursor-pointer`}><FaEyeSlash /></button>
                       </div>
                     </div>
                   </div>
@@ -1260,7 +1264,7 @@ export default function ReceptionistDashboard() {
                 </div>
                 {/* Live indicator */}
                 <div className="ml-auto flex items-center gap-2">
-                  <span className={`w-2 h-2 rounded-full animate-pulse ${isDark ? "bg-green-400" : "bg-green-500"}`}/>
+                  <span className={`w-2 h-2 rounded-full animate-pulse ${isDark ? "bg-green-400" : "bg-green-500"}`} />
                   <span className={`text-[10px] font-semibold uppercase tracking-widest ${t.textMuted}`}>Live</span>
                 </div>
               </div>
@@ -1331,9 +1335,9 @@ export default function ReceptionistDashboard() {
                                 {parts.map((part, pi) =>
                                   part.startsWith("**") && part.endsWith("**")
                                     ? <span key={pi} style={{
-                                        fontWeight: 700,
-                                        color: isUser ? "#fff" : (isDark ? "#8ab4f8" : "#9E217B"),
-                                      }}>{part.slice(2, -2)}</span>
+                                      fontWeight: 700,
+                                      color: isUser ? "#fff" : (isDark ? "#8ab4f8" : "#9E217B"),
+                                    }}>{part.slice(2, -2)}</span>
                                     : <span key={pi}>{part}</span>
                                 )}
                               </div>
@@ -1372,13 +1376,13 @@ export default function ReceptionistDashboard() {
                         border: isDark ? "1px solid #2a2a35" : "1px solid #e2e8f0",
                         display: "flex", gap: 5, alignItems: "center",
                       }}>
-                        {[0,1,2].map(i => (
+                        {[0, 1, 2].map(i => (
                           <span key={i} style={{
                             width: 7, height: 7, borderRadius: "50%",
                             background: isDark ? "#8ab4f8" : "#9E217B",
                             animation: `bounce 1.2s ease-in-out ${i * 0.2}s infinite`,
                             display: "block",
-                          }}/>
+                          }} />
                         ))}
                       </div>
                     </div>
@@ -1403,7 +1407,7 @@ export default function ReceptionistDashboard() {
                             onClick={() => {
                               setChatInput(chip);
                               // Directly trigger submit
-                              const syntheticEvent = { preventDefault: () => {} } as React.FormEvent;
+                              const syntheticEvent = { preventDefault: () => { } } as React.FormEvent;
                               const saved = chatInput;
                               setChatInput(chip);
                               setTimeout(() => {
@@ -1464,7 +1468,7 @@ export default function ReceptionistDashboard() {
                     </div>
                   )}
 
-                  <div ref={chatEndRef}/>
+                  <div ref={chatEndRef} />
                 </div>
 
                 {/* ── Input bar ── */}
@@ -1525,7 +1529,7 @@ export default function ReceptionistDashboard() {
                           : "none",
                         transform: chatInput.trim() ? "scale(1)" : "scale(0.95)",
                       }}>
-                      <FaPaperPlane style={{ marginLeft: -1 }}/>
+                      <FaPaperPlane style={{ marginLeft: -1 }} />
                     </button>
                   </form>
 
@@ -1540,22 +1544,23 @@ export default function ReceptionistDashboard() {
               </div>
 
               {/* Keyframe for fadeUp */}
-              <style dangerouslySetInnerHTML={{ __html: `
+              <style dangerouslySetInnerHTML={{
+                __html: `
                 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
                 @keyframes fadeUp {
                   from { opacity: 0; transform: translateY(8px); }
                   to   { opacity: 1; transform: translateY(0); }
                 }
-              `}}/>
+              `}} />
             </div>
           )}
 
           {/* ── SHARED PAGE HEADER ── */}
-          {!["settings","detail","assistant","assigned","recep-leads","closed-leads"].includes(activeTab) && (
+          {!["settings", "detail", "assistant", "assigned", "recep-leads", "closed-leads"].includes(activeTab) && (
             <div className="flex justify-between items-center mb-8">
               <h1 className={`text-xl md:text-3xl font-bold flex items-center flex-wrap gap-2 md:gap-3 ${t.text}`}>
-                Hi, {String(user?.name||"User").split(" ")[0]}
-                <span className={`text-xs md:text-sm font-medium px-2 py-0.5 md:px-3 md:py-1 rounded-full capitalize ${isDark?"text-[#9E217B] bg-white/80 border border-[#9E217B]/40":"text-[#9E217B] bg-[#9E217B]/10 border border-[#9E217B]/20"}`}>{user?.role}</span>
+                Hi, {String(user?.name || "User").split(" ")[0]}
+                <span className={`text-xs md:text-sm font-medium px-2 py-0.5 md:px-3 md:py-1 rounded-full capitalize ${isDark ? "text-[#9E217B] bg-white/80 border border-[#9E217B]/40" : "text-[#9E217B] bg-[#9E217B]/10 border border-[#9E217B]/20"}`}>{user?.role}</span>
               </h1>
               <button onClick={refetchAll} className={`text-white text-xs md:text-sm font-semibold flex items-center gap-1 md:gap-2 px-3 py-1.5 md:px-4 md:py-2 rounded-lg transition-all shadow-sm ${t.btnPrimary}`}>
                 <span className="md:hidden">↻ Sync</span>
@@ -1578,18 +1583,18 @@ export default function ReceptionistDashboard() {
                     <div className="flex items-center gap-2">
                       <button onClick={() => {
                         let d: any[] = [];
-                        if (chartMode1==="today")     d=configTodayBarData;
-                        else if (chartMode1==="monthly")   d=configMonthlyBarData;
-                        else if (chartMode1==="inception") d=configInceptionBarData;
-                        else d=(chartMode1==="3months"?config3MonthBarData:chartMode1==="6months"?config6MonthBarData:configYearlyBarData);
-                        downloadCSV(d.map(({color,monthIdx,year,...r}:any)=>r), `Room_Configurations_${chartMode1}.csv`);
-                      }} className={`p-1.5 border rounded-md ${t.exportBtn}`} title="Export CSV"><FaDownload size={12}/></button>
-                      {chartMode1==="monthly" && (
-                        <select value={configChartMonth} onChange={e=>setConfigChartMonth(Number(e.target.value))} className={`text-[10px] rounded px-1.5 py-1 outline-none cursor-pointer border ${t.selectSmall}`}>
-                          {MONTH_NAMES.map((m,idx)=><option key={idx} value={idx}>{m}</option>)}
+                        if (chartMode1 === "today") d = configTodayBarData;
+                        else if (chartMode1 === "monthly") d = configMonthlyBarData;
+                        else if (chartMode1 === "inception") d = configInceptionBarData;
+                        else d = (chartMode1 === "3months" ? config3MonthBarData : chartMode1 === "6months" ? config6MonthBarData : configYearlyBarData);
+                        downloadCSV(d.map(({ color, monthIdx, year, ...r }: any) => r), `Room_Configurations_${chartMode1}.csv`);
+                      }} className={`p-1.5 border rounded-md ${t.exportBtn}`} title="Export CSV"><FaDownload size={12} /></button>
+                      {chartMode1 === "monthly" && (
+                        <select value={configChartMonth} onChange={e => setConfigChartMonth(Number(e.target.value))} className={`text-[10px] rounded px-1.5 py-1 outline-none cursor-pointer border ${t.selectSmall}`}>
+                          {MONTH_NAMES.map((m, idx) => <option key={idx} value={idx}>{m}</option>)}
                         </select>
                       )}
-                      <select value={chartMode1} onChange={e=>setChartMode1(e.target.value as any)} className={`text-xs rounded-lg px-2 py-1.5 outline-none cursor-pointer border ${t.selectSmall}`}>
+                      <select value={chartMode1} onChange={e => setChartMode1(e.target.value as any)} className={`text-xs rounded-lg px-2 py-1.5 outline-none cursor-pointer border ${t.selectSmall}`}>
                         <option value="today">Today</option><option value="monthly">Monthly</option>
                         <option value="3months">Last 3 Months</option><option value="6months">Last 6 Months</option>
                         <option value="yearly">Yearly</option><option value="inception">Inception</option>
@@ -1597,15 +1602,15 @@ export default function ReceptionistDashboard() {
                     </div>
                   </div>
                   <p className={`text-[10px] font-semibold mb-3 ${t.accentText}`}>
-                    {chartMode1==="today"&&`Today — ${now.toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"})}`}
-                    {chartMode1==="monthly"&&`${MONTH_NAMES[configChartMonth]} ${now.getFullYear()}`}
-                    {chartMode1==="3months"&&"Last 3 Months"}{chartMode1==="6months"&&"Last 6 Months"}
-                    {chartMode1==="yearly"&&`Year ${now.getFullYear()}`}{chartMode1==="inception"&&"All Time"}
+                    {chartMode1 === "today" && `Today — ${now.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}`}
+                    {chartMode1 === "monthly" && `${MONTH_NAMES[configChartMonth]} ${now.getFullYear()}`}
+                    {chartMode1 === "3months" && "Last 3 Months"}{chartMode1 === "6months" && "Last 6 Months"}
+                    {chartMode1 === "yearly" && `Year ${now.getFullYear()}`}{chartMode1 === "inception" && "All Time"}
                   </p>
                   {isFetchingEnquiries ? (
                     <div className={`flex-1 flex items-center justify-center text-sm ${t.textMuted} min-h-[230px]`}>Calculating…</div>
                   ) : isConfigChartEmpty ? (
-                    <div className={`w-full h-[230px] mt-2 flex flex-col items-center justify-center rounded-xl border-2 border-dashed ${isDark?"border-[#2A2A35]":"border-gray-200"}`}>
+                    <div className={`w-full h-[230px] mt-2 flex flex-col items-center justify-center rounded-xl border-2 border-dashed ${isDark ? "border-[#2A2A35]" : "border-gray-200"}`}>
                       <span className={`text-sm font-medium ${t.textMuted}`}>No data available</span>
                     </div>
                   ) : (
@@ -1613,20 +1618,20 @@ export default function ReceptionistDashboard() {
                       <ResponsiveContainer width="100%" height="100%">
                         {(() => {
                           let pieData: any[] = [];
-                          if (chartMode1==="today")     pieData=configTodayBarData;
-                          else if (chartMode1==="monthly")   pieData=configMonthlyBarData;
-                          else if (chartMode1==="inception") pieData=configInceptionBarData;
+                          if (chartMode1 === "today") pieData = configTodayBarData;
+                          else if (chartMode1 === "monthly") pieData = configMonthlyBarData;
+                          else if (chartMode1 === "inception") pieData = configInceptionBarData;
                           else {
-                            const src = chartMode1==="3months"?config3MonthBarData:chartMode1==="6months"?config6MonthBarData:configYearlyBarData;
-                            pieData = CONFIG_KEYS.map((key,i)=>({ name:key, count:src.reduce((s:number,item:any)=>s+(item[key]||0),0), color:t.chartColors[i%t.chartColors.length] })).filter(d=>d.count>0);
+                            const src = chartMode1 === "3months" ? config3MonthBarData : chartMode1 === "6months" ? config6MonthBarData : configYearlyBarData;
+                            pieData = CONFIG_KEYS.map((key, i) => ({ name: key, count: src.reduce((s: number, item: any) => s + (item[key] || 0), 0), color: t.chartColors[i % t.chartColors.length] })).filter(d => d.count > 0);
                           }
                           return (
                             <PieChart>
                               <Pie data={pieData} dataKey="count" nameKey="name" cx="50%" cy="50%" innerRadius={55} outerRadius={85} paddingAngle={2} stroke="none">
-                                {pieData.map((_:any,i:number)=><Cell key={i} fill={pieData[i].color}/>)}
+                                {pieData.map((_: any, i: number) => <Cell key={i} fill={pieData[i].color} />)}
                               </Pie>
-                              <Tooltip content={<CustomTooltip/>}/>
-                              <Legend verticalAlign="bottom" align="center" wrapperStyle={{fontSize:"10px",color:t.legendColor,paddingTop:"10px"}}/>
+                              <Tooltip content={<CustomTooltip />} />
+                              <Legend verticalAlign="bottom" align="center" wrapperStyle={{ fontSize: "10px", color: t.legendColor, paddingTop: "10px" }} />
                             </PieChart>
                           );
                         })()}
@@ -1640,13 +1645,13 @@ export default function ReceptionistDashboard() {
                   <div className="flex items-center justify-between mb-3">
                     <h2 className={`text-base font-bold ${t.text}`}>Lead Sources</h2>
                     <div className="flex items-center gap-2">
-                      <button onClick={() => downloadCSV(sourceDataFiltered.map(({color,...r}:any)=>r), `Lead_Sources_${card4Mode}.csv`)} className={`p-1.5 border rounded-md ${t.exportBtn}`} title="Export CSV"><FaDownload size={12}/></button>
-                      {card4Mode==="monthly" && (
-                        <select value={card4Month} onChange={e=>setCard4Month(Number(e.target.value))} className={`text-[10px] rounded px-1.5 py-1 outline-none cursor-pointer border ${t.selectSmall}`}>
-                          {MONTH_NAMES.map((m,idx)=><option key={idx} value={idx}>{m}</option>)}
+                      <button onClick={() => downloadCSV(sourceDataFiltered.map(({ color, ...r }: any) => r), `Lead_Sources_${card4Mode}.csv`)} className={`p-1.5 border rounded-md ${t.exportBtn}`} title="Export CSV"><FaDownload size={12} /></button>
+                      {card4Mode === "monthly" && (
+                        <select value={card4Month} onChange={e => setCard4Month(Number(e.target.value))} className={`text-[10px] rounded px-1.5 py-1 outline-none cursor-pointer border ${t.selectSmall}`}>
+                          {MONTH_NAMES.map((m, idx) => <option key={idx} value={idx}>{m}</option>)}
                         </select>
                       )}
-                      <select value={card4Mode} onChange={e=>setCard4Mode(e.target.value as any)} className={`text-xs rounded-lg px-2 py-1.5 outline-none cursor-pointer border ${t.selectSmall}`}>
+                      <select value={card4Mode} onChange={e => setCard4Mode(e.target.value as any)} className={`text-xs rounded-lg px-2 py-1.5 outline-none cursor-pointer border ${t.selectSmall}`}>
                         <option value="today">Today</option><option value="monthly">Monthly</option>
                         <option value="3months">Last 3 Months</option><option value="6months">Last 6 Months</option>
                         <option value="yearly">Yearly</option><option value="inception">Inception</option>
@@ -1654,15 +1659,15 @@ export default function ReceptionistDashboard() {
                     </div>
                   </div>
                   <p className={`text-[10px] font-semibold mb-3 ${t.accentText}`}>
-                    {card4Mode==="today"&&`Today — ${now.toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"})}`}
-                    {card4Mode==="monthly"&&`${MONTH_NAMES[card4Month]} ${now.getFullYear()}`}
-                    {card4Mode==="3months"&&"Last 3 Months"}{card4Mode==="6months"&&"Last 6 Months"}
-                    {card4Mode==="yearly"&&`Year ${now.getFullYear()}`}{card4Mode==="inception"&&"All Time"}
+                    {card4Mode === "today" && `Today — ${now.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}`}
+                    {card4Mode === "monthly" && `${MONTH_NAMES[card4Month]} ${now.getFullYear()}`}
+                    {card4Mode === "3months" && "Last 3 Months"}{card4Mode === "6months" && "Last 6 Months"}
+                    {card4Mode === "yearly" && `Year ${now.getFullYear()}`}{card4Mode === "inception" && "All Time"}
                   </p>
                   {isFetchingEnquiries ? (
                     <div className={`flex-1 flex items-center justify-center text-sm ${t.textMuted} min-h-[230px]`}>Calculating…</div>
-                  ) : sourceDataFiltered.length===0 ? (
-                    <div className={`w-full h-[230px] flex items-center justify-center rounded-xl border-2 border-dashed ${isDark?"border-[#2A2A35]":"border-gray-200"}`}>
+                  ) : sourceDataFiltered.length === 0 ? (
+                    <div className={`w-full h-[230px] flex items-center justify-center rounded-xl border-2 border-dashed ${isDark ? "border-[#2A2A35]" : "border-gray-200"}`}>
                       <span className={`text-sm font-medium ${t.textMuted}`}>No data available</span>
                     </div>
                   ) : (
@@ -1670,10 +1675,10 @@ export default function ReceptionistDashboard() {
                       <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
                           <Pie data={sourceDataFiltered} dataKey="count" nameKey="name" cx="50%" cy="50%" innerRadius={55} outerRadius={85} paddingAngle={2} stroke="none">
-                            {sourceDataFiltered.map((_:any,i:number)=><Cell key={i} fill={sourceDataFiltered[i].color}/>)}
+                            {sourceDataFiltered.map((_: any, i: number) => <Cell key={i} fill={sourceDataFiltered[i].color} />)}
                           </Pie>
-                          <Tooltip content={<CustomTooltip/>}/>
-                          <Legend verticalAlign="bottom" align="center" wrapperStyle={{fontSize:"10px",color:t.legendColor,paddingTop:"10px"}}/>
+                          <Tooltip content={<CustomTooltip />} />
+                          <Legend verticalAlign="bottom" align="center" wrapperStyle={{ fontSize: "10px", color: t.legendColor, paddingTop: "10px" }} />
                         </PieChart>
                       </ResponsiveContainer>
                     </div>
@@ -1683,52 +1688,52 @@ export default function ReceptionistDashboard() {
                 {/* Card 2: Enquiry Details */}
                 <div className={`rounded-2xl p-6 border flex flex-col gap-4 ${t.card}`} style={t.cardGlass}>
                   <div className="flex items-center justify-between">
-                    <h2 className={`text-base font-bold ${isDark?"text-[#d4006e]":"text-[#9E217B]"}`}>Enquiry Details</h2>
+                    <h2 className={`text-base font-bold ${isDark ? "text-[#d4006e]" : "text-[#9E217B]"}`}>Enquiry Details</h2>
                     <div className="flex items-center gap-2">
                       <button onClick={() => {
                         let f = mergedLeads;
-                        if (card2Mode==="today") f=mergedLeads.filter((e:any)=>e.created_at&&new Date(e.created_at)>=todayStart);
-                        else if (card2Mode==="monthly") f=mergedLeads.filter((e:any)=>e.created_at&&new Date(e.created_at).getMonth()===selectedMonthCard&&new Date(e.created_at).getFullYear()===now.getFullYear());
-                        else if (card2Mode==="3months") f=mergedLeads.filter((e:any)=>e.created_at&&new Date(e.created_at)>=threeMonthsAgo);
-                        else if (card2Mode==="6months") f=mergedLeads.filter((e:any)=>e.created_at&&new Date(e.created_at)>=sixMonthsAgo);
-                        else if (card2Mode==="yearly") f=mergedLeads.filter((e:any)=>e.created_at&&new Date(e.created_at)>=yearStart);
-                        downloadCSV(f.map((e:any)=>({"Lead No":e.id,"Client Name":e.name,"Budget":e.salesBudget||"N/A","Configuration":e.configuration||"N/A","Purpose":e.purpose||"N/A","Source":e.source||"N/A","Date":e.date,"Assigned To":e.assignedTo||"Unassigned"})), `Enquiries_${card2Mode}.csv`);
-                      }} className={`p-1.5 border rounded-md transition-colors ${isDark?"border-[#9E217B]/30 text-[#d4006e]":"border-[#9E217B]/30 text-[#9E217B]"}`} title="Export CSV"><FaDownload size={12}/></button>
-                      <select value={card2Mode} onChange={e=>setCard2Mode(e.target.value as any)} className={`text-xs rounded-lg px-2 py-1.5 outline-none cursor-pointer border ${t.selectSmall}`}>
+                        if (card2Mode === "today") f = mergedLeads.filter((e: any) => e.created_at && new Date(e.created_at) >= todayStart);
+                        else if (card2Mode === "monthly") f = mergedLeads.filter((e: any) => e.created_at && new Date(e.created_at).getMonth() === selectedMonthCard && new Date(e.created_at).getFullYear() === now.getFullYear());
+                        else if (card2Mode === "3months") f = mergedLeads.filter((e: any) => e.created_at && new Date(e.created_at) >= threeMonthsAgo);
+                        else if (card2Mode === "6months") f = mergedLeads.filter((e: any) => e.created_at && new Date(e.created_at) >= sixMonthsAgo);
+                        else if (card2Mode === "yearly") f = mergedLeads.filter((e: any) => e.created_at && new Date(e.created_at) >= yearStart);
+                        downloadCSV(f.map((e: any) => ({ "Lead No": e.id, "Client Name": e.name, "Budget": e.salesBudget || "N/A", "Configuration": e.configuration || "N/A", "Purpose": e.purpose || "N/A", "Source": e.source || "N/A", "Date": e.date, "Assigned To": e.assignedTo || "Unassigned" })), `Enquiries_${card2Mode}.csv`);
+                      }} className={`p-1.5 border rounded-md transition-colors ${isDark ? "border-[#9E217B]/30 text-[#d4006e]" : "border-[#9E217B]/30 text-[#9E217B]"}`} title="Export CSV"><FaDownload size={12} /></button>
+                      <select value={card2Mode} onChange={e => setCard2Mode(e.target.value as any)} className={`text-xs rounded-lg px-2 py-1.5 outline-none cursor-pointer border ${t.selectSmall}`}>
                         <option value="today">Today</option><option value="monthly">Monthly</option>
                         <option value="3months">Last 3 Months</option><option value="6months">Last 6 Months</option>
                         <option value="yearly">Yearly</option><option value="alltime">Total All Time</option>
                       </select>
                     </div>
                   </div>
-                  <div className={`rounded-xl p-5 border flex-1 flex flex-col ${isDark?"bg-[#9E217B]/5 border-[#9E217B]/20":"bg-[#9E217B]/5 border-[#9E217B]/20"}`}>
+                  <div className={`rounded-xl p-5 border flex-1 flex flex-col ${isDark ? "bg-[#9E217B]/5 border-[#9E217B]/20" : "bg-[#9E217B]/5 border-[#9E217B]/20"}`}>
                     <div className="flex items-center justify-between mb-4">
                       <p className={`text-xs font-bold uppercase tracking-wider ${t.textFaint}`}>
-                        {card2Mode==="today"&&"Today"}{card2Mode==="monthly"&&"Monthly"}{card2Mode==="3months"&&"Last 3 Months"}
-                        {card2Mode==="6months"&&"Last 6 Months"}{card2Mode==="yearly"&&"Yearly"}{card2Mode==="alltime"&&"All Time"}
+                        {card2Mode === "today" && "Today"}{card2Mode === "monthly" && "Monthly"}{card2Mode === "3months" && "Last 3 Months"}
+                        {card2Mode === "6months" && "Last 6 Months"}{card2Mode === "yearly" && "Yearly"}{card2Mode === "alltime" && "All Time"}
                       </p>
-                      {card2Mode==="monthly" && (
-                        <select value={selectedMonthCard} onChange={e=>setSelectedMonthCard(Number(e.target.value))} className={`text-[10px] rounded px-1.5 py-0.5 outline-none cursor-pointer border ${t.selectSmall}`}>
-                          {MONTH_NAMES.map((m,idx)=><option key={idx} value={idx}>{m}</option>)}
+                      {card2Mode === "monthly" && (
+                        <select value={selectedMonthCard} onChange={e => setSelectedMonthCard(Number(e.target.value))} className={`text-[10px] rounded px-1.5 py-0.5 outline-none cursor-pointer border ${t.selectSmall}`}>
+                          {MONTH_NAMES.map((m, idx) => <option key={idx} value={idx}>{m}</option>)}
                         </select>
                       )}
                     </div>
-                    <p className={`text-7xl font-black leading-none ${isDark?"text-[#d4006e]":"text-[#9E217B]"}`}>
+                    <p className={`text-7xl font-black leading-none ${isDark ? "text-[#d4006e]" : "text-[#9E217B]"}`}>
                       {isFetchingEnquiries ? "…" :
-                        card2Mode==="today"?enquiriesToday:
-                        card2Mode==="monthly"?monthlyEnquiriesSelected:
-                        card2Mode==="3months"?enquiries3Months:
-                        card2Mode==="6months"?enquiries6Months:
-                        card2Mode==="yearly"?enquiriesYear:totalCount
+                        card2Mode === "today" ? enquiriesToday :
+                          card2Mode === "monthly" ? monthlyEnquiriesSelected :
+                            card2Mode === "3months" ? enquiries3Months :
+                              card2Mode === "6months" ? enquiries6Months :
+                                card2Mode === "yearly" ? enquiriesYear : totalCount
                       }
                     </p>
-                    <p className={`text-sm mt-4 font-medium ${isDark?"text-[#d4006e]":"text-[#9E217B]"}`}>
-                      {card2Mode==="today"&&`Enquiries on ${now.toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"})}`}
-                      {card2Mode==="monthly"&&`Enquiries in ${MONTH_NAMES[selectedMonthCard]} ${now.getFullYear()}`}
-                      {card2Mode==="3months"&&"Enquiries over 3 months"}
-                      {card2Mode==="6months"&&"Enquiries over 6 months"}
-                      {card2Mode==="yearly"&&`Enquiries in ${now.getFullYear()}`}
-                      {card2Mode==="alltime"&&"Total enquiries captured"}
+                    <p className={`text-sm mt-4 font-medium ${isDark ? "text-[#d4006e]" : "text-[#9E217B]"}`}>
+                      {card2Mode === "today" && `Enquiries on ${now.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}`}
+                      {card2Mode === "monthly" && `Enquiries in ${MONTH_NAMES[selectedMonthCard]} ${now.getFullYear()}`}
+                      {card2Mode === "3months" && "Enquiries over 3 months"}
+                      {card2Mode === "6months" && "Enquiries over 6 months"}
+                      {card2Mode === "yearly" && `Enquiries in ${now.getFullYear()}`}
+                      {card2Mode === "alltime" && "Total enquiries captured"}
                     </p>
                   </div>
                 </div>
@@ -1738,13 +1743,13 @@ export default function ReceptionistDashboard() {
                   <div className="flex items-center justify-between mb-2">
                     <h2 className={`text-base font-bold ${t.text}`}>Sales Manager Activity</h2>
                     <div className="flex items-center gap-2">
-                      <button onClick={() => downloadCSV(managerLeadCountsFiltered.map(m=>({"Sales Manager":m.name,"Total Enquiries":m.count})), `SM_Activity_${card3Mode}.csv`)} className={`p-1.5 border rounded-md ${t.exportBtn}`} title="Export CSV"><FaDownload size={12}/></button>
-                      {card3Mode==="monthly" && (
-                        <select value={card3Month} onChange={e=>setCard3Month(Number(e.target.value))} className={`text-[10px] rounded px-1.5 py-1 outline-none cursor-pointer border ${t.selectSmall}`}>
-                          {MONTH_NAMES.map((m,idx)=><option key={idx} value={idx}>{m}</option>)}
+                      <button onClick={() => downloadCSV(managerLeadCountsFiltered.map(m => ({ "Sales Manager": m.name, "Total Enquiries": m.count })), `SM_Activity_${card3Mode}.csv`)} className={`p-1.5 border rounded-md ${t.exportBtn}`} title="Export CSV"><FaDownload size={12} /></button>
+                      {card3Mode === "monthly" && (
+                        <select value={card3Month} onChange={e => setCard3Month(Number(e.target.value))} className={`text-[10px] rounded px-1.5 py-1 outline-none cursor-pointer border ${t.selectSmall}`}>
+                          {MONTH_NAMES.map((m, idx) => <option key={idx} value={idx}>{m}</option>)}
                         </select>
                       )}
-                      <select value={card3Mode} onChange={e=>setCard3Mode(e.target.value as any)} className={`text-xs rounded-lg px-2 py-1.5 outline-none cursor-pointer border ${t.selectSmall}`}>
+                      <select value={card3Mode} onChange={e => setCard3Mode(e.target.value as any)} className={`text-xs rounded-lg px-2 py-1.5 outline-none cursor-pointer border ${t.selectSmall}`}>
                         <option value="today">Today</option><option value="monthly">Monthly</option>
                         <option value="3months">Last 3 Months</option><option value="6months">Last 6 Months</option>
                         <option value="yearly">Yearly</option><option value="inception">Inception</option>
@@ -1752,7 +1757,7 @@ export default function ReceptionistDashboard() {
                     </div>
                   </div>
                   <p className={`text-[10px] font-semibold mb-3 flex items-center justify-between ${t.accentText}`}>
-                    <span>{card3Mode==="today"&&`Today — ${now.toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"})}`}{card3Mode==="monthly"&&`${MONTH_NAMES[card3Month]} ${now.getFullYear()}`}{card3Mode==="3months"&&"Last 3 Months"}{card3Mode==="6months"&&"Last 6 Months"}{card3Mode==="yearly"&&`Year ${now.getFullYear()}`}{card3Mode==="inception"&&"All Time"}</span>
+                    <span>{card3Mode === "today" && `Today — ${now.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}`}{card3Mode === "monthly" && `${MONTH_NAMES[card3Month]} ${now.getFullYear()}`}{card3Mode === "3months" && "Last 3 Months"}{card3Mode === "6months" && "Last 6 Months"}{card3Mode === "yearly" && `Year ${now.getFullYear()}`}{card3Mode === "inception" && "All Time"}</span>
                     <span className={t.textFaint}>{managerLeadCountsFiltered.length} managers</span>
                   </p>
                   <div className="flex-1 overflow-y-auto custom-scrollbar max-h-[250px] pr-2">
@@ -1764,9 +1769,9 @@ export default function ReceptionistDashboard() {
                       <tbody className={`divide-y ${t.tableDivide}`}>
                         {isFetchingEnquiries ? (
                           <tr><td colSpan={2} className={`text-center py-4 text-xs ${t.textMuted}`}>Loading...</td></tr>
-                        ) : managerLeadCountsFiltered.length===0 ? (
+                        ) : managerLeadCountsFiltered.length === 0 ? (
                           <tr><td colSpan={2} className={`text-center py-4 text-xs ${t.textMuted}`}>No data for this period</td></tr>
-                        ) : managerLeadCountsFiltered.map((row:any,i:number) => (
+                        ) : managerLeadCountsFiltered.map((row: any, i: number) => (
                           <tr key={i} className={`transition-colors ${t.tableRow}`}>
                             <td className={`py-2.5 px-1 font-semibold text-xs ${t.text}`}>
                               <div className="flex items-center gap-2">
@@ -1789,15 +1794,15 @@ export default function ReceptionistDashboard() {
                   <div>
                     <h2 className={`text-base md:text-lg font-bold flex items-center gap-3 ${t.text}`}>
                       Front Desk Log
-                      <button onClick={() => downloadCSV(receptionistLeads.map((e:any)=>({"Lead No":e.id,"Client Name":e.name,"CP Company":e.cp_company||"N/A","Budget":e.salesBudget||"N/A","Phone":e.phone||"N/A","Alt Phone":e.altPhone||"N/A","Date":e.date,"Assigned To":e.assignedTo||"Unassigned"})), "Front_Desk_Log.csv")} className={`p-1.5 border rounded-md ${t.exportBtn}`}><FaDownload size={12}/></button>
+                      <button onClick={() => downloadCSV(receptionistLeads.map((e: any) => ({ "Lead No": e.id, "Client Name": e.name, "CP Company": e.cp_company || "N/A", "Budget": e.salesBudget || "N/A", "Phone": e.phone || "N/A", "Alt Phone": e.altPhone || "N/A", "Date": e.date, "Assigned To": e.assignedTo || "Unassigned" })), "Front_Desk_Log.csv")} className={`p-1.5 border rounded-md ${t.exportBtn}`}><FaDownload size={12} /></button>
                     </h2>
                     <p className={`text-xs mt-0.5 ${t.textFaint}`}>{receptionistLeads.length} shown · {totalCount} total</p>
                   </div>
                   <div className="flex gap-4 items-center">
                     <div className="relative hidden md:block">
-                      <FaSearch className={`absolute left-3 top-1/2 -translate-y-1/2 text-xs ${t.textFaint}`}/>
-                      <input type="text" placeholder="Search leads..." value={searchRecep} onChange={e=>setSearchRecep(e.target.value)}
-                        className={`rounded-lg pl-9 pr-4 py-2 text-sm outline-none w-48 transition-colors border ${t.inputBg} ${t.text}`}/>
+                      <FaSearch className={`absolute left-3 top-1/2 -translate-y-1/2 text-xs ${t.textFaint}`} />
+                      <input type="text" placeholder="Search leads..." value={searchRecep} onChange={e => setSearchRecep(e.target.value)}
+                        className={`rounded-lg pl-9 pr-4 py-2 text-sm outline-none w-48 transition-colors border ${t.inputBg} ${t.text}`} />
                     </div>
                     <button onClick={() => setIsEnquiryModalOpen(true)} className={`font-bold py-1.5 px-3 md:py-2 md:px-4 rounded-lg transition-colors text-xs flex items-center gap-2 cursor-pointer ${t.btnPrimary}`}>+ New Entry</button>
                   </div>
@@ -1805,36 +1810,36 @@ export default function ReceptionistDashboard() {
                 <div className="overflow-x-auto custom-scrollbar">
                   <table className="w-full text-left border-collapse whitespace-nowrap">
                     <thead><tr className={t.tableHead}>
-                      {["Lead No.","Client Name","CP Company","Budget","Phone","Alt. Phone","Date Created","Sales Manager"].map(h => (
+                      {["Lead No.", "Client Name", "CP Company", "Budget", "Phone", "Alt. Phone", "Date Created", "Sales Manager"].map(h => (
                         <th key={h} className={`px-3 py-3 md:p-4 font-bold uppercase tracking-wider border-b ${t.textHeader} ${t.tableBorder}`}>{h}</th>
                       ))}
                     </tr></thead>
                     <tbody className={`${t.tableDivide} divide-y`}>
                       {isFetchingEnquiries ? (
                         <tr><td colSpan={8} className={`p-8 text-center text-sm ${t.textMuted}`}>Fetching data...</td></tr>
-                      ) : receptionistLeads.length===0 ? (
+                      ) : receptionistLeads.length === 0 ? (
                         <tr><td colSpan={8} className={`p-8 text-center text-sm ${t.textMuted}`}>No leads found.</td></tr>
-                      ) : receptionistLeads.map((enquiry:any) => (
+                      ) : receptionistLeads.map((enquiry: any) => (
                         <tr key={enquiry.id} className={`transition-colors cursor-pointer ${t.tableRow}`} onClick={() => { setSelectedLead(enquiry); setActiveTab("detail"); }}>
                           <td className={`px-3 py-3 md:p-4 text-xs md:text-sm font-bold ${t.accentText}`}>#{enquiry.id}</td>
                           <td className={`px-3 py-3 md:p-4 text-xs md:text-sm font-semibold ${t.text}`}>{enquiry.name}</td>
-                          <td className={`px-3 py-3 md:p-4 text-[10px] md:text-sm truncate max-w-[100px] ${t.textMuted}`}>{enquiry.cp_company||<span className="italic text-[10px]">—</span>}</td>
-                          <td className={`px-3 py-3 md:p-4 text-xs md:text-sm font-bold ${isDark?"text-green-700":"text-emerald-600"}`}>{enquiry.salesBudget||enquiry.budget}</td>
+                          <td className={`px-3 py-3 md:p-4 text-[10px] md:text-sm truncate max-w-[100px] ${t.textMuted}`}>{enquiry.cp_company || <span className="italic text-[10px]">—</span>}</td>
+                          <td className={`px-3 py-3 md:p-4 text-xs md:text-sm font-bold ${isDark ? "text-green-700" : "text-emerald-600"}`}>{enquiry.salesBudget || enquiry.budget}</td>
                           <td className={`px-3 py-3 md:p-4 text-[10px] md:text-sm font-mono ${t.text}`}>{maskPhone(enquiry.phone)}</td>
                           <td className={`px-3 py-3 md:p-4 text-[10px] md:text-sm font-mono ${t.textMuted}`}>{maskPhone(enquiry.altPhone)}</td>
                           <td className={`px-3 py-3 md:p-4 text-[10px] md:text-xs ${t.textFaint}`}>{enquiry.date}</td>
                           <td className="px-3 py-3 md:p-4 text-xs md:text-sm">
-                            <span className={`px-2 py-1 rounded-md text-[10px] md:text-xs font-semibold ${t.accentBg}`}>{enquiry.assignedTo||"Unassigned"}</span>
+                            <span className={`px-2 py-1 rounded-md text-[10px] md:text-xs font-semibold ${t.accentBg}`}>{enquiry.assignedTo || "Unassigned"}</span>
                           </td>
                         </tr>
                       ))}
-                      {isLoadingMore && <LoaderRow/>}
+                      {isLoadingMore && <LoaderRow />}
                       {!hasMore && !isFetchingEnquiries && enquiries.length > 0 && (
                         <tr><td colSpan={8} className={`p-4 text-center text-xs ${t.textFaint}`}>All {totalCount} records loaded</td></tr>
                       )}
                     </tbody>
                   </table>
-                  <div ref={tableSentinelRef} className="h-1 w-full" aria-hidden="true"/>
+                  <div ref={tableSentinelRef} className="h-1 w-full" aria-hidden="true" />
                 </div>
               </div>
             </div>
@@ -1852,56 +1857,106 @@ export default function ReceptionistDashboard() {
                 </div>
                 <div className="flex gap-4 items-center">
                   <div className="relative">
-                    <FaSearch className={`absolute left-3 top-1/2 -translate-y-1/2 text-xs ${t.textFaint}`}/>
-                    <input type="text" placeholder="Search..." value={searchRecep} onChange={e=>setSearchRecep(e.target.value)} className={`rounded-lg pl-9 pr-4 py-2 text-sm outline-none w-48 transition-colors border ${t.inputBg} ${t.text}`}/>
+                    <FaSearch className={`absolute left-3 top-1/2 -translate-y-1/2 text-xs ${t.textFaint}`} />
+                    <input type="text" placeholder="Search..." value={searchRecep} onChange={e => setSearchRecep(e.target.value)} className={`rounded-lg pl-9 pr-4 py-2 text-sm outline-none w-48 transition-colors border ${t.inputBg} ${t.text}`} />
                   </div>
                   <button onClick={() => setIsEnquiryModalOpen(true)} className={`font-bold py-2.5 px-6 rounded-xl transition-colors text-sm flex items-center gap-2 cursor-pointer ${t.btnPrimary}`}>
-                    <FaClipboardList/> + Add New Form
+                    <FaClipboardList /> + Add New Form
                   </button>
                 </div>
               </div>
               {isFetchingEnquiries ? (
                 <div className={`text-center py-10 ${t.textMuted}`}>Fetching live database forms...</div>
-              ) : receptionistLeads.length===0 ? (
+              ) : receptionistLeads.length === 0 ? (
                 <div className={`text-center py-10 ${t.textMuted}`}>No matching forms found.</div>
               ) : (
-               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {receptionistLeads.map((enquiry:any,index:number) => (
-                    <div key={enquiry.id??index} onClick={() => { setSelectedLead(enquiry); setActiveTab("detail"); }}
-                      className={`rounded-2xl p-6 border cursor-pointer group flex flex-col justify-between transition-all ${t.card}`} style={t.cardGlass}>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {receptionistLeads.map((enquiry: any, index: number) => (
+                    <div
+                      key={enquiry.id ?? index}
+                      className={`rounded-2xl p-6 border cursor-pointer group flex flex-col justify-between transition-all ${t.card}`}
+                      style={t.cardGlass}
+                      onClick={() => { setSelectedLead(enquiry); setActiveTab("detail"); }}
+                    >
                       <div>
+                        {/* ── Card Header ── */}
                         <div className={`flex justify-between items-start mb-6 border-b pb-4 ${t.tableBorder}`}>
-                          <h3 className={`text-xl font-bold transition-colors flex items-center gap-2 ${t.text} ${isDark?"group-hover:text-[#d4006e]":"group-hover:text-[#9E217B]"}`}>
+                          <h3 className={`text-xl font-bold transition-colors flex items-center gap-2 ${t.text} ${isDark ? "group-hover:text-[#d4006e]" : "group-hover:text-[#9E217B]"}`}>
                             <span className={`flex-shrink-0 ${t.accentText}`}>#{enquiry.id}</span>
                             <span className="line-clamp-1">{enquiry.name}</span>
                           </h3>
-                          <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider flex-shrink-0 border ${
-                            enquiry.status==="Closing"?t.statusClosing:enquiry.status==="Visit Scheduled"?t.statusVisit:t.statusRouted
-                          }`}>{enquiry.status||"Routed"}</span>
+                          <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider flex-shrink-0 border ${enquiry.status === "Closing" ? t.statusClosing :
+                            enquiry.status === "Visit Scheduled" ? t.statusVisit : t.statusRouted
+                            }`}>{enquiry.status || "Routed"}</span>
                         </div>
+
+                        {/* ── Card Body ── */}
                         <div className="space-y-4 mb-6">
-                          <div><p className={`text-xs font-medium ${t.textFaint}`}>Budget</p><p className={`text-sm font-semibold ${isDark?"text-green-400":"text-emerald-600"}`}>{enquiry.salesBudget||enquiry.budget}</p></div>
-                          <div><p className={`text-xs font-medium ${t.textFaint}`}>Configuration</p><p className={`text-sm font-semibold ${t.text}`}>{enquiry.propType||enquiry.configuration||"N/A"}</p></div>
+                          <div>
+                            <p className={`text-xs font-medium ${t.textFaint}`}>Budget</p>
+                            <p className={`text-sm font-semibold ${isDark ? "text-green-400" : "text-emerald-600"}`}>
+                              {enquiry.salesBudget || enquiry.budget}
+                            </p>
+                          </div>
+                          <div>
+                            <p className={`text-xs font-medium ${t.textFaint}`}>Configuration</p>
+                            <p className={`text-sm font-semibold ${t.text}`}>
+                              {enquiry.propType || enquiry.configuration || "N/A"}
+                            </p>
+                          </div>
                           <div className={`p-3 rounded-lg border flex flex-col gap-2 ${t.settingsBg}`} style={t.settingsBgGl}>
-                            <p className={`text-xs flex items-center gap-2 ${t.textMuted}`}><FaPhoneAlt className="w-3 h-3"/> Primary: <span className={`font-mono ${t.text}`}>{maskPhone(enquiry.phone)}</span></p>
+                            <p className={`text-xs flex items-center gap-2 ${t.textMuted}`}>
+                              <FaPhoneAlt className="w-3 h-3" />
+                              Primary: <span className={`font-mono ${t.text}`}>{maskPhone(enquiry.phone)}</span>
+                            </p>
                           </div>
                         </div>
                       </div>
-                      <div className={`pt-4 border-t flex justify-between items-center text-sm mt-auto ${t.tableBorder}`}>
-                        <div className="flex items-center gap-2">
-                          <div className={`w-6 h-6 rounded-full text-white flex items-center justify-center text-xs font-bold ${isDark?"bg-gradient-to-tr from-[#9E217B] to-[#d4006e]":"bg-gradient-to-tr from-[#00AEEF] to-[#9E217B]"}`}>
-                            {String(enquiry.assignedTo||"U").charAt(0).toUpperCase()}
+
+                      {/* ── Card Footer ── */}
+                      <div
+                        className={`pt-4 border-t flex flex-col gap-3 mt-auto ${t.tableBorder}`}
+                        onClick={e => e.stopPropagation()} // prevent card click when clicking footer
+                      >
+                        {/* Assigned Manager Row */}
+                        <div className="flex justify-between items-center">
+                          <div className="flex items-center gap-2">
+                            <div className={`w-6 h-6 rounded-full text-white flex items-center justify-center text-xs font-bold ${isDark
+                              ? "bg-gradient-to-tr from-[#9E217B] to-[#d4006e]"
+                              : "bg-gradient-to-tr from-[#00AEEF] to-[#9E217B]"
+                              }`}>
+                              {String(enquiry.assignedTo || "U").charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                              <p className={`text-[9px] uppercase tracking-wider font-bold ${t.textFaint}`}>Assigned To</p>
+                              <p className={`text-xs font-semibold ${t.text}`}>{enquiry.assignedTo || "Unassigned"}</p>
+                            </div>
                           </div>
-                          <p className={`text-xs ${t.textMuted}`}>Assigned: <span className={`font-semibold ${t.text}`}>{enquiry.assignedTo||"Unassigned"}</span></p>
+                          <p className={`text-xs ${t.textFaint}`}>{enquiry.date}</p>
                         </div>
-                        <p className={`text-xs ${t.textFaint}`}>{enquiry.date}</p>
+
+                        {/* Transfer Button Row */}
+                        <div className="flex gap-2">
+                          {/* View Details */}
+                          <button
+                            onClick={() => { setSelectedLead(enquiry); setActiveTab("detail"); }}
+                            className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all border ${isDark
+                              ? "border-[#2A2A35] text-[#888899] hover:border-[#9E217B] hover:text-[#d4006e] hover:bg-[#9E217B]/10"
+                              : "border-[#D1D5DB] text-[#6B7280] hover:border-[#9E217B] hover:text-[#9E217B] hover:bg-[#9E217B]/5"
+                              }`}
+                          >
+                            View Details →
+                          </button>
+
+                        </div>
                       </div>
                     </div>
                   ))}
+
                   {isLoadingMore && <div className={`col-span-full text-center py-4 ${t.textMuted}`}>Loading more…</div>}
                 </div>
               )}
-              <div ref={cardsSentinelRef} className="h-1 w-full mt-4" aria-hidden="true"/>
+              <div ref={cardsSentinelRef} className="h-1 w-full mt-4" aria-hidden="true" />
             </div>
           )}
 
@@ -1911,19 +1966,18 @@ export default function ReceptionistDashboard() {
           {activeTab === "detail" && selectedLead && (
             <div className="animate-fadeIn max-w-5xl mx-auto">
               <div className={`flex flex-col sm:flex-row sm:items-center gap-4 mb-8 rounded-2xl border p-6 md:p-8 ${t.card}`} style={t.cardGlass}>
-                <button onClick={() => setActiveTab("forms")} className={`w-10 h-10 flex items-center justify-center border hover:border-current rounded-xl transition-colors cursor-pointer shadow-sm ${t.textMuted} ${t.tableBorder}`}><FaChevronLeft className="text-sm"/></button>
+                <button onClick={() => setActiveTab("forms")} className={`w-10 h-10 flex items-center justify-center border hover:border-current rounded-xl transition-colors cursor-pointer shadow-sm ${t.textMuted} ${t.tableBorder}`}><FaChevronLeft className="text-sm" /></button>
                 <h1 className={`text-xl md:text-3xl font-bold flex flex-wrap items-center gap-3 ${t.text}`}>
                   <span className={t.accentText}>#{selectedLead.id}</span>
                   <span>{selectedLead.name}</span>
-                  <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${
-                    selectedLead.status==="Closing"?t.statusClosing:selectedLead.status==="Visit Scheduled"?t.statusVisit:t.statusRouted
-                  }`}>{selectedLead.status||"Routed"}</span>
+                  <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${selectedLead.status === "Closing" ? t.statusClosing : selectedLead.status === "Visit Scheduled" ? t.statusVisit : t.statusRouted
+                    }`}>{selectedLead.status || "Routed"}</span>
                 </h1>
               </div>
               <div className={`rounded-2xl border p-6 md:p-8 ${t.card}`} style={t.cardGlass}>
-                <div className={`rounded-xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8 text-white ${isDark?"bg-gradient-to-r from-[#9E217B] to-[#7a1a5e]":"bg-gradient-to-r from-[#00AEEF] to-[#9E217B]"}`}>
+                <div className={`rounded-xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8 text-white ${isDark ? "bg-gradient-to-r from-[#9E217B] to-[#7a1a5e]" : "bg-gradient-to-r from-[#00AEEF] to-[#9E217B]"}`}>
                   <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-full border border-white/30 bg-white/20 flex items-center justify-center font-bold text-xl">{String(selectedLead.assignedTo||"U").charAt(0).toUpperCase()}</div>
+                    <div className="w-12 h-12 rounded-full border border-white/30 bg-white/20 flex items-center justify-center font-bold text-xl">{String(selectedLead.assignedTo || "U").charAt(0).toUpperCase()}</div>
                     <div>
                       <p className="text-xs text-white/70 font-bold tracking-wider uppercase mb-1">Assigned Sales Manager</p>
                       <p className="font-bold text-lg">{selectedLead.assignedTo}</p>
@@ -1931,7 +1985,7 @@ export default function ReceptionistDashboard() {
                   </div>
                   <div className="sm:text-right">
                     <p className="text-xs text-white/70 uppercase tracking-wider font-bold mb-1">Source</p>
-                    <p className="font-semibold flex items-center sm:justify-end gap-2"><FaBriefcase className="opacity-70"/> {selectedLead.source||"N/A"}</p>
+                    <p className="font-semibold flex items-center sm:justify-end gap-2"><FaBriefcase className="opacity-70" /> {selectedLead.source || "N/A"}</p>
                   </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
@@ -1939,8 +1993,8 @@ export default function ReceptionistDashboard() {
                     <div>
                       <h3 className={`text-sm font-bold border-b pb-2 mb-4 uppercase tracking-widest ${t.sectionTitle} ${t.tableBorder}`}>Contact Information</h3>
                       <div className="space-y-4">
-                        {[{label:"Phone Number",val:maskPhone(selectedLead.phone),mono:true},{label:"Alt. Phone",val:selectedLead.altPhone?maskPhone(selectedLead.altPhone):"N/A",mono:true},{label:"Email Address",val:selectedLead.email},{label:"Residential Address",val:selectedLead.address}].map(({label,val,mono})=>(
-                          <div key={label}><p className={`text-xs font-medium mb-1 ${t.textFaint}`}>{label}</p><p className={`${mono?"text-lg tracking-widest font-semibold":"font-medium"} ${t.text}`}>{val}</p></div>
+                        {[{ label: "Phone Number", val: maskPhone(selectedLead.phone), mono: true }, { label: "Alt. Phone", val: selectedLead.altPhone ? maskPhone(selectedLead.altPhone) : "N/A", mono: true }, { label: "Email Address", val: selectedLead.email }, { label: "Residential Address", val: selectedLead.address }].map(({ label, val, mono }) => (
+                          <div key={label}><p className={`text-xs font-medium mb-1 ${t.textFaint}`}>{label}</p><p className={`${mono ? "text-lg tracking-widest font-semibold" : "font-medium"} ${t.text}`}>{val}</p></div>
                         ))}
                       </div>
                     </div>
@@ -1949,10 +2003,10 @@ export default function ReceptionistDashboard() {
                     <div>
                       <h3 className={`text-sm font-bold border-b pb-2 mb-4 uppercase tracking-widest ${t.sectionTitle} ${t.tableBorder}`}>Property Requirements</h3>
                       <div className={`rounded-xl p-5 space-y-5 border ${t.settingsBg}`} style={t.settingsBgGl}>
-                        <div><p className={`text-xs font-medium mb-1 pl-2 ${t.textFaint}`}>Budget</p><p className={`font-bold text-xl ${isDark?"text-green-500":"text-emerald-600"}`}>{selectedLead.salesBudget||selectedLead.budget}</p></div>
+                        <div><p className={`text-xs font-medium mb-1 pl-2 ${t.textFaint}`}>Budget</p><p className={`font-bold text-xl ${isDark ? "text-green-500" : "text-emerald-600"}`}>{selectedLead.salesBudget || selectedLead.budget}</p></div>
                         <div className={`grid grid-cols-2 gap-4 border-t pt-5 ${t.tableBorder}`}>
-                          <div><p className={`text-xs font-medium mb-1 pl-2 ${t.textFaint}`}>Configuration</p><p className={`font-medium ${t.text}`}>{selectedLead.configuration||selectedLead.propType}</p></div>
-                          <div><p className={`text-xs font-medium mb-1 pl-2 ${t.textFaint}`}>Purpose</p><p className={`font-medium ${t.text}`}>{selectedLead.purpose||selectedLead.useType}</p></div>
+                          <div><p className={`text-xs font-medium mb-1 pl-2 ${t.textFaint}`}>Configuration</p><p className={`font-medium ${t.text}`}>{selectedLead.configuration || selectedLead.propType}</p></div>
+                          <div><p className={`text-xs font-medium mb-1 pl-2 ${t.textFaint}`}>Purpose</p><p className={`font-medium ${t.text}`}>{selectedLead.purpose || selectedLead.useType}</p></div>
                         </div>
                       </div>
                     </div>
@@ -1997,15 +2051,15 @@ export default function ReceptionistDashboard() {
                     <div>
                       <h1 className={`text-2xl font-bold flex items-center gap-3 ${t.text}`}>
                         Assigned Forms
-                        <span className={`text-sm font-medium px-3 py-1 rounded-full border ${isDark?"text-[#d4006e] border-[#9E217B]/30 bg-[#9E217B]/10":"text-[#9E217B] bg-[#9E217B]/10 border-[#9E217B]/20"}`}>My Leads</span>
+                        <span className={`text-sm font-medium px-3 py-1 rounded-full border ${isDark ? "text-[#d4006e] border-[#9E217B]/30 bg-[#9E217B]/10" : "text-[#9E217B] bg-[#9E217B]/10 border-[#9E217B]/20"}`}>My Leads</span>
                       </h1>
                       <p className={`text-xs mt-1 ${t.textFaint}`}>{paginatedAssigned.length} shown · {filteredAssigned.length} total{hasMoreAssigned && <span className={` ${t.accentText}`}> · scroll for more</span>}</p>
                     </div>
                     <div className="flex items-center gap-3">
                       <div className="relative">
-                        <FaSearch className={`absolute left-3 top-1/2 -translate-y-1/2 text-xs ${t.textFaint}`}/>
-                        <input type="text" placeholder="Search..." value={searchAssigned} onChange={e=>{setSearchAssigned(e.target.value);setAssignedCardsPage(1);}}
-                          className={`rounded-lg pl-9 pr-4 py-2 text-sm outline-none w-52 transition-colors border ${t.inputBg} ${t.text}`}/>
+                        <FaSearch className={`absolute left-3 top-1/2 -translate-y-1/2 text-xs ${t.textFaint}`} />
+                        <input type="text" placeholder="Search..." value={searchAssigned} onChange={e => { setSearchAssigned(e.target.value); setAssignedCardsPage(1); }}
+                          className={`rounded-lg pl-9 pr-4 py-2 text-sm outline-none w-52 transition-colors border ${t.inputBg} ${t.text}`} />
                       </div>
                       <button onClick={refetchAll} className={`text-sm font-semibold flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${t.btnPrimary}`}>↻ Refresh</button>
                     </div>
@@ -2013,66 +2067,65 @@ export default function ReceptionistDashboard() {
 
                   {isFetchingEnquiries ? (
                     <div className={`text-center py-10 ${t.textMuted}`}>Fetching your leads...</div>
-                  ) : myAssignedLeads.length===0 ? (
+                  ) : myAssignedLeads.length === 0 ? (
                     <div className={`text-center py-20 ${t.textMuted}`}>
-                      <FaUserTie className={`text-5xl mx-auto mb-4 ${t.textFaint}`}/>
+                      <FaUserTie className={`text-5xl mx-auto mb-4 ${t.textFaint}`} />
                       <p className="text-lg font-semibold">No leads assigned to you yet.</p>
                       <p className={`text-sm mt-2 ${t.textFaint}`}>Create a new lead and self-assign it from the Forms tab.</p>
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {paginatedAssigned.map((lead:any) => {
-                        const isClosing = lead.status==="Closing";
+                      {paginatedAssigned.map((lead: any) => {
+                        const isClosing = lead.status === "Closing";
                         return (
                           <div key={lead.id} onClick={() => { setSelectedLead(lead); setAssignedSubView("detail"); setDetailTab("personal"); setShowSalesForm(false); setShowLoanForm(false); }}
-                            className={`rounded-2xl p-6 border shadow-sm cursor-pointer group flex flex-col justify-between transition-all duration-300 ${isClosing?`${isDark?"bg-yellow-900/10 border-yellow-500/30":"bg-amber-50 border-amber-200"} hover:-translate-y-1.5 hover:scale-[1.02] hover:border-yellow-400/60 hover:shadow-xl` : t.card}`} style={t.cardGlass}>
+                            className={`rounded-2xl p-6 border shadow-sm cursor-pointer group flex flex-col justify-between transition-all duration-300 ${isClosing ? `${isDark ? "bg-yellow-900/10 border-yellow-500/30" : "bg-amber-50 border-amber-200"} hover:-translate-y-1.5 hover:scale-[1.02] hover:border-yellow-400/60 hover:shadow-xl` : t.card}`} style={t.cardGlass}>
                             <div>
                               <div className={`flex justify-between items-start mb-5 pb-4 border-b ${t.tableBorder}`}>
-                                <h3 className={`text-xl font-bold transition-colors line-clamp-1 pr-2 ${t.text} ${isDark?"group-hover:text-[#d4006e]":"group-hover:text-[#9E217B]"}`}>
+                                <h3 className={`text-xl font-bold transition-colors line-clamp-1 pr-2 ${t.text} ${isDark ? "group-hover:text-[#d4006e]" : "group-hover:text-[#9E217B]"}`}>
                                   <span className={`mr-2 transition-colors ${isDark ? "text-[#d4006e]" : "text-[#00AEEF] group-hover:text-[#9E217B]"}`}>#{lead.id}</span>{lead.name}
                                 </h3>
-                                <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border flex-shrink-0 ${
-                                  isClosing?t.statusClosing:lead.status==="Visit Scheduled"?t.statusVisit:t.statusRouted
-                                }`}>{lead.status||"ROUTED"}</span>
+                                <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border flex-shrink-0 ${isClosing ? t.statusClosing : lead.status === "Visit Scheduled" ? t.statusVisit : t.statusRouted
+                                  }`}>{lead.status || "ROUTED"}</span>
                               </div>
                               <div className="space-y-3 mb-5">
                                 <div className="flex justify-between items-center">
-                                  <div><p className={`text-xs font-medium ${t.textFaint}`}>Budget</p><p className={`text-sm font-semibold ${isDark?"text-green-400":"text-emerald-600"}`}>{lead.salesBudget||lead.budget}</p></div>
-                                  {lead.loanStatus&&lead.loanStatus!=="N/A" && <LoanStatusBadge status={lead.loanStatus}/>}
+                                  <div><p className={`text-xs font-medium ${t.textFaint}`}>Budget</p><p className={`text-sm font-semibold ${isDark ? "text-green-400" : "text-emerald-600"}`}>{lead.salesBudget || lead.budget}</p></div>
+                                  {lead.loanStatus && lead.loanStatus !== "N/A" && <LoanStatusBadge status={lead.loanStatus} />}
                                 </div>
-                                {lead.propType&&lead.propType!=="Pending" && (
+                                {lead.propType && lead.propType !== "Pending" && (
                                   <div><p className={`text-xs font-medium ${t.textFaint}`}>Property</p><p className={`text-sm font-medium ${t.text}`}>{lead.propType}</p></div>
                                 )}
                                 <div className={`p-3 rounded-lg border flex flex-col gap-1.5 ${t.settingsBg}`} style={t.settingsBgGl}>
-                                  <p className={`text-xs flex items-center gap-2 ${t.textMuted}`}><FaPhoneAlt className="w-3 h-3"/><span>Ph No.</span><span className={`font-mono ${t.text}`}>{maskPhone(lead.phone)}</span></p>
+                                  <p className={`text-xs flex items-center gap-2 ${t.textMuted}`}><FaPhoneAlt className="w-3 h-3" /><span>Ph No.</span><span className={`font-mono ${t.text}`}>{maskPhone(lead.phone)}</span></p>
                                 </div>
-                                {(lead.mongoVisitDate||lead.leadInterestStatus!=="Pending") && (
+                                {(lead.mongoVisitDate || lead.leadInterestStatus !== "Pending") && (
                                   <div className="flex items-center justify-between gap-2">
-                                    {lead.mongoVisitDate && <div className="flex items-center gap-1.5 text-xs font-semibold text-orange-400"><FaCalendarAlt className="text-[10px]"/>{formatDate(lead.mongoVisitDate).split(",")[0]}</div>}
-                                    {lead.leadInterestStatus&&lead.leadInterestStatus!=="Pending" && <InterestBadge status={lead.leadInterestStatus} size="sm"/>}
+                                    {lead.mongoVisitDate && <div className="flex items-center gap-1.5 text-xs font-semibold text-orange-400"><FaCalendarAlt className="text-[10px]" />{formatDate(lead.mongoVisitDate).split(",")[0]}</div>}
+                                    {lead.leadInterestStatus && lead.leadInterestStatus !== "Pending" && <InterestBadge status={lead.leadInterestStatus} size="sm" />}
                                   </div>
                                 )}
                                 {isClosing && (
-                                  <div className={`flex items-center gap-2 text-[10px] font-bold px-3 py-1.5 rounded-lg ${isDark?"text-yellow-400 bg-yellow-500/10 border border-yellow-500/20":"text-amber-600 bg-amber-50 border border-amber-200"}`}>
-                                    <FaHandshake/> Deal in Closing Stage
+                                  <div className={`flex items-center gap-2 text-[10px] font-bold px-3 py-1.5 rounded-lg ${isDark ? "text-yellow-400 bg-yellow-500/10 border border-yellow-500/20" : "text-amber-600 bg-amber-50 border border-amber-200"}`}>
+                                    <FaHandshake /> Deal in Closing Stage
                                   </div>
                                 )}
                               </div>
                             </div>
                             <div className={`pt-4 border-t mt-auto flex justify-between items-center ${t.tableBorder}`}>
                               <p className={`text-[10px] flex-shrink-0 ${t.textFaint}`}>{formatDate(lead.created_at).split(",")[0]}</p>
-                              <span className={`text-[10px] font-bold uppercase tracking-widest transition-colors ${isDark?"text-gray-500 group-hover:text-[#d4006e]":"text-[#00AEEF] group-hover:text-[#9E217B]"}`}>Details →</span>
+                              <span className={`text-[10px] font-bold uppercase tracking-widest transition-colors ${isDark ? "text-gray-500 group-hover:text-[#d4006e]" : "text-[#00AEEF] group-hover:text-[#9E217B]"}`}>Details →</span>
                             </div>
                           </div>
                         );
                       })}
-                      {hasMoreAssigned && <CardsLoader/>}
+                      {hasMoreAssigned && <CardsLoader />}
                       {!hasMoreAssigned && myAssignedLeads.length > 0 && (
                         <div className="col-span-full"><p className={`text-center text-xs py-4 ${t.textFaint}`}>All {filteredAssigned.length} leads loaded</p></div>
                       )}
                     </div>
                   )}
-                  <div ref={assignedSentinelRef} className="h-1 w-full mt-4" aria-hidden="true"/>
+                  <div ref={assignedSentinelRef} className="h-1 w-full mt-4" aria-hidden="true" />
                 </div>
               )}
 
@@ -2082,12 +2135,12 @@ export default function ReceptionistDashboard() {
                   {/* Detail header */}
                   <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 rounded-2xl border p-4 sm:p-5 shadow-sm flex-shrink-0 ${t.card}`} style={t.cardGlass}>
                     <div className="flex items-center gap-4">
-                      <button onClick={() => { setAssignedSubView("cards"); }} className={`w-10 h-10 flex items-center justify-center border rounded-xl transition-colors cursor-pointer shadow-sm ${t.textMuted} ${t.tableBorder} ${isDark?"bg-[#222] hover:bg-[#333]":"bg-white hover:bg-[#F8FAFC]"}`}><FaChevronLeft className="text-sm"/></button>
+                      <button onClick={() => { setAssignedSubView("cards"); }} className={`w-10 h-10 flex items-center justify-center border rounded-xl transition-colors cursor-pointer shadow-sm ${t.textMuted} ${t.tableBorder} ${isDark ? "bg-[#222] hover:bg-[#333]" : "bg-white hover:bg-[#F8FAFC]"}`}><FaChevronLeft className="text-sm" /></button>
                       <h1 className={`text-xl md:text-2xl font-bold flex items-center gap-3 ${t.text}`}>
                         <span className={t.accentText}>#{selectedLead.id}</span>
                         <span>{selectedLead.name}</span>
-                        {selectedLead.status==="Closing" && (
-                          <span className={`text-[11px] font-bold px-3 py-1 rounded-full border flex items-center gap-1.5 ${t.statusClosing}`}><FaHandshake className="text-xs"/> Closing</span>
+                        {selectedLead.status === "Closing" && (
+                          <span className={`text-[11px] font-bold px-3 py-1 rounded-full border flex items-center gap-1.5 ${t.statusClosing}`}><FaHandshake className="text-xs" /> Closing</span>
                         )}
                       </h1>
                     </div>
@@ -2096,21 +2149,21 @@ export default function ReceptionistDashboard() {
                         <>
                           <button onClick={() => { prefillSalesForm(); setShowSalesForm(true); setShowLoanForm(false); }}
                             className={`font-bold px-4 py-2 rounded-lg text-sm flex items-center gap-2 transition-colors cursor-pointer ${t.btnPrimary}`}>
-                            <FaFileInvoice/> Fill Salesform
+                            <FaFileInvoice /> Fill Salesform
                           </button>
                           <button onClick={() => { prefillLoanForm(); setShowLoanForm(true); setShowSalesForm(false); }}
                             className={`font-bold px-4 py-2 rounded-lg text-sm flex items-center gap-2 transition-colors cursor-pointer ${t.btnSecondary}`}>
-                            <FaUniversity/> Track Loan
+                            <FaUniversity /> Track Loan
                           </button>
-                          {selectedLead.mongoVisitDate && selectedLead.status!=="Closing" && (
+                          {selectedLead.mongoVisitDate && selectedLead.status !== "Closing" && (
                             <button onClick={handleMarkAsClosing} className={`font-bold px-4 py-2 rounded-lg text-sm flex items-center gap-2 transition-colors cursor-pointer ${t.btnWarning}`}>
-                              <FaHandshake/> Mark Closing
+                              <FaHandshake /> Mark Closing
                             </button>
                           )}
                           {/* TRANSFER BUTTON */}
                           <button onClick={() => { setTransferTarget(""); setTransferNote(""); setIsTransferModalOpen(true); }}
                             className={`font-bold px-4 py-2 rounded-lg text-sm flex items-center gap-2 transition-colors cursor-pointer ${t.btnTransfer}`}>
-                            <FaExchangeAlt/> Transfer Lead
+                            <FaExchangeAlt /> Transfer Lead
                           </button>
                         </>
                       )}
@@ -2127,27 +2180,27 @@ export default function ReceptionistDashboard() {
                               <h3 className={`text-lg font-bold ${t.text}`}>Sales Data Form</h3>
                               <p className={`text-xs mt-0.5 ${t.accentText}`}>For Lead #{selectedLead.id}</p>
                             </div>
-                            <button type="button" onClick={() => setShowSalesForm(false)} className={`p-1 ${t.textMuted} hover:text-red-500`}><FaTimes/></button>
+                            <button type="button" onClick={() => setShowSalesForm(false)} className={`p-1 ${t.textMuted} hover:text-red-500`}><FaTimes /></button>
                           </div>
                           <form onSubmit={handleSalesFormSubmit} className="flex flex-col gap-4 flex-1">
-                            <div><label className={`text-xs mb-1 block ${t.textMuted}`}>Property Type?</label><input type="text" placeholder="e.g. 1BHK, 2BHK" value={salesForm.propertyType} onChange={e=>setSalesForm({...salesForm,propertyType:e.target.value})} className={formInput}/></div>
-                            <div><label className={`text-xs mb-1 block ${t.textMuted}`}>Preferred Location?</label><input type="text" placeholder="e.g. Dombivali, Kalyan" value={salesForm.location} onChange={e=>setSalesForm({...salesForm,location:e.target.value})} className={formInput}/></div>
-                            <div><label className={`text-xs mb-1 block ${t.textMuted}`}>Approximate Budget?</label><input type="text" placeholder="e.g. 5 cr" value={salesForm.budget} onChange={e=>setSalesForm({...salesForm,budget:e.target.value})} className={formInput}/></div>
+                            <div><label className={`text-xs mb-1 block ${t.textMuted}`}>Property Type?</label><input type="text" placeholder="e.g. 1BHK, 2BHK" value={salesForm.propertyType} onChange={e => setSalesForm({ ...salesForm, propertyType: e.target.value })} className={formInput} /></div>
+                            <div><label className={`text-xs mb-1 block ${t.textMuted}`}>Preferred Location?</label><input type="text" placeholder="e.g. Dombivali, Kalyan" value={salesForm.location} onChange={e => setSalesForm({ ...salesForm, location: e.target.value })} className={formInput} /></div>
+                            <div><label className={`text-xs mb-1 block ${t.textMuted}`}>Approximate Budget?</label><input type="text" placeholder="e.g. 5 cr" value={salesForm.budget} onChange={e => setSalesForm({ ...salesForm, budget: e.target.value })} className={formInput} /></div>
                             <div className="grid grid-cols-2 gap-3">
-                              <div><label className={`text-xs mb-1 block ${t.textMuted}`}>Self-use or Investment?</label><select value={salesForm.useType} onChange={e=>setSalesForm({...salesForm,useType:e.target.value})} className={formSelect}><option value="">Select</option><option>Self Use</option><option>Investment</option></select></div>
-                              <div><label className={`text-xs mb-1 block ${t.textMuted}`}>Planning to Purchase?</label><select value={salesForm.purchaseDate} onChange={e=>setSalesForm({...salesForm,purchaseDate:e.target.value})} className={formSelect}><option value="">Select</option><option>Immediate</option><option>Next 3 Months</option></select></div>
+                              <div><label className={`text-xs mb-1 block ${t.textMuted}`}>Self-use or Investment?</label><select value={salesForm.useType} onChange={e => setSalesForm({ ...salesForm, useType: e.target.value })} className={formSelect}><option value="">Select</option><option>Self Use</option><option>Investment</option></select></div>
+                              <div><label className={`text-xs mb-1 block ${t.textMuted}`}>Planning to Purchase?</label><select value={salesForm.purchaseDate} onChange={e => setSalesForm({ ...salesForm, purchaseDate: e.target.value })} className={formSelect}><option value="">Select</option><option>Immediate</option><option>Next 3 Months</option></select></div>
                             </div>
                             <div className={`border-t pt-3 mt-1 ${t.tableBorder}`}>
                               <label className={`block text-xs font-bold mb-1.5 ${t.accentText}`}>Lead Interest Status *</label>
-                              <select required value={salesForm.leadStatus} onChange={e=>setSalesForm({...salesForm,leadStatus:e.target.value})} className={formSelect}><option value="" disabled>Select Status</option><option>Interested</option><option>Not Interested</option><option>Maybe</option></select>
+                              <select required value={salesForm.leadStatus} onChange={e => setSalesForm({ ...salesForm, leadStatus: e.target.value })} className={formSelect}><option value="" disabled>Select Status</option><option>Interested</option><option>Not Interested</option><option>Maybe</option></select>
                             </div>
                             <div className={`border-t pt-3 mt-1 ${t.tableBorder}`}>
-                              <label className={`block text-xs font-bold mb-1.5 ${isDark?"text-[#00AEEF]":"text-[#00AEEF]"}`}>Loan Planned?</label>
-                              <select required value={salesForm.loanPlanned} onChange={e=>setSalesForm({...salesForm,loanPlanned:e.target.value})} className={formSelect}><option value="" disabled>Select Option</option><option>Yes</option><option>No</option><option>Not Sure</option></select>
+                              <label className={`block text-xs font-bold mb-1.5 ${isDark ? "text-[#00AEEF]" : "text-[#00AEEF]"}`}>Loan Planned?</label>
+                              <select required value={salesForm.loanPlanned} onChange={e => setSalesForm({ ...salesForm, loanPlanned: e.target.value })} className={formSelect}><option value="" disabled>Select Option</option><option>Yes</option><option>No</option><option>Not Sure</option></select>
                             </div>
                             <div className={`mt-2 border-t pt-3 ${t.tableBorder}`}>
                               <label className="text-xs text-orange-400 font-bold mb-1.5 block">Schedule a Site Visit?</label>
-                              <input ref={inputRef} type="datetime-local" value={salesForm.siteVisit} onChange={e=>setSalesForm({...salesForm,siteVisit:e.target.value})} onClick={()=>inputRef.current?.showPicker()} className={`${formInput} focus:border-orange-500`}/>
+                              <input ref={inputRef} type="datetime-local" value={salesForm.siteVisit} onChange={e => setSalesForm({ ...salesForm, siteVisit: e.target.value })} onClick={() => inputRef.current?.showPicker()} className={`${formInput} focus:border-orange-500`} />
                             </div>
                             <button type="submit" className={`mt-auto w-full font-bold py-3.5 rounded-xl shadow-md transition-colors flex-shrink-0 ${t.btnPrimary}`}>Submit Salesform</button>
                           </form>
@@ -2156,56 +2209,56 @@ export default function ReceptionistDashboard() {
                         <div className={`rounded-xl border p-5 shadow-xl flex-1 overflow-y-auto custom-scrollbar flex flex-col animate-fadeIn ${t.modalCard}`} style={t.modalGlass}>
                           <div className={`flex justify-between items-center mb-4 border-b pb-3 flex-shrink-0 ${t.tableBorder}`}>
                             <div>
-                              <h3 className={`text-lg font-bold flex items-center gap-2 ${isDark?"text-[#00AEEF]":"text-[#00AEEF]"}`}><FaUniversity/> Loan Tracking Workflow</h3>
+                              <h3 className={`text-lg font-bold flex items-center gap-2 ${isDark ? "text-[#00AEEF]" : "text-[#00AEEF]"}`}><FaUniversity /> Loan Tracking Workflow</h3>
                               <p className={`text-xs mt-0.5 ${t.textFaint}`}>For Lead #{selectedLead.id}</p>
                             </div>
-                            <button type="button" onClick={() => setShowLoanForm(false)} className={`p-1 ${t.textMuted} hover:text-red-500`}><FaTimes/></button>
+                            <button type="button" onClick={() => setShowLoanForm(false)} className={`p-1 ${t.textMuted} hover:text-red-500`}><FaTimes /></button>
                           </div>
                           <form onSubmit={handleLoanFormSubmit} className="flex flex-col gap-6 flex-1">
                             <div>
-                              <h4 className={`text-xs font-bold uppercase tracking-wider mb-3 ${isDark?"text-[#00AEEF]":"text-[#00AEEF]"}`}>1. Loan Decision</h4>
+                              <h4 className={`text-xs font-bold uppercase tracking-wider mb-3 ${isDark ? "text-[#00AEEF]" : "text-[#00AEEF]"}`}>1. Loan Decision</h4>
                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                <div><label className={`text-xs mb-1 block ${t.textMuted}`}>Loan Required? *</label><select required value={loanForm.loanRequired} onChange={e=>setLoanForm({...loanForm,loanRequired:e.target.value})} className={formSelect}><option value="">Select</option><option>Yes</option><option>No</option><option>Not Sure</option></select></div>
+                                <div><label className={`text-xs mb-1 block ${t.textMuted}`}>Loan Required? *</label><select required value={loanForm.loanRequired} onChange={e => setLoanForm({ ...loanForm, loanRequired: e.target.value })} className={formSelect}><option value="">Select</option><option>Yes</option><option>No</option><option>Not Sure</option></select></div>
                                 <div>
                                   <label className={`text-xs mb-1 block ${t.textMuted}`}>Loan Status *</label>
-                                  <select required value={loanForm.status} onChange={e=>setLoanForm({...loanForm,status:e.target.value})} className={formSelect}><option value="">Select Status</option><option>Approved</option><option>In Progress</option><option>Rejected</option></select>
-                                  {loanForm.status && (<p className={`text-[10px] mt-1.5 font-semibold ${loanForm.status==="Approved"?"text-green-400":loanForm.status==="Rejected"?"text-red-400":"text-yellow-400"}`}>{loanForm.status==="Approved"&&"✅ Loan cleared — schedule closing meeting"}{loanForm.status==="In Progress"&&"📄 Follow up on pending documents"}{loanForm.status==="Rejected"&&"❌ Loan rejected — suggest co-applicant or other bank"}</p>)}
+                                  <select required value={loanForm.status} onChange={e => setLoanForm({ ...loanForm, status: e.target.value })} className={formSelect}><option value="">Select Status</option><option>Approved</option><option>In Progress</option><option>Rejected</option></select>
+                                  {loanForm.status && (<p className={`text-[10px] mt-1.5 font-semibold ${loanForm.status === "Approved" ? "text-green-400" : loanForm.status === "Rejected" ? "text-red-400" : "text-yellow-400"}`}>{loanForm.status === "Approved" && "✅ Loan cleared — schedule closing meeting"}{loanForm.status === "In Progress" && "📄 Follow up on pending documents"}{loanForm.status === "Rejected" && "❌ Loan rejected — suggest co-applicant or other bank"}</p>)}
                                 </div>
                               </div>
                             </div>
                             <div className={`border-t pt-4 ${t.tableBorder}`}>
-                              <h4 className={`text-xs font-bold uppercase tracking-wider mb-3 ${isDark?"text-[#00AEEF]":"text-[#00AEEF]"}`}>2. Bank & Loan Details</h4>
+                              <h4 className={`text-xs font-bold uppercase tracking-wider mb-3 ${isDark ? "text-[#00AEEF]" : "text-[#00AEEF]"}`}>2. Bank & Loan Details</h4>
                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                {[{label:"Bank Name",k:"bank",ph:"e.g. HDFC"},{label:"Amount Required",k:"amountReq",ph:"e.g. 60L"},{label:"Amount Approved",k:"amountApp",ph:"e.g. 55L"},{label:"CIBIL Score",k:"cibil",ph:"e.g. 750"},{label:"Agent Name",k:"agent",ph:"Agent Name"},{label:"Agent Contact",k:"agentContact",ph:"Agent Phone",tel:true}].map(f=>(
-                                  <div key={f.k}><label className={`text-xs mb-1 block ${t.textMuted}`}>{f.label}</label><input type={f.tel?"tel":"text"} value={(loanForm as any)[f.k]} onChange={e=>setLoanForm({...loanForm,[f.k]:e.target.value})} className={formInput} placeholder={f.ph}/></div>
+                                {[{ label: "Bank Name", k: "bank", ph: "e.g. HDFC" }, { label: "Amount Required", k: "amountReq", ph: "e.g. 60L" }, { label: "Amount Approved", k: "amountApp", ph: "e.g. 55L" }, { label: "CIBIL Score", k: "cibil", ph: "e.g. 750" }, { label: "Agent Name", k: "agent", ph: "Agent Name" }, { label: "Agent Contact", k: "agentContact", ph: "Agent Phone", tel: true }].map(f => (
+                                  <div key={f.k}><label className={`text-xs mb-1 block ${t.textMuted}`}>{f.label}</label><input type={f.tel ? "tel" : "text"} value={(loanForm as any)[f.k]} onChange={e => setLoanForm({ ...loanForm, [f.k]: e.target.value })} className={formInput} placeholder={f.ph} /></div>
                                 ))}
                               </div>
                             </div>
                             <div className={`border-t pt-4 ${t.tableBorder}`}>
-                              <h4 className={`text-xs font-bold uppercase tracking-wider mb-3 ${isDark?"text-[#00AEEF]":"text-[#00AEEF]"}`}>3. Financial Qualification</h4>
+                              <h4 className={`text-xs font-bold uppercase tracking-wider mb-3 ${isDark ? "text-[#00AEEF]" : "text-[#00AEEF]"}`}>3. Financial Qualification</h4>
                               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                                <div><label className={`text-xs mb-1 block ${t.textMuted}`}>Employment</label><select value={loanForm.empType} onChange={e=>setLoanForm({...loanForm,empType:e.target.value})} className={formSelect}><option value="">Select</option><option>Salaried</option><option>Self-employed</option></select></div>
-                                <div><label className={`text-xs mb-1 block ${t.textMuted}`}>Monthly Income</label><input type="text" value={loanForm.income} onChange={e=>setLoanForm({...loanForm,income:e.target.value})} className={formInput} placeholder="e.g. 1L"/></div>
-                                <div><label className={`text-xs mb-1 block ${t.textMuted}`}>Existing EMIs</label><input type="text" value={loanForm.emi} onChange={e=>setLoanForm({...loanForm,emi:e.target.value})} className={formInput} placeholder="e.g. 15k"/></div>
+                                <div><label className={`text-xs mb-1 block ${t.textMuted}`}>Employment</label><select value={loanForm.empType} onChange={e => setLoanForm({ ...loanForm, empType: e.target.value })} className={formSelect}><option value="">Select</option><option>Salaried</option><option>Self-employed</option></select></div>
+                                <div><label className={`text-xs mb-1 block ${t.textMuted}`}>Monthly Income</label><input type="text" value={loanForm.income} onChange={e => setLoanForm({ ...loanForm, income: e.target.value })} className={formInput} placeholder="e.g. 1L" /></div>
+                                <div><label className={`text-xs mb-1 block ${t.textMuted}`}>Existing EMIs</label><input type="text" value={loanForm.emi} onChange={e => setLoanForm({ ...loanForm, emi: e.target.value })} className={formInput} placeholder="e.g. 15k" /></div>
                               </div>
                             </div>
                             <div className={`border-t pt-4 ${t.tableBorder}`}>
-                              <h4 className={`text-xs font-bold uppercase tracking-wider mb-3 flex items-center gap-1 ${isDark?"text-[#00AEEF]":"text-[#00AEEF]"}`}><FaFileAlt/> 4. Document Checklist</h4>
+                              <h4 className={`text-xs font-bold uppercase tracking-wider mb-3 flex items-center gap-1 ${isDark ? "text-[#00AEEF]" : "text-[#00AEEF]"}`}><FaFileAlt /> 4. Document Checklist</h4>
                               <div className={`grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 rounded-lg border ${t.settingsBg}`} style={t.settingsBgGl}>
-                                {["docPan","docAadhaar","docSalary","docBank","docProperty"].map(docKey=>{
-                                  const label=docKey==="docPan"?"PAN Card":docKey==="docAadhaar"?"Aadhaar Card":docKey==="docSalary"?"Salary Slips / ITR":docKey==="docBank"?"Bank Statements":"Property Documents";
+                                {["docPan", "docAadhaar", "docSalary", "docBank", "docProperty"].map(docKey => {
+                                  const label = docKey === "docPan" ? "PAN Card" : docKey === "docAadhaar" ? "Aadhaar Card" : docKey === "docSalary" ? "Salary Slips / ITR" : docKey === "docBank" ? "Bank Statements" : "Property Documents";
                                   return (
                                     <div key={docKey} className={`flex items-center justify-between border p-2 rounded-lg ${t.innerBlock}`}>
                                       <span className={`text-xs font-medium ${t.text}`}>{label}</span>
-                                      <select value={(loanForm as any)[docKey]} onChange={e=>setLoanForm({...loanForm,[docKey]:e.target.value})} className={`text-xs font-bold bg-transparent outline-none cursor-pointer ${(loanForm as any)[docKey]==="Uploaded"?"text-green-400":"text-gray-500"}`}><option>Pending</option><option>Uploaded</option></select>
+                                      <select value={(loanForm as any)[docKey]} onChange={e => setLoanForm({ ...loanForm, [docKey]: e.target.value })} className={`text-xs font-bold bg-transparent outline-none cursor-pointer ${(loanForm as any)[docKey] === "Uploaded" ? "text-green-400" : "text-gray-500"}`}><option>Pending</option><option>Uploaded</option></select>
                                     </div>
                                   );
                                 })}
                               </div>
                             </div>
                             <div className={`border-t pt-4 ${t.tableBorder}`}>
-                              <h4 className={`text-xs font-bold uppercase tracking-wider mb-3 ${isDark?"text-[#00AEEF]":"text-[#00AEEF]"}`}>5. Notes / Remarks</h4>
-                              <textarea value={loanForm.notes} onChange={e=>setLoanForm({...loanForm,notes:e.target.value})} className={`w-full rounded-lg px-4 py-2.5 text-sm outline-none resize-none h-20 custom-scrollbar border ${t.inputInner} ${t.text} ${t.inputFocus}`} placeholder="Bank feedback, CIBIL issues, Internal notes..."/>
+                              <h4 className={`text-xs font-bold uppercase tracking-wider mb-3 ${isDark ? "text-[#00AEEF]" : "text-[#00AEEF]"}`}>5. Notes / Remarks</h4>
+                              <textarea value={loanForm.notes} onChange={e => setLoanForm({ ...loanForm, notes: e.target.value })} className={`w-full rounded-lg px-4 py-2.5 text-sm outline-none resize-none h-20 custom-scrollbar border ${t.inputInner} ${t.text} ${t.inputFocus}`} placeholder="Bank feedback, CIBIL issues, Internal notes..." />
                             </div>
                             <button type="submit" className={`mt-4 flex-shrink-0 w-full font-bold py-3.5 rounded-xl shadow-md transition-colors cursor-pointer ${t.btnSecondary}`}>Save Loan Tracker Update</button>
                           </form>
@@ -2214,44 +2267,44 @@ export default function ReceptionistDashboard() {
                         <div className="flex flex-col h-full animate-fadeIn">
                           {/* Tab switcher */}
                           <div className={`flex items-center gap-2 mb-4 border p-1.5 rounded-xl flex-shrink-0 ${t.tableWrap}`}>
-                            <button onClick={() => setDetailTab("personal")} className={`flex-1 py-2 text-sm font-bold rounded-lg transition-colors cursor-pointer ${detailTab==="personal" ? t.btnPrimary : `${t.textMuted} ${isDark?"hover:text-white hover:bg-[#222]":"hover:text-[#1A1A1A] hover:bg-[#F1F5F9]"}`}`}>Personal Information</button>
-                            <button onClick={() => setDetailTab("loan")} className={`flex-1 py-2 text-sm font-bold rounded-lg transition-colors cursor-pointer ${detailTab==="loan" ? t.btnSecondary : `${t.textMuted} ${isDark?"hover:text-white hover:bg-[#222]":"hover:text-[#1A1A1A] hover:bg-[#F1F5F9]"}`}`}>Loan Tracking</button>
+                            <button onClick={() => setDetailTab("personal")} className={`flex-1 py-2 text-sm font-bold rounded-lg transition-colors cursor-pointer ${detailTab === "personal" ? t.btnPrimary : `${t.textMuted} ${isDark ? "hover:text-white hover:bg-[#222]" : "hover:text-[#1A1A1A] hover:bg-[#F1F5F9]"}`}`}>Personal Information</button>
+                            <button onClick={() => setDetailTab("loan")} className={`flex-1 py-2 text-sm font-bold rounded-lg transition-colors cursor-pointer ${detailTab === "loan" ? t.btnSecondary : `${t.textMuted} ${isDark ? "hover:text-white hover:bg-[#222]" : "hover:text-[#1A1A1A] hover:bg-[#F1F5F9]"}`}`}>Loan Tracking</button>
                           </div>
                           <div className={`flex-1 overflow-y-auto custom-scrollbar rounded-xl p-6 pt-4 pb-4 shadow-lg border ${t.chatPanel}`} style={t.chatPanelGl}>
                             {detailTab === "personal" ? (
                               <div>
                                 <div className="grid grid-cols-2 gap-y-3 gap-x-4 text-sm">
                                   {[
-                                    {label:"Email",val:selectedLead.email!=="N/A"?selectedLead.email:"Not Provided"},
-                                    {label:"Phone",val:selectedLead.phone,mono:true},
-                                    {label:"Alt Phone",val:selectedLead.altPhone&&selectedLead.altPhone!=="N/A"?selectedLead.altPhone:"Not Provided",mono:true},
-                                  ].map(f=>(
-                                    <div key={f.label}><p className={`text-xs font-medium mb-1 ${t.textFaint}`}>{f.label}</p><p className={`font-semibold ${f.mono?"font-mono":""} ${t.text}`}>{f.val}</p></div>
+                                    { label: "Email", val: selectedLead.email !== "N/A" ? selectedLead.email : "Not Provided" },
+                                    { label: "Phone", val: selectedLead.phone, mono: true },
+                                    { label: "Alt Phone", val: selectedLead.altPhone && selectedLead.altPhone !== "N/A" ? selectedLead.altPhone : "Not Provided", mono: true },
+                                  ].map(f => (
+                                    <div key={f.label}><p className={`text-xs font-medium mb-1 ${t.textFaint}`}>{f.label}</p><p className={`font-semibold ${f.mono ? "font-mono" : ""} ${t.text}`}>{f.val}</p></div>
                                   ))}
-                                  <div><p className={`text-xs font-medium mb-1 ${t.textFaint}`}>Lead Interest</p>{selectedLead.leadInterestStatus&&selectedLead.leadInterestStatus!=="Pending"?<InterestBadge status={selectedLead.leadInterestStatus}/>:<p className={`font-semibold ${t.text}`}>Pending</p>}</div>
-                                  <div className="col-span-2"><p className={`text-xs font-medium mb-1 ${t.textFaint}`}>Loan Status</p>{selectedLead.loanStatus&&selectedLead.loanStatus!=="N/A"?<div className="w-fit"><LoanStatusBadge status={selectedLead.loanStatus}/></div>:<p className={`font-semibold ${t.text}`}>N/A</p>}</div>
-                                  <div className="col-span-2"><p className={`text-xs font-medium mb-1 ${t.textFaint}`}>Residential Address</p><p className={`font-semibold ${t.text}`}>{selectedLead.address&&selectedLead.address!=="N/A"?selectedLead.address:"Not Provided"}</p></div>
-                                  <div><p className={`text-xs font-medium mb-1 ${t.textFaint}`}>Budget</p><p className={`font-bold ${isDark?"text-green-400":"text-emerald-600"}`}>{selectedLead.salesBudget!=="Pending"?selectedLead.salesBudget:selectedLead.budget}</p></div>
-                                  <div><p className={`text-xs font-medium mb-1 ${t.textFaint}`}>Property Type</p><p className={`font-semibold ${t.text}`}>{selectedLead.propType||"Pending"}</p></div>
-                                  <div><p className={`text-xs font-medium mb-1 ${t.textFaint}`}>Type of Use</p><p className={`font-semibold ${t.text}`}>{selectedLead.useType!=="Pending"?selectedLead.useType:(selectedLead.purpose||"N/A")}</p></div>
-                                  <div><p className={`text-xs font-medium mb-1 ${t.textFaint}`}>Planning to Buy?</p><p className={`font-semibold ${t.text}`}>{selectedLead.planningPurchase||"Pending"}</p></div>
+                                  <div><p className={`text-xs font-medium mb-1 ${t.textFaint}`}>Lead Interest</p>{selectedLead.leadInterestStatus && selectedLead.leadInterestStatus !== "Pending" ? <InterestBadge status={selectedLead.leadInterestStatus} /> : <p className={`font-semibold ${t.text}`}>Pending</p>}</div>
+                                  <div className="col-span-2"><p className={`text-xs font-medium mb-1 ${t.textFaint}`}>Loan Status</p>{selectedLead.loanStatus && selectedLead.loanStatus !== "N/A" ? <div className="w-fit"><LoanStatusBadge status={selectedLead.loanStatus} /></div> : <p className={`font-semibold ${t.text}`}>N/A</p>}</div>
+                                  <div className="col-span-2"><p className={`text-xs font-medium mb-1 ${t.textFaint}`}>Residential Address</p><p className={`font-semibold ${t.text}`}>{selectedLead.address && selectedLead.address !== "N/A" ? selectedLead.address : "Not Provided"}</p></div>
+                                  <div><p className={`text-xs font-medium mb-1 ${t.textFaint}`}>Budget</p><p className={`font-bold ${isDark ? "text-green-400" : "text-emerald-600"}`}>{selectedLead.salesBudget !== "Pending" ? selectedLead.salesBudget : selectedLead.budget}</p></div>
+                                  <div><p className={`text-xs font-medium mb-1 ${t.textFaint}`}>Property Type</p><p className={`font-semibold ${t.text}`}>{selectedLead.propType || "Pending"}</p></div>
+                                  <div><p className={`text-xs font-medium mb-1 ${t.textFaint}`}>Type of Use</p><p className={`font-semibold ${t.text}`}>{selectedLead.useType !== "Pending" ? selectedLead.useType : (selectedLead.purpose || "N/A")}</p></div>
+                                  <div><p className={`text-xs font-medium mb-1 ${t.textFaint}`}>Planning to Buy?</p><p className={`font-semibold ${t.text}`}>{selectedLead.planningPurchase || "Pending"}</p></div>
                                   <div><p className={`text-xs font-medium mb-1 ${t.textFaint}`}>Loan Required?</p><p className={`font-semibold ${t.text}`}>{getLatestLoanDetails()?.loanRequired}</p></div>
-                                  <div><p className={`text-xs font-medium mb-1 ${t.textFaint}`}>Status</p><span className={`text-sm font-bold ${selectedLead.status==="Closing"?"text-amber-500":selectedLead.status==="Visit Scheduled"?"text-orange-400":t.accentText}`}>{selectedLead.status||"Routed"}</span></div>
+                                  <div><p className={`text-xs font-medium mb-1 ${t.textFaint}`}>Status</p><span className={`text-sm font-bold ${selectedLead.status === "Closing" ? "text-amber-500" : selectedLead.status === "Visit Scheduled" ? "text-orange-400" : t.accentText}`}>{selectedLead.status || "Routed"}</span></div>
                                   <div className={`col-span-2 p-3 rounded-xl border ${t.settingsBg}`} style={t.settingsBgGl}>
-                                    <p className={`text-xs font-bold uppercase tracking-wider mb-0.5 ${isDark?"text-[#00AEEF]":"text-[#00AEEF]"}`}>📍 Site Visit Date</p>
-                                    <p className={`text-base font-black ${t.text}`}>{selectedLead.mongoVisitDate?formatDate(selectedLead.mongoVisitDate):"Not Scheduled"}</p>
+                                    <p className={`text-xs font-bold uppercase tracking-wider mb-0.5 ${isDark ? "text-[#00AEEF]" : "text-[#00AEEF]"}`}>📍 Site Visit Date</p>
+                                    <p className={`text-base font-black ${t.text}`}>{selectedLead.mongoVisitDate ? formatDate(selectedLead.mongoVisitDate) : "Not Scheduled"}</p>
                                   </div>
                                 </div>
                                 <div className={`mt-3 border rounded-xl p-3 ${t.settingsBg}`} style={t.settingsBgGl}>
                                   <h3 className={`text-xs font-bold uppercase tracking-wider mb-2 border-b pb-2 ${t.sectionTitle} ${t.sectionBorder}`}>Channel Partner Data</h3>
                                   <div className="grid grid-cols-2 gap-2">
-                                    <div><p className={`text-xs font-medium mb-1 ${t.textFaint}`}>Primary Source</p><p className={`font-medium text-sm ${t.text}`}>{selectedLead.source||"N/A"}</p></div>
-                                    {selectedLead.source==="Others"&&(<div><p className={`text-xs font-medium mb-1 ${t.textFaint}`}>Specified Name</p><p className={`font-medium text-sm ${t.text}`}>{selectedLead.sourceOther}</p></div>)}
+                                    <div><p className={`text-xs font-medium mb-1 ${t.textFaint}`}>Primary Source</p><p className={`font-medium text-sm ${t.text}`}>{selectedLead.source || "N/A"}</p></div>
+                                    {selectedLead.source === "Others" && (<div><p className={`text-xs font-medium mb-1 ${t.textFaint}`}>Specified Name</p><p className={`font-medium text-sm ${t.text}`}>{selectedLead.sourceOther}</p></div>)}
                                   </div>
-                                  {selectedLead.source==="Channel Partner"&&(
+                                  {selectedLead.source === "Channel Partner" && (
                                     <div className={`mt-2 pt-2 border-t grid grid-cols-1 sm:grid-cols-2 gap-3 ${t.tableBorder}`}>
-                                      {[{label:"CP Company",val:selectedLead.cp_company || selectedLead.cpCompany},{label:"CP Phone",val:selectedLead.cp_phone || selectedLead.cpPhone}].map(({label,val})=>(
-                                        <div key={label}><p className={`text-xs font-medium mb-1 ${t.textFaint}`}>{label}</p><p className={`font-medium text-sm ${t.text}`}>{val||"N/A"}</p></div>
+                                      {[{ label: "CP Company", val: selectedLead.cp_company || selectedLead.cpCompany }, { label: "CP Phone", val: selectedLead.cp_phone || selectedLead.cpPhone }].map(({ label, val }) => (
+                                        <div key={label}><p className={`text-xs font-medium mb-1 ${t.textFaint}`}>{label}</p><p className={`font-medium text-sm ${t.text}`}>{val || "N/A"}</p></div>
                                       ))}
                                     </div>
                                   )}
@@ -2265,21 +2318,21 @@ export default function ReceptionistDashboard() {
                                   const isHighProb = curLoan?.status?.toLowerCase() === "approved" && selectedLead.mongoVisitDate;
                                   return (
                                     <>
-                                      <h3 className={`text-sm font-bold border-b pb-2 mb-6 uppercase flex items-center justify-between ${isDark?"text-[#00AEEF]":"text-[#00AEEF]"} ${t.tableBorder}`}><span className="flex items-center gap-2"><FaUniversity/> Deal Loan Overview</span></h3>
+                                      <h3 className={`text-sm font-bold border-b pb-2 mb-6 uppercase flex items-center justify-between ${isDark ? "text-[#00AEEF]" : "text-[#00AEEF]"} ${t.tableBorder}`}><span className="flex items-center gap-2"><FaUniversity /> Deal Loan Overview</span></h3>
                                       {isHighProb && <div className="mb-6 bg-gradient-to-r from-orange-500/20 to-red-500/20 border border-orange-500/50 p-3 rounded-lg flex items-center justify-center gap-2 text-orange-400 font-bold tracking-wide shadow-md">🚀 HIGH PROBABILITY DEAL (Visit Done + Loan Approved)</div>}
                                       <div className="grid grid-cols-2 gap-y-5 gap-x-4 text-sm">
                                         <div><p className={`text-xs font-medium mb-1 ${t.textFaint}`}>Loan Required?</p><p className={`font-semibold ${t.text}`}>{curLoan?.loanRequired}</p></div>
                                         <div><p className={`text-xs font-medium mb-1 ${t.textFaint}`}>Current Status</p><p className={`font-bold px-2 py-0.5 rounded inline-block border ${sColor}`}>{curLoan?.status}</p></div>
                                         <div><p className={`text-xs font-medium mb-1 ${t.textFaint}`}>Amount Requested</p><p className="text-orange-400 font-semibold">{curLoan?.amountReq}</p></div>
-                                        <div><p className={`text-xs font-medium mb-1 ${t.textFaint}`}>Amount Approved</p><p className={`font-semibold ${isDark?"text-green-400":"text-emerald-600"}`}>{curLoan?.amountApp}</p></div>
-                                        {[{label:"Bank Name",val:curLoan?.bankName},{label:"CIBIL Score",val:curLoan?.cibil},{label:"Agent Name",val:curLoan?.agent},{label:"Agent Contact",val:curLoan?.agentContact},{label:"Emp Type",val:curLoan?.empType},{label:"Monthly Income",val:curLoan?.income},{label:"Existing EMIs",val:curLoan?.emi}].map(f=>(
+                                        <div><p className={`text-xs font-medium mb-1 ${t.textFaint}`}>Amount Approved</p><p className={`font-semibold ${isDark ? "text-green-400" : "text-emerald-600"}`}>{curLoan?.amountApp}</p></div>
+                                        {[{ label: "Bank Name", val: curLoan?.bankName }, { label: "CIBIL Score", val: curLoan?.cibil }, { label: "Agent Name", val: curLoan?.agent }, { label: "Agent Contact", val: curLoan?.agentContact }, { label: "Emp Type", val: curLoan?.empType }, { label: "Monthly Income", val: curLoan?.income }, { label: "Existing EMIs", val: curLoan?.emi }].map(f => (
                                           <div key={f.label}><p className={`text-xs font-medium mb-1 ${t.textFaint}`}>{f.label}</p><p className={`font-semibold ${t.text}`}>{f.val}</p></div>
                                         ))}
                                         <div className="col-span-2 mb-2"><p className={`text-xs font-bold uppercase tracking-widest ${t.textMuted}`}>Document Status</p></div>
-                                        {[{label:"PAN Card",val:curLoan?.docPan},{label:"Aadhaar",val:curLoan?.docAadhaar},{label:"Salary/ITR",val:curLoan?.docSalary},{label:"Bank Stmt",val:curLoan?.docBank},{label:"Property Docs",val:curLoan?.docProperty}].map((doc,i)=>(
+                                        {[{ label: "PAN Card", val: curLoan?.docPan }, { label: "Aadhaar", val: curLoan?.docAadhaar }, { label: "Salary/ITR", val: curLoan?.docSalary }, { label: "Bank Stmt", val: curLoan?.docBank }, { label: "Property Docs", val: curLoan?.docProperty }].map((doc, i) => (
                                           <div key={i} className={`flex items-center justify-between p-2 rounded-lg col-span-1 border ${t.innerBlock}`}>
                                             <span className={`text-xs ${t.textMuted}`}>{doc.label}</span>
-                                            {doc.val==="Uploaded"?<FaCheck className="text-green-500 text-xs"/>:<FaClock className={`text-xs ${t.textFaint}`}/>}
+                                            {doc.val === "Uploaded" ? <FaCheck className="text-green-500 text-xs" /> : <FaClock className={`text-xs ${t.textFaint}`} />}
                                           </div>
                                         ))}
                                       </div>
@@ -2290,8 +2343,8 @@ export default function ReceptionistDashboard() {
                             )}
                           </div>
                           <div className="grid grid-cols-2 gap-3 mt-4 flex-shrink-0">
-                            <button className={`border flex flex-col items-center justify-center py-3 rounded-xl transition-all cursor-pointer gap-1 ${isDark?"bg-[#00AEEF]/10 border-[#00AEEF]/30 hover:bg-[#00AEEF] text-[#00AEEF] hover:text-white":"bg-[#00AEEF]/10 border-[#00AEEF]/30 hover:bg-[#00AEEF] text-[#00AEEF] hover:text-white"}`}><FaMicrophone className="text-lg"/><span className="font-bold text-[10px]">Browser Call</span></button>
-                            <button className="bg-green-600/10 border border-green-500/30 hover:bg-green-600 text-green-400 hover:text-white flex flex-col items-center justify-center py-3 rounded-xl transition-all cursor-pointer gap-1"><FaWhatsapp className="text-xl"/><span className="font-bold text-[10px]">WhatsApp</span></button>
+                            <button className={`border flex flex-col items-center justify-center py-3 rounded-xl transition-all cursor-pointer gap-1 ${isDark ? "bg-[#00AEEF]/10 border-[#00AEEF]/30 hover:bg-[#00AEEF] text-[#00AEEF] hover:text-white" : "bg-[#00AEEF]/10 border-[#00AEEF]/30 hover:bg-[#00AEEF] text-[#00AEEF] hover:text-white"}`}><FaMicrophone className="text-lg" /><span className="font-bold text-[10px]">Browser Call</span></button>
+                            <button className="bg-green-600/10 border border-green-500/30 hover:bg-green-600 text-green-400 hover:text-white flex flex-col items-center justify-center py-3 rounded-xl transition-all cursor-pointer gap-1"><FaWhatsapp className="text-xl" /><span className="font-bold text-[10px]">WhatsApp</span></button>
                           </div>
                         </div>
                       )}
@@ -2311,15 +2364,15 @@ export default function ReceptionistDashboard() {
                           </div>
                         </div>
                         {currentLeadFollowUps.map((msg: any, idx: number) => {
-                          const isLoan    = msg.message.includes("🏦 Loan Update");
-                          const isSF      = msg.message.includes("📝 Detailed Salesform Submitted");
+                          const isLoan = msg.message.includes("🏦 Loan Update");
+                          const isSF = msg.message.includes("📝 Detailed Salesform Submitted");
                           const isClosing = msg.message.includes("✅ Lead Marked as Closing");
                           const bubbleCls = isLoan ? t.fupLoan : isSF ? t.fupSalesform : isClosing ? t.fupClosing : t.fupDefault;
                           return (
                             <div key={idx} className="flex justify-start">
                               <div className={`rounded-2xl rounded-tl-none p-4 max-w-[85%] shadow-lg ${bubbleCls}`}>
                                 <div className="flex justify-between items-center mb-3 gap-6">
-                                  <span className={`font-bold text-sm ${t.text}`}>{msg.createdBy==="admin"?`${msg.salesManagerName||"Admin"} (Admin)`:msg.salesManagerName}</span>
+                                  <span className={`font-bold text-sm ${t.text}`}>{msg.createdBy === "admin" ? `${msg.salesManagerName || "Admin"} (Admin)` : msg.salesManagerName}</span>
                                   <span className={`text-[10px] ${t.textFaint}`}>{formatDate(msg.createdAt)}</span>
                                 </div>
                                 <p className={`text-sm whitespace-pre-wrap leading-relaxed ${t.textMuted}`}>{msg.message}</p>
@@ -2327,7 +2380,7 @@ export default function ReceptionistDashboard() {
                             </div>
                           );
                         })}
-                        <div ref={followUpEndRef}/>
+                        <div ref={followUpEndRef} />
                       </div>
                       <form onSubmit={handleSendCustomNote} className={`p-4 border-t flex gap-3 items-center flex-shrink-0 ${t.header} ${t.tableBorder}`} style={t.headerGlass}>
                         <input
@@ -2335,7 +2388,7 @@ export default function ReceptionistDashboard() {
                           placeholder="Add follow-up note..."
                           className={`flex-1 rounded-xl px-4 py-3 text-sm outline-none transition-colors border ${t.inputBg} ${t.text} ${t.inputFocus}`}
                         />
-                        <button type="submit" className={`w-12 h-12 text-white rounded-xl flex items-center justify-center cursor-pointer transition-colors shadow-lg ${isDark?"bg-purple-600 hover:bg-purple-500":"bg-[#00AEEF] hover:bg-[#0099d4]"}`}><FaPaperPlane className="text-sm ml-[-2px]"/></button>
+                        <button type="submit" className={`w-12 h-12 text-white rounded-xl flex items-center justify-center cursor-pointer transition-colors shadow-lg ${isDark ? "bg-purple-600 hover:bg-purple-500" : "bg-[#00AEEF] hover:bg-[#0099d4]"}`}><FaPaperPlane className="text-sm ml-[-2px]" /></button>
                       </form>
                     </div>
                   </div>
@@ -2356,11 +2409,11 @@ export default function ReceptionistDashboard() {
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="relative">
-                    <FaSearch className={`absolute left-3 top-1/2 -translate-y-1/2 text-xs ${t.textFaint}`}/>
-                    <input type="text" placeholder="Search leads..." value={searchRecepLeads} onChange={e=>setSearchRecepLeads(e.target.value)}
-                      className={`rounded-lg pl-9 pr-4 py-2 text-sm outline-none w-52 transition-colors border ${t.inputBg} ${t.text}`}/>
+                    <FaSearch className={`absolute left-3 top-1/2 -translate-y-1/2 text-xs ${t.textFaint}`} />
+                    <input type="text" placeholder="Search leads..." value={searchRecepLeads} onChange={e => setSearchRecepLeads(e.target.value)}
+                      className={`rounded-lg pl-9 pr-4 py-2 text-sm outline-none w-52 transition-colors border ${t.inputBg} ${t.text}`} />
                   </div>
-                  <button onClick={() => downloadCSV(filteredRecepLeads.map((l:any)=>({"Lead No":l.id,"Client Name":l.name,"CP Company":l.cp_company||"N/A","Budget":l.salesBudget||l.budget||"N/A","Phone":l.phone||"N/A","Alt Phone":l.altPhone||"N/A","Date Created":l.date,"Assigned to Receptionist":l.assignedReceptionist||user.name,"Status":l.status||"Routed"})), "Receptionist_Leads.csv")} className={`p-2 border rounded-lg ${t.exportBtn}`} title="Export CSV"><FaDownload size={12}/></button>
+                  <button onClick={() => downloadCSV(filteredRecepLeads.map((l: any) => ({ "Lead No": l.id, "Client Name": l.name, "CP Company": l.cp_company || "N/A", "Budget": l.salesBudget || l.budget || "N/A", "Phone": l.phone || "N/A", "Alt Phone": l.altPhone || "N/A", "Date Created": l.date, "Assigned to Receptionist": l.assignedReceptionist || user.name, "Status": l.status || "Routed" })), "Receptionist_Leads.csv")} className={`p-2 border rounded-lg ${t.exportBtn}`} title="Export CSV"><FaDownload size={12} /></button>
                   <button onClick={refetchAll} className={`text-sm font-semibold flex items-center gap-2 px-4 py-2 rounded-lg ${t.btnPrimary}`}>↻ Refresh</button>
                 </div>
               </div>
@@ -2373,20 +2426,20 @@ export default function ReceptionistDashboard() {
                 <div className="overflow-x-auto custom-scrollbar">
                   <table className="w-full text-left border-collapse whitespace-nowrap">
                     <thead><tr className={t.tableHead}>
-                      {["Lead No.","Client Name","CP Details","Budget","Phone","Alt. Phone","Date Created","Assigned to Receptionist","Status","Actions"].map(h => (
+                      {["Lead No.", "Client Name", "CP Details", "Budget", "Phone", "Alt. Phone", "Date Created", "Assigned to Receptionist", "Status", "Actions"].map(h => (
                         <th key={h} className={`px-3 py-3 md:p-4 font-bold uppercase tracking-wider border-b ${t.textHeader} ${t.tableBorder}`}>{h}</th>
                       ))}
                     </tr></thead>
                     <tbody className={`${t.tableDivide} divide-y`}>
                       {isFetchingEnquiries ? (
                         <tr><td colSpan={10} className={`p-8 text-center text-sm ${t.textMuted}`}>Loading your leads...</td></tr>
-                      ) : filteredRecepLeads.length===0 ? (
+                      ) : filteredRecepLeads.length === 0 ? (
                         <tr><td colSpan={10} className={`p-12 text-center ${t.textMuted}`}>
-                          <FaUserTie className={`text-5xl mx-auto mb-4 ${t.textFaint}`}/>
+                          <FaUserTie className={`text-5xl mx-auto mb-4 ${t.textFaint}`} />
                           <p className="text-lg font-semibold">No leads found.</p>
                           <p className={`text-sm mt-2 ${t.textFaint}`}>Self-assign leads when creating new entries.</p>
                         </td></tr>
-                      ) : filteredRecepLeads.map((lead:any) => (
+                      ) : filteredRecepLeads.map((lead: any) => (
                         <tr key={lead.id} className={`transition-colors ${t.tableRow}`}>
                           <td className={`px-3 py-3 md:p-4 text-xs md:text-sm font-bold ${t.accentText}`}>#{lead.id}</td>
                           <td className={`px-3 py-3 md:p-4 text-xs md:text-sm font-semibold ${t.text}`}>{lead.name}</td>
@@ -2400,17 +2453,16 @@ export default function ReceptionistDashboard() {
                               </div>
                             ) : <span className="italic text-[10px]">—</span>}
                           </td>
-                          <td className={`px-3 py-3 md:p-4 text-xs md:text-sm font-bold ${isDark?"text-green-700":"text-emerald-600"}`}>{lead.salesBudget||lead.budget}</td>
+                          <td className={`px-3 py-3 md:p-4 text-xs md:text-sm font-bold ${isDark ? "text-green-700" : "text-emerald-600"}`}>{lead.salesBudget || lead.budget}</td>
                           <td className={`px-3 py-3 md:p-4 text-[10px] md:text-sm font-mono ${t.text}`}>{maskPhone(lead.phone)}</td>
                           <td className={`px-3 py-3 md:p-4 text-[10px] md:text-sm font-mono ${t.textMuted}`}>{maskPhone(lead.altPhone)}</td>
                           <td className={`px-3 py-3 md:p-4 text-[10px] md:text-xs ${t.textFaint}`}>{lead.date}</td>
                           <td className="px-3 py-3 md:p-4">
-                            <span className={`px-2 py-1 rounded-md text-[10px] font-semibold ${isDark?"bg-purple-500/10 text-purple-400 border border-purple-500/30":"bg-[#9E217B]/10 text-[#9E217B] border border-[#9E217B]/30"}`}>{lead.assignedReceptionist||user.name}</span>
+                            <span className={`px-2 py-1 rounded-md text-[10px] font-semibold ${isDark ? "bg-purple-500/10 text-purple-400 border border-purple-500/30" : "bg-[#9E217B]/10 text-[#9E217B] border border-[#9E217B]/30"}`}>{lead.assignedReceptionist || user.name}</span>
                           </td>
                           <td className="px-3 py-3 md:p-4">
-                            <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase border ${
-                              lead.status==="Closing"?t.statusClosing:lead.status==="Visit Scheduled"?t.statusVisit:t.statusRouted
-                            }`}>{lead.status||"Routed"}</span>
+                            <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase border ${lead.status === "Closing" ? t.statusClosing : lead.status === "Visit Scheduled" ? t.statusVisit : t.statusRouted
+                              }`}>{lead.status || "Routed"}</span>
                           </td>
                           <td className="px-3 py-3 md:p-4">
                             <button onClick={() => { setSelectedLead(lead); setAssignedSubView("detail"); setDetailTab("personal"); setShowSalesForm(false); setShowLoanForm(false); setActiveTab("assigned"); }}
@@ -2426,210 +2478,210 @@ export default function ReceptionistDashboard() {
               </div>
             </div>
           )}
-        {/* ════════════════════════════════════════════════════
+          {/* ════════════════════════════════════════════════════
             CLOSED LEADS TAB
         ════════════════════════════════════════════════════ */}
-        {activeTab === "closed-leads" && (
-          <div className="animate-fadeIn pb-10">
+          {activeTab === "closed-leads" && (
+            <div className="animate-fadeIn pb-10">
 
-            {/* ── TABLE VIEW ── */}
-            {closedLeadView === "table" && (
-              <>
-                <div className="flex justify-between items-center mb-8">
-                  <div>
-                    <h1 className={`text-xl md:text-3xl font-bold ${t.text}`}>Closed Leads</h1>
-                    <p className={`text-xs mt-1 ${t.textFaint}`}>Leads that have reached the Closing stage</p>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="relative">
-                      <FaSearch className={`absolute left-3 top-1/2 -translate-y-1/2 text-xs ${t.textFaint}`}/>
-                      <input type="text" placeholder="Search leads..." value={searchClosedLeads}
-                        onChange={e => setSearchClosedLeads(e.target.value)}
-                        className={`rounded-lg pl-9 pr-4 py-2 text-sm outline-none w-52 transition-colors border ${t.inputBg} ${t.text}`}/>
+              {/* ── TABLE VIEW ── */}
+              {closedLeadView === "table" && (
+                <>
+                  <div className="flex justify-between items-center mb-8">
+                    <div>
+                      <h1 className={`text-xl md:text-3xl font-bold ${t.text}`}>Closed Leads</h1>
+                      <p className={`text-xs mt-1 ${t.textFaint}`}>Leads that have reached the Closing stage</p>
                     </div>
-                    <button onClick={() => downloadCSV(filteredClosedLeads.map((l: any) => ({
-                      "Lead No":    l.id,
-                      "Client Name":l.name,
-                      "Budget":     l.salesBudget || l.budget || "N/A",
-                      "Status":     l.status,
-                      "Assigned To":l.assignedTo || "Unassigned",
-                      "Closing Date": l.closingDate ? formatDate(l.closingDate) : "N/A",
-                      "Date Created": l.date,
-                    })), "Closed_Leads.csv")}
-                      className={`p-2 border rounded-lg ${t.exportBtn}`} title="Export CSV">
-                      <FaDownload size={12}/>
-                    </button>
-                    <button onClick={refetchAll} className={`text-sm font-semibold flex items-center gap-2 px-4 py-2 rounded-lg ${t.btnPrimary}`}>
-                      ↻ Refresh
-                    </button>
-                  </div>
-                </div>
-
-                <div className={`rounded-2xl border overflow-hidden ${t.tableWrap}`} style={t.tableGlass}>
-                  <div className={`p-4 border-b flex justify-between items-center ${t.tableBorder}`}>
-                    <p className={`text-sm font-semibold ${t.text}`}>{filteredClosedLeads.length} closed leads</p>
-                    <p className={`text-xs ${t.textFaint}`}>Click any row to view full history</p>
-                  </div>
-                  <div className="overflow-x-auto custom-scrollbar">
-                    <table className="w-full text-left border-collapse whitespace-nowrap">
-                      <thead><tr className={t.tableHead}>
-                        {["Lead No.","Client Name","Budget","Property","Status","Assigned To","Site Visit","Closing Date","Actions"].map(h => (
-                          <th key={h} className={`px-3 py-3 md:p-4 font-bold uppercase tracking-wider border-b ${t.textHeader} ${t.tableBorder}`}>{h}</th>
-                        ))}
-                      </tr></thead>
-                      <tbody className={`${t.tableDivide} divide-y`}>
-                        {isFetchingEnquiries ? (
-                          <tr><td colSpan={9} className={`p-8 text-center text-sm ${t.textMuted}`}>Loading...</td></tr>
-                        ) : filteredClosedLeads.length === 0 ? (
-                          <tr><td colSpan={9} className={`p-12 text-center ${t.textMuted}`}>
-                            <FaHandshake className={`text-5xl mx-auto mb-4 ${t.textFaint}`}/>
-                            <p className="text-lg font-semibold">No closed leads yet.</p>
-                            <p className={`text-sm mt-2 ${t.textFaint}`}>Leads marked as Closing will appear here.</p>
-                          </td></tr>
-                        ) : filteredClosedLeads.map((lead: any) => (
-                          <tr key={lead.id} className={`transition-colors cursor-pointer ${t.tableRow}`}
-                            onClick={() => { setSelectedClosedLead(lead); setClosedLeadView("detail"); }}>
-                            <td className={`px-3 py-3 md:p-4 text-xs md:text-sm font-bold ${t.accentText}`}>#{lead.id}</td>
-                            <td className={`px-3 py-3 md:p-4 text-xs md:text-sm font-semibold ${t.text}`}>{lead.name}</td>
-                            <td className={`px-3 py-3 md:p-4 text-xs md:text-sm font-bold ${isDark?"text-green-400":"text-emerald-600"}`}>{lead.salesBudget||lead.budget}</td>
-                            <td className={`px-3 py-3 md:p-4 text-xs ${t.textMuted}`}>{lead.propType||lead.configuration||"N/A"}</td>
-                            <td className="px-3 py-3 md:p-4">
-                              <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase border ${t.statusClosing}`}>
-                                {lead.status}
-                              </span>
-                            </td>
-                            <td className={`px-3 py-3 md:p-4 text-xs ${t.textMuted}`}>{lead.assignedTo||"Unassigned"}</td>
-                            <td className={`px-3 py-3 md:p-4 text-[10px] ${lead.mongoVisitDate?"text-orange-400":t.textFaint}`}>
-                              {lead.mongoVisitDate ? formatDate(lead.mongoVisitDate).split(",")[0] : "—"}
-                            </td>
-                            <td className={`px-3 py-3 md:p-4 text-[10px] ${t.textFaint}`}>
-                              {lead.closingDate ? formatDate(lead.closingDate).split(",")[0] : "—"}
-                            </td>
-                            <td className="px-3 py-3 md:p-4">
-                              <button className={`text-xs font-bold px-3 py-1.5 rounded-lg ${t.btnWarning}`}>
-                                View History
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </>
-            )}
-
-            {/* ── DETAIL / HISTORY VIEW ── */}
-            {closedLeadView === "detail" && selectedClosedLead && (() => {
-              const leadFollowUps = followUps.filter((f: any) => String(f.leadId) === String(selectedClosedLead.id));
-              return (
-                <div className="animate-fadeIn max-w-5xl mx-auto">
-                  {/* Header */}
-                  <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 rounded-2xl border p-5 ${t.card}`} style={t.cardGlass}>
-                    <div className="flex items-center gap-4">
-                      <button onClick={() => { setClosedLeadView("table"); setSelectedClosedLead(null); }}
-                        className={`w-10 h-10 flex items-center justify-center border rounded-xl transition-colors cursor-pointer ${t.textMuted} ${t.tableBorder} ${isDark?"bg-[#222] hover:bg-[#333]":"bg-white hover:bg-[#F8FAFC]"}`}>
-                        <FaChevronLeft className="text-sm"/>
+                    <div className="flex items-center gap-3">
+                      <div className="relative">
+                        <FaSearch className={`absolute left-3 top-1/2 -translate-y-1/2 text-xs ${t.textFaint}`} />
+                        <input type="text" placeholder="Search leads..." value={searchClosedLeads}
+                          onChange={e => setSearchClosedLeads(e.target.value)}
+                          className={`rounded-lg pl-9 pr-4 py-2 text-sm outline-none w-52 transition-colors border ${t.inputBg} ${t.text}`} />
+                      </div>
+                      <button onClick={() => downloadCSV(filteredClosedLeads.map((l: any) => ({
+                        "Lead No": l.id,
+                        "Client Name": l.name,
+                        "Budget": l.salesBudget || l.budget || "N/A",
+                        "Status": l.status,
+                        "Assigned To": l.assignedTo || "Unassigned",
+                        "Closing Date": l.closingDate ? formatDate(l.closingDate) : "N/A",
+                        "Date Created": l.date,
+                      })), "Closed_Leads.csv")}
+                        className={`p-2 border rounded-lg ${t.exportBtn}`} title="Export CSV">
+                        <FaDownload size={12} />
                       </button>
-                      <div>
-                        <h1 className={`text-xl md:text-2xl font-bold flex items-center gap-3 ${t.text}`}>
-                          <span className={t.accentText}>#{selectedClosedLead.id}</span>
-                          <span>{selectedClosedLead.name}</span>
-                          <span className={`text-[11px] font-bold px-3 py-1 rounded-full border flex items-center gap-1.5 ${t.statusClosing}`}>
-                            <FaHandshake className="text-xs"/> Closing
-                          </span>
-                        </h1>
-                        <p className={`text-xs mt-1 ${t.textFaint}`}>
-                          {selectedClosedLead.closingDate && `Closed on ${formatDate(selectedClosedLead.closingDate)}`}
-                        </p>
-                      </div>
+                      <button onClick={refetchAll} className={`text-sm font-semibold flex items-center gap-2 px-4 py-2 rounded-lg ${t.btnPrimary}`}>
+                        ↻ Refresh
+                      </button>
                     </div>
-                    <button onClick={() => downloadCSV(leadFollowUps.map((f: any) => ({
-                      "By":      f.salesManagerName,
-                      "Role":    f.createdBy,
-                      "Message": f.message,
-                      "Date":    formatDate(f.createdAt),
-                    })), `Lead_${selectedClosedLead.id}_History.csv`)}
-                      className={`p-2 border rounded-lg ${t.exportBtn}`} title="Export History">
-                      <FaDownload size={12}/>
-                    </button>
                   </div>
 
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    {/* Lead Summary Card */}
-                    <div className={`rounded-2xl border p-6 space-y-4 ${t.card}`} style={t.cardGlass}>
-                      <h3 className={`text-sm font-bold uppercase tracking-wider border-b pb-2 ${t.sectionTitle} ${t.tableBorder}`}>Lead Summary</h3>
-                      {[
-                        { label: "Client Name",  val: selectedClosedLead.name },
-                        { label: "Phone",        val: maskPhone(selectedClosedLead.phone) },
-                        { label: "Budget",       val: selectedClosedLead.salesBudget || selectedClosedLead.budget },
-                        { label: "Property",     val: selectedClosedLead.propType || selectedClosedLead.configuration || "N/A" },
-                        { label: "Use Type",     val: selectedClosedLead.useType !== "Pending" ? selectedClosedLead.useType : (selectedClosedLead.purpose || "N/A") },
-                        { label: "Source",       val: selectedClosedLead.source || "N/A" },
-                        { label: "Assigned To",  val: selectedClosedLead.assignedTo || "Unassigned" },
-                        { label: "Interest",     val: selectedClosedLead.leadInterestStatus || "N/A" },
-                        { label: "Loan Status",  val: selectedClosedLead.loanStatus !== "N/A" ? selectedClosedLead.loanStatus : "N/A" },
-                      ].map(({ label, val }) => (
-                        <div key={label}>
-                          <p className={`text-xs font-medium ${t.textFaint}`}>{label}</p>
-                          <p className={`text-sm font-semibold mt-0.5 ${t.text}`}>{val}</p>
-                        </div>
-                      ))}
-                      {selectedClosedLead.mongoVisitDate && (
-                        <div className={`p-3 rounded-xl border ${isDark?"bg-orange-900/10 border-orange-500/20":"bg-orange-50 border-orange-200"}`}>
-                          <p className="text-xs font-bold text-orange-400 mb-1">📍 Site Visit Date</p>
-                          <p className={`text-sm font-bold ${t.text}`}>{formatDate(selectedClosedLead.mongoVisitDate)}</p>
-                        </div>
-                      )}
+                  <div className={`rounded-2xl border overflow-hidden ${t.tableWrap}`} style={t.tableGlass}>
+                    <div className={`p-4 border-b flex justify-between items-center ${t.tableBorder}`}>
+                      <p className={`text-sm font-semibold ${t.text}`}>{filteredClosedLeads.length} closed leads</p>
+                      <p className={`text-xs ${t.textFaint}`}>Click any row to view full history</p>
                     </div>
-
-                    {/* Follow-up Timeline */}
-                    <div className={`lg:col-span-2 rounded-2xl border overflow-hidden flex flex-col ${t.chatPanel}`} style={t.chatPanelGl}>
-                      <div className={`p-4 border-b flex items-center gap-3 ${t.modalHeader} ${t.tableBorder}`}>
-                        <FaFileAlt className={t.accentText}/>
-                        <h3 className={`font-bold text-sm ${t.text}`}>Full Lead History</h3>
-                        <span className={`text-xs px-2 py-0.5 rounded-full ${t.accentBg}`}>{leadFollowUps.length} entries</span>
-                      </div>
-                      <div className={`flex-1 overflow-y-auto custom-scrollbar p-6 flex flex-col gap-5 max-h-[60vh] ${t.chatArea}`}>
-                        {/* System entry */}
-                        <div className={`rounded-2xl rounded-tl-none p-4 max-w-[90%] shadow-md ${t.fupSalesform}`}>
-                          <div className="flex justify-between items-center mb-2 gap-6">
-                            <span className={`font-bold text-sm ${t.accentText}`}>System (Front Desk)</span>
-                            <span className={`text-[10px] ${t.textFaint}`}>{formatDate(selectedClosedLead.created_at)}</span>
-                          </div>
-                          <p className={`text-sm ${t.textMuted}`}>Lead captured. Assigned to: {selectedClosedLead.assigned_to || "Unassigned"}</p>
-                        </div>
-
-                        {leadFollowUps.length === 0 ? (
-                          <p className={`text-center text-sm py-10 ${t.textFaint}`}>No follow-up history recorded.</p>
-                        ) : leadFollowUps.map((msg: any, idx: number) => {
-                          const isLoan     = msg.message?.includes("🏦 Loan Update");
-                          const isSF       = msg.message?.includes("📝 Detailed Salesform Submitted");
-                          const isClosing  = msg.message?.includes("✅ Lead Marked as Closing");
-                          const isTransfer = msg.message?.includes("🔄 Lead Transferred");
-                          const bubble = isLoan ? t.fupLoan : isSF ? t.fupSalesform : isClosing ? t.fupClosing : isTransfer ? t.fupTransfer : t.fupDefault;
-                          return (
-                            <div key={idx} className={`rounded-2xl rounded-tl-none p-4 max-w-[90%] shadow-md ${bubble}`}>
-                              <div className="flex justify-between items-center mb-2 gap-6">
-                                <span className={`font-bold text-sm ${t.text}`}>
-                                  {msg.createdBy === "receptionist"
-                                    ? `${msg.salesManagerName || "Receptionist"} (Receptionist)`
-                                    : msg.salesManagerName}
+                    <div className="overflow-x-auto custom-scrollbar">
+                      <table className="w-full text-left border-collapse whitespace-nowrap">
+                        <thead><tr className={t.tableHead}>
+                          {["Lead No.", "Client Name", "Budget", "Property", "Status", "Assigned To", "Site Visit", "Closing Date", "Actions"].map(h => (
+                            <th key={h} className={`px-3 py-3 md:p-4 font-bold uppercase tracking-wider border-b ${t.textHeader} ${t.tableBorder}`}>{h}</th>
+                          ))}
+                        </tr></thead>
+                        <tbody className={`${t.tableDivide} divide-y`}>
+                          {isFetchingEnquiries ? (
+                            <tr><td colSpan={9} className={`p-8 text-center text-sm ${t.textMuted}`}>Loading...</td></tr>
+                          ) : filteredClosedLeads.length === 0 ? (
+                            <tr><td colSpan={9} className={`p-12 text-center ${t.textMuted}`}>
+                              <FaHandshake className={`text-5xl mx-auto mb-4 ${t.textFaint}`} />
+                              <p className="text-lg font-semibold">No closed leads yet.</p>
+                              <p className={`text-sm mt-2 ${t.textFaint}`}>Leads marked as Closing will appear here.</p>
+                            </td></tr>
+                          ) : filteredClosedLeads.map((lead: any) => (
+                            <tr key={lead.id} className={`transition-colors cursor-pointer ${t.tableRow}`}
+                              onClick={() => { setSelectedClosedLead(lead); setClosedLeadView("detail"); }}>
+                              <td className={`px-3 py-3 md:p-4 text-xs md:text-sm font-bold ${t.accentText}`}>#{lead.id}</td>
+                              <td className={`px-3 py-3 md:p-4 text-xs md:text-sm font-semibold ${t.text}`}>{lead.name}</td>
+                              <td className={`px-3 py-3 md:p-4 text-xs md:text-sm font-bold ${isDark ? "text-green-400" : "text-emerald-600"}`}>{lead.salesBudget || lead.budget}</td>
+                              <td className={`px-3 py-3 md:p-4 text-xs ${t.textMuted}`}>{lead.propType || lead.configuration || "N/A"}</td>
+                              <td className="px-3 py-3 md:p-4">
+                                <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase border ${t.statusClosing}`}>
+                                  {lead.status}
                                 </span>
-                                <span className={`text-[10px] flex-shrink-0 ${t.textFaint}`}>{formatDate(msg.createdAt)}</span>
-                              </div>
-                              <p className={`text-sm whitespace-pre-wrap leading-relaxed ${t.textMuted}`}>{msg.message}</p>
+                              </td>
+                              <td className={`px-3 py-3 md:p-4 text-xs ${t.textMuted}`}>{lead.assignedTo || "Unassigned"}</td>
+                              <td className={`px-3 py-3 md:p-4 text-[10px] ${lead.mongoVisitDate ? "text-orange-400" : t.textFaint}`}>
+                                {lead.mongoVisitDate ? formatDate(lead.mongoVisitDate).split(",")[0] : "—"}
+                              </td>
+                              <td className={`px-3 py-3 md:p-4 text-[10px] ${t.textFaint}`}>
+                                {lead.closingDate ? formatDate(lead.closingDate).split(",")[0] : "—"}
+                              </td>
+                              <td className="px-3 py-3 md:p-4">
+                                <button className={`text-xs font-bold px-3 py-1.5 rounded-lg ${t.btnWarning}`}>
+                                  View History
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* ── DETAIL / HISTORY VIEW ── */}
+              {closedLeadView === "detail" && selectedClosedLead && (() => {
+                const leadFollowUps = followUps.filter((f: any) => String(f.leadId) === String(selectedClosedLead.id));
+                return (
+                  <div className="animate-fadeIn max-w-5xl mx-auto">
+                    {/* Header */}
+                    <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 rounded-2xl border p-5 ${t.card}`} style={t.cardGlass}>
+                      <div className="flex items-center gap-4">
+                        <button onClick={() => { setClosedLeadView("table"); setSelectedClosedLead(null); }}
+                          className={`w-10 h-10 flex items-center justify-center border rounded-xl transition-colors cursor-pointer ${t.textMuted} ${t.tableBorder} ${isDark ? "bg-[#222] hover:bg-[#333]" : "bg-white hover:bg-[#F8FAFC]"}`}>
+                          <FaChevronLeft className="text-sm" />
+                        </button>
+                        <div>
+                          <h1 className={`text-xl md:text-2xl font-bold flex items-center gap-3 ${t.text}`}>
+                            <span className={t.accentText}>#{selectedClosedLead.id}</span>
+                            <span>{selectedClosedLead.name}</span>
+                            <span className={`text-[11px] font-bold px-3 py-1 rounded-full border flex items-center gap-1.5 ${t.statusClosing}`}>
+                              <FaHandshake className="text-xs" /> Closing
+                            </span>
+                          </h1>
+                          <p className={`text-xs mt-1 ${t.textFaint}`}>
+                            {selectedClosedLead.closingDate && `Closed on ${formatDate(selectedClosedLead.closingDate)}`}
+                          </p>
+                        </div>
+                      </div>
+                      <button onClick={() => downloadCSV(leadFollowUps.map((f: any) => ({
+                        "By": f.salesManagerName,
+                        "Role": f.createdBy,
+                        "Message": f.message,
+                        "Date": formatDate(f.createdAt),
+                      })), `Lead_${selectedClosedLead.id}_History.csv`)}
+                        className={`p-2 border rounded-lg ${t.exportBtn}`} title="Export History">
+                        <FaDownload size={12} />
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                      {/* Lead Summary Card */}
+                      <div className={`rounded-2xl border p-6 space-y-4 ${t.card}`} style={t.cardGlass}>
+                        <h3 className={`text-sm font-bold uppercase tracking-wider border-b pb-2 ${t.sectionTitle} ${t.tableBorder}`}>Lead Summary</h3>
+                        {[
+                          { label: "Client Name", val: selectedClosedLead.name },
+                          { label: "Phone", val: maskPhone(selectedClosedLead.phone) },
+                          { label: "Budget", val: selectedClosedLead.salesBudget || selectedClosedLead.budget },
+                          { label: "Property", val: selectedClosedLead.propType || selectedClosedLead.configuration || "N/A" },
+                          { label: "Use Type", val: selectedClosedLead.useType !== "Pending" ? selectedClosedLead.useType : (selectedClosedLead.purpose || "N/A") },
+                          { label: "Source", val: selectedClosedLead.source || "N/A" },
+                          { label: "Assigned To", val: selectedClosedLead.assignedTo || "Unassigned" },
+                          { label: "Interest", val: selectedClosedLead.leadInterestStatus || "N/A" },
+                          { label: "Loan Status", val: selectedClosedLead.loanStatus !== "N/A" ? selectedClosedLead.loanStatus : "N/A" },
+                        ].map(({ label, val }) => (
+                          <div key={label}>
+                            <p className={`text-xs font-medium ${t.textFaint}`}>{label}</p>
+                            <p className={`text-sm font-semibold mt-0.5 ${t.text}`}>{val}</p>
+                          </div>
+                        ))}
+                        {selectedClosedLead.mongoVisitDate && (
+                          <div className={`p-3 rounded-xl border ${isDark ? "bg-orange-900/10 border-orange-500/20" : "bg-orange-50 border-orange-200"}`}>
+                            <p className="text-xs font-bold text-orange-400 mb-1">📍 Site Visit Date</p>
+                            <p className={`text-sm font-bold ${t.text}`}>{formatDate(selectedClosedLead.mongoVisitDate)}</p>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Follow-up Timeline */}
+                      <div className={`lg:col-span-2 rounded-2xl border overflow-hidden flex flex-col ${t.chatPanel}`} style={t.chatPanelGl}>
+                        <div className={`p-4 border-b flex items-center gap-3 ${t.modalHeader} ${t.tableBorder}`}>
+                          <FaFileAlt className={t.accentText} />
+                          <h3 className={`font-bold text-sm ${t.text}`}>Full Lead History</h3>
+                          <span className={`text-xs px-2 py-0.5 rounded-full ${t.accentBg}`}>{leadFollowUps.length} entries</span>
+                        </div>
+                        <div className={`flex-1 overflow-y-auto custom-scrollbar p-6 flex flex-col gap-5 max-h-[60vh] ${t.chatArea}`}>
+                          {/* System entry */}
+                          <div className={`rounded-2xl rounded-tl-none p-4 max-w-[90%] shadow-md ${t.fupSalesform}`}>
+                            <div className="flex justify-between items-center mb-2 gap-6">
+                              <span className={`font-bold text-sm ${t.accentText}`}>System (Front Desk)</span>
+                              <span className={`text-[10px] ${t.textFaint}`}>{formatDate(selectedClosedLead.created_at)}</span>
                             </div>
-                          );
-                        })}
+                            <p className={`text-sm ${t.textMuted}`}>Lead captured. Assigned to: {selectedClosedLead.assigned_to || "Unassigned"}</p>
+                          </div>
+
+                          {leadFollowUps.length === 0 ? (
+                            <p className={`text-center text-sm py-10 ${t.textFaint}`}>No follow-up history recorded.</p>
+                          ) : leadFollowUps.map((msg: any, idx: number) => {
+                            const isLoan = msg.message?.includes("🏦 Loan Update");
+                            const isSF = msg.message?.includes("📝 Detailed Salesform Submitted");
+                            const isClosing = msg.message?.includes("✅ Lead Marked as Closing");
+                            const isTransfer = msg.message?.includes("🔄 Lead Transferred");
+                            const bubble = isLoan ? t.fupLoan : isSF ? t.fupSalesform : isClosing ? t.fupClosing : isTransfer ? t.fupTransfer : t.fupDefault;
+                            return (
+                              <div key={idx} className={`rounded-2xl rounded-tl-none p-4 max-w-[90%] shadow-md ${bubble}`}>
+                                <div className="flex justify-between items-center mb-2 gap-6">
+                                  <span className={`font-bold text-sm ${t.text}`}>
+                                    {msg.createdBy === "receptionist"
+                                      ? `${msg.salesManagerName || "Receptionist"} (Receptionist)`
+                                      : msg.salesManagerName}
+                                  </span>
+                                  <span className={`text-[10px] flex-shrink-0 ${t.textFaint}`}>{formatDate(msg.createdAt)}</span>
+                                </div>
+                                <p className={`text-sm whitespace-pre-wrap leading-relaxed ${t.textMuted}`}>{msg.message}</p>
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              );
-            })()}
-          </div>
-        )}
+                );
+              })()}
+            </div>
+          )}
         </main>
       </div>
 
@@ -2638,17 +2690,17 @@ export default function ReceptionistDashboard() {
       ════════════════════════════════════════════════════ */}
       <nav className={`md:hidden flex w-full h-16 border-t items-center justify-around flex-shrink-0 z-40 ${t.sidebar}`}>
         {NAV_ITEMS.map(({ id, icon, title }) => {
-          const active = activeTab === id || (id==="forms"&&activeTab==="detail");
+          const active = activeTab === id || (id === "forms" && activeTab === "detail");
           return (
             <div key={id} onClick={() => setActiveTab(id)} className="relative flex justify-center items-center h-full flex-1 cursor-pointer" title={title}>
-              {active && <div className={`absolute top-0 left-1/2 -translate-x-1/2 h-1 w-8 rounded-b ${t.navIndicator}`}/>}
+              {active && <div className={`absolute top-0 left-1/2 -translate-x-1/2 h-1 w-8 rounded-b ${t.navIndicator}`} />}
               <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${active ? t.navActive : t.navInactive}`}>{icon}</div>
             </div>
           );
         })}
         <div onClick={() => setActiveTab("settings")} className="relative flex justify-center items-center h-full flex-1 cursor-pointer">
-          {activeTab==="settings" && <div className={`absolute top-0 left-1/2 -translate-x-1/2 h-1 w-8 rounded-b ${t.navIndicator}`}/>}
-          <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${activeTab==="settings" ? t.navActive : t.navInactive}`}><FaCog className="w-5 h-5"/></div>
+          {activeTab === "settings" && <div className={`absolute top-0 left-1/2 -translate-x-1/2 h-1 w-8 rounded-b ${t.navIndicator}`} />}
+          <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${activeTab === "settings" ? t.navActive : t.navInactive}`}><FaCog className="w-5 h-5" /></div>
         </div>
       </nav>
 
@@ -2656,14 +2708,14 @@ export default function ReceptionistDashboard() {
           ENQUIRY MODAL (with Self-Assign toggle)
       ════════════════════════════════════════════════════ */}
       {isEnquiryModalOpen && (
-        <div className="fixed inset-0 bg-black/70 z-[100] flex justify-center items-center p-4 sm:p-6 animate-fadeIn" style={{backdropFilter:"blur(6px)"}}>
+        <div className="fixed inset-0 bg-black/70 z-[100] flex justify-center items-center p-4 sm:p-6 animate-fadeIn" style={{ backdropFilter: "blur(6px)" }}>
           <div className={`rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl border ${t.modalCard}`} style={t.modalGlass}>
             <div className={`p-4 md:p-6 border-b flex justify-between items-center ${t.modalHeader} ${t.tableBorder}`}>
               <div>
-                <h2 className={`text-lg md:text-xl font-bold flex items-center gap-2 ${t.text}`}><FaUserCircle className={t.accentText}/> Client Enquiry Form</h2>
+                <h2 className={`text-lg md:text-xl font-bold flex items-center gap-2 ${t.text}`}><FaUserCircle className={t.accentText} /> Client Enquiry Form</h2>
                 <p className={`text-xs mt-1 ${t.textMuted}`}>Fill all details accurately to route to the Sales Manager.</p>
               </div>
-              <button onClick={() => setIsEnquiryModalOpen(false)} className={`hover:text-red-500 transition-colors cursor-pointer p-2 ${t.textMuted}`}><FaTimes className="text-xl"/></button>
+              <button onClick={() => setIsEnquiryModalOpen(false)} className={`hover:text-red-500 transition-colors cursor-pointer p-2 ${t.textMuted}`}><FaTimes className="text-xl" /></button>
             </div>
             <div className={`p-4 md:p-6 overflow-y-auto custom-scrollbar flex-1 ${t.modalInner}`}>
               <form id="enquiryForm" onSubmit={handleEnquirySubmit} className="space-y-6 md:space-y-8">
@@ -2672,40 +2724,40 @@ export default function ReceptionistDashboard() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
                     <div className="sm:col-span-2">
                       <label className={`block text-xs mb-1.5 font-medium pl-2 ${t.textMuted}`}>Full Name *</label>
-                      <input type="text" required value={enquiryForm.fullName} onChange={e=>setEnquiryForm({...enquiryForm,fullName:e.target.value})}
-                        className={`w-full rounded-lg p-3 text-sm outline-none transition-colors border ${t.modalInput} ${t.text}`} placeholder="e.g. Mayur Acharya"/>
+                      <input type="text" required value={enquiryForm.fullName} onChange={e => setEnquiryForm({ ...enquiryForm, fullName: e.target.value })}
+                        className={`w-full rounded-lg p-3 text-sm outline-none transition-colors border ${t.modalInput} ${t.text}`} placeholder="e.g. Mayur Acharya" />
                     </div>
                     <div className="sm:col-span-2">
                       <label className={`block text-xs mb-1.5 font-medium pl-2 ${t.textMuted}`}>Address</label>
-                      <input type="text" value={enquiryForm.address} onChange={e=>setEnquiryForm({...enquiryForm,address:e.target.value})}
-                        className={`w-full rounded-lg p-3 text-sm outline-none transition-colors border ${t.modalInput} ${t.text}`} placeholder="Full residential address"/>
+                      <input type="text" value={enquiryForm.address} onChange={e => setEnquiryForm({ ...enquiryForm, address: e.target.value })}
+                        className={`w-full rounded-lg p-3 text-sm outline-none transition-colors border ${t.modalInput} ${t.text}`} placeholder="Full residential address" />
                     </div>
                     <div>
                       <label className={`block text-xs mb-1.5 font-medium pl-2 ${t.textMuted}`}>Mobile No *</label>
-                      <input type="tel" required value={enquiryForm.mobile} onChange={e=>setEnquiryForm({...enquiryForm,mobile:e.target.value})}
-                        className={`w-full rounded-lg p-3 text-sm outline-none transition-colors border ${t.modalInput} ${t.text}`} placeholder="+91 0000000000"/>
+                      <input type="tel" required value={enquiryForm.mobile} onChange={e => setEnquiryForm({ ...enquiryForm, mobile: e.target.value })}
+                        className={`w-full rounded-lg p-3 text-sm outline-none transition-colors border ${t.modalInput} ${t.text}`} placeholder="+91 0000000000" />
                     </div>
                     <div>
                       <label className={`block text-xs mb-1.5 font-medium pl-2 ${t.textMuted}`}>Alt Mobile No</label>
-                      <input type="tel" value={enquiryForm.altMobile} onChange={e=>setEnquiryForm({...enquiryForm,altMobile:e.target.value})}
-                        className={`w-full rounded-lg p-3 text-sm outline-none transition-colors border ${t.modalInput} ${t.text}`} placeholder="+91 0000000000"/>
+                      <input type="tel" value={enquiryForm.altMobile} onChange={e => setEnquiryForm({ ...enquiryForm, altMobile: e.target.value })}
+                        className={`w-full rounded-lg p-3 text-sm outline-none transition-colors border ${t.modalInput} ${t.text}`} placeholder="+91 0000000000" />
                     </div>
                     <div>
                       <label className={`block text-xs mb-1.5 font-medium pl-2 ${t.textMuted}`}>Email ID</label>
-                      <input type="email" value={enquiryForm.email} onChange={e=>setEnquiryForm({...enquiryForm,email:e.target.value})}
-                        className={`w-full rounded-lg p-3 text-sm outline-none transition-colors border ${t.modalInput} ${t.text}`} placeholder="email@example.com"/>
+                      <input type="email" value={enquiryForm.email} onChange={e => setEnquiryForm({ ...enquiryForm, email: e.target.value })}
+                        className={`w-full rounded-lg p-3 text-sm outline-none transition-colors border ${t.modalInput} ${t.text}`} placeholder="email@example.com" />
                     </div>
                     <div>
                       <label className={`block text-xs mb-1.5 font-medium pl-2 ${t.textMuted}`}>Occupation</label>
-                      <select value={enquiryForm.occupation} onChange={e=>setEnquiryForm({...enquiryForm,occupation:e.target.value})}
+                      <select value={enquiryForm.occupation} onChange={e => setEnquiryForm({ ...enquiryForm, occupation: e.target.value })}
                         className={`w-full rounded-lg p-3 text-sm outline-none transition-colors border cursor-pointer ${t.modalInput} ${t.text}`}>
                         <option value="" disabled>Select Occupation</option>
-                        {["Salaried","Self Employed","Business owner","House maker"].map(o=><option key={o} value={o}>{o}</option>)}
+                        {["Salaried", "Self Employed", "Business owner", "House maker"].map(o => <option key={o} value={o}>{o}</option>)}
                       </select>
                     </div>
-                   <div>
+                    <div>
                       <label className={`block text-xs mb-1.5 font-medium pl-2 ${t.textMuted}`}>Loan Planned</label>
-                      <select value={enquiryForm.loanPlanned} onChange={e=>setEnquiryForm({...enquiryForm,loanPlanned:e.target.value})}
+                      <select value={enquiryForm.loanPlanned} onChange={e => setEnquiryForm({ ...enquiryForm, loanPlanned: e.target.value })}
                         className={`w-full rounded-lg p-3 text-sm outline-none transition-colors border cursor-pointer ${t.modalInput} ${t.text}`}>
                         <option value="" disabled>Select Option</option>
                         <option value="Yes">Yes</option><option value="No">No</option>
@@ -2719,106 +2771,106 @@ export default function ReceptionistDashboard() {
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-5">
                     <div>
                       <label className={`block text-xs mb-1.5 font-medium pl-2 ${t.textMuted}`}>Budget *</label>
-                      <input type="text" required value={enquiryForm.budget} onChange={e=>setEnquiryForm({...enquiryForm,budget:e.target.value})}
-                        className={`w-full rounded-lg p-3 text-sm outline-none transition-colors border ${t.modalInput} ${t.text}`} placeholder="e.g. 80 Lakhs, 1.5 Cr"/>
+                      <input type="text" required value={enquiryForm.budget} onChange={e => setEnquiryForm({ ...enquiryForm, budget: e.target.value })}
+                        className={`w-full rounded-lg p-3 text-sm outline-none transition-colors border ${t.modalInput} ${t.text}`} placeholder="e.g. 80 Lakhs, 1.5 Cr" />
                     </div>
                     <div>
                       <label className={`block text-xs mb-1.5 font-medium pl-2 ${t.textMuted}`}>Configuration (BHK)</label>
-                      <select value={enquiryForm.configuration} onChange={e=>setEnquiryForm({...enquiryForm,configuration:e.target.value})}
+                      <select value={enquiryForm.configuration} onChange={e => setEnquiryForm({ ...enquiryForm, configuration: e.target.value })}
                         className={`w-full rounded-lg p-3 text-sm outline-none transition-colors border cursor-pointer ${t.modalInput} ${t.text}`}>
                         <option value="" disabled>Select…</option>
-                        {["1 RK","1 BHK","2 BHK","3 BHK","4 BHK","4+ BHK"].map(o=><option key={o} value={o}>{o}</option>)}
+                        {["1 RK", "1 BHK", "2 BHK", "3 BHK", "4 BHK", "4+ BHK"].map(o => <option key={o} value={o}>{o}</option>)}
                       </select>
                     </div>
                     <div>
                       <label className={`block text-xs mb-1.5 font-medium pl-2 ${t.textMuted}`}>Purpose</label>
-                      <select value={enquiryForm.purpose} onChange={e=>setEnquiryForm({...enquiryForm,purpose:e.target.value})}
+                      <select value={enquiryForm.purpose} onChange={e => setEnquiryForm({ ...enquiryForm, purpose: e.target.value })}
                         className={`w-full rounded-lg p-3 text-sm outline-none transition-colors border cursor-pointer ${t.modalInput} ${t.text}`}>
                         <option value="" disabled>Select…</option>
-                        {["Personal use","Investment","Second home"].map(o=><option key={o} value={o}>{o}</option>)}
+                        {["Personal use", "Investment", "Second home"].map(o => <option key={o} value={o}>{o}</option>)}
                       </select>
                     </div>
                   </div>
                 </div>
 
-                <div className={`p-5 md:p-6 rounded-xl border ${isDark?"border-[#9E217B]/20":"border-[#00AEEF]/20"} ${t.modalBlock}`} style={t.modalBlockGl}>
-                  <h3 className={`text-sm font-bold mb-4 uppercase tracking-wider border-b pb-2 ${isDark?"text-[#d4006e] border-[#9E217B]/20":"text-[#00AEEF] border-[#00AEEF]/20"}`}>Routing & Source</h3>
+                <div className={`p-5 md:p-6 rounded-xl border ${isDark ? "border-[#9E217B]/20" : "border-[#00AEEF]/20"} ${t.modalBlock}`} style={t.modalBlockGl}>
+                  <h3 className={`text-sm font-bold mb-4 uppercase tracking-wider border-b pb-2 ${isDark ? "text-[#d4006e] border-[#9E217B]/20" : "text-[#00AEEF] border-[#00AEEF]/20"}`}>Routing & Source</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
                     <div>
                       <label className={`block text-xs mb-1.5 font-medium pl-2 ${t.textMuted}`}>Source *</label>
-                      <select required value={enquiryForm.source} onChange={e=>{
-                          const newSource = e.target.value;
-                          setEnquiryForm(prev => {
-                            let updated = { ...prev, source: newSource };
-                            if (newSource === "Channel Partner") {
-                              updated.cpDetails = { name: "", company: "", phone: "" };
-                            } else {
-                              updated.cpDetails = { name: "", company: "", phone: "" };
-                            }
-                            return updated;
-                          });
-                        }}
+                      <select required value={enquiryForm.source} onChange={e => {
+                        const newSource = e.target.value;
+                        setEnquiryForm(prev => {
+                          let updated = { ...prev, source: newSource };
+                          if (newSource === "Channel Partner") {
+                            updated.cpDetails = { name: "", company: "", phone: "" };
+                          } else {
+                            updated.cpDetails = { name: "", company: "", phone: "" };
+                          }
+                          return updated;
+                        });
+                      }}
                         className={`w-full rounded-lg p-3 text-sm outline-none transition-colors border cursor-pointer ${t.modalInput} ${t.text}`}>
                         <option value="" disabled>Select Source</option>
-                        {["Advertisement","Referral","Exhibition","Channel Partner","Website","Call Center","Others"].map(s=><option key={s} value={s}>{s}</option>)}
+                        {["Advertisement", "Referral", "Exhibition", "Channel Partner", "Website", "Call Center", "Others"].map(s => <option key={s} value={s}>{s}</option>)}
                       </select>
                     </div>
 
                     {/* SELF-ASSIGN TOGGLE */}
-                    <div className={`rounded-xl p-4 border flex flex-col gap-3 ${isDark?"bg-[#9E217B]/5 border-[#9E217B]/20":"bg-[#9E217B]/5 border-[#9E217B]/20"}`}>
-                      <label className={`block text-xs font-bold ${isDark?"text-[#d4006e]":"text-[#9E217B]"}`}>Assignment Option</label>
+                    <div className={`rounded-xl p-4 border flex flex-col gap-3 ${isDark ? "bg-[#9E217B]/5 border-[#9E217B]/20" : "bg-[#9E217B]/5 border-[#9E217B]/20"}`}>
+                      <label className={`block text-xs font-bold ${isDark ? "text-[#d4006e]" : "text-[#9E217B]"}`}>Assignment Option</label>
                       <div className="flex items-center gap-3">
                         <button type="button"
-                          onClick={() => setEnquiryForm({...enquiryForm,selfAssign:false})}
-                          className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold transition-colors border ${!enquiryForm.selfAssign?(isDark?"bg-[#9E217B] border-[#9E217B] text-white":"bg-[#00AEEF] border-[#00AEEF] text-white"):`${t.textMuted} ${t.tableBorder}`}`}>
+                          onClick={() => setEnquiryForm({ ...enquiryForm, selfAssign: false })}
+                          className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold transition-colors border ${!enquiryForm.selfAssign ? (isDark ? "bg-[#9E217B] border-[#9E217B] text-white" : "bg-[#00AEEF] border-[#00AEEF] text-white") : `${t.textMuted} ${t.tableBorder}`}`}>
                           Assign to Manager
                         </button>
                         <button type="button"
-                          onClick={() => setEnquiryForm({...enquiryForm,selfAssign:true,assignedTo:""})}
-                          className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold transition-colors border ${enquiryForm.selfAssign?(isDark?"bg-[#9E217B] border-[#9E217B] text-white":"bg-[#9E217B] border-[#9E217B] text-white"):`${t.textMuted} ${t.tableBorder}`}`}>
+                          onClick={() => setEnquiryForm({ ...enquiryForm, selfAssign: true, assignedTo: "" })}
+                          className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold transition-colors border ${enquiryForm.selfAssign ? (isDark ? "bg-[#9E217B] border-[#9E217B] text-white" : "bg-[#9E217B] border-[#9E217B] text-white") : `${t.textMuted} ${t.tableBorder}`}`}>
                           Self-Assign (Me)
                         </button>
                       </div>
                       {enquiryForm.selfAssign ? (
-                        <p className={`text-xs ${isDark?"text-[#d4006e]":"text-[#9E217B]"}`}>✓ Lead will be assigned to <strong>{user.name}</strong> (you)</p>
+                        <p className={`text-xs ${isDark ? "text-[#d4006e]" : "text-[#9E217B]"}`}>✓ Lead will be assigned to <strong>{user.name}</strong> (you)</p>
                       ) : (
-                       <div>
-                          <label className={`block text-xs mb-1.5 font-medium ${isDark?"text-[#d4006e]":"text-[#00AEEF]"}`}>Assign To *</label>
-                         <select required value={enquiryForm.assignedTo} onChange={e=>setEnquiryForm({...enquiryForm, assignedTo: e.target.value})}
-                            className={`w-full rounded-xl p-3 text-sm outline-none transition-colors border-2 cursor-pointer ${isDark?"bg-[#14141B] border-purple-500/40 text-white":"bg-white border-purple-300 text-[#1A1A1A]"}`}>
+                        <div>
+                          <label className={`block text-xs mb-1.5 font-medium ${isDark ? "text-[#d4006e]" : "text-[#00AEEF]"}`}>Assign To *</label>
+                          <select required value={enquiryForm.assignedTo} onChange={e => setEnquiryForm({ ...enquiryForm, assignedTo: e.target.value })}
+                            className={`w-full rounded-xl p-3 text-sm outline-none transition-colors border-2 cursor-pointer ${isDark ? "bg-[#14141B] border-purple-500/40 text-white" : "bg-white border-purple-300 text-[#1A1A1A]"}`}>
                             <option value="" disabled>-- Select Manager --</option>
-                            {isFetchingManagers ? <option disabled>Loading managers…</option> : combinedAssignees.length > 0 ? combinedAssignees.map((m:any,i:number)=><option key={i} value={m.name}>{m.name} ({String(m.role || "Sales Manager").replace("_", " ")})</option>) : <option disabled>No assignees available</option>}
+                            {isFetchingManagers ? <option disabled>Loading managers…</option> : combinedAssignees.length > 0 ? combinedAssignees.map((m: any, i: number) => <option key={i} value={m.name}>{m.name} ({String(m.role || "Sales Manager").replace("_", " ")})</option>) : <option disabled>No assignees available</option>}
                           </select>
                         </div>
                       )}
                     </div>
 
-                    {enquiryForm.source==="Others" && (
+                    {enquiryForm.source === "Others" && (
                       <div className="sm:col-span-2 mt-2">
                         <label className={`block text-xs mb-1.5 font-medium pl-2 ${t.textMuted}`}>Specify Source *</label>
-                        <input required type="text" value={enquiryForm.sourceOther} onChange={e=>setEnquiryForm({...enquiryForm,sourceOther:e.target.value})}
-                          className={`w-full rounded-lg p-3 text-sm outline-none transition-colors border ${t.modalInput} ${t.text}`} placeholder="Please specify the lead source"/>
+                        <input required type="text" value={enquiryForm.sourceOther} onChange={e => setEnquiryForm({ ...enquiryForm, sourceOther: e.target.value })}
+                          className={`w-full rounded-lg p-3 text-sm outline-none transition-colors border ${t.modalInput} ${t.text}`} placeholder="Please specify the lead source" />
                       </div>
                     )}
-                    {enquiryForm.source==="Channel Partner" && (
+                    {enquiryForm.source === "Channel Partner" && (
                       <div className={`sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2 p-4 rounded-xl border ${t.settingsBg} ${t.tableBorder}`}>
                         <h4 className={`sm:col-span-2 text-xs font-bold mb-1 ${t.accentText}`}>Channel Partner Details</h4>
-                        
+
                         {/* Smart Auto-suggest Input for Company */}
                         <div className="relative">
                           <label className={`block text-xs mb-1.5 font-medium pl-2 ${t.textMuted}`}>CP Company *</label>
                           <input required type="text"
                             value={enquiryForm.cpDetails.company}
                             onChange={e => {
-                              setEnquiryForm({...enquiryForm, cpDetails: {...enquiryForm.cpDetails, company: e.target.value}});
+                              setEnquiryForm({ ...enquiryForm, cpDetails: { ...enquiryForm.cpDetails, company: e.target.value } });
                               setShowCpDropdown(true);
                             }}
                             onFocus={() => setShowCpDropdown(true)}
                             onBlur={() => setTimeout(() => setShowCpDropdown(false), 200)} // Delay so click registers
-                            className={`w-full rounded-lg p-3 text-sm outline-none transition-colors border ${t.modalInput} ${t.text}`} 
+                            className={`w-full rounded-lg p-3 text-sm outline-none transition-colors border ${t.modalInput} ${t.text}`}
                             placeholder="Company Name"
                           />
-                          
+
                           {/* Dropdown Menu */}
                           {showCpDropdown && enquiryForm.cpDetails.company && (
                             <div className={`absolute z-50 w-full mt-1 max-h-40 overflow-y-auto rounded-lg shadow-xl border ${t.dropdown}`} style={t.dropdownGlass}>
@@ -2851,10 +2903,10 @@ export default function ReceptionistDashboard() {
                         {/* Standard Phone Input (Auto-fills if CP selected above) */}
                         <div>
                           <label className={`block text-xs mb-1.5 font-medium pl-2 ${t.textMuted}`}>CP Contact</label>
-                          <input type="text" 
-                            value={enquiryForm.cpDetails.phone} 
-                            onChange={e => setEnquiryForm({...enquiryForm, cpDetails:{...enquiryForm.cpDetails, phone: e.target.value}})}
-                            className={`w-full rounded-lg p-3 text-sm outline-none transition-colors border ${t.modalInput} ${t.text}`} 
+                          <input type="text"
+                            value={enquiryForm.cpDetails.phone}
+                            onChange={e => setEnquiryForm({ ...enquiryForm, cpDetails: { ...enquiryForm.cpDetails, phone: e.target.value } })}
+                            className={`w-full rounded-lg p-3 text-sm outline-none transition-colors border ${t.modalInput} ${t.text}`}
                             placeholder="Phone Number"
                           />
                         </div>
@@ -2867,9 +2919,9 @@ export default function ReceptionistDashboard() {
             </div>
             <div className={`p-4 md:p-6 border-t flex flex-col md:flex-row justify-end gap-3 md:gap-4 ${t.modalHeader} ${t.tableBorder}`}>
               <button onClick={() => setIsEnquiryModalOpen(false)} type="button"
-                className={`px-6 py-2.5 rounded-lg font-bold cursor-pointer transition-colors ${t.textMuted} ${isDark?"hover:bg-red-500/10 hover:text-red-500":"hover:bg-[#9E217B]/10 hover:text-[#9E217B]"}`}>Cancel</button>
+                className={`px-6 py-2.5 rounded-lg font-bold cursor-pointer transition-colors ${t.textMuted} ${isDark ? "hover:bg-red-500/10 hover:text-red-500" : "hover:bg-[#9E217B]/10 hover:text-[#9E217B]"}`}>Cancel</button>
               <button form="enquiryForm" type="submit" disabled={isSubmitting}
-                className={`px-8 py-2.5 rounded-lg font-bold transition-colors ${isSubmitting?"opacity-50 cursor-not-allowed":"cursor-pointer"} ${t.btnPrimary}`}>
+                className={`px-8 py-2.5 rounded-lg font-bold transition-colors ${isSubmitting ? "opacity-50 cursor-not-allowed" : "cursor-pointer"} ${t.btnPrimary}`}>
                 {isSubmitting ? "Submitting..." : "Submit"}
               </button>
             </div>
@@ -2881,52 +2933,52 @@ export default function ReceptionistDashboard() {
           TRANSFER LEAD MODAL
       ════════════════════════════════════════════════════ */}
       {isTransferModalOpen && selectedLead && (
-        <div className="fixed inset-0 bg-black/75 z-[200] flex justify-center items-center p-4 sm:p-6 animate-fadeIn" style={{backdropFilter:"blur(8px)"}}>
+        <div className="fixed inset-0 bg-black/75 z-[200] flex justify-center items-center p-4 sm:p-6 animate-fadeIn" style={{ backdropFilter: "blur(8px)" }}>
           <div className={`rounded-2xl w-full max-w-lg shadow-2xl border overflow-hidden ${t.modalCard}`} style={t.modalGlass}>
             {/* Header */}
-            <div className={`p-5 border-b flex justify-between items-center ${isDark?"bg-purple-900/20 border-purple-500/20":"bg-purple-50 border-purple-200"}`}>
+            <div className={`p-5 border-b flex justify-between items-center ${isDark ? "bg-purple-900/20 border-purple-500/20" : "bg-purple-50 border-purple-200"}`}>
               <div>
-                <h2 className={`text-lg font-bold flex items-center gap-2 ${isDark?"text-purple-400":"text-purple-700"}`}>
-                  <FaExchangeAlt/> Transfer Lead #{selectedLead.id}
+                <h2 className={`text-lg font-bold flex items-center gap-2 ${isDark ? "text-purple-400" : "text-purple-700"}`}>
+                  <FaExchangeAlt /> Transfer Lead #{selectedLead.id}
                 </h2>
                 <p className={`text-xs mt-1 ${t.textMuted}`}>Transferring: <strong>{selectedLead.name}</strong></p>
               </div>
               <button onClick={() => { setIsTransferModalOpen(false); setTransferNote(""); setTransferTarget(""); }}
-                className={`p-2 ${t.textMuted} hover:text-red-500 transition-colors`}><FaTimes/></button>
+                className={`p-2 ${t.textMuted} hover:text-red-500 transition-colors`}><FaTimes /></button>
             </div>
 
             {/* Body */}
             <div className={`p-6 ${t.modalInner}`}>
               {/* Transfer target */}
               <div className="mb-5">
-                <label className={`block text-sm font-bold mb-2 ${isDark?"text-purple-400":"text-purple-700"}`}>Transfer to Sales Manager *</label>
-                <select required value={enquiryForm.assignedTo} onChange={e=>setEnquiryForm({...enquiryForm, assignedTo: e.target.value})}
-                  className={`w-full rounded-xl p-3 text-sm outline-none transition-colors border-2 cursor-pointer ${isDark?"bg-[#14141B] border-purple-500/40 text-white":"bg-white border-purple-300 text-[#1A1A1A]"}`}>
+                <label className={`block text-sm font-bold mb-2 ${isDark ? "text-purple-400" : "text-purple-700"}`}>Transfer to Sales Manager *</label>
+                <select required value={transferTarget} onChange={e => setTransferTarget(e.target.value)}
+                  className={`w-full rounded-xl p-3 text-sm outline-none transition-colors border-2 cursor-pointer ${isDark ? "bg-[#14141B] border-purple-500/40 text-white" : "bg-white border-purple-300 text-[#1A1A1A]"}`}>
                   <option value="" disabled>-- Select Sales Manager --</option>
-                  {isFetchingManagers ? <option disabled>Loading managers…</option> : combinedAssignees.length > 0 ? combinedAssignees.map((m:any,i:number)=><option key={i} value={m.name}>{m.name} ({String(m.role || "Sales Manager").replace("_", " ")})</option>) : <option disabled>No assignees available</option>}
+                  {isFetchingManagers ? <option disabled>Loading managers…</option> : combinedAssignees.length > 0 ? combinedAssignees.map((m: any, i: number) => <option key={i} value={m.name}>{m.name} ({String(m.role || "Sales Manager").replace("_", " ")})</option>) : <option disabled>No assignees available</option>}
                 </select>
               </div>
 
               {/* Handover note */}
               <div>
-                <label className={`block text-sm font-bold mb-2 ${isDark?"text-purple-400":"text-purple-700"}`}>Handover Summary *</label>
+                <label className={`block text-sm font-bold mb-2 ${isDark ? "text-purple-400" : "text-purple-700"}`}>Handover Summary *</label>
                 <p className={`text-xs mb-3 leading-relaxed ${t.textMuted}`}>
                   Please summarize all completed actions, discussions held, current interest level, and any pending tasks so the Sales Manager can seamlessly continue from where you left off.
                 </p>
                 <textarea
                   required
                   value={transferNote}
-                  onChange={e=>setTransferNote(e.target.value)}
+                  onChange={e => setTransferNote(e.target.value)}
                   placeholder="e.g. Client was contacted twice. Showed interest in 2BHK under 80L budget. Site visit is being considered. Client has pre-approved loan from HDFC. Next step: schedule site visit and share project brochure."
                   rows={7}
-                  className={`w-full rounded-xl px-4 py-3 text-sm outline-none resize-none leading-relaxed border-2 transition-colors custom-scrollbar ${isDark?"bg-[#14141B] border-purple-500/30 text-white placeholder:text-gray-600 focus:border-purple-500":"bg-white border-purple-200 text-[#1A1A1A] placeholder:text-gray-400 focus:border-purple-500"}`}
+                  className={`w-full rounded-xl px-4 py-3 text-sm outline-none resize-none leading-relaxed border-2 transition-colors custom-scrollbar ${isDark ? "bg-[#14141B] border-purple-500/30 text-white placeholder:text-gray-600 focus:border-purple-500" : "bg-white border-purple-200 text-[#1A1A1A] placeholder:text-gray-400 focus:border-purple-500"}`}
                 />
                 {transferNote.length > 0 && transferNote.length < 50 && (
                   <p className="text-xs text-amber-500 mt-1.5">⚠ Please provide a more detailed summary (min 50 characters).</p>
                 )}
               </div>
 
-              <div className={`mt-4 p-3 rounded-lg border text-xs ${isDark?"bg-blue-900/10 border-blue-500/20 text-blue-400":"bg-blue-50 border-blue-200 text-blue-700"}`}>
+              <div className={`mt-4 p-3 rounded-lg border text-xs ${isDark ? "bg-blue-900/10 border-blue-500/20 text-blue-400" : "bg-blue-50 border-blue-200 text-blue-700"}`}>
                 <p className="font-bold mb-1">ℹ What happens after transfer:</p>
                 <ul className="space-y-1 list-disc pl-4">
                   <li>Lead is reassigned to the selected Sales Manager</li>
@@ -2944,12 +2996,11 @@ export default function ReceptionistDashboard() {
               <button
                 onClick={handleTransferLead}
                 disabled={isTransferring || !transferTarget || transferNote.trim().length < 50}
-                className={`px-8 py-2.5 rounded-lg font-bold transition-colors flex items-center gap-2 ${
-                  isTransferring || !transferTarget || transferNote.trim().length < 50
-                    ? "opacity-50 cursor-not-allowed bg-purple-400 text-white"
-                    : "cursor-pointer bg-purple-600 hover:bg-purple-500 text-white shadow-lg shadow-purple-600/20"
-                }`}>
-                {isTransferring ? "Transferring…" : <><FaExchangeAlt/> Confirm Transfer</>}
+                className={`px-8 py-2.5 rounded-lg font-bold transition-colors flex items-center gap-2 ${isTransferring || !transferTarget || transferNote.trim().length < 50
+                  ? "opacity-50 cursor-not-allowed bg-purple-400 text-white"
+                  : "cursor-pointer bg-purple-600 hover:bg-purple-500 text-white shadow-lg shadow-purple-600/20"
+                  }`}>
+                {isTransferring ? "Transferring…" : <><FaExchangeAlt /> Confirm Transfer</>}
               </button>
             </div>
           </div>
@@ -2957,7 +3008,10 @@ export default function ReceptionistDashboard() {
       )}
 
       {/* ── STYLES ── */}
-      <style dangerouslySetInnerHTML={{ __html: `
+
+
+      <style dangerouslySetInnerHTML={{
+        __html: `
         .custom-scrollbar::-webkit-scrollbar { width: 5px; height: 5px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(158,33,123,0.4); border-radius: 10px; }

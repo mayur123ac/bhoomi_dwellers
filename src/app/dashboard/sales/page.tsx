@@ -308,7 +308,8 @@ export default function SalesDashboard() {
   const visitNotificationLeads = useMemo(() => {
     const now   = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    return allLeads
+    const myLeads = user.role === "admin" ? allLeads : allLeads.filter((l: any) => l.assigned_to === user.name);
+    return myLeads
       .filter((lead: any) => {
         if (!lead.mongoVisitDate) return false;
         if (dismissedVisits.has(String(lead.id))) return false;
@@ -760,7 +761,17 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
 
   // Update effect to handle closed-leads routing
   useEffect(() => { setSubView(initialView==="overview"?"overview":initialView==="detail"&&selectedLead?"detail":initialView==="closed-leads"?"closed-leads":"cards"); },[initialView]);
-  useEffect(() => { if(selectedLead){ const u=allLeads.find((l:any)=>String(l.id)===String(selectedLead.id)); if(u) setSelectedLead(u); } },[allLeads]);
+  useEffect(() => { 
+    if (selectedLead) { 
+      const u = allLeads.find((l:any) => String(l.id) === String(selectedLead.id)); 
+      if (u && (adminUser.role === "admin" || u.assigned_to === adminUser.name)) {
+        setSelectedLead(u); 
+      } else {
+        setSelectedLead(null);
+        setSubView("cards");
+      }
+    } 
+  }, [allLeads, adminUser]);
   useEffect(() => { setCardsPage(1); }, [searchTerm]);
 
   // 1. Get ALL leads for this manager
