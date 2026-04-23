@@ -10,6 +10,7 @@ import {
   Share2, Image, Banknote, Users, BadgeCheck, CalendarCheck,
   ArrowRight, Target, BrainCircuit, Flame
 } from "lucide-react";
+
 import {
   FaThLarge, FaCog, FaFileInvoice,
   FaChevronLeft, FaCheckCircle, FaPaperPlane, FaTimes, FaPhoneAlt,
@@ -21,6 +22,10 @@ import {
   PieChart, Pie, Cell, Tooltip as RTooltip, ResponsiveContainer,
   BarChart, Bar, XAxis, YAxis, CartesianGrid
 } from "recharts";
+import CallButton from "@/components/CallButton";
+import CallModal from "@/components/CallModal";
+import OnCallBadge from "@/components/OnCallBadge";
+
 
 const CARDS_PER_PAGE = 20;
 const MONTH_NAMES = [
@@ -740,6 +745,8 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
 
   // ── WhatsApp States ──
   const [isWaModalOpen, setIsWaModalOpen] = useState(false);
+  const [callOpen, setCallOpen]           = useState(false);
+  const [callHidden, setCallHidden]       = useState(false);
   const [waMessage, setWaMessage] = useState("");
   const [isSendingWa, setIsSendingWa] = useState(false);
   const followUpEndRef = useRef<HTMLDivElement>(null);
@@ -1202,13 +1209,19 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
             <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 rounded-2xl border p-4 sm:p-5 shadow-sm flex-shrink-0 ${t.card}`} style={t.cardGlass}>
               <div className="flex items-center gap-4">
                 <button onClick={() => { setMainView("forms"); setSubView("cards"); }} className={`w-10 h-10 flex items-center justify-center border rounded-xl transition-colors cursor-pointer shadow-sm ${t.textMuted} ${t.tableBorder} ${isDark?"bg-[#222] hover:bg-[#333]":"bg-white hover:bg-[#F8FAFC]"}`}><FaChevronLeft className="text-sm"/></button>
-                <h1 className={`text-xl md:text-2xl font-bold flex items-center gap-3 ${t.text}`}>
+               <h1 className={`text-xl md:text-2xl font-bold flex items-center gap-3 flex-wrap ${t.text}`}>
                   <span className={t.accentText}>#{selectedLead.id}</span>
                   <span>{selectedLead.name}</span>
                   {selectedLead.status === "Closing" && (
                     <span className={`text-[11px] font-bold px-3 py-1 rounded-full border flex items-center gap-1.5 ${t.statusClosing}`}>
                       <FaHandshake className="text-xs"/> Closing
                     </span>
+                  )}
+                  {callHidden && (
+                    <OnCallBadge
+                      leadName={selectedLead.name}
+                      onClick={() => { setCallHidden(false); setCallOpen(true); }}
+                    />
                   )}
                 </h1>
               </div>
@@ -1411,7 +1424,12 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
                       )}
                     </div>
                     <div className="grid grid-cols-2 gap-3 mt-4 flex-shrink-0">
-                      <button className={`border flex flex-col items-center justify-center py-3 rounded-xl transition-all cursor-pointer gap-1 ${isDark?"bg-[#00AEEF]/10 border-[#00AEEF]/30 hover:bg-[#00AEEF] text-[#00AEEF] hover:text-white":"bg-[#00AEEF]/10 border-[#00AEEF]/30 hover:bg-[#00AEEF] text-[#00AEEF] hover:text-white"}`}><FaMicrophone className="text-lg"/><span className="font-bold text-[10px]">Browser Call</span></button>
+                     <button
+                        onClick={() => { setCallOpen(true); setCallHidden(false); }}
+                        className={`border flex flex-col items-center justify-center py-3 rounded-xl transition-all cursor-pointer gap-1 ${isDark?"bg-[#00AEEF]/10 border-[#00AEEF]/30 hover:bg-[#00AEEF] text-[#00AEEF] hover:text-white":"bg-[#00AEEF]/10 border-[#00AEEF]/30 hover:bg-[#00AEEF] text-[#00AEEF] hover:text-white"}`}>
+                        <FaMicrophone className="text-lg"/>
+                        <span className="font-bold text-[10px]">Browser Call</span>
+                      </button>
                      <button 
                         onClick={() => setIsWaModalOpen(true)}
                         className="bg-green-600/10 border border-green-500/30 hover:bg-green-600 text-green-400 hover:text-white flex flex-col items-center justify-center py-3 rounded-xl transition-all cursor-pointer gap-1"
@@ -1467,6 +1485,17 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
               </div>
             </div>
           </div>
+        )}
+        {/* ── CALL MODAL ── */}
+        {selectedLead && (
+          <CallModal
+            leadName={selectedLead.name}
+            phone={selectedLead.phone || selectedLead.contact_no || ""}
+            altPhone={selectedLead.altPhone && selectedLead.altPhone !== "N/A" ? selectedLead.altPhone : undefined}
+            isVisible={callOpen && !callHidden}
+            onHide={() => { setCallHidden(true); setCallOpen(false); }}
+            onClose={() => { setCallOpen(false); setCallHidden(false); }}
+          />
         )}
         {/* ── WHATSAPP MODAL ── */}
         {isWaModalOpen && selectedLead && (
