@@ -1,21 +1,20 @@
-//Callmodal.tsx
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
-type CallState = "select" | "dialing" | "active" | "ended";
+type CallState = "select" | "active" | "ended";
 
 interface CallModalProps {
   leadName: string;
   phone: string;
   altPhone?: string;
   isVisible: boolean;
-  onHide: () => void;       // minimise → show ON CALL badge
-  onClose: () => void;      // fully close
+  onHide: () => void;   // minimise → show ON CALL badge
+  onClose: () => void;  // fully close
 }
 
-// ─── Ripple animation (pure CSS keyframes injected once) ──────────────────────
+// ─── CSS Animations (injected once) ──────────────────────────────────────────
 const STYLE = `
 @keyframes ripple {
   0%   { transform: scale(1);   opacity: .6; }
@@ -43,7 +42,7 @@ const STYLE = `
 function WaveForm() {
   return (
     <div className="flex items-center gap-[3px] h-6">
-      {[1,2,3,4,5].map(i => (
+      {[1, 2, 3, 4, 5].map(i => (
         <div key={i} className="wave-bar w-[3px] h-3 rounded-full bg-teal-400 opacity-80" />
       ))}
     </div>
@@ -51,7 +50,13 @@ function WaveForm() {
 }
 
 function Avatar({ name }: { name: string }) {
-  const initials = name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
+  const initials = name
+    .split(" ")
+    .map(w => w[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+
   return (
     <div className="relative flex items-center justify-center">
       <div className="ripple-ring absolute w-20 h-20 rounded-full bg-teal-400/20" />
@@ -64,35 +69,62 @@ function Avatar({ name }: { name: string }) {
 }
 
 function CtrlBtn({
-  icon, label, active, disabled, danger, onClick
+  icon, label, active, disabled, danger, onClick,
 }: {
-  icon: string; label: string; active?: boolean; disabled?: boolean; danger?: boolean; onClick?: () => void;
+  icon: string;
+  label: string;
+  active?: boolean;
+  disabled?: boolean;
+  danger?: boolean;
+  onClick?: () => void;
 }) {
   return (
     <button
       onClick={onClick}
       disabled={disabled}
-      className={`flex flex-col items-center gap-1 group disabled:opacity-40 disabled:cursor-not-allowed`}
+      className="flex flex-col items-center gap-1 group disabled:opacity-40 disabled:cursor-not-allowed"
     >
-      <div className={`w-12 h-12 rounded-full flex items-center justify-center text-xl transition-all duration-200
-        ${danger  ? "bg-red-500 hover:bg-red-600 shadow-lg shadow-red-500/40 text-white" :
-          active  ? "bg-teal-500/20 text-teal-400 ring-1 ring-teal-400" :
-                    "bg-white/10 hover:bg-white/20 text-white/80"}`}>
+      <div
+        className={`w-12 h-12 rounded-full flex items-center justify-center text-xl transition-all duration-200
+          ${danger
+            ? "bg-red-500 hover:bg-red-600 shadow-lg shadow-red-500/40 text-white"
+            : active
+            ? "bg-teal-500/20 text-teal-400 ring-1 ring-teal-400"
+            : "bg-white/10 hover:bg-white/20 text-white/80"
+          }`}
+      >
         {icon}
       </div>
-      <span className="text-[10px] text-white/50 group-hover:text-white/80 transition-colors">{label}</span>
+      <span className="text-[10px] text-white/50 group-hover:text-white/80 transition-colors">
+        {label}
+      </span>
     </button>
   );
 }
 
+// ─── Normalize Indian phone numbers ──────────────────────────────────────────
+function normalizePhone(num: string): string {
+  let n = num.replace(/\s+/g, "").replace(/^0+/, "");
+  if (!n.startsWith("+")) {
+    n = "+91" + n.replace(/^91/, "");
+  }
+  return n;
+}
+
 // ─── Main Component ───────────────────────────────────────────────────────────
-export default function CallModal({ leadName, phone, altPhone, isVisible, onHide, onClose }: CallModalProps) {
-  const [state, setState]   = useState<CallState>("select");
-  const [muted, setMuted]   = useState(false);
-  const [speaker, setSpeaker] = useState(false);
-  const [seconds, setSeconds] = useState(0);
+export default function CallModal({
+  leadName,
+  phone,
+  altPhone,
+  isVisible,
+  onHide,
+  onClose,
+}: CallModalProps) {
+  const [state, setState]       = useState<CallState>("select");
+  const [muted, setMuted]       = useState(false);
+  const [speaker, setSpeaker]   = useState(false);
+  const [seconds, setSeconds]   = useState(0);
   const [selectedPhone, setSelectedPhone] = useState("");
-  const [status, setStatus] = useState("Connecting...");
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Inject keyframes once
@@ -104,115 +136,47 @@ export default function CallModal({ leadName, phone, altPhone, isVisible, onHide
     document.head.appendChild(tag);
   }, []);
 
+  // ── Timer ──
   const startTimer = useCallback(() => {
     setSeconds(0);
     timerRef.current = setInterval(() => setSeconds(s => s + 1), 1000);
   }, []);
 
   const stopTimer = useCallback(() => {
-    if (timerRef.current) clearInterval(timerRef.current);
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
   }, []);
 
   const fmt = (s: number) =>
     `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
 
-    // Add at top of CallModal component:
-    const deviceRef = useRef<any>(null);
-    const callRef   = useRef<any>(null);
-    const handleSelectNumber = async (num: string) => {
-        // Normalize Indian numbers
-        let normalized = num.replace(/\s+/g, "").replace(/^0+/, "");
-        if (!normalized.startsWith("+")) {
-            normalized = "+91" + normalized.replace(/^91/, "");
-        }
+  // ── Call handler — opens native dialer, no Twilio needed ──
+  const handleSelectNumber = (num: string) => {
+    const normalized = normalizePhone(num);
+    setSelectedPhone(normalized);
+    setState("active");
+    startTimer();
 
-        setSelectedPhone(normalized); // ← only set ONCE, use normalized
-        setState("dialing");
-        setStatus("Connecting...");
+    // Opens phone dialer on mobile, or VoIP app on desktop
+    window.open(`tel:${normalized}`, "_self");
+  };
 
-       try {
-        const { Device } = await import("@twilio/voice-sdk");
-        
-        // DEBUG: Check token first
-        const res = await fetch("/api/token");
-        const tokenData = await res.json();
-        console.log("[DEBUG] Token response:", tokenData);
-        
-        if (!tokenData.token) {
-            setStatus("Token fetch failed");
-            setState("ended");
-            return;
-        }
-
-        const device = new Device(tokenData.token, { 
-            logLevel: 1,
-            codecPreferences: ["opus", "pcmu"] as any,
-        });
-        deviceRef.current = device;
-
-        // DEBUG: Listen to ALL device events
-        device.on("error", (err: any) => {
-            console.error("[DEBUG] Device error:", err.code, err.message, err);
-            setStatus("Device error: " + err.code);
-            setState("ended");
-        });
-
-        device.on("registered", () => {
-            console.log("[DEBUG] Device registered successfully ✅");
-        });
-
-        device.on("unregistered", () => {
-            console.log("[DEBUG] Device unregistered");
-        });
-
-        await device.register();
-        setStatus("Ringing...");
-
-        const call = await device.connect({ params: { To: normalized } });
-        callRef.current = call;
-
-        call.on("accept", () => {
-            setState("active");
-            setStatus("Connected");
-            startTimer();
-        });
-
-        call.on("disconnect", () => {
-            stopTimer();
-            setState("ended");
-            setStatus("Call Ended");
-        });
-
-        call.on("error", (err: any) => {
-            console.error("[DEBUG] Call error:", err?.code, err?.message, err);
-            setStatus("Error " + (err?.code || "") + ": " + (err?.message || "Unknown"));
-            setState("ended");
-        });
-
-        } catch (err: any) {
-        console.error("[DEBUG] Caught exception:", err);
-        setStatus("Failed: " + (err?.message || "Unknown error"));
-        setState("ended");
-        }
-    };
-
-    // Update handleEndCall:
-    const handleEndCall = () => {
-    callRef.current?.disconnect();
-    deviceRef.current?.destroy();
+  // ── End call ──
+  const handleEndCall = () => {
     stopTimer();
     setState("ended");
-    setStatus("Call Ended");
-    };
+  };
 
-
-
+  // ── Full close & reset ──
   const handleClose = () => {
     stopTimer();
     setState("select");
     setSeconds(0);
     setMuted(false);
     setSpeaker(false);
+    setSelectedPhone("");
     onClose();
   };
 
@@ -220,25 +184,37 @@ export default function CallModal({ leadName, phone, altPhone, isVisible, onHide
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="relative w-[340px] rounded-3xl overflow-hidden shadow-2xl"
-        style={{ background: "linear-gradient(145deg, #0f1923 0%, #111c28 60%, #0d1f2d 100%)" }}>
-
+      <div
+        className="relative w-[340px] rounded-3xl overflow-hidden shadow-2xl"
+        style={{
+          background: "linear-gradient(145deg, #0f1923 0%, #111c28 60%, #0d1f2d 100%)",
+        }}
+      >
         {/* ── Header bar ── */}
         <div className="flex items-center justify-between px-5 pt-4 pb-2">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-teal-400 animate-pulse" />
-            <span className="text-[11px] font-medium text-teal-400 tracking-widest uppercase">{status}</span>
+            <span className="text-[11px] font-medium text-teal-400 tracking-widest uppercase">
+              {state === "select"
+                ? "Ready"
+                : state === "active"
+                ? "On Call"
+                : "Call Ended"}
+            </span>
           </div>
           <div className="flex gap-2">
-            {/* Hide → ON CALL badge */}
-            <button onClick={onHide}
+            <button
+              onClick={onHide}
               className="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 text-white/60 text-xs flex items-center justify-center transition-all"
-              title="Minimise">
+              title="Minimise"
+            >
               —
             </button>
-            <button onClick={handleClose}
+            <button
+              onClick={handleClose}
               className="w-7 h-7 rounded-full bg-white/10 hover:bg-red-500/60 text-white/60 text-xs flex items-center justify-center transition-all"
-              title="Close">
+              title="Close"
+            >
               ✕
             </button>
           </div>
@@ -253,42 +229,44 @@ export default function CallModal({ leadName, phone, altPhone, isVisible, onHide
           {/* ── STATE: select ── */}
           {state === "select" && (
             <div className="w-full mt-6 space-y-3">
-              <p className="text-center text-xs text-white/40 uppercase tracking-widest mb-1">Choose number to call</p>
-              <button onClick={() => handleSelectNumber(phone)}
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl bg-white/8 hover:bg-teal-500/20 border border-white/10 hover:border-teal-400/50 transition-all group">
+              <p className="text-center text-xs text-white/40 uppercase tracking-widest mb-1">
+                Choose number to call
+              </p>
+
+              <button
+                onClick={() => handleSelectNumber(phone)}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl bg-white/8 hover:bg-teal-500/20 border border-white/10 hover:border-teal-400/50 transition-all group"
+              >
                 <span className="text-lg">📞</span>
                 <div className="text-left">
                   <p className="text-[10px] text-white/40 uppercase tracking-wider">Primary</p>
-                  <p className="text-sm font-medium text-white group-hover:text-teal-300 transition-colors">{phone}</p>
+                  <p className="text-sm font-medium text-white group-hover:text-teal-300 transition-colors">
+                    {phone}
+                  </p>
                 </div>
               </button>
+
               {altPhone && (
-                <button onClick={() => handleSelectNumber(altPhone)}
-                  className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl bg-white/8 hover:bg-teal-500/20 border border-white/10 hover:border-teal-400/50 transition-all group">
+                <button
+                  onClick={() => handleSelectNumber(altPhone)}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl bg-white/8 hover:bg-teal-500/20 border border-white/10 hover:border-teal-400/50 transition-all group"
+                >
                   <span className="text-lg">📱</span>
                   <div className="text-left">
                     <p className="text-[10px] text-white/40 uppercase tracking-wider">Alt Number</p>
-                    <p className="text-sm font-medium text-white group-hover:text-teal-300 transition-colors">{altPhone}</p>
+                    <p className="text-sm font-medium text-white group-hover:text-teal-300 transition-colors">
+                      {altPhone}
+                    </p>
                   </div>
                 </button>
               )}
-              <button onClick={handleClose}
-                className="w-full py-2.5 rounded-2xl text-white/40 text-sm hover:text-white/70 transition-colors">
+
+              <button
+                onClick={handleClose}
+                className="w-full py-2.5 rounded-2xl text-white/40 text-sm hover:text-white/70 transition-colors"
+              >
                 Cancel
               </button>
-            </div>
-          )}
-
-          {/* ── STATE: dialing ── */}
-          {state === "dialing" && (
-            <div className="w-full mt-6 flex flex-col items-center gap-6">
-              <div className="text-white/50 text-sm">{status}</div>
-              <div className="font-mono text-3xl text-white/20">00:00</div>
-              <div className="flex justify-center gap-8 mt-2">
-                <CtrlBtn icon="🔇" label="Mute" disabled />
-                <CtrlBtn icon="🔊" label="Speaker" disabled />
-                <CtrlBtn icon="✕" label="End" danger onClick={handleEndCall} />
-              </div>
             </div>
           )}
 
@@ -296,10 +274,22 @@ export default function CallModal({ leadName, phone, altPhone, isVisible, onHide
           {state === "active" && (
             <div className="w-full mt-5 flex flex-col items-center gap-5">
               <WaveForm />
-              <div className="font-mono text-3xl font-light text-white tracking-widest">{fmt(seconds)}</div>
+              <div className="font-mono text-3xl font-light text-white tracking-widest">
+                {fmt(seconds)}
+              </div>
               <div className="flex justify-center gap-8 mt-1">
-                <CtrlBtn icon={muted ? "🔇" : "🎙️"} label="Mute" active={muted} onClick={() => setMuted(m => !m)} />
-                <CtrlBtn icon="🔊" label="Speaker" active={speaker} onClick={() => setSpeaker(s => !s)} />
+                <CtrlBtn
+                  icon={muted ? "🔇" : "🎙️"}
+                  label="Mute"
+                  active={muted}
+                  onClick={() => setMuted(m => !m)}
+                />
+                <CtrlBtn
+                  icon="🔊"
+                  label="Speaker"
+                  active={speaker}
+                  onClick={() => setSpeaker(s => !s)}
+                />
                 <CtrlBtn icon="✕" label="End" danger onClick={handleEndCall} />
               </div>
             </div>
@@ -322,8 +312,10 @@ export default function CallModal({ leadName, phone, altPhone, isVisible, onHide
                     ❌ Not Interested
                   </button>
                 </div>
-                <button onClick={handleClose}
-                  className="w-full py-2 text-white/30 text-xs hover:text-white/60 transition-colors">
+                <button
+                  onClick={handleClose}
+                  className="w-full py-2 text-white/30 text-xs hover:text-white/60 transition-colors"
+                >
                   Close
                 </button>
               </div>
