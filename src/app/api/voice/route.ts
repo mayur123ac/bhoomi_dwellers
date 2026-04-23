@@ -1,18 +1,34 @@
 import { NextRequest, NextResponse } from "next/server";
-const twilio = (await import("twilio")).default;
-export const runtime = "nodejs";
-export async function POST(req: NextRequest) {
-  const body  = await req.formData();
-  const to    = body.get("To") as string;
-  const twiml = new twilio.twiml.VoiceResponse();
 
-  if (to) {
-    const dial = twiml.dial({ callerId: process.env.TWILIO_PHONE_NUMBER! });
-    dial.number(to);
-  } else {
-    twiml.say("No number provided.");
+export const runtime = "nodejs";
+
+// Twilio calls this via POST when browser SDK connects
+export async function POST(req: NextRequest) {
+  try {
+    const twilio = (await import("twilio")).default;
+    const body   = await req.formData();
+    const to     = body.get("To") as string;
+
+    const twiml  = new twilio.twiml.VoiceResponse();
+
+    if (to && to.startsWith("+")) {
+      const dial = twiml.dial({
+        callerId: process.env.TWILIO_PHONE_NUMBER!,
+        timeout: 30,
+      });
+      dial.number(to);
+    } else {
+      twiml.say("Sorry, no number provided.");
+    }
+
+    return new NextResponse(twiml.toString(), {
+      status: 200,
+      headers: {
+        "Content-Type": "text/xml",
+        "Cache-Control": "no-cache",
+      },
+    });
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 });
   }
-  return new NextResponse(twiml.toString(), {
-    headers: { "Content-Type": "text/xml" }
-  });
 }
