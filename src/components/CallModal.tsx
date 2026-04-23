@@ -120,52 +120,80 @@ export default function CallModal({ leadName, phone, altPhone, isVisible, onHide
     const deviceRef = useRef<any>(null);
     const callRef   = useRef<any>(null);
     const handleSelectNumber = async (num: string) => {
-    // Normalize Indian numbers
-    let normalized = num.replace(/\s+/g, "").replace(/^0+/, "");
-    if (!normalized.startsWith("+")) {
-        normalized = "+91" + normalized.replace(/^91/, "");
-    }
+        // Normalize Indian numbers
+        let normalized = num.replace(/\s+/g, "").replace(/^0+/, "");
+        if (!normalized.startsWith("+")) {
+            normalized = "+91" + normalized.replace(/^91/, "");
+        }
 
-    setSelectedPhone(normalized); // ← only set ONCE, use normalized
-    setState("dialing");
-    setStatus("Connecting...");
+        setSelectedPhone(normalized); // ← only set ONCE, use normalized
+        setState("dialing");
+        setStatus("Connecting...");
 
-    try {
+       try {
         const { Device } = await import("@twilio/voice-sdk");
+        
+        // DEBUG: Check token first
         const res = await fetch("/api/token");
-        const { token } = await res.json();
+        const tokenData = await res.json();
+        console.log("[DEBUG] Token response:", tokenData);
+        
+        if (!tokenData.token) {
+            setStatus("Token fetch failed");
+            setState("ended");
+            return;
+        }
 
-        const device = new Device(token, { logLevel: 1 });
+        const device = new Device(tokenData.token, { 
+            logLevel: 1,
+            codecPreferences: ["opus", "pcmu"] as any,
+        });
         deviceRef.current = device;
+
+        // DEBUG: Listen to ALL device events
+        device.on("error", (err: any) => {
+            console.error("[DEBUG] Device error:", err.code, err.message, err);
+            setStatus("Device error: " + err.code);
+            setState("ended");
+        });
+
+        device.on("registered", () => {
+            console.log("[DEBUG] Device registered successfully ✅");
+        });
+
+        device.on("unregistered", () => {
+            console.log("[DEBUG] Device unregistered");
+        });
 
         await device.register();
         setStatus("Ringing...");
 
-        const call = await device.connect({ params: { To: normalized } }); // ← use normalized
+        const call = await device.connect({ params: { To: normalized } });
         callRef.current = call;
 
         call.on("accept", () => {
-        setState("active");
-        setStatus("Connected");
-        startTimer();
+            setState("active");
+            setStatus("Connected");
+            startTimer();
         });
 
         call.on("disconnect", () => {
-        stopTimer();
-        setState("ended");
-        setStatus("Call Ended");
+            stopTimer();
+            setState("ended");
+            setStatus("Call Ended");
         });
 
-       call.on("error", (err: any) => {
-        console.error("[Twilio] Call error:", err);
-        setStatus("Error: " + (err?.message || err?.code || "Unknown error"));
-        setState("ended");
+        call.on("error", (err: any) => {
+            console.error("[DEBUG] Call error:", err?.code, err?.message, err);
+            setStatus("Error " + (err?.code || "") + ": " + (err?.message || "Unknown"));
+            setState("ended");
         });
 
-    } catch (err: any) {
-        setStatus("Failed to connect: " + err.message);
+        } catch (err: any) {
+        console.error("[DEBUG] Caught exception:", err);
+        setStatus("Failed: " + (err?.message || "Unknown error"));
         setState("ended");
-    }
+        }
     };
 
     // Update handleEndCall:
