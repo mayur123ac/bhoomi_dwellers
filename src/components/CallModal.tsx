@@ -156,8 +156,9 @@ export default function CallModal({ leadName, phone, altPhone, isVisible, onHide
         setStatus("Call Ended");
         });
 
-        call.on("error", (err: Error) => {
-        setStatus("Error: " + err.message);
+       call.on("error", (err: any) => {
+        console.error("[Twilio] Call error:", err);
+        setStatus("Error: " + (err?.message || err?.code || "Unknown error"));
         setState("ended");
         });
 
