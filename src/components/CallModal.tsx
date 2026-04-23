@@ -1,3 +1,4 @@
+//Callmodal.tsx
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
@@ -118,27 +119,29 @@ export default function CallModal({ leadName, phone, altPhone, isVisible, onHide
     // Add at top of CallModal component:
     const deviceRef = useRef<any>(null);
     const callRef   = useRef<any>(null);
-
     const handleSelectNumber = async (num: string) => {
-    setSelectedPhone(num);
+    // Normalize Indian numbers
+    let normalized = num.replace(/\s+/g, "").replace(/^0+/, "");
+    if (!normalized.startsWith("+")) {
+        normalized = "+91" + normalized.replace(/^91/, "");
+    }
+
+    setSelectedPhone(normalized); // ← only set ONCE, use normalized
     setState("dialing");
     setStatus("Connecting...");
 
     try {
-        // 1. Get token from your API
         const { Device } = await import("@twilio/voice-sdk");
-        const res    = await fetch("/api/token");
+        const res = await fetch("/api/token");
         const { token } = await res.json();
 
-        // 2. Create Twilio Device
         const device = new Device(token, { logLevel: 1 });
         deviceRef.current = device;
 
         await device.register();
         setStatus("Ringing...");
 
-        // 3. Make the call
-        const call = await device.connect({ params: { To: num } });
+        const call = await device.connect({ params: { To: normalized } }); // ← use normalized
         callRef.current = call;
 
         call.on("accept", () => {
@@ -159,7 +162,7 @@ export default function CallModal({ leadName, phone, altPhone, isVisible, onHide
         });
 
     } catch (err: any) {
-        setStatus("Failed to connect");
+        setStatus("Failed to connect: " + err.message);
         setState("ended");
     }
     };

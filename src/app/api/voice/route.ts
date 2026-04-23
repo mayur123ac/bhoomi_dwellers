@@ -1,15 +1,17 @@
+//voice/route.ts
 import { NextRequest, NextResponse } from "next/server";
 
 export const runtime = "nodejs";
 
-// Twilio calls this via POST when browser SDK connects
 export async function POST(req: NextRequest) {
   try {
     const twilio = (await import("twilio")).default;
-    const body   = await req.formData();
-    const to     = body.get("To") as string;
+    const body = await req.formData();
+    const to = body.get("To") as string;
 
-    const twiml  = new twilio.twiml.VoiceResponse();
+    console.log("[voice] To param received:", to); // ← add this to debug
+
+    const twiml = new twilio.twiml.VoiceResponse();
 
     if (to && to.startsWith("+")) {
       const dial = twiml.dial({
@@ -18,6 +20,7 @@ export async function POST(req: NextRequest) {
       });
       dial.number(to);
     } else {
+      console.error("[voice] Invalid or missing To:", to);
       twiml.say("Sorry, no number provided.");
     }
 
@@ -29,6 +32,7 @@ export async function POST(req: NextRequest) {
       },
     });
   } catch (err: any) {
+    console.error("[voice] Error:", err.message);
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
