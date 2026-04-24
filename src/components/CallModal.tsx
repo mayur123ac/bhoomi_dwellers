@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { Device, Call } from "@twilio/voice-sdk";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 type CallState = "select" | "active" | "ended";
@@ -127,6 +128,12 @@ export default function CallModal({
   const [selectedPhone, setSelectedPhone] = useState("");
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // Twilio state
+  const [device, setDevice] = useState<Device | null>(null);
+  const [activeCall, setActiveCall] = useState<Call | null>(null);
+  const [deviceError, setDeviceError] = useState("");
+  const [isInitializing, setIsInitializing] = useState(false);
+
   // Inject keyframes once
   useEffect(() => {
     if (document.getElementById("call-modal-styles")) return;
@@ -135,6 +142,55 @@ export default function CallModal({
     tag.textContent = STYLE;
     document.head.appendChild(tag);
   }, []);
+
+  // Fetch token & Setup Twilio Device
+  useEffect(() => {
+    if (!isVisible) return;
+    
+    let isMounted = true;
+    let newDevice: Device | null = null;
+    
+    const initTwilio = async () => {
+      setIsInitializing(true);
+      setDeviceError("");
+      try {
+        const res = await fetch("/api/token");
+        const data = await res.json();
+        if (!data.token) throw new Error(data.error || "Failed to fetch token");
+        
+        if (!isMounted) return;
+        newDevice = new Device(data.token);
+        
+        newDevice.on("error", (err) => {
+          console.error("Twilio Device Error:", err);
+          if (isMounted) setDeviceError(err.message);
+        });
+
+        if (isMounted) setDevice(newDevice);
+      } catch (err: any) {
+        console.error("Token fetch error:", err);
+        if (isMounted) setDeviceError(err.message);
+      } finally {
+        if (isMounted) setIsInitializing(false);
+      }
+    };
+    
+    initTwilio();
+    
+    return () => {
+      isMounted = false;
+      if (newDevice) {
+        newDevice.destroy();
+      }
+    };
+  }, [isVisible]);
+
+  // Handle Mute
+  useEffect(() => {
+    if (activeCall) {
+      activeCall.mute(muted);
+    }
+  }, [muted, activeCall]);
 
   // ── Timer ──
   const startTimer = useCallback(() => {
@@ -152,31 +208,67 @@ export default function CallModal({
   const fmt = (s: number) =>
     `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
 
-  // ── Call handler — opens native dialer, no Twilio needed ──
-  const handleSelectNumber = (num: string) => {
+  // ── Call handler — connects via Twilio WebRTC ──
+  const handleSelectNumber = async (num: string) => {
     const normalized = normalizePhone(num);
     setSelectedPhone(normalized);
+    
+    if (!device) {
+       alert(deviceError || "Twilio is still connecting or failed to connect.");
+       return;
+    }
+    
     setState("active");
     startTimer();
+    
+    try {
+      const call = await device.connect({ params: { To: normalized } });
+      setActiveCall(call);
+      
+      call.on("disconnect", () => {
+        stopTimer();
+        setState("ended");
+        setActiveCall(null);
+      });
 
-    // Opens phone dialer on mobile, or VoIP app on desktop
-    window.open(`tel:${normalized}`, "_self");
+      call.on("error", (error: any) => {
+        console.error("Twilio Call Error:", error);
+        alert("Call error: " + error.message);
+        stopTimer();
+        setState("ended");
+        setActiveCall(null);
+      });
+
+    } catch (err: any) {
+      console.error("Call connection error:", err);
+      alert("Could not start call: " + err.message);
+      stopTimer();
+      setState("ended");
+    }
   };
 
   // ── End call ──
   const handleEndCall = () => {
+    if (activeCall) {
+      activeCall.disconnect();
+    }
     stopTimer();
     setState("ended");
+    setActiveCall(null);
   };
 
   // ── Full close & reset ──
   const handleClose = () => {
+    if (activeCall) {
+      activeCall.disconnect();
+    }
     stopTimer();
     setState("select");
     setSeconds(0);
     setMuted(false);
     setSpeaker(false);
     setSelectedPhone("");
+    setActiveCall(null);
     onClose();
   };
 
