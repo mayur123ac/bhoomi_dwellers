@@ -177,7 +177,10 @@ function useAdminData() {
 
         const fupsWithDate = leadFups.filter((f: any) => f.siteVisitDate && f.siteVisitDate.trim() !== "");
         const latestVisitDate = fupsWithDate.length > 0 ? fupsWithDate[fupsWithDate.length - 1].siteVisitDate : null;
+        const closingFups = leadFups.filter((f: any) => f.message?.includes("✅ Lead Marked as Closing"));
+        const closingDate = closingFups.length > 0 ? closingFups[closingFups.length - 1].createdAt : null;
         const activeBudget = extractField("Budget") !== "Pending" ? extractField("Budget") : lead.budget;
+
 
         const sfLoanPlanned = extractField("Loan Planned");
         const derivedLoanPlanned =
@@ -199,7 +202,11 @@ function useAdminData() {
           cpName: lead.cp_name, cpCompany: lead.cp_company, cpPhone: lead.cp_phone,
           altPhone: lead.alt_phone, address: lead.address,
           mongoVisitDate: latestVisitDate,
-          status: latestVisitDate ? "Visit Scheduled" : lead.status,
+          closingDate,
+          status: lead.status === "Closing" || lead.status === "Closed" || !!closingDate
+            ? (lead.status === "Closing" || lead.status === "Closed" ? lead.status : "Closing")
+            : latestVisitDate ? "Visit Scheduled" : lead.status,
+
         };
       });
 
@@ -706,7 +713,7 @@ export default function AdminAtlasDashboard() {
         </header>
 
         <main className={`flex-1 overflow-hidden transition-colors duration-300 ${theme.mainBg}`}>
-          {activeView === "dashboard" && <DashboardOverview managers={managers} siteHeads={siteHeads} allLeads={allLeads} isLoading={isLoading} user={user} theme={theme} isDark={isDark} receptionists={receptionists} followUps={followUps} onNavigateToSales={(lead: any) => {
+          {activeView === "dashboard" && <DashboardOverview refetch={refetch} managers={managers} siteHeads={siteHeads} allLeads={allLeads} isLoading={isLoading} user={user} theme={theme} isDark={isDark} receptionists={receptionists} followUps={followUps} onNavigateToSales={(lead: any) => {
             const isSiteHead = siteHeads.some((sh: any) => sh.name === lead.assigned_to);
             const isReceptionist = receptionists.some((r: any) => r.name === lead.assigned_receptionist);
             const targetTab = isSiteHead ? "site_head" : isReceptionist ? "receptionist" : "sales";
@@ -971,10 +978,73 @@ function DashboardAnalytics({ leads, theme, isDark }: { leads: any[]; theme: any
 // ============================================================================
 // DASHBOARD OVERVIEW
 // ============================================================================
-function DashboardOverview({ managers, siteHeads, allLeads, isLoading, user, theme, isDark, receptionists, followUps, onNavigateToSales }: any) {
+
+// Assumed imports based on the component's usage:
+// import { DashboardAnalytics, TableSearchInput, InterestBadge } from "./your-components"; 
+// import { downloadCSV, formatLeadForExport } from "./your-utils";
+
+function DashboardOverview({ managers, siteHeads, allLeads, isLoading, user, theme, isDark, receptionists, followUps, onNavigateToSales, refetch }: any) {
   const [visibleCount, setVisibleCount] = useState(20);
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const loadLessRef = useRef<HTMLDivElement>(null);
+  const [isReassignModalOpen, setIsReassignModalOpen] = useState(false);
+  const [reassignTarget, setReassignTarget] = useState("");
+  const [reassignNote, setReassignNote] = useState("");
+  const [isReassigning, setIsReassigning] = useState(false);
+  const [reassignLead, setReassignLead] = useState<any>(null);
+  const [combinedAssignees, setCombinedAssignees] = useState<any[]>([]);
+  const [isFetchingManagers, setIsFetchingManagers] = useState(true);
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
+
+  // ── Enhanced Reassign Logic ────────────────────────────────────────────────
+  const handleReassignLead = async () => {
+    if (!reassignLead || !reassignTarget || !reassignNote.trim()) return;
+
+    // Prevent reassigning to the exact same manager
+    if (reassignTarget === (reassignLead.assigned_to || reassignLead.assignedTo)) {
+      alert("Please select a different manager.");
+      return;
+    }
+
+    setIsReassigning(true);
+    try {
+      const res = await fetch("/api/leads/transfer", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          lead_id: reassignLead.id,
+          transfer_to: reassignTarget,
+          transfer_note: `🔁 Reassigned by ${user?.name || "Admin"} — Reason: ${reassignNote}`,
+          transferred_by: user?.name || "Admin",
+        }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.message ?? "Reassign failed");
+      }
+
+      setIsReassignModalOpen(false);
+      setReassignNote("");
+      setReassignTarget("");
+      setToastMsg(`✅ Lead #${reassignLead.id} reassigned to ${reassignTarget}!`);
+      setTimeout(() => setToastMsg(null), 3000);
+      refetch();
+    } catch (e: any) {
+      alert(e.message ?? "Reassign failed. Try again.");
+    } finally {
+      setIsReassigning(false);
+    }
+  };
+
+  useEffect(() => {
+    Promise.all([fetch("/api/users/sales-manager"), fetch("/api/users/site-head")])
+      .then(async ([sm, sh]) => {
+        const a = sm.ok ? (await sm.json()).data || [] : [];
+        const b = sh.ok ? (await sh.json()).data || [] : [];
+        setCombinedAssignees([...a, ...b]);
+      }).finally(() => setIsFetchingManagers(false));
+  }, []);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -1014,9 +1084,9 @@ function DashboardOverview({ managers, siteHeads, allLeads, isLoading, user, the
     if (!hasAutoSelected && managers?.length > 0 && !isLoading) {
       setSelectedManagerName(managers[0].name);
       setHasAutoSelected(true);
-      // setPerfMode("manager");
     }
   }, [managers, isLoading, hasAutoSelected]);
+
   const [perfMode, setPerfMode] = useState<"overall" | "manager" | "receptionist" | "site_head">("overall");
   const [selectedSiteHeadName, setSelectedSiteHeadName] = useState("");
   const [hasAutoSelectedSiteHead, setHasAutoSelectedSiteHead] = useState(false);
@@ -1084,8 +1154,6 @@ function DashboardOverview({ managers, siteHeads, allLeads, isLoading, user, the
   const pieData = managerStats.filter((m: any) => m.siteVisits > 0);
   const VISIT_COLORS = theme.visitPieColors;
 
-
-
   // ── Filter helper ──────────────────────────────────────────────────────────
   const filterLeads = (leads: any[], q: string) => {
     if (!q.trim()) return leads;
@@ -1096,6 +1164,12 @@ function DashboardOverview({ managers, siteHeads, allLeads, isLoading, user, the
       (l.phone || "").includes(q) ||
       (l.source || "").toLowerCase().includes(lq)
     );
+  };
+
+  const formatDate = (ds: string) => {
+    if (!ds) return "—";
+    try { return new Date(ds).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }); }
+    catch { return ds; }
   };
 
   return (
@@ -1258,7 +1332,6 @@ function DashboardOverview({ managers, siteHeads, allLeads, isLoading, user, the
           )}
 
           <div className={`${theme.tableWrap} rounded-2xl overflow-hidden`} style={theme.tableGlass}>
-            {/* Table header with search */}
             <div className={`p-5 flex flex-wrap justify-between items-center gap-4 ${theme.tableHead}`}>
               <h3 className={`font-bold flex items-center gap-2 ${theme.text}`}>
                 <FaTable className="text-[#00AEEF]" /> Enquiry Overview
@@ -1282,8 +1355,8 @@ function DashboardOverview({ managers, siteHeads, allLeads, isLoading, user, the
               <table className="w-full text-left text-sm">
                 <thead className={`text-xs uppercase ${theme.tableHead} ${theme.textHeader}`}>
                   <tr>
-                    {["LEAD NO.", "NAME", "PROP. TYPE", "BUDGET", "SOURCE", "CP NAME", "CP PHONE", "STATUS", "INTEREST", "SITE VISIT", "ASSIGNED TO", "DATE"].map(h => (
-                      <th key={h} className="px-4 py-4">{h}</th>
+                    {["LEAD NO.", "NAME", "PROP. TYPE", "BUDGET", "SOURCE", "CP NAME", "CP PHONE", "STATUS", "INTEREST", "SITE VISIT", "ASSIGNED TO", "REASSIGN"].map(h => (
+                      <th key={h} className="px-3 py-4">{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -1300,14 +1373,14 @@ function DashboardOverview({ managers, siteHeads, allLeads, isLoading, user, the
                     else if (lead.assigned_to) assignedRole = "Sales Manager";
 
                     return (
-                      <tr key={lead.id} className={`transition-colors ${theme.tableRow}`}>
+                      <tr key={lead.id} className={`transition-colors cursor-pointer ${theme.tableRow}`} onClick={() => onNavigateToSales && onNavigateToSales(lead)}>
                         <td className={`px-6 py-4 font-bold ${isDark ? "text-[#d946a8]" : "text-[#9E217B]"}`}>#{lead.id}</td>
                         <td className={`px-4 py-4 font-medium ${theme.text}`}>
                           {(lead.assigned_to || lead.assigned_receptionist) ? (
                             <span
                               className={`cursor-pointer hover:underline transition-colors ${isDark ? "hover:text-[#d946a8]" : "hover:text-[#9E217B]"}`}
                               title={`Open lead detail for ${lead.name}`}
-                              onClick={() => onNavigateToSales && onNavigateToSales(lead)}
+                              onClick={(e) => { e.stopPropagation(); onNavigateToSales && onNavigateToSales(lead); }}
                             >
                               {lead.name}
                             </span>
@@ -1321,8 +1394,7 @@ function DashboardOverview({ managers, siteHeads, allLeads, isLoading, user, the
                         <td className={`px-4 py-4 ${theme.textMuted}`}>{lead.cpName || lead.cp_name || "—"}</td>
                         <td className={`px-4 py-4 font-mono text-xs ${theme.textMuted}`}>{lead.cpPhone || lead.cp_phone || "—"}</td>
                         <td className="px-4 py-4">
-                          <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase border flex-shrink-0 whitespace-nowrap ${lead.status === "Closing" ? theme.statusClosing : lead.status === "Visit Scheduled" ? theme.statusVisit : theme.statusRouted
-                            }`}>
+                          <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase border flex-shrink-0 whitespace-nowrap ${lead.status === "Closing" ? theme.statusClosing : lead.status === "Visit Scheduled" ? theme.statusVisit : theme.statusRouted}`}>
                             {lead.status || "Routed"}
                           </span>
                         </td>
@@ -1346,7 +1418,18 @@ function DashboardOverview({ managers, siteHeads, allLeads, isLoading, user, the
                             </div>
                           ) : "—"}
                         </td>
-                        <td className={`px-4 py-4 text-xs whitespace-nowrap ${theme.textFaint}`}>{formatDate(lead.created_at).split(",")[0]}</td>
+                        <td className="px-4 py-4" onClick={e => e.stopPropagation()}>
+                          {lead.status === "Closing" || lead.status === "Closed" || !!lead.closingDate ? (
+                            <span className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase border whitespace-nowrap ${isDark ? "text-gray-400 border-gray-600 bg-gray-800/50" : "text-gray-500 border-gray-300 bg-gray-100"}`}>
+                              Marked closed
+                            </span>
+                          ) : (
+                            <button className={`text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${isDark ? "bg-orange-600 hover:bg-orange-500 text-white" : "bg-orange-100 hover:bg-orange-200 text-orange-700"}`}
+                              onClick={e => { e.stopPropagation(); setReassignLead(lead); setReassignTarget(""); setReassignNote(""); setIsReassignModalOpen(true); }}>
+                              <FaExchangeAlt /> Reassign
+                            </button>
+                          )}
+                        </td>
                       </tr>
                     );
                   })}
@@ -1445,48 +1528,86 @@ function DashboardOverview({ managers, siteHeads, allLeads, isLoading, user, the
               <table className="w-full text-left text-sm">
                 <thead className={`text-xs uppercase ${theme.tableHead} ${theme.textHeader}`}>
                   <tr>
-                    {["LEAD NO.", "NAME", "PROP. TYPE", "BUDGET", "USE TYPE", "LOAN?", "LOAN STATUS", "AMT REQ / APP", "CP NAME", "CP PHONE", "SITE VISIT"].map(h => (
+                    {["LEAD NO.", "NAME", "PROP. TYPE", "BUDGET", "SOURCE", "CP NAME", "CP PHONE", "STATUS", "INTEREST", "SITE VISIT", "ASSIGNED TO", "REASSIGN"].map(h => (
                       <th key={h} className="px-4 py-4">{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody className={`divide-y ${theme.tableDivide}`}>
                   {isLoading ? (
-                    <tr><td colSpan={11} className={`text-center py-8 ${theme.textMuted}`}>Syncing...</td></tr>
+                    <tr><td colSpan={12} className={`text-center py-8 ${theme.textMuted}`}>Syncing...</td></tr>
                   ) : filterLeads(activeSiteHeadLeads, siteHeadLeadSearch).length === 0 ? (
-                    <tr><td colSpan={11} className={`text-center py-8 ${theme.textMuted}`}>
+                    <tr><td colSpan={12} className={`text-center py-8 ${theme.textMuted}`}>
                       {siteHeadLeadSearch ? "No leads match your search." : `No leads for ${selectedSiteHeadName}.`}
                     </td></tr>
-                  ) : filterLeads(activeSiteHeadLeads, siteHeadLeadSearch).map((lead: any) => (
-                    <tr key={lead.id} className={`transition-colors ${theme.tableRow}`}>
-                      <td className={`px-6 py-4 font-bold ${isDark ? "text-[#d946a8]" : "text-[#9E217B]"}`}>#{lead.id}</td>
-                      <td className={`px-4 py-4 font-medium ${theme.text}`}>{lead.name}</td>
-                      <td className={`px-4 py-4 ${theme.textMuted}`}>{lead.propType || "Pending"}</td>
-                      <td className={`px-4 py-4 font-semibold ${isDark ? "text-green-400" : "text-emerald-600"}`}>{lead.salesBudget}</td>
-                      <td className={`px-4 py-4 ${theme.textMuted}`}>{lead.useType || "Pending"}</td>
-                      <td className={`px-4 py-4 ${theme.textMuted}`}>{lead.loanPlanned || "Pending"}</td>
-                      <td className="px-4 py-4">
-                        {lead.loanStatus && lead.loanStatus !== "N/A"
-                          ? <LoanStatusBadge status={lead.loanStatus} isDark={isDark} />
-                          : <span className={`text-xs italic ${theme.textFaint}`}>N/A</span>}
-                      </td>
-                      <td className="px-4 py-4">
-                        {lead.loanAmtReq && lead.loanAmtReq !== "N/A"
-                          ? <div className="flex flex-col gap-0.5">
-                            <span className="text-[11px] text-orange-500 font-medium">Req: {lead.loanAmtReq}</span>
-                            <span className={`text-[11px] font-medium ${isDark ? "text-green-400" : "text-emerald-600"}`}>App: {lead.loanAmtApp !== "N/A" ? lead.loanAmtApp : "—"}</span>
-                          </div>
-                          : <span className={`text-xs italic ${theme.textFaint}`}>N/A</span>}
-                      </td>
-                      <td className={`px-4 py-4 ${theme.textMuted}`}>{lead.cpName || lead.cp_name || "—"}</td>
-                      <td className={`px-4 py-4 font-mono text-xs ${theme.textMuted}`}>{lead.cpPhone || lead.cp_phone || "—"}</td>
-                      <td className="px-6 py-4">
-                        {lead.mongoVisitDate
-                          ? <span className="text-orange-500 font-medium">{formatDate(lead.mongoVisitDate).split(",")[0]}</span>
-                          : <span className={`text-xs italic ${theme.textFaint}`}>Pending</span>}
-                      </td>
-                    </tr>
-                  ))}
+                  ) : filterLeads(activeSiteHeadLeads, siteHeadLeadSearch).slice(0, visibleCount).map((lead: any) => {
+                    let assignedRole = "Site Head";
+                    let assignedName = lead.assigned_receptionist || lead.assigned_to || "";
+                    if (lead.assigned_receptionist) assignedRole = "Receptionist";
+                    else if (siteHeads?.some((sh: any) => sh.name === lead.assigned_to)) assignedRole = "Site Head";
+                    else if (lead.assigned_to) assignedRole = "Sales Manager";
+
+                    return (
+                      <tr key={lead.id} className={`transition-colors cursor-pointer ${theme.tableRow}`} onClick={() => onNavigateToSales && onNavigateToSales(lead)}>
+                        <td className={`px-6 py-4 font-bold ${isDark ? "text-[#d946a8]" : "text-[#9E217B]"}`}>#{lead.id}</td>
+                        <td className={`px-4 py-4 font-medium ${theme.text}`}>
+                          {(lead.assigned_to || lead.assigned_receptionist) ? (
+                            <span
+                              className={`cursor-pointer hover:underline transition-colors ${isDark ? "hover:text-[#d946a8]" : "hover:text-[#9E217B]"}`}
+                              title={`Open lead detail for ${lead.name}`}
+                              onClick={(e) => { e.stopPropagation(); onNavigateToSales && onNavigateToSales(lead); }}
+                            >
+                              {lead.name}
+                            </span>
+                          ) : (
+                            lead.name
+                          )}
+                        </td>
+                        <td className={`px-4 py-4 ${theme.textMuted}`}>{lead.propType || lead.configuration || "Pending"}</td>
+                        <td className={`px-4 py-4 font-semibold ${isDark ? "text-green-400" : "text-emerald-600"}`}>{lead.salesBudget || lead.budget || "N/A"}</td>
+                        <td className={`px-4 py-4 text-xs ${theme.textMuted}`}>{lead.source || "—"}</td>
+                        <td className={`px-4 py-4 ${theme.textMuted}`}>{lead.cpName || lead.cp_name || "—"}</td>
+                        <td className={`px-4 py-4 font-mono text-xs ${theme.textMuted}`}>{lead.cpPhone || lead.cp_phone || "—"}</td>
+                        <td className="px-4 py-4">
+                          <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase border flex-shrink-0 whitespace-nowrap ${lead.status === "Closing" ? theme.statusClosing : lead.status === "Visit Scheduled" ? theme.statusVisit : theme.statusRouted}`}>
+                            {lead.status || "Routed"}
+                          </span>
+                        </td>
+                        <td className="px-4 py-4">
+                          {lead.leadInterestStatus && lead.leadInterestStatus !== "Pending"
+                            ? <InterestBadge status={lead.leadInterestStatus} size="sm" isDark={isDark} />
+                            : <span className={`text-xs italic ${theme.textFaint}`}>—</span>}
+                        </td>
+                        <td className="px-6 py-4">
+                          {lead.mongoVisitDate
+                            ? <span className="text-orange-500 font-medium">{formatDate(lead.mongoVisitDate).split(",")[0]}</span>
+                            : <span className={`text-xs italic ${theme.textFaint}`}>Pending</span>}
+                        </td>
+                        <td className={`px-4 py-4 ${theme.textMuted}`}>
+                          {assignedName ? (
+                            <div className="flex flex-col gap-0.5">
+                              <span className={`font-semibold ${theme.text}`}>{assignedName}</span>
+                              <span className={`text-[9px] px-1.5 py-0.5 rounded border inline-block w-fit ${isDark ? "bg-[#222] border-[#333]" : "bg-gray-50 border-gray-200"}`}>
+                                {assignedRole}
+                              </span>
+                            </div>
+                          ) : "—"}
+                        </td>
+                        <td className="px-4 py-4" onClick={e => e.stopPropagation()}>
+                          {lead.status === "Closing" || lead.status === "Closed" || !!lead.closingDate ? (
+                            <span className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase border whitespace-nowrap ${isDark ? "text-gray-400 border-gray-600 bg-gray-800/50" : "text-gray-500 border-gray-300 bg-gray-100"}`}>
+                              Marked closed
+                            </span>
+                          ) : (
+                            <button className={`text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${isDark ? "bg-orange-600 hover:bg-orange-500 text-white" : "bg-orange-100 hover:bg-orange-200 text-orange-700"}`}
+                              onClick={e => { e.stopPropagation(); setReassignLead(lead); setReassignTarget(""); setReassignNote(""); setIsReassignModalOpen(true); }}>
+                              <FaExchangeAlt /> Reassign
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
 
@@ -1558,7 +1679,6 @@ function DashboardOverview({ managers, siteHeads, allLeads, isLoading, user, the
                 <FaClipboardList className="text-[#00AEEF]" /> All Leads — {selectedReceptionistName}
               </h3>
               <div className="flex items-center gap-3 flex-wrap">
-                {/* ← correct search state: recepLeadSearch */}
                 <TableSearchInput value={recepLeadSearch} onChange={setRecepLeadSearch} theme={theme} />
                 <button
                   onClick={() => downloadCSV(recepAllLeads.map(formatLeadForExport), `${selectedReceptionistName}_Leads.csv`)}
@@ -1577,48 +1697,82 @@ function DashboardOverview({ managers, siteHeads, allLeads, isLoading, user, the
               <table className="w-full text-left text-sm">
                 <thead className={`text-xs uppercase ${theme.tableHead} ${theme.textHeader}`}>
                   <tr>
-                    {["LEAD NO.", "NAME", "PROP. TYPE", "BUDGET", "USE TYPE", "LOAN?", "LOAN STATUS", "CP NAME", "CP PHONE", "SITE VISIT", "ASSIGNED TO"].map(h => (
+                    {["LEAD NO.", "NAME", "PROP. TYPE", "BUDGET", "SOURCE", "CP NAME", "CP PHONE", "STATUS", "INTEREST", "SITE VISIT", "ASSIGNED TO", "REASSIGN"].map(h => (
                       <th key={h} className="px-4 py-4">{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody className={`divide-y ${theme.tableDivide}`}>
                   {isLoading ? (
-                    <tr><td colSpan={11} className={`text-center py-8 ${theme.textMuted}`}>Syncing...</td></tr>
+                    <tr><td colSpan={12} className={`text-center py-8 ${theme.textMuted}`}>Syncing...</td></tr>
                   ) : filterLeads(recepAllLeads, recepLeadSearch).length === 0 ? (
-                    <tr><td colSpan={11} className={`text-center py-8 ${theme.textMuted}`}>
+                    <tr><td colSpan={12} className={`text-center py-8 ${theme.textMuted}`}>
                       {recepLeadSearch ? "No leads match your search." : `No leads for ${selectedReceptionistName}.`}
                     </td></tr>
-                  ) : filterLeads(recepAllLeads, recepLeadSearch).map((lead: any) => {
-                    /* ← correct source array: recepAllLeads, not activeManagerLeads */
-                    const isAssigned = lead.assigned_to === selectedReceptionistName;
+                  ) : filterLeads(recepAllLeads, recepLeadSearch).slice(0, visibleCount).map((lead: any) => {
+                    let assignedRole = "Receptionist";
+                    let assignedName = lead.assigned_receptionist || lead.assigned_to || "";
+                    if (lead.assigned_receptionist) assignedRole = "Receptionist";
+                    else if (siteHeads?.some((sh: any) => sh.name === lead.assigned_to)) assignedRole = "Site Head";
+                    else if (lead.assigned_to) assignedRole = "Sales Manager";
+
                     return (
-                      <tr key={lead.id} className={`transition-colors ${theme.tableRow}`}>
+                      <tr key={lead.id} className={`transition-colors cursor-pointer ${theme.tableRow}`} onClick={() => onNavigateToSales && onNavigateToSales(lead)}>
                         <td className={`px-6 py-4 font-bold ${isDark ? "text-[#d946a8]" : "text-[#9E217B]"}`}>#{lead.id}</td>
-                        <td className={`px-4 py-4 font-medium ${theme.text}`}>{lead.name}</td>
-                        <td className={`px-4 py-4 ${theme.textMuted}`}>{lead.propType || "Pending"}</td>
-                        <td className={`px-4 py-4 font-semibold ${isDark ? "text-green-400" : "text-emerald-600"}`}>{lead.salesBudget}</td>
-                        <td className={`px-4 py-4 ${theme.textMuted}`}>{lead.useType || "Pending"}</td>
-                        <td className={`px-4 py-4 ${theme.textMuted}`}>{lead.loanPlanned || "Pending"}</td>
-                        <td className="px-4 py-4">
-                          {lead.loanStatus && lead.loanStatus !== "N/A"
-                            ? <LoanStatusBadge status={lead.loanStatus} isDark={isDark} />
-                            : <span className={`text-xs italic ${theme.textFaint}`}>N/A</span>}
+                        <td className={`px-4 py-4 font-medium ${theme.text}`}>
+                          {(lead.assigned_to || lead.assigned_receptionist) ? (
+                            <span
+                              className={`cursor-pointer hover:underline transition-colors ${isDark ? "hover:text-[#d946a8]" : "hover:text-[#9E217B]"}`}
+                              title={`Open lead detail for ${lead.name}`}
+                              onClick={(e) => { e.stopPropagation(); onNavigateToSales && onNavigateToSales(lead); }}
+                            >
+                              {lead.name}
+                            </span>
+                          ) : (
+                            lead.name
+                          )}
                         </td>
-                        <td className={`px-4 py-4 ${theme.textMuted}`}>{lead.cpName || "—"}</td>
-                        <td className={`px-4 py-4 font-mono text-xs ${theme.textMuted}`}>{lead.cpPhone || "—"}</td>
+                        <td className={`px-4 py-4 ${theme.textMuted}`}>{lead.propType || lead.configuration || "Pending"}</td>
+                        <td className={`px-4 py-4 font-semibold ${isDark ? "text-green-400" : "text-emerald-600"}`}>{lead.salesBudget || lead.budget || "N/A"}</td>
+                        <td className={`px-4 py-4 text-xs ${theme.textMuted}`}>{lead.source || "—"}</td>
+                        <td className={`px-4 py-4 ${theme.textMuted}`}>{lead.cpName || lead.cp_name || "—"}</td>
+                        <td className={`px-4 py-4 font-mono text-xs ${theme.textMuted}`}>{lead.cpPhone || lead.cp_phone || "—"}</td>
+                        <td className="px-4 py-4">
+                          <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase border flex-shrink-0 whitespace-nowrap ${lead.status === "Closing" ? theme.statusClosing : lead.status === "Visit Scheduled" ? theme.statusVisit : theme.statusRouted}`}>
+                            {lead.status || "Routed"}
+                          </span>
+                        </td>
+                        <td className="px-4 py-4">
+                          {lead.leadInterestStatus && lead.leadInterestStatus !== "Pending"
+                            ? <InterestBadge status={lead.leadInterestStatus} size="sm" isDark={isDark} />
+                            : <span className={`text-xs italic ${theme.textFaint}`}>—</span>}
+                        </td>
                         <td className="px-6 py-4">
                           {lead.mongoVisitDate
-                            ? <span className="text-orange-500 font-medium">{new Date(lead.mongoVisitDate).toLocaleDateString("en-IN", { day: "2-digit", month: "short" })}</span>
+                            ? <span className="text-orange-500 font-medium">{formatDate(lead.mongoVisitDate).split(",")[0]}</span>
                             : <span className={`text-xs italic ${theme.textFaint}`}>Pending</span>}
                         </td>
-                        <td className="px-4 py-4">
-                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold border ${isAssigned
-                            ? isDark ? "text-[#00AEEF] border-[#00AEEF]/30 bg-[#00AEEF]/10" : "text-[#00AEEF] border-[#00AEEF]/30 bg-blue-50"
-                            : isDark ? "text-purple-400 border-purple-500/30 bg-purple-500/10" : "text-purple-700 border-purple-200 bg-purple-50"
-                            }`}>
-                            {isAssigned ? "Receptionist" : "Self-Managed"}
-                          </span>
+                        <td className={`px-4 py-4 ${theme.textMuted}`}>
+                          {assignedName ? (
+                            <div className="flex flex-col gap-0.5">
+                              <span className={`font-semibold ${theme.text}`}>{assignedName}</span>
+                              <span className={`text-[9px] px-1.5 py-0.5 rounded border inline-block w-fit ${isDark ? "bg-[#222] border-[#333]" : "bg-gray-50 border-gray-200"}`}>
+                                {assignedRole}
+                              </span>
+                            </div>
+                          ) : "—"}
+                        </td>
+                        <td className="px-4 py-4" onClick={e => e.stopPropagation()}>
+                          {lead.status === "Closing" || lead.status === "Closed" || !!lead.closingDate ? (
+                            <span className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase border whitespace-nowrap ${isDark ? "text-gray-400 border-gray-600 bg-gray-800/50" : "text-gray-500 border-gray-300 bg-gray-100"}`}>
+                              Marked closed
+                            </span>
+                          ) : (
+                            <button className={`text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${isDark ? "bg-orange-600 hover:bg-orange-500 text-white" : "bg-orange-100 hover:bg-orange-200 text-orange-700"}`}
+                              onClick={e => { e.stopPropagation(); setReassignLead(lead); setReassignTarget(""); setReassignNote(""); setIsReassignModalOpen(true); }}>
+                              <FaExchangeAlt /> Reassign
+                            </button>
+                          )}
                         </td>
                       </tr>
                     );
@@ -1683,7 +1837,6 @@ function DashboardOverview({ managers, siteHeads, allLeads, isLoading, user, the
                 <FaUsers className="text-[#9E217B]" /> Leads Database ({selectedManagerName})
               </h3>
               <div className="flex items-center gap-3 flex-wrap">
-                {/* ← correct search state: managerLeadSearch */}
                 <TableSearchInput value={managerLeadSearch} onChange={setManagerLeadSearch} theme={theme} />
                 <button
                   onClick={() => downloadCSV(activeManagerLeads.map(formatLeadForExport), `${selectedManagerName}_Leads.csv`)}
@@ -1701,48 +1854,86 @@ function DashboardOverview({ managers, siteHeads, allLeads, isLoading, user, the
               <table className="w-full text-left text-sm">
                 <thead className={`text-xs uppercase ${theme.tableHead} ${theme.textHeader}`}>
                   <tr>
-                    {["LEAD NO.", "NAME", "PROP. TYPE", "BUDGET", "USE TYPE", "LOAN?", "LOAN STATUS", "AMT REQ / APP", "CP NAME", "CP PHONE", "SITE VISIT"].map(h => (
+                    {["LEAD NO.", "NAME", "PROP. TYPE", "BUDGET", "SOURCE", "CP NAME", "CP PHONE", "STATUS", "INTEREST", "SITE VISIT", "ASSIGNED TO", "REASSIGN"].map(h => (
                       <th key={h} className="px-4 py-4">{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody className={`divide-y ${theme.tableDivide}`}>
                   {isLoading ? (
-                    <tr><td colSpan={11} className={`text-center py-8 ${theme.textMuted}`}>Syncing...</td></tr>
+                    <tr><td colSpan={12} className={`text-center py-8 ${theme.textMuted}`}>Syncing...</td></tr>
                   ) : filterLeads(activeManagerLeads, managerLeadSearch).length === 0 ? (
-                    <tr><td colSpan={11} className={`text-center py-8 ${theme.textMuted}`}>
+                    <tr><td colSpan={12} className={`text-center py-8 ${theme.textMuted}`}>
                       {managerLeadSearch ? "No leads match your search." : `No leads for ${selectedManagerName}.`}
                     </td></tr>
-                  ) : filterLeads(activeManagerLeads, managerLeadSearch).map((lead: any) => (
-                    <tr key={lead.id} className={`transition-colors ${theme.tableRow}`}>
-                      <td className={`px-6 py-4 font-bold ${isDark ? "text-[#d946a8]" : "text-[#9E217B]"}`}>#{lead.id}</td>
-                      <td className={`px-4 py-4 font-medium ${theme.text}`}>{lead.name}</td>
-                      <td className={`px-4 py-4 ${theme.textMuted}`}>{lead.propType || "Pending"}</td>
-                      <td className={`px-4 py-4 font-semibold ${isDark ? "text-green-400" : "text-emerald-600"}`}>{lead.salesBudget}</td>
-                      <td className={`px-4 py-4 ${theme.textMuted}`}>{lead.useType || "Pending"}</td>
-                      <td className={`px-4 py-4 ${theme.textMuted}`}>{lead.loanPlanned || "Pending"}</td>
-                      <td className="px-4 py-4">
-                        {lead.loanStatus && lead.loanStatus !== "N/A"
-                          ? <LoanStatusBadge status={lead.loanStatus} isDark={isDark} />
-                          : <span className={`text-xs italic ${theme.textFaint}`}>N/A</span>}
-                      </td>
-                      <td className="px-4 py-4">
-                        {lead.loanAmtReq && lead.loanAmtReq !== "N/A"
-                          ? <div className="flex flex-col gap-0.5">
-                            <span className="text-[11px] text-orange-500 font-medium">Req: {lead.loanAmtReq}</span>
-                            <span className={`text-[11px] font-medium ${isDark ? "text-green-400" : "text-emerald-600"}`}>App: {lead.loanAmtApp !== "N/A" ? lead.loanAmtApp : "—"}</span>
-                          </div>
-                          : <span className={`text-xs italic ${theme.textFaint}`}>N/A</span>}
-                      </td>
-                      <td className={`px-4 py-4 ${theme.textMuted}`}>{lead.cpName || lead.cp_name || "—"}</td>
-                      <td className={`px-4 py-4 font-mono text-xs ${theme.textMuted}`}>{lead.cpPhone || lead.cp_phone || "—"}</td>
-                      <td className="px-6 py-4">
-                        {lead.mongoVisitDate
-                          ? <span className="text-orange-500 font-medium">{formatDate(lead.mongoVisitDate).split(",")[0]}</span>
-                          : <span className={`text-xs italic ${theme.textFaint}`}>Pending</span>}
-                      </td>
-                    </tr>
-                  ))}
+                  ) : filterLeads(activeManagerLeads, managerLeadSearch).slice(0, visibleCount).map((lead: any) => {
+                    let assignedRole = "Sales Manager";
+                    let assignedName = lead.assigned_receptionist || lead.assigned_to || "";
+                    if (lead.assigned_receptionist) assignedRole = "Receptionist";
+                    else if (siteHeads?.some((sh: any) => sh.name === lead.assigned_to)) assignedRole = "Site Head";
+                    else if (lead.assigned_to) assignedRole = "Sales Manager";
+
+                    return (
+                      <tr key={lead.id} className={`transition-colors cursor-pointer ${theme.tableRow}`} onClick={() => onNavigateToSales && onNavigateToSales(lead)}>
+                        <td className={`px-6 py-4 font-bold ${isDark ? "text-[#d946a8]" : "text-[#9E217B]"}`}>#{lead.id}</td>
+                        <td className={`px-4 py-4 font-medium ${theme.text}`}>
+                          {(lead.assigned_to || lead.assigned_receptionist) ? (
+                            <span
+                              className={`cursor-pointer hover:underline transition-colors ${isDark ? "hover:text-[#d946a8]" : "hover:text-[#9E217B]"}`}
+                              title={`Open lead detail for ${lead.name}`}
+                              onClick={(e) => { e.stopPropagation(); onNavigateToSales && onNavigateToSales(lead); }}
+                            >
+                              {lead.name}
+                            </span>
+                          ) : (
+                            lead.name
+                          )}
+                        </td>
+                        <td className={`px-4 py-4 ${theme.textMuted}`}>{lead.propType || lead.configuration || "Pending"}</td>
+                        <td className={`px-4 py-4 font-semibold ${isDark ? "text-green-400" : "text-emerald-600"}`}>{lead.salesBudget || lead.budget || "N/A"}</td>
+                        <td className={`px-4 py-4 text-xs ${theme.textMuted}`}>{lead.source || "—"}</td>
+                        <td className={`px-4 py-4 ${theme.textMuted}`}>{lead.cpName || lead.cp_name || "—"}</td>
+                        <td className={`px-4 py-4 font-mono text-xs ${theme.textMuted}`}>{lead.cpPhone || lead.cp_phone || "—"}</td>
+                        <td className="px-4 py-4">
+                          <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase border flex-shrink-0 whitespace-nowrap ${lead.status === "Closing" ? theme.statusClosing : lead.status === "Visit Scheduled" ? theme.statusVisit : theme.statusRouted}`}>
+                            {lead.status || "Routed"}
+                          </span>
+                        </td>
+                        <td className="px-4 py-4">
+                          {lead.leadInterestStatus && lead.leadInterestStatus !== "Pending"
+                            ? <InterestBadge status={lead.leadInterestStatus} size="sm" isDark={isDark} />
+                            : <span className={`text-xs italic ${theme.textFaint}`}>—</span>}
+                        </td>
+                        <td className="px-6 py-4">
+                          {lead.mongoVisitDate
+                            ? <span className="text-orange-500 font-medium">{formatDate(lead.mongoVisitDate).split(",")[0]}</span>
+                            : <span className={`text-xs italic ${theme.textFaint}`}>Pending</span>}
+                        </td>
+                        <td className={`px-4 py-4 ${theme.textMuted}`}>
+                          {assignedName ? (
+                            <div className="flex flex-col gap-0.5">
+                              <span className={`font-semibold ${theme.text}`}>{assignedName}</span>
+                              <span className={`text-[9px] px-1.5 py-0.5 rounded border inline-block w-fit ${isDark ? "bg-[#222] border-[#333]" : "bg-gray-50 border-gray-200"}`}>
+                                {assignedRole}
+                              </span>
+                            </div>
+                          ) : "—"}
+                        </td>
+                        <td className="px-4 py-4" onClick={e => e.stopPropagation()}>
+                          {lead.status === "Closing" || lead.status === "Closed" || !!lead.closingDate ? (
+                            <span className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase border whitespace-nowrap ${isDark ? "text-gray-400 border-gray-600 bg-gray-800/50" : "text-gray-500 border-gray-300 bg-gray-100"}`}>
+                              Marked closed
+                            </span>
+                          ) : (
+                            <button className={`text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${isDark ? "bg-orange-600 hover:bg-orange-500 text-white" : "bg-orange-100 hover:bg-orange-200 text-orange-700"}`}
+                              onClick={e => { e.stopPropagation(); setReassignLead(lead); setReassignTarget(""); setReassignNote(""); setIsReassignModalOpen(true); }}>
+                              <FaExchangeAlt /> Reassign
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
 
@@ -1761,9 +1952,59 @@ function DashboardOverview({ managers, siteHeads, allLeads, isLoading, user, the
           </div>
         </div>
       )}
+
+      {toastMsg && (
+        <div className={`fixed top-6 left-1/2 transform -translate-x-1/2 z-[100] px-6 py-3 rounded-xl shadow-lg flex items-center gap-4 animate-fadeIn bg-[#9E217B] border-[#b8268f] text-white`}>
+          <div className="text-lg"><FaCheckCircle /></div>
+          <span className="text-sm font-bold">{toastMsg}</span>
+        </div>
+      )}
+
+      {isReassignModalOpen && reassignLead && (
+        <div className="fixed inset-0 bg-black/75 z-[200] flex justify-center items-center p-4 sm:p-6 animate-fadeIn" style={{ backdropFilter: "blur(8px)" }}>
+          <div className={`rounded-2xl w-full max-w-lg shadow-2xl border overflow-hidden ${theme.modalCard}`} style={theme.modalGlass}>
+            <div className={`p-5 border-b flex justify-between items-center ${isDark ? "bg-orange-900/20 border-orange-500/20" : "bg-orange-50 border-orange-200"}`}>
+              <div>
+                <h2 className={`text-lg font-bold flex items-center gap-2 ${isDark ? "text-orange-400" : "text-orange-700"}`}><FaExchangeAlt /> Re-assign Lead #{reassignLead.id}</h2>
+                <p className={`text-xs mt-1 ${theme.textMuted}`}>Currently assigned to: <strong>{reassignLead.assigned_to || reassignLead.assignedTo || "Unassigned"}</strong></p>
+              </div>
+              <button onClick={() => { setIsReassignModalOpen(false); setReassignNote(""); setReassignTarget(""); }} className={`p-2 ${theme.textMuted} hover:text-red-500 transition-colors`}><FaTimes /></button>
+            </div>
+            <div className={`p-6 ${theme.modalInner}`}>
+              <div className="mb-5">
+                <label className={`block text-sm font-bold mb-2 ${isDark ? "text-orange-400" : "text-orange-700"}`}>Assign to *</label>
+                <select required value={reassignTarget} onChange={e => setReassignTarget(e.target.value)}
+                  className={`w-full rounded-xl p-3 text-sm outline-none transition-colors border-2 cursor-pointer ${isDark ? "bg-[#14141B] border-orange-500/40 text-white" : "bg-white border-orange-300 text-[#1A1A1A]"}`}>
+                  <option value="" disabled>-- Select Manager --</option>
+                  {isFetchingManagers ? <option disabled>Loading managers…</option> : combinedAssignees.filter((m: any) => m.name !== (reassignLead.assigned_to || reassignLead.assignedTo)).length > 0 ? combinedAssignees.filter((m: any) => m.name !== (reassignLead.assigned_to || reassignLead.assignedTo)).map((m: any, i: number) => (
+                    <option key={i} value={m.name}>{m.name} ({String(m.role || "Sales Manager").replace("_", " ")})</option>
+                  )) : <option disabled>No other assignees available</option>}
+                </select>
+              </div>
+              <div>
+                <label className={`block text-sm font-bold mb-2 ${isDark ? "text-orange-400" : "text-orange-700"}`}>Reason for Re-assign * (min 10 chars)</label>
+                <textarea required value={reassignNote} onChange={e => setReassignNote(e.target.value)} rows={4}
+                  placeholder="e.g. Wrong manager was selected initially."
+                  className={`w-full rounded-xl px-4 py-3 text-sm outline-none resize-none border-2 transition-colors ${isDark ? "bg-[#14141B] border-orange-500/30 text-white focus:border-orange-500" : "bg-white border-orange-200 text-[#1A1A1A] focus:border-orange-500"}`} />
+                {reassignNote.length > 0 && reassignNote.length < 10 && <p className="text-xs text-amber-500 mt-1">⚠ Min 10 characters required.</p>}
+              </div>
+            </div>
+            <div className={`p-5 border-t flex justify-end gap-3 ${theme.modalHeader} ${theme.tableBorder}`}>
+              <button onClick={() => { setIsReassignModalOpen(false); setReassignNote(""); setReassignTarget(""); }}
+                className={`px-6 py-2.5 rounded-lg font-bold cursor-pointer transition-colors ${theme.textMuted} hover:text-red-500`}>Cancel</button>
+              <button onClick={handleReassignLead} disabled={isReassigning || !reassignTarget || !reassignNote.trim()}
+                className={`px-8 py-2.5 rounded-lg font-bold transition-colors flex items-center gap-2 ${isReassigning || !reassignTarget || !reassignNote.trim() ? "opacity-50 cursor-not-allowed bg-orange-400 text-white" : "cursor-pointer bg-orange-500 hover:bg-orange-400 text-white shadow-lg shadow-orange-500/20"}`}>
+                {isReassigning ? "Reassigning…" : <><FaExchangeAlt /> Confirm Re-assign</>}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
+// export default DashboardOverview;
 
 function TableSearchInput({
   value,
@@ -2032,7 +2273,7 @@ function AdminSalesView({ managers, allLeads, followUps, isLoading, adminUser, r
   };
 
   const handleTransferLead = async () => {
-    if (!selectedLead || !transferTarget || transferNote.trim().length < 50) return;
+    if (!selectedLead || !transferTarget || !transferNote.trim()) return;
     setIsTransferring(true);
     try {
       const res = await fetch("/api/leads/transfer", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ lead_id: selectedLead.id, transfer_to: transferTarget, transfer_note: transferNote, transferred_by: adminUser.name }) });
@@ -2543,8 +2784,8 @@ function AdminSalesView({ managers, allLeads, followUps, isLoading, adminUser, r
                   <div className={`p-5 border-t flex justify-end gap-3 ${theme.modalHeader} ${theme.tableBorder}`}>
                     <button onClick={() => { setIsTransferModalOpen(false); setTransferNote(""); setTransferTarget(""); }}
                       className={`px-6 py-2.5 rounded-lg font-bold cursor-pointer transition-colors ${theme.textMuted} hover:text-red-500`}>Cancel</button>
-                    <button onClick={handleTransferLead} disabled={isTransferring || !transferTarget || transferNote.trim().length < 50}
-                      className={`px-8 py-2.5 rounded-lg font-bold transition-colors flex items-center gap-2 ${isTransferring || !transferTarget || transferNote.trim().length < 50 ? "opacity-50 cursor-not-allowed bg-purple-400 text-white" : "cursor-pointer bg-purple-600 hover:bg-purple-500 text-white shadow-lg shadow-purple-600/20"}`}>
+                    <button onClick={handleTransferLead} disabled={isTransferring || !transferTarget || !transferNote.trim()}
+                      className={`px-8 py-2.5 rounded-lg font-bold transition-colors flex items-center gap-2 ${isTransferring || !transferTarget || !transferNote.trim() ? "opacity-50 cursor-not-allowed bg-purple-400 text-white" : "cursor-pointer bg-purple-600 hover:bg-purple-500 text-white shadow-lg shadow-purple-600/20"}`}>
                       {isTransferring ? "Transferring…" : <><FaExchangeAlt /> Confirm Transfer</>}
                     </button>
                   </div>
@@ -2556,7 +2797,11 @@ function AdminSalesView({ managers, allLeads, followUps, isLoading, adminUser, r
         )}
       </div>
     </div>
+
   );
+
+
+
 }
 
 // ============================================================================
@@ -2806,7 +3051,7 @@ function AdminSiteHeadView({ siteHeads, allLeads, followUps, isLoading, adminUse
   };
 
   const handleTransferLead = async () => {
-    if (!selectedLead || !transferTarget || transferNote.trim().length < 50) return;
+    if (!selectedLead || !transferTarget || !transferNote.trim()) return;
     setIsTransferring(true);
     try {
       const res = await fetch("/api/leads/transfer", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ lead_id: selectedLead.id, transfer_to: transferTarget, transfer_note: transferNote, transferred_by: adminUser.name }) });
@@ -3317,8 +3562,8 @@ function AdminSiteHeadView({ siteHeads, allLeads, followUps, isLoading, adminUse
                   <div className={`p-5 border-t flex justify-end gap-3 ${theme.modalHeader} ${theme.tableBorder}`}>
                     <button onClick={() => { setIsTransferModalOpen(false); setTransferNote(""); setTransferTarget(""); }}
                       className={`px-6 py-2.5 rounded-lg font-bold cursor-pointer transition-colors ${theme.textMuted} hover:text-red-500`}>Cancel</button>
-                    <button onClick={handleTransferLead} disabled={isTransferring || !transferTarget || transferNote.trim().length < 50}
-                      className={`px-8 py-2.5 rounded-lg font-bold transition-colors flex items-center gap-2 ${isTransferring || !transferTarget || transferNote.trim().length < 50 ? "opacity-50 cursor-not-allowed bg-purple-400 text-white" : "cursor-pointer bg-purple-600 hover:bg-purple-500 text-white shadow-lg shadow-purple-600/20"}`}>
+                    <button onClick={handleTransferLead} disabled={isTransferring || !transferTarget || !transferNote.trim()}
+                      className={`px-8 py-2.5 rounded-lg font-bold transition-colors flex items-center gap-2 ${isTransferring || !transferTarget || !transferNote.trim() ? "opacity-50 cursor-not-allowed bg-purple-400 text-white" : "cursor-pointer bg-purple-600 hover:bg-purple-500 text-white shadow-lg shadow-purple-600/20"}`}>
                       {isTransferring ? "Transferring…" : <><FaExchangeAlt /> Confirm Transfer</>}
                     </button>
                   </div>
@@ -3507,7 +3752,7 @@ function ReceptionistView({ receptionists, allLeads, followUps, isLoading, refet
   };
 
   const handleTransferLead = async () => {
-    if (!selectedLead || !transferTarget || transferNote.trim().length < 50) return;
+    if (!selectedLead || !transferTarget || !transferNote.trim()) return;
     setIsTransferring(true);
     try {
       const res = await fetch("/api/leads/transfer", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ lead_id: selectedLead.id, transfer_to: transferTarget, transfer_note: transferNote, transferred_by: actorName }) });
@@ -3521,7 +3766,7 @@ function ReceptionistView({ receptionists, allLeads, followUps, isLoading, refet
   };
 
   const handleReassignLead = async () => {
-    if (!selectedLead || !reassignTarget || reassignNote.trim().length < 10) return;
+    if (!selectedLead || !reassignTarget || !reassignNote.trim()) return;
     if (reassignTarget === (selectedLead.assignedTo || selectedLead.assigned_to)) {
       alert("Please select a different manager.");
       return;
@@ -4479,8 +4724,8 @@ function ReceptionistView({ receptionists, allLeads, followUps, isLoading, refet
             <div className={`p-5 border-t flex justify-end gap-3 ${theme.modalHeader} ${theme.tableBorder}`}>
               <button onClick={() => { setIsTransferModalOpen(false); setTransferNote(""); setTransferTarget(""); }}
                 className={`px-6 py-2.5 rounded-lg font-bold cursor-pointer transition-colors ${theme.textMuted} hover:text-red-500`}>Cancel</button>
-              <button onClick={handleTransferLead} disabled={isTransferring || !transferTarget || transferNote.trim().length < 50}
-                className={`px-8 py-2.5 rounded-lg font-bold transition-colors flex items-center gap-2 ${isTransferring || !transferTarget || transferNote.trim().length < 50 ? "opacity-50 cursor-not-allowed bg-purple-400 text-white" : "cursor-pointer bg-purple-600 hover:bg-purple-500 text-white shadow-lg shadow-purple-600/20"}`}>
+              <button onClick={handleTransferLead} disabled={isTransferring || !transferTarget || !transferNote.trim()}
+                className={`px-8 py-2.5 rounded-lg font-bold transition-colors flex items-center gap-2 ${isTransferring || !transferTarget || !transferNote.trim() ? "opacity-50 cursor-not-allowed bg-purple-400 text-white" : "cursor-pointer bg-purple-600 hover:bg-purple-500 text-white shadow-lg shadow-purple-600/20"}`}>
                 {isTransferring ? "Transferring…" : <><FaExchangeAlt /> Confirm Transfer</>}
               </button>
             </div>
@@ -4533,8 +4778,8 @@ function ReceptionistView({ receptionists, allLeads, followUps, isLoading, refet
               <button onClick={() => { setIsReassignModalOpen(false); setReassignNote(""); setReassignTarget(""); }}
                 className={`px-6 py-2.5 rounded-lg font-bold cursor-pointer transition-colors ${theme.textMuted} hover:text-red-500`}>Cancel</button>
               <button onClick={handleReassignLead}
-                disabled={isReassigning || !reassignTarget || reassignNote.trim().length < 10}
-                className={`px-8 py-2.5 rounded-lg font-bold transition-colors flex items-center gap-2 ${isReassigning || !reassignTarget || reassignNote.trim().length < 10
+                disabled={isReassigning || !reassignTarget || !reassignNote.trim()}
+                className={`px-8 py-2.5 rounded-lg font-bold transition-colors flex items-center gap-2 ${isReassigning || !reassignTarget || !reassignNote.trim()
                   ? "opacity-50 cursor-not-allowed bg-orange-400 text-white"
                   : "cursor-pointer bg-orange-500 hover:bg-orange-400 text-white shadow-lg shadow-orange-500/20"
                   }`}>

@@ -327,7 +327,8 @@ export default function EmployeesPage() {
     const params = new URLSearchParams(window.location.search);
     if (params.get("tab") === "callers") setActiveSection("callers");
 
-    if (parsed.role?.toLowerCase() === "admin") {
+    const userRole = parsed.role?.toLowerCase() || "";
+    if (userRole === "admin" || userRole === "site head" || userRole === "site_head") {
       setIsAuthorized(true);
       fetchRoles();
       fetchEmployees();
@@ -1003,10 +1004,10 @@ export default function EmployeesPage() {
                       onClick={() => handleToggleStatus(selectedManageUser._id, selectedManageUser.isActive)}
                       disabled={selectedManageUser.email === ADMIN_EMAIL}
                       className={`py-2.5 px-6 rounded-lg font-bold text-sm transition-colors cursor-pointer ${selectedManageUser.email === ADMIN_EMAIL
-                          ? isDark ? "bg-[#222] border border-[#333] text-gray-600 cursor-not-allowed" : "bg-[#F1F5F9] border border-indigo-200 text-[#9CA3AF] cursor-not-allowed"
-                          : selectedManageUser.isActive
-                            ? "bg-red-600 hover:bg-red-700 text-white border border-red-500"
-                            : "bg-green-600 hover:bg-green-700 text-white border border-green-500"
+                        ? isDark ? "bg-[#222] border border-[#333] text-gray-600 cursor-not-allowed" : "bg-[#F1F5F9] border border-indigo-200 text-[#9CA3AF] cursor-not-allowed"
+                        : selectedManageUser.isActive
+                          ? "bg-red-600 hover:bg-red-700 text-white border border-red-500"
+                          : "bg-green-600 hover:bg-green-700 text-white border border-green-500"
                         }`}
                     >
                       {selectedManageUser.email === ADMIN_EMAIL
