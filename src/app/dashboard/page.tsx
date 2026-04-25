@@ -983,10 +983,6 @@ function DashboardAnalytics({ leads, theme, isDark }: { leads: any[]; theme: any
 // DASHBOARD OVERVIEW
 // ============================================================================
 
-// Assumed imports based on the component's usage:
-// import { DashboardAnalytics, TableSearchInput, InterestBadge } from "./your-components"; 
-// import { downloadCSV, formatLeadForExport } from "./your-utils";
-
 function DashboardOverview({ managers, siteHeads, allLeads, isLoading, user, theme, isDark, receptionists, followUps, onNavigateToSales, refetch }: any) {
   const [visibleCount, setVisibleCount] = useState(20);
   const loadMoreRef = useRef<HTMLDivElement>(null);
@@ -2007,8 +2003,6 @@ function DashboardOverview({ managers, siteHeads, allLeads, isLoading, user, the
     </div>
   );
 }
-
-// export default DashboardOverview;
 
 function TableSearchInput({
   value,
@@ -3641,7 +3635,6 @@ function ReceptionistView({ receptionists, allLeads, followUps, isLoading, refet
   // ── Lazy load state ──────────────────────────────────────────────────────────
   const [visibleCount, setVisibleCount] = useState(20);
   const loadMoreRef = useRef<HTMLDivElement>(null);
-  const loadLessRef = useRef<HTMLDivElement>(null);
 
   const combinedAssignees = useMemo(() => {
     return [...salesManagers, ...siteHeads];
@@ -3887,7 +3880,7 @@ function ReceptionistView({ receptionists, allLeads, followUps, isLoading, refet
     [mergedLeads, recepName]
   );
 
-  // ── Total leads in the currently active section (drives lazy loader) ─────────
+  // ── Total leads in the currently active section ─────────
   const currentSectionTotal = useMemo(() => {
     if (activeSection === "enquiries") return allEnquiries.length;
     if (activeSection === "closed") return closedLeads.length;
@@ -3904,33 +3897,19 @@ function ReceptionistView({ receptionists, allLeads, followUps, isLoading, refet
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting) {
-          setVisibleCount(prev => Math.min(prev + 20, currentSectionTotal));
+          setVisibleCount(prev => prev + 20); // Just reliably increase the count
         }
       },
       { threshold: 0.1 }
     );
     if (loadMoreRef.current) observer.observe(loadMoreRef.current);
     return () => observer.disconnect();
-  }, [currentSectionTotal]);
+  }, [activeSection, assignedTableFilter, searchRecep, selectedReceptionist]);
 
-  // ── Top sentinel: unload back to 20 when scrolled fully back up ───────────────
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && visibleCount > 20) {
-          setVisibleCount(20);
-        }
-      },
-      { threshold: 1.0 }
-    );
-    if (loadLessRef.current) observer.observe(loadLessRef.current);
-    return () => observer.disconnect();
-  }, [visibleCount]);
-
-  // ── Reset count when section or receptionist changes ─────────────────────────
+  // ── Reset count when switching sections or searching ─────────────────────────
   useEffect(() => {
     setVisibleCount(20);
-  }, [activeSection, selectedReceptionist?.name, assignedTableFilter]);
+  }, [activeSection, selectedReceptionist?.name, assignedTableFilter, searchRecep]);
 
   // ── Status badge ─────────────────────────────────────────────────────────────
   const statusCls = (status: string) => {
@@ -3956,7 +3935,6 @@ function ReceptionistView({ receptionists, allLeads, followUps, isLoading, refet
   // ── Reusable table renderer ───────────────────────────────────────────────────
   const renderTable = (leads: any[], showAssignedInfo = false, isEnquiryTable = false) => (
     <div className={`rounded-2xl overflow-hidden border ${theme.tableWrap}`} style={theme.tableGlass}>
-      <div ref={loadLessRef} style={{ height: "1px", width: "100%" }} />
       <div className="overflow-x-auto">
         <table className="w-full text-left text-sm">
           <thead className={`text-xs uppercase ${theme.tableHead} ${theme.textHeader}`}>
@@ -3977,9 +3955,9 @@ function ReceptionistView({ receptionists, allLeads, followUps, isLoading, refet
           </thead>
           <tbody className={`divide-y ${theme.tableDivide}`}>
             {isLoading ? (
-              <tr><td colSpan={10} className={`text-center py-8 ${theme.textMuted}`}>Syncing…</td></tr>
+              <tr><td colSpan={12} className={`text-center py-8 ${theme.textMuted}`}>Syncing…</td></tr>
             ) : leads.length === 0 ? (
-              <tr><td colSpan={10} className={`text-center py-12 ${theme.textMuted}`}>
+              <tr><td colSpan={12} className={`text-center py-12 ${theme.textMuted}`}>
                 <FaClipboardList className="text-3xl mx-auto mb-3 opacity-20" />
                 <p className="text-sm">No leads found.</p>
               </td></tr>
@@ -4085,6 +4063,7 @@ function ReceptionistView({ receptionists, allLeads, followUps, isLoading, refet
             ))}
           </tbody>
         </table>
+
         {/* ── BOTTOM SENTINEL — triggers load more ── */}
         {visibleCount < leads.length && (
           <div ref={loadMoreRef} className={`flex items-center justify-center gap-3 py-6 ${theme.textMuted}`}>
@@ -4097,6 +4076,7 @@ function ReceptionistView({ receptionists, allLeads, followUps, isLoading, refet
             ✓ All {leads.length} leads loaded
           </div>
         )}
+
       </div>
     </div>
   );
@@ -4670,7 +4650,9 @@ function ReceptionistView({ receptionists, allLeads, followUps, isLoading, refet
                             ⚠️ Showing all leads including closed ones.
                           </div>
                         )}
-                        {renderTable(assignedTableFilter === "working" ? assignedLeads.filter((l: any) => l.status !== "Closing" && l.status !== "Closed" && !l.closingDate) : assignedLeads)}
+                        {renderTable(assignedTableFilter === "working"
+                          ? assignedLeads.filter((l: any) => l.status !== "Closing" && l.status !== "Closed" && !l.closingDate)
+                          : assignedLeads)}
                       </div>
                     )}
 
@@ -4739,7 +4721,7 @@ function ReceptionistView({ receptionists, allLeads, followUps, isLoading, refet
       )}
 
       {/* ════════════════════════════════════════════════════
-          REASSIGN LEAD MODAL (Admin)
+         REASSIGN LEAD MODAL (Admin)
       ════════════════════════════════════════════════════ */}
       {isReassignModalOpen && selectedLead && (
         <div className="fixed inset-0 bg-black/75 z-[200] flex justify-center items-center p-4 sm:p-6 animate-fadeIn" style={{ backdropFilter: "blur(8px)" }}>
