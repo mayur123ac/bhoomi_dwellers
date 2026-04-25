@@ -147,8 +147,12 @@ function useAdminData() {
       }
 
       let pgLeads: any[] = [];
-      const resLeads = await fetch("/api/walkin_enquiries");
-      if (resLeads.ok) { const j = await resLeads.json(); pgLeads = Array.isArray(j.data) ? j.data : []; }
+      const resLeads = await fetch("/api/walkin_enquiries?limit=10000&offset=0");
+      if (resLeads.ok) {
+        const j = await resLeads.json();
+        pgLeads = Array.isArray(j.data) ? j.data : [];
+        console.log("Admin fetched leads count:", pgLeads.length); // ← check this
+      }
 
       let mongoFollowUps: any[] = [];
       const resFups = await fetch("/api/followups");
@@ -3952,8 +3956,8 @@ function ReceptionistView({ receptionists, allLeads, followUps, isLoading, refet
   // ── Reusable table renderer ───────────────────────────────────────────────────
   const renderTable = (leads: any[], showAssignedInfo = false, isEnquiryTable = false) => (
     <div className={`rounded-2xl overflow-hidden border ${theme.tableWrap}`} style={theme.tableGlass}>
+      <div ref={loadLessRef} style={{ height: "1px", width: "100%" }} />
       <div className="overflow-x-auto">
-        <div ref={loadLessRef} style={{ height: "1px", width: "100%" }} />
         <table className="w-full text-left text-sm">
           <thead className={`text-xs uppercase ${theme.tableHead} ${theme.textHeader}`}>
             <tr>
@@ -3979,7 +3983,7 @@ function ReceptionistView({ receptionists, allLeads, followUps, isLoading, refet
                 <FaClipboardList className="text-3xl mx-auto mb-3 opacity-20" />
                 <p className="text-sm">No leads found.</p>
               </td></tr>
-            ) : leads.map((lead: any) => (
+            ) : leads.slice(0, visibleCount).map((lead: any) => (
               <tr
                 key={lead.id}
                 className={`transition-colors ${theme.tableRow} ${!isEnquiryTable ? "cursor-pointer" : ""}`}
