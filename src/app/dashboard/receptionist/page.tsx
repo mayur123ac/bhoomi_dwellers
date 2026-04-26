@@ -207,7 +207,7 @@ export default function ReceptionistDashboard() {
   const [enquiryForm, setEnquiryForm] = useState({
     fullName: "", mobile: "", altMobile: "", email: "", address: "",
     occupation: "", organization: "", budget: "", configuration: "",
-    purpose: "", source: "", assignedTo: "", loanPlanned: "", sourceOther: "",
+    purpose: "", source: "", assignedTo: "", loanPlanned: "", sourceOther: "", referralName: "",
     cpDetails: { name: "", company: "", phone: "" },
     selfAssign: false,
   });
@@ -251,6 +251,7 @@ export default function ReceptionistDashboard() {
   const [customNote, setCustomNote] = useState("");
   const followUpEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const [showManagerDropdown, setShowManagerDropdown] = useState(false);
   const [searchAssigned, setSearchAssigned] = useState("");
   const [assignedCardsPage, setAssignedCardsPage] = useState(1);
   const assignedSentinelRef = useRef<HTMLDivElement>(null);
@@ -746,6 +747,9 @@ export default function ReceptionistDashboard() {
       purpose: enquiryForm.purpose || "N/A",
       source: enquiryForm.source,
       source_other: enquiryForm.source === "Others" ? enquiryForm.sourceOther : null,
+      referral_name: enquiryForm.source === "Referral" 
+        ? enquiryForm.referralName 
+        : null,
       cp_name: enquiryForm.source === "Channel Partner" ? enquiryForm.cpDetails.name : null,
       cp_company: enquiryForm.source === "Channel Partner" ? enquiryForm.cpDetails.company : null,
       cp_phone: enquiryForm.source === "Channel Partner" ? enquiryForm.cpDetails.phone : null,
@@ -762,7 +766,7 @@ export default function ReceptionistDashboard() {
       if (res.ok) {
         showToast(isReceptionist ? `Lead self-assigned to you!` : `Lead routed to ${assignTo}!`);
         setIsEnquiryModalOpen(false);
-        setEnquiryForm({ fullName: "", mobile: "", altMobile: "", email: "", address: "", occupation: "", organization: "", budget: "", configuration: "", purpose: "", source: "", assignedTo: "", loanPlanned: "", sourceOther: "", cpDetails: { name: "", company: "", phone: "" }, selfAssign: false });
+        setEnquiryForm({ fullName: "", mobile: "", altMobile: "", email: "", address: "", occupation: "", organization: "", budget: "", configuration: "", purpose: "", source: "", assignedTo: "", loanPlanned: "", sourceOther: "", referralName: "", cpDetails: { name: "", company: "", phone: "" }, selfAssign: false });
         refetchAll();
       } else { alert("Server Error. Please check DB schema."); }
     } catch { alert("Network Error while submitting."); }
@@ -1860,8 +1864,32 @@ export default function ReceptionistDashboard() {
                     <FaSearch className={`absolute left-3 top-1/2 -translate-y-1/2 text-xs ${t.textFaint}`} />
                     <input type="text" placeholder="Search..." value={searchRecep} onChange={e => setSearchRecep(e.target.value)} className={`rounded-lg pl-9 pr-4 py-2 text-sm outline-none w-48 transition-colors border ${t.inputBg} ${t.text}`} />
                   </div>
-                  <button onClick={() => setIsEnquiryModalOpen(true)} className={`font-bold py-2.5 px-6 rounded-xl transition-colors text-sm flex items-center gap-2 cursor-pointer ${t.btnPrimary}`}>
-                    <FaClipboardList /> + Add New Form
+                  <button
+                    onClick={() => setIsEnquiryModalOpen(true)}
+                    className={`
+                      flex items-center justify-center gap-2
+                      font-medium rounded-lg
+                      transition-all duration-200
+                      cursor-pointer whitespace-nowrap
+
+                      /* Mobile */
+                      h-10 px-3 text-sm
+
+                      /* Desktop */
+                      sm:h-11 sm:px-5 sm:text-sm
+
+                      /* Colors */
+                      ${t.btnPrimary}
+
+                      /* Effects */
+                      hover:shadow-md active:scale-95
+                    `}
+                  >
+                    <FaClipboardList className="text-base" />
+
+                    <span className="hidden sm:inline">
+                      Add New Form
+                    </span>
                   </button>
                 </div>
               </div>
@@ -2013,6 +2041,7 @@ export default function ReceptionistDashboard() {
                   </div>
 
                   {/* ── Channel Partner Card ── */}
+                      
                   {(selectedLead.cp_company || selectedLead.cpCompany) && (
                     <div className={`mt-6 rounded-xl border p-5 ${t.settingsBg}`} style={t.settingsBgGl}>
                       <h3 className={`text-xs font-bold uppercase tracking-widest mb-4 border-b pb-2 ${t.sectionTitle} ${t.tableBorder}`}>
@@ -2031,6 +2060,21 @@ export default function ReceptionistDashboard() {
                             {selectedLead.cp_phone || selectedLead.cpPhone || "N/A"}
                           </p>
                         </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ── ADD THIS: Referral Card ── */}
+                  {selectedLead.source === "Referral" && selectedLead.referral_name && (
+                    <div className={`mt-6 rounded-xl border p-5 ${t.settingsBg}`} style={t.settingsBgGl}>
+                      <h3 className={`text-xs font-bold uppercase tracking-widest mb-4 border-b pb-2 ${t.sectionTitle} ${t.tableBorder}`}>
+                        Referral Details
+                      </h3>
+                      <div>
+                        <p className={`text-xs font-medium mb-1 ${t.textFaint}`}>Referred By</p>
+                        <p className={`font-semibold text-sm ${t.text}`}>
+                          {selectedLead.referral_name}
+                        </p>
                       </div>
                     </div>
                   )}
@@ -2821,7 +2865,7 @@ export default function ReceptionistDashboard() {
                       <label className={`block text-xs font-bold ${isDark ? "text-[#d4006e]" : "text-[#9E217B]"}`}>Assignment Option</label>
                       <div className="flex items-center gap-3">
                         <button type="button"
-                          onClick={() => setEnquiryForm({ ...enquiryForm, selfAssign: false })}
+                           onClick={() => { setEnquiryForm({ ...enquiryForm, selfAssign: false }); setShowManagerDropdown(true); }}
                           className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold transition-colors border ${!enquiryForm.selfAssign ? (isDark ? "bg-[#9E217B] border-[#9E217B] text-white" : "bg-[#00AEEF] border-[#00AEEF] text-white") : `${t.textMuted} ${t.tableBorder}`}`}>
                           Assign to Manager
                         </button>
@@ -2834,13 +2878,67 @@ export default function ReceptionistDashboard() {
                       {enquiryForm.selfAssign ? (
                         <p className={`text-xs ${isDark ? "text-[#d4006e]" : "text-[#9E217B]"}`}>✓ Lead will be assigned to <strong>{user.name}</strong> (you)</p>
                       ) : (
-                        <div>
-                          <label className={`block text-xs mb-1.5 font-medium ${isDark ? "text-[#d4006e]" : "text-[#00AEEF]"}`}>Assign To *</label>
-                          <select required value={enquiryForm.assignedTo} onChange={e => setEnquiryForm({ ...enquiryForm, assignedTo: e.target.value })}
-                            className={`w-full rounded-xl p-3 text-sm outline-none transition-colors border-2 cursor-pointer ${isDark ? "bg-[#14141B] border-purple-500/40 text-white" : "bg-white border-purple-300 text-[#1A1A1A]"}`}>
-                            <option value="" disabled>-- Select Manager --</option>
-                            {isFetchingManagers ? <option disabled>Loading managers…</option> : combinedAssignees.length > 0 ? combinedAssignees.map((m: any, i: number) => <option key={i} value={m.name}>{m.name} ({String(m.role || "Sales Manager").replace("_", " ")})</option>) : <option disabled>No assignees available</option>}
-                          </select>
+                       <div className={`w-full rounded-xl border-2 overflow-hidden ${isDark ? "border-purple-500/40" : "border-purple-300"}`}>
+                          {isFetchingManagers ? (
+                            <div className={`p-3 text-sm ${t.textMuted}`}>Loading managers…</div>
+                          ) : combinedAssignees.length === 0 ? (
+                            <div className={`p-3 text-sm ${t.textMuted}`}>No assignees available</div>
+                          ) : (
+                            <>
+                              {/* Selected display or placeholder — always visible */}
+                              <div
+                                onClick={() => setShowManagerDropdown(prev => !prev)}
+                                className={`px-4 py-3 text-sm cursor-pointer flex items-center justify-between ${
+                                  enquiryForm.assignedTo
+                                    ? isDark ? "text-white bg-purple-900/30" : "text-purple-800 bg-purple-100 font-semibold"
+                                    : isDark ? "text-gray-400" : "text-gray-400"
+                                }`}
+                              >
+                                <span>
+                                  {enquiryForm.assignedTo
+                                    ? `${enquiryForm.assignedTo} ✓`
+                                    : "-- Select Sales Manager --"}
+                                </span>
+                                <span className={`text-xs ${t.textFaint}`}>{showManagerDropdown ? "▲" : "▼"}</span>
+                              </div>
+
+                              {/* Dropdown list — only shown when open */}
+                              {showManagerDropdown && (
+                                <div className={`max-h-[200px] overflow-y-auto custom-scrollbar border-t ${isDark ? "border-[#2a2a35]" : "border-gray-100"}`}>
+                                  <div
+                                    onClick={() => {
+                                      setEnquiryForm({ ...enquiryForm, assignedTo: "" });
+                                      setShowManagerDropdown(false);
+                                    }}
+                                    className={`px-4 py-3 text-sm cursor-pointer border-b transition-colors ${
+                                      isDark ? "text-gray-500 hover:bg-[#1a1a28] border-[#2a2a35]" : "text-gray-400 hover:bg-gray-50 border-gray-100"
+                                    }`}
+                                  >
+                                    -- Clear Selection --
+                                  </div>
+                                  {combinedAssignees.map((m: any, i: number) => (
+                                    <div
+                                      key={i}
+                                      onClick={() => {
+                                        setEnquiryForm({ ...enquiryForm, assignedTo: m.name });
+                                        setShowManagerDropdown(false);  // ← closes on click
+                                      }}
+                                      className={`px-4 py-3 text-sm cursor-pointer border-b transition-colors ${
+                                        enquiryForm.assignedTo === m.name
+                                          ? isDark ? "bg-purple-900/40 text-purple-200 font-bold" : "bg-purple-100 text-purple-800 font-bold"
+                                          : isDark ? "text-white hover:bg-[#1a1a28] border-[#2a2a35]" : "text-[#1A1A1A] hover:bg-purple-50 border-gray-100"
+                                      }`}
+                                    >
+                                      <span className="font-semibold">{m.name}</span>
+                                      <span className={`ml-2 text-xs ${isDark ? "text-gray-400" : "text-gray-500"}`}>
+                                        ({String(m.role || "Sales Manager").replace("_", " ")})
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </>
+                          )}
                         </div>
                       )}
                     </div>
@@ -2850,6 +2948,21 @@ export default function ReceptionistDashboard() {
                         <label className={`block text-xs mb-1.5 font-medium pl-2 ${t.textMuted}`}>Specify Source *</label>
                         <input required type="text" value={enquiryForm.sourceOther} onChange={e => setEnquiryForm({ ...enquiryForm, sourceOther: e.target.value })}
                           className={`w-full rounded-lg p-3 text-sm outline-none transition-colors border ${t.modalInput} ${t.text}`} placeholder="Please specify the lead source" />
+                      </div>
+                    )}
+                    {enquiryForm.source === "Referral" && (
+                      <div className="sm:col-span-2 mt-2">
+                        <label className={`block text-xs mb-1.5 font-medium pl-2 ${t.textMuted}`}>
+                          Referred by *
+                        </label>
+                        <input
+                          required
+                          type="text"
+                          value={enquiryForm.referralName}
+                          onChange={e => setEnquiryForm({ ...enquiryForm, referralName: e.target.value })}
+                          className={`w-full rounded-lg p-3 text-sm outline-none transition-colors border ${t.modalInput} ${t.text}`}
+                          placeholder="e.g. Rajesh Sharma (existing client)"
+                        />
                       </div>
                     )}
                     {enquiryForm.source === "Channel Partner" && (
@@ -2918,7 +3031,7 @@ export default function ReceptionistDashboard() {
               </form>
             </div>
             <div className={`p-4 md:p-6 border-t flex flex-col md:flex-row justify-end gap-3 md:gap-4 ${t.modalHeader} ${t.tableBorder}`}>
-              <button onClick={() => setIsEnquiryModalOpen(false)} type="button"
+              <button onClick={() => { setIsEnquiryModalOpen(false); setShowManagerDropdown(false); }} type="button"
                 className={`px-6 py-2.5 rounded-lg font-bold cursor-pointer transition-colors ${t.textMuted} ${isDark ? "hover:bg-red-500/10 hover:text-red-500" : "hover:bg-[#9E217B]/10 hover:text-[#9E217B]"}`}>Cancel</button>
               <button form="enquiryForm" type="submit" disabled={isSubmitting}
                 className={`px-8 py-2.5 rounded-lg font-bold transition-colors ${isSubmitting ? "opacity-50 cursor-not-allowed" : "cursor-pointer"} ${t.btnPrimary}`}>
@@ -2995,7 +3108,7 @@ export default function ReceptionistDashboard() {
                 className={`px-6 py-2.5 rounded-lg font-bold cursor-pointer transition-colors ${t.textMuted} hover:text-red-500`}>Cancel</button>
               <button
                 onClick={handleTransferLead}
-                disabled={isTransferring || !transferTarget || transferNote.trim().length < 50}
+                disabled={isTransferring || !transferTarget || !transferNote.trim()}
                 className={`px-8 py-2.5 rounded-lg font-bold transition-colors flex items-center gap-2 ${isTransferring || !transferTarget || transferNote.trim().length < 50
                   ? "opacity-50 cursor-not-allowed bg-purple-400 text-white"
                   : "cursor-pointer bg-purple-600 hover:bg-purple-500 text-white shadow-lg shadow-purple-600/20"

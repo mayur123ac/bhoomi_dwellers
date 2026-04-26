@@ -31,11 +31,11 @@ export async function POST(req: Request) {
     const {
       name, phone, alt_phone, email, address, occupation, organization,
       budget, configuration, purpose, source, source_other,
+      referral_name,           // ← ADD THIS
       cp_name, cp_company, cp_phone, loan_planned,
       assignedTo,
       assigned_receptionist,
       status,
-      // NEW FIELDS FOR SITE HEAD LOGIC:
       is_global_shared,
       overseeing_site_head
     } = body;
@@ -49,42 +49,45 @@ export async function POST(req: Request) {
 
     const rows = await query(
       `INSERT INTO walkin_enquiries (
-      name, phone, email, address, occupation, organization,
-      budget, configuration, purpose, source,
-      alt_phone, source_other, cp_name, cp_company, cp_phone,
-      loan_planned, assigned_to, assigned_receptionist, status,
-      is_global_shared, overseeing_site_head
-    )
-    VALUES (
-      $1, $2, $3, $4, $5, $6,
-      $7, $8, $9, $10,
-      $11, $12, $13, $14, $15,
-      $16, $17, $18, $19,
-      $20, $21
-    )
-    RETURNING *`,
+        name, phone, email, address, occupation, organization,
+        budget, configuration, purpose, source,
+        alt_phone, source_other, referral_name,
+        cp_name, cp_company, cp_phone,
+        loan_planned, assigned_to, assigned_receptionist, status,
+        is_global_shared, overseeing_site_head
+      )
+      VALUES (
+        $1,  $2,  $3,  $4,  $5,  $6,
+        $7,  $8,  $9,  $10,
+        $11, $12, $13,
+        $14, $15, $16,
+        $17, $18, $19, $20,
+        $21, $22
+      )
+      RETURNING *`,
       [
-        name,                                // $1
-        phone,                               // $2
-        email || "N/A",              // $3
-        address || "N/A",              // $4
-        occupation || "N/A",              // $5
+        name,                               // $1
+        phone,                              // $2
+        email || "N/A",                     // $3
+        address || "N/A",                   // $4
+        occupation || "N/A",                // $5
         organization || "N/A",              // $6
-        budget || "Pending",          // $7
-        configuration || "N/A",              // $8
-        purpose || "N/A",              // $9
-        source || "Direct Walk-in",   // $10
-        alt_phone || null,               // $11
+        budget || "Pending",                // $7
+        configuration || "N/A",             // $8
+        purpose || "N/A",                   // $9
+        source || "Direct Walk-in",         // $10
+        alt_phone || null,                  // $11
         source_other || null,               // $12
-        cp_name || null,               // $13
-        cp_company || null,               // $14
-        cp_phone || null,               // $15
-        loan_planned || "Pending",          // $16
-        assignedTo,                          // $17
-        assigned_receptionist || null,       // $18
-        status || "Routed",           // $19
-        is_global_shared || false,           // $20 (Defaults to false)
-        overseeing_site_head || null         // $21 (Defaults to null)
+        referral_name || null,              // $13  ← NEW
+        cp_name || null,                    // $14
+        cp_company || null,                 // $15
+        cp_phone || null,                   // $16
+        loan_planned || "Pending",          // $17
+        assignedTo,                         // $18
+        assigned_receptionist || null,      // $19
+        status || "Routed",                 // $20
+        is_global_shared || false,          // $21
+        overseeing_site_head || null        // $22
       ]
     );
 

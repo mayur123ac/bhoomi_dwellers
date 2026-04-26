@@ -20,12 +20,7 @@ export async function POST(req: Request) {
       );
     }
 
-    if (!transfer_note || transfer_note.trim().length < 50) {
-      return NextResponse.json(
-        { success: false, message: "Handover summary must be at least 50 characters." },
-        { status: 400 }
-      );
-    }
+   
 
     // ── 1. Fetch existing lead ────────────────────────────────────────
     const existing = await query(

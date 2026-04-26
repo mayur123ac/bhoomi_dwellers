@@ -983,6 +983,10 @@ function DashboardAnalytics({ leads, theme, isDark }: { leads: any[]; theme: any
 // DASHBOARD OVERVIEW
 // ============================================================================
 
+// Assumed imports based on the component's usage:
+// import { DashboardAnalytics, TableSearchInput, InterestBadge } from "./your-components"; 
+// import { downloadCSV, formatLeadForExport } from "./your-utils";
+
 function DashboardOverview({ managers, siteHeads, allLeads, isLoading, user, theme, isDark, receptionists, followUps, onNavigateToSales, refetch }: any) {
   const [visibleCount, setVisibleCount] = useState(20);
   const loadMoreRef = useRef<HTMLDivElement>(null);
@@ -2004,6 +2008,8 @@ function DashboardOverview({ managers, siteHeads, allLeads, isLoading, user, the
   );
 }
 
+// export default DashboardOverview;
+
 function TableSearchInput({
   value,
   onChange,
@@ -2650,18 +2656,28 @@ function AdminSalesView({ managers, allLeads, followUps, isLoading, adminUser, r
                                   </div>
                                 </div>
                                 <div className={`mt-3 border rounded-xl p-3 ${theme.settingsBg}`} style={theme.settingsBgGl}>
-                                  <h3 className={`text-xs font-bold uppercase tracking-wider mb-2 border-b pb-2 ${theme.sectionTitle} ${theme.sectionBorder}`}>Channel Partner Data</h3>
+                                  <h3 className={`text-xs font-bold uppercase tracking-wider mb-2 border-b pb-2 ${theme.sectionTitle} ${theme.sectionBorder}`}>
+                                    {selectedLead.source && selectedLead.source !== "N/A" ? `${selectedLead.source} Data` : "Source Data"}
+                                  </h3>
                                   <div className="grid grid-cols-2 gap-2">
                                     <div><p className={`text-xs font-medium mb-1 ${theme.textFaint}`}>Primary Source</p><p className={`font-medium text-sm ${theme.text}`}>{selectedLead.source || "N/A"}</p></div>
                                     {selectedLead.source === "Others" && (<div><p className={`text-xs font-medium mb-1 ${theme.textFaint}`}>Specified Name</p><p className={`font-medium text-sm ${theme.text}`}>{selectedLead.sourceOther}</p></div>)}
                                   </div>
-                                  {selectedLead.source === "Channel Partner" && (
+                                  
+                                  {selectedLead.source === "Channel Partner" ? (
                                     <div className={`mt-2 pt-2 border-t grid grid-cols-1 sm:grid-cols-3 gap-3 ${theme.tableBorder}`}>
-                                      {[{ label: "CP Company", val: selectedLead.cp_company || selectedLead.cpCompany }, { label: "CP Phone", val: selectedLead.cp_phone || selectedLead.cpPhone }].map(({ label, val }) => (
+                                      {[{ label: "CP Name", val: selectedLead.cpName || selectedLead.cp_name }, { label: "CP Company", val: selectedLead.cp_company || selectedLead.cpCompany }, { label: "CP Phone", val: selectedLead.cp_phone || selectedLead.cpPhone }].map(({ label, val }) => (
                                         <div key={label}><p className={`text-xs font-medium mb-1 ${theme.textFaint}`}>{label}</p><p className={`font-medium text-sm ${theme.text}`}>{val || "N/A"}</p></div>
                                       ))}
                                     </div>
-                                  )}
+                                  ) : selectedLead.source === "Referral" && selectedLead.referral_name ? (
+                                    <div className={`mt-2 pt-2 border-t grid grid-cols-1 sm:grid-cols-3 gap-3 ${theme.tableBorder}`}>
+                                      <div>
+                                        <p className={`text-xs font-medium mb-1 ${theme.textFaint}`}>Referred By</p>
+                                        <p className={`font-medium text-sm ${theme.text}`}>{selectedLead.referral_name}</p>
+                                      </div>
+                                    </div>
+                                  ) : null}
                                 </div>
                               </div>
                             ) : (
@@ -2773,7 +2789,7 @@ function AdminSalesView({ managers, allLeads, followUps, isLoading, adminUser, r
                       </select>
                     </div>
                     <div>
-                      <label className={`block text-sm font-bold mb-2 ${isDark ? "text-purple-400" : "text-purple-700"}`}>Handover Summary * (min 50 chars)</label>
+                      <label className={`block text-sm font-bold mb-2 ${isDark ? "text-purple-400" : "text-purple-700"}`}>Handover Summary *</label>
                       <textarea required value={transferNote} onChange={e => setTransferNote(e.target.value)} rows={7}
                         placeholder="Summarize actions, discussions, interest level..."
                         className={`w-full rounded-xl px-4 py-3 text-sm outline-none resize-none leading-relaxed border-2 transition-colors custom-scrollbar ${isDark ? "bg-[#14141B] border-purple-500/30 text-white focus:border-purple-500" : "bg-white border-purple-200 text-[#1A1A1A] focus:border-purple-500"}`} />
@@ -3427,20 +3443,30 @@ function AdminSiteHeadView({ siteHeads, allLeads, followUps, isLoading, adminUse
                                     <p className={`text-base font-black ${theme.text}`}>{selectedLead.mongoVisitDate ? formatDate(selectedLead.mongoVisitDate) : "Not Scheduled"}</p>
                                   </div>
                                 </div>
-                                <div className={`mt-3 border rounded-xl p-3 ${theme.settingsBg}`} style={theme.settingsBgGl}>
-                                  <h3 className={`text-xs font-bold uppercase tracking-wider mb-2 border-b pb-2 ${theme.sectionTitle} ${theme.sectionBorder}`}>Channel Partner Data</h3>
-                                  <div className="grid grid-cols-2 gap-2">
-                                    <div><p className={`text-xs font-medium mb-1 ${theme.textFaint}`}>Primary Source</p><p className={`font-medium text-sm ${theme.text}`}>{selectedLead.source || "N/A"}</p></div>
-                                    {selectedLead.source === "Others" && (<div><p className={`text-xs font-medium mb-1 ${theme.textFaint}`}>Specified Name</p><p className={`font-medium text-sm ${theme.text}`}>{selectedLead.sourceOther}</p></div>)}
-                                  </div>
-                                  {selectedLead.source === "Channel Partner" && (
-                                    <div className={`mt-2 pt-2 border-t grid grid-cols-1 sm:grid-cols-3 gap-3 ${theme.tableBorder}`}>
-                                      {[{ label: "CP Company", val: selectedLead.cp_company || selectedLead.cpCompany }, { label: "CP Phone", val: selectedLead.cp_phone || selectedLead.cpPhone }].map(({ label, val }) => (
-                                        <div key={label}><p className={`text-xs font-medium mb-1 ${theme.textFaint}`}>{label}</p><p className={`font-medium text-sm ${theme.text}`}>{val || "N/A"}</p></div>
-                                      ))}
-                                    </div>
-                                  )}
+                               <div className={`mt-3 border rounded-xl p-3 ${theme.settingsBg}`} style={theme.settingsBgGl}>
+                                <h3 className={`text-xs font-bold uppercase tracking-wider mb-2 border-b pb-2 ${theme.sectionTitle} ${theme.sectionBorder}`}>
+                                  {selectedLead.source && selectedLead.source !== "N/A" ? `${selectedLead.source} Data` : "Source Data"}
+                                </h3>
+                                <div className="grid grid-cols-2 gap-2">
+                                  <div><p className={`text-xs font-medium mb-1 ${theme.textFaint}`}>Primary Source</p><p className={`font-medium text-sm ${theme.text}`}>{selectedLead.source || "N/A"}</p></div>
+                                  {selectedLead.source === "Others" && (<div><p className={`text-xs font-medium mb-1 ${theme.textFaint}`}>Specified Name</p><p className={`font-medium text-sm ${theme.text}`}>{selectedLead.sourceOther}</p></div>)}
                                 </div>
+                                
+                                {selectedLead.source === "Channel Partner" ? (
+                                  <div className={`mt-2 pt-2 border-t grid grid-cols-1 sm:grid-cols-3 gap-3 ${theme.tableBorder}`}>
+                                    {[{ label: "CP Name", val: selectedLead.cpName || selectedLead.cp_name }, { label: "CP Company", val: selectedLead.cp_company || selectedLead.cpCompany }, { label: "CP Phone", val: selectedLead.cp_phone || selectedLead.cpPhone }].map(({ label, val }) => (
+                                      <div key={label}><p className={`text-xs font-medium mb-1 ${theme.textFaint}`}>{label}</p><p className={`font-medium text-sm ${theme.text}`}>{val || "N/A"}</p></div>
+                                    ))}
+                                  </div>
+                                ) : selectedLead.source === "Referral" && selectedLead.referral_name ? (
+                                  <div className={`mt-2 pt-2 border-t grid grid-cols-1 sm:grid-cols-3 gap-3 ${theme.tableBorder}`}>
+                                    <div>
+                                      <p className={`text-xs font-medium mb-1 ${theme.textFaint}`}>Referred By</p>
+                                      <p className={`font-medium text-sm ${theme.text}`}>{selectedLead.referral_name}</p>
+                                    </div>
+                                  </div>
+                                ) : null}
+                              </div>
                               </div>
                             ) : (
                               <div>
@@ -3551,7 +3577,7 @@ function AdminSiteHeadView({ siteHeads, allLeads, followUps, isLoading, adminUse
                       </select>
                     </div>
                     <div>
-                      <label className={`block text-sm font-bold mb-2 ${isDark ? "text-purple-400" : "text-purple-700"}`}>Handover Summary * (min 50 chars)</label>
+                      <label className={`block text-sm font-bold mb-2 ${isDark ? "text-purple-400" : "text-purple-700"}`}>Handover Summary</label>
                       <textarea required value={transferNote} onChange={e => setTransferNote(e.target.value)} rows={7}
                         placeholder="Summarize actions, discussions, interest level..."
                         className={`w-full rounded-xl px-4 py-3 text-sm outline-none resize-none leading-relaxed border-2 transition-colors custom-scrollbar ${isDark ? "bg-[#14141B] border-purple-500/30 text-white focus:border-purple-500" : "bg-white border-purple-200 text-[#1A1A1A] focus:border-purple-500"}`} />
@@ -3576,9 +3602,6 @@ function AdminSiteHeadView({ siteHeads, allLeads, followUps, isLoading, adminUse
   );
 }
 
-// ============================================================================
-// RECEPTIONIST VIEW
-// ============================================================================
 // ============================================================================
 // RECEPTIONIST VIEW
 // ============================================================================
@@ -3897,7 +3920,7 @@ function ReceptionistView({ receptionists, allLeads, followUps, isLoading, refet
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting) {
-          setVisibleCount(prev => prev + 20); // Just reliably increase the count
+          setVisibleCount(prev => Math.min(prev + 20, currentSectionTotal)); // Just reliably increase the count
         }
       },
       { threshold: 0.1 }
@@ -4464,20 +4487,30 @@ function ReceptionistView({ receptionists, allLeads, followUps, isLoading, refet
                                     </div>
                                   )}
                                 </div>
-                                <div className={`mt-6 border rounded-xl p-4 ${theme.settingsBg}`}>
-                                  <h3 className={`text-xs font-bold uppercase tracking-wider mb-3 border-b pb-2 ${theme.accentText}`}>Channel Partner Data</h3>
-                                  <div className="grid grid-cols-2 gap-4">
-                                    <div><p className={`text-xs font-medium mb-1 ${theme.textMuted}`}>Primary Source</p><p className={`font-medium text-sm ${theme.text}`}>{selectedLead.source || "N/A"}</p></div>
-                                    {selectedLead.source === "Others" && (<div><p className={`text-xs font-medium mb-1 ${theme.textMuted}`}>Specified Name</p><p className={`font-medium text-sm ${theme.text}`}>{selectedLead.sourceOther}</p></div>)}
-                                  </div>
-                                  {selectedLead.source === "Channel Partner" && (
-                                    <div className={`mt-4 pt-4 border-t grid grid-cols-1 sm:grid-cols-3 gap-4 ${theme.tableBorder}`}>
-                                      {[{ label: "CP Company", val: selectedLead.cp_company || selectedLead.cpCompany }, { label: "CP Phone", val: selectedLead.cp_phone || selectedLead.cpPhone }].map(({ label, val }) => (
-                                        <div key={label}><p className={`text-xs font-medium mb-1 ${theme.textMuted}`}>{label}</p><p className={`font-medium text-sm ${theme.text}`}>{val || "N/A"}</p></div>
-                                      ))}
-                                    </div>
-                                  )}
+                               <div className={`mt-3 border rounded-xl p-3 ${theme.settingsBg}`} style={theme.settingsBgGl}>
+                                <h3 className={`text-xs font-bold uppercase tracking-wider mb-2 border-b pb-2 ${theme.sectionTitle} ${theme.sectionBorder}`}>
+                                  {selectedLead.source && selectedLead.source !== "N/A" ? `${selectedLead.source} Data` : "Source Data"}
+                                </h3>
+                                <div className="grid grid-cols-2 gap-2">
+                                  <div><p className={`text-xs font-medium mb-1 ${theme.textFaint}`}>Primary Source</p><p className={`font-medium text-sm ${theme.text}`}>{selectedLead.source || "N/A"}</p></div>
+                                  {selectedLead.source === "Others" && (<div><p className={`text-xs font-medium mb-1 ${theme.textFaint}`}>Specified Name</p><p className={`font-medium text-sm ${theme.text}`}>{selectedLead.sourceOther}</p></div>)}
                                 </div>
+                                
+                                {selectedLead.source === "Channel Partner" ? (
+                                  <div className={`mt-2 pt-2 border-t grid grid-cols-1 sm:grid-cols-3 gap-3 ${theme.tableBorder}`}>
+                                    {[{ label: "CP Name", val: selectedLead.cpName || selectedLead.cp_name }, { label: "CP Company", val: selectedLead.cp_company || selectedLead.cpCompany }, { label: "CP Phone", val: selectedLead.cp_phone || selectedLead.cpPhone }].map(({ label, val }) => (
+                                      <div key={label}><p className={`text-xs font-medium mb-1 ${theme.textFaint}`}>{label}</p><p className={`font-medium text-sm ${theme.text}`}>{val || "N/A"}</p></div>
+                                    ))}
+                                  </div>
+                                ) : selectedLead.source === "Referral" && selectedLead.referral_name ? (
+                                  <div className={`mt-2 pt-2 border-t grid grid-cols-1 sm:grid-cols-3 gap-3 ${theme.tableBorder}`}>
+                                    <div>
+                                      <p className={`text-xs font-medium mb-1 ${theme.textFaint}`}>Referred By</p>
+                                      <p className={`font-medium text-sm ${theme.text}`}>{selectedLead.referral_name}</p>
+                                    </div>
+                                  </div>
+                                ) : null}
+                              </div>
                               </div>
                             ) : (
                               <div>
@@ -4700,11 +4733,11 @@ function ReceptionistView({ receptionists, allLeads, followUps, isLoading, refet
                 </select>
               </div>
               <div>
-                <label className={`block text-sm font-bold mb-2 ${isDark ? "text-purple-400" : "text-purple-700"}`}>Handover Summary * (min 50 chars)</label>
+                <label className={`block text-sm font-bold mb-2 ${isDark ? "text-purple-400" : "text-purple-700"}`}>Handover Summary</label>
                 <textarea required value={transferNote} onChange={e => setTransferNote(e.target.value)} rows={7}
                   placeholder="Summarize actions, discussions, interest level..."
                   className={`w-full rounded-xl px-4 py-3 text-sm outline-none resize-none leading-relaxed border-2 transition-colors custom-scrollbar ${isDark ? "bg-[#14141B] border-purple-500/30 text-white focus:border-purple-500" : "bg-white border-purple-200 text-[#1A1A1A] focus:border-purple-500"}`} />
-                {transferNote.length > 0 && transferNote.length < 50 && <p className="text-xs text-amber-500 mt-1">⚠ Min 50 characters required.</p>}
+                
               </div>
             </div>
             <div className={`p-5 border-t flex justify-end gap-3 ${theme.modalHeader} ${theme.tableBorder}`}>
