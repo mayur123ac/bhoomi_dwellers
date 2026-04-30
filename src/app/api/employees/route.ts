@@ -98,11 +98,11 @@ export async function PUT(req: Request) {
       const values: any[] = [];
       let p = 1;
 
-      if (name)     { setClauses.push(`name = $${p++}`);     values.push(name); }
+      if (name) { setClauses.push(`name = $${p++}`); values.push(name); }
       if (username) { setClauses.push(`username = $${p++}`); values.push(username.trim()); }
-      if (email)    { setClauses.push(`email = $${p++}`);    values.push(email.trim().toLowerCase()); }
+      if (email) { setClauses.push(`email = $${p++}`); values.push(email.trim().toLowerCase()); }
       if (password) { setClauses.push(`password = $${p++}`); values.push(password); }
-      if (role)     { setClauses.push(`role = $${p++}`);     values.push(role); }
+      if (role) { setClauses.push(`role = $${p++}`); values.push(role); }
 
       if (setClauses.length === 0) {
         return NextResponse.json({ message: "No fields to update." }, { status: 400 });

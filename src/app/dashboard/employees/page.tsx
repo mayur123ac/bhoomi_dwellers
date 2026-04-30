@@ -12,7 +12,8 @@ import {
   FaPhoneAlt, FaSearch, FaChevronLeft, FaComments, FaUpload, FaDownload,
   FaFileExcel, FaDesktop, FaCheckCircle, FaTimes, FaPaperPlane,
   FaCalendarAlt, FaHeart, FaTimesCircle, FaAngleLeft, FaCommentAlt,
-  FaMoneyBillWave, FaMapMarkerAlt, FaBullseye, FaSave, FaUniversity, FaBriefcase, FaChartPie // ← add this
+  FaMoneyBillWave, FaMapMarkerAlt, FaBullseye, FaSave, FaUniversity, FaBriefcase, FaChartPie,
+  FaExchangeAlt, FaEye, FaExclamationTriangle
 } from "react-icons/fa";
 import { useCallerSync } from "@/lib/hooks/useCallerSync";
 import { label } from "framer-motion/client";
@@ -311,11 +312,18 @@ export default function EmployeesPage() {
   const [isFetchingManagers, setIsFetchingManagers] = useState(true);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
+  // ── Transfer Leads state ──
+  const [transferModalOpen, setTransferModalOpen] = useState(false);
+  const [transferFrom, setTransferFrom] = useState<EmployeeType | null>(null);
+  const [transferTo, setTransferTo] = useState("");
+  const [transferLoading, setTransferLoading] = useState(false);
+  const [transferConfirmed, setTransferConfirmed] = useState(false);
+
   const combinedAssignees = useMemo(() => {
     return [...salesManagers, ...siteHeads];
   }, [salesManagers, siteHeads]);
 
-  const showToast = (msg: string) => { setToastMsg(msg); setTimeout(() => setToastMsg(null), 3000); };
+  const showToast = (msg: string) => { setToastMsg(msg); setTimeout(() => setToastMsg(null), 4000); };
 
   // ── Auth ──
   useEffect(() => {
@@ -552,6 +560,38 @@ export default function EmployeesPage() {
     finally { setEditSaving(false); }
   };
   const toggleRowPassword = (id: string) => setRevealedPasswords(p => ({ ...p, [id]: !p[id] }));
+
+  // ── Transfer Leads handler ──
+  const handleTransferLeads = async () => {
+    if (!transferFrom || !transferTo || !transferConfirmed) return;
+    setTransferLoading(true);
+    try {
+      const res = await fetch("/api/transfer-leads", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-user-role": user?.role || "",
+        },
+        body: JSON.stringify({ from: transferFrom.name, to: transferTo }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        const count = data.transferred || 0;
+        showToast(count > 0 ? `✅ ${count} lead(s) transferred successfully` : "ℹ️ No leads found to transfer");
+        setTransferModalOpen(false);
+        setTransferFrom(null);
+        setTransferTo("");
+        setTransferConfirmed(false);
+        fetchEmployees();
+      } else {
+        showToast(`❌ ${data.message || "Transfer failed"}`);
+      }
+    } catch (err: any) {
+      showToast(`❌ ${err.message || "Transfer failed"}`);
+    } finally {
+      setTransferLoading(false);
+    }
+  };
 
   // ── Caller API ──
   const fetchCallerData = async () => {
@@ -1113,6 +1153,14 @@ export default function EmployeesPage() {
                                     className={`p-2 rounded-lg transition-colors cursor-pointer ${t.textMuted} hover:text-[#d946a8] hover:bg-[#9E217B]/10`}>
                                     <FaUserEdit />
                                   </button>
+                                  {user?.role?.toLowerCase() === "admin" && (
+                                    <button
+                                      onClick={() => { setTransferFrom(emp); setTransferTo(""); setTransferConfirmed(false); setTransferModalOpen(true); }}
+                                      title="Transfer Leads"
+                                      className={`p-2 rounded-lg transition-colors cursor-pointer ${isDark ? "text-orange-400/70 hover:text-orange-300 hover:bg-orange-500/10" : "text-orange-500/70 hover:text-orange-600 hover:bg-orange-500/10"}`}>
+                                      <FaExchangeAlt />
+                                    </button>
+                                  )}
                                   <button onClick={() => handleDeleteEmployee(emp._id, emp.name)}
                                     className={`p-2 rounded-lg transition-colors cursor-pointer ${t.textLight2} hover:text-red-500 hover:bg-red-500/10`}>
                                     <FaTrash />
@@ -1565,6 +1613,142 @@ export default function EmployeesPage() {
           </div>
         )}
       </div>
+
+      {/* ── TRANSFER LEADS MODAL ── */}
+      <AnimatePresence>
+        {transferModalOpen && transferFrom && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[999] flex items-center justify-center bg-black/60 backdrop-blur-sm"
+            onClick={() => { if (!transferLoading) { setTransferModalOpen(false); } }}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ duration: 0.2 }}
+              onClick={(e) => e.stopPropagation()}
+              className={`w-full max-w-md mx-4 rounded-2xl border shadow-2xl overflow-hidden ${t.panel}`}
+              style={{ boxShadow: "0 8px 40px rgba(0,0,0,0.25)" }}
+            >
+              {/* Header */}
+              <div className={`px-6 py-5 border-b flex items-center gap-3 ${t.panelHead}`}>
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isDark ? "bg-orange-500/15" : "bg-orange-50"}`}>
+                  <FaExchangeAlt className={`text-lg ${isDark ? "text-orange-400" : "text-orange-500"}`} />
+                </div>
+                <div>
+                  <h2 className={`font-bold text-base ${t.text}`}>Transfer All Leads</h2>
+                  <p className={`text-[11px] ${t.textFaint}`}>Reassign workload between employees</p>
+                </div>
+              </div>
+
+              {/* Body */}
+              <div className="px-6 py-5 space-y-5">
+                {/* From */}
+                <div>
+                  <label className={`block text-xs mb-1.5 font-semibold ${t.textMuted}`}>🔄 Transfer From</label>
+                  <div className={`w-full rounded-lg px-4 py-2.5 text-sm font-semibold border ${isDark ? "bg-[#1a1a1a] border-[#333] text-gray-300" : "bg-[#F8FAFC] border-indigo-200 text-[#374151]"}`}>
+                    <div className="flex items-center gap-2">
+                      <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white ${isDark ? "bg-[#9E217B]" : "bg-[#9E217B]"}`}>
+                        {transferFrom.name.charAt(0).toUpperCase()}
+                      </div>
+                      {transferFrom.name}
+                      <span className={`ml-auto text-[10px] px-2 py-0.5 rounded-full border ${isDark ? "text-[#d946a8] bg-[#9E217B]/10 border-[#9E217B]/30" : "text-[#9E217B] bg-[#9E217B]/10 border-[#9E217B]/30"}`}>{transferFrom.role}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* To */}
+                <div>
+                  <label className={`block text-xs mb-1.5 font-semibold ${t.textMuted}`}>🔁 Transfer To</label>
+                  <select
+                    value={transferTo}
+                    onChange={e => setTransferTo(e.target.value)}
+                    className={t.sel}
+                  >
+                    <option value="" disabled>-- Select target employee --</option>
+                    {employees
+                      .filter(emp => emp._id !== transferFrom._id && emp.isActive && emp.email !== ADMIN_EMAIL)
+                      .map(emp => (
+                        <option key={emp._id} value={emp.name}>{emp.name} ({emp.role})</option>
+                      ))}
+                  </select>
+                </div>
+
+                {/* Warning */}
+                <div className={`flex items-start gap-3 rounded-xl p-3.5 border ${isDark ? "bg-orange-500/5 border-orange-500/20" : "bg-orange-50 border-orange-200"}`}>
+                  <FaExclamationTriangle className={`text-sm mt-0.5 flex-shrink-0 ${isDark ? "text-orange-400" : "text-orange-500"}`} />
+                  <p className={`text-xs leading-relaxed ${isDark ? "text-orange-300/80" : "text-orange-700"}`}>
+                    This will transfer <strong>ALL</strong> leads currently assigned to <strong>{transferFrom.name}</strong> to the selected employee.
+                  </p>
+                </div>
+
+                {/* Confirm checkbox */}
+                <label className={`flex items-center gap-3 cursor-pointer select-none group`}>
+                  <input
+                    type="checkbox"
+                    checked={transferConfirmed}
+                    onChange={e => setTransferConfirmed(e.target.checked)}
+                    className="w-4 h-4 rounded border-2 accent-[#9E217B] cursor-pointer"
+                  />
+                  <span className={`text-xs ${t.textMuted} group-hover:${t.text}`}>
+                    I understand this action cannot be undone
+                  </span>
+                </label>
+              </div>
+
+              {/* Footer */}
+              <div className={`px-6 py-4 border-t flex items-center justify-end gap-3 ${t.innerBorder}`}>
+                <button
+                  onClick={() => { setTransferModalOpen(false); setTransferFrom(null); setTransferTo(""); setTransferConfirmed(false); }}
+                  disabled={transferLoading}
+                  className={`text-sm font-semibold px-5 py-2.5 rounded-lg cursor-pointer border transition-colors ${isDark ? "bg-[#1a1a1a] hover:bg-[#222] border-[#333] text-gray-300" : "bg-white hover:bg-[#F8FAFC] border-indigo-200 text-[#374151]"}`}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleTransferLeads}
+                  disabled={!transferTo || !transferConfirmed || transferLoading}
+                  className={`text-sm font-bold px-5 py-2.5 rounded-lg cursor-pointer transition-all flex items-center gap-2 shadow-lg
+                    ${!transferTo || !transferConfirmed || transferLoading
+                      ? isDark ? "bg-[#222] border border-[#333] text-gray-600 cursor-not-allowed shadow-none" : "bg-[#F1F5F9] border border-indigo-200 text-[#9CA3AF] cursor-not-allowed shadow-none"
+                      : "bg-orange-600 hover:bg-orange-500 text-white border border-orange-500 shadow-orange-600/20"
+                    }`}
+                >
+                  {transferLoading ? (
+                    <>
+                      <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+                      Transferring...
+                    </>
+                  ) : (
+                    <>
+                      <FaExchangeAlt className="text-xs" /> Transfer Now
+                    </>
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── TOAST NOTIFICATION ── */}
+      <AnimatePresence>
+        {toastMsg && (
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 30 }}
+            className={`fixed bottom-6 right-6 z-[9999] px-5 py-3 rounded-xl shadow-2xl border text-sm font-semibold flex items-center gap-2 max-w-md
+              ${toastMsg.startsWith("✅") ? isDark ? "bg-green-500/10 border-green-500/30 text-green-400" : "bg-green-50 border-green-200 text-green-700"
+              : toastMsg.startsWith("ℹ️") ? isDark ? "bg-blue-500/10 border-blue-500/30 text-blue-400" : "bg-blue-50 border-blue-200 text-blue-700"
+              : isDark ? "bg-red-500/10 border-red-500/30 text-red-400" : "bg-red-50 border-red-200 text-red-700"}`}
+          >
+            {toastMsg}
+            <button onClick={() => setToastMsg(null)} className="ml-2 opacity-60 hover:opacity-100 cursor-pointer"><FaTimes className="text-xs" /></button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <style dangerouslySetInnerHTML={{
         __html: `
@@ -2292,13 +2476,4 @@ function CallerControlMode({ leads, savedLeads, setSavedLeads, adminName, onExit
       </div>
     </div>
   );
-}
-
-// ── FaEye inline (avoids import conflict) ──
-function FaEye({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 576 512" fill="currentColor" width="1em" height="1em">
-      <path d="M572.52 241.4C518.29 135.59 410.93 64 288 64S57.68 135.64 3.48 241.41a32.35 32.35 0 0 0 0 29.19C57.71 376.41 165.07 448 288 448s230.32-71.64 284.52-177.41a32.35 32.35 0 0 0 0-29.19zM288 400a144 144 0 1 1 144-144 143.93 143.93 0 0 1-144 144zm0-240a95.31 95.31 0 0 0-25.31 3.79 47.85 47.85 0 0 1-66.9 66.9A95.78 95.78 0 1 0 288 160z" />
-    </svg>
-  );
-}
+}
