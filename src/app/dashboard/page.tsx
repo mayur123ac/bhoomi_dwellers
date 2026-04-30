@@ -239,13 +239,13 @@ function InterestBadge({ status, size = "md", isDark }: { status: string; size?:
   const colorMap: Record<string, string> = {
     "Interested": isDark ? "border-green-500/40 text-green-400 bg-green-500/10" : "border-green-300 text-green-700 bg-green-50",
     "Not Interested": isDark ? "border-red-500/40 text-red-400 bg-red-500/10" : "border-red-300 text-red-700 bg-red-50",
-    "Maybe": isDark ? "border-yellow-500/40 text-yellow-400 bg-yellow-500/10" : "border-yellow-300 text-yellow-700 bg-yellow-50",
+    "Non Qualified lead": isDark ? "border-yellow-500/40 text-yellow-400 bg-yellow-500/10" : "border-yellow-300 text-yellow-700 bg-yellow-50",
   };
   const cls = colorMap[status] ?? (isDark ? "border-[#9E217B]/30 text-[#d946a8] bg-[#9E217B]/10" : "border-[#9E217B]/30 text-[#9E217B] bg-[#9E217B]/10");
   const sz = size === "sm" ? "text-[9px] px-2 py-0.5" : "text-[10px] px-3 py-1";
   return (
     <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider border inline-flex items-center justify-center gap-1 flex-shrink-0 leading-none ${cls}`}>
-      <FaUniversity className="text-[7px] mb-[1px]" />{status}
+      {status}
     </span>
   );
 }
@@ -259,7 +259,7 @@ function LoanStatusBadge({ status, isDark }: { status: string; isDark?: boolean 
   if (s === "in progress") cls = isDark ? "border-yellow-500/40 text-yellow-400 bg-yellow-500/10" : "border-yellow-300 text-yellow-700 bg-yellow-50";
   return (
     <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider border flex items-center gap-1 flex-shrink-0 ${cls}`}>
-      <FaUniversity className="text-[7px]" />{status}
+      {status}
     </span>
   );
 }
@@ -540,12 +540,13 @@ export default function AdminAtlasDashboard() {
   const handleLogout = () => { localStorage.removeItem("crm_user"); router.push("/"); };
 
   const menuItems = [
-    { id: "dashboard", icon: FaThLarge, label: "Overview" },
-    { id: "receptionist", icon: FaClipboardList, label: "Receptionist" },
-    { id: "sales", icon: FaUsers, label: "Sales Managers" },
-    { id: "site_head", icon: FaUniversity, label: "Site Heads" },
-    { id: "caller", icon: FaPhoneAlt, label: "Caller Panel" },
-    { id: "employees", icon: FaIdCard, label: "Add Employee" },
+    { id: "dashboard",   icon: FaThLarge,       label: "Overview" },
+    { id: "receptionist",icon: FaClipboardList,  label: "Receptionist" },
+    { id: "sales",       icon: FaUsers,          label: "Sales Managers" },
+    { id: "site_head",   icon: FaUniversity,     label: "Site Heads" },
+    { id: "monitoring",  icon: FaChartPie,       label: "Daily Monitor" }, // ← ADD THIS
+    { id: "caller",      icon: FaPhoneAlt,       label: "Caller Panel" },
+    { id: "employees",   icon: FaIdCard,         label: "Add Employee" },
   ];
 
   const handleMenuClick = (itemId: string) => {
@@ -738,6 +739,11 @@ export default function AdminAtlasDashboard() {
               isDark={isDark}
             />
           )}
+        {activeView === "monitoring" && (
+          <div className="flex-1 overflow-hidden h-full">
+            <DailyMonitoringPanel theme={theme} isDark={isDark} />
+          </div>
+        )}
         </main>
       </div>
     </div>
@@ -752,7 +758,7 @@ function DashboardAnalytics({ leads, theme, isDark }: { leads: any[]; theme: any
   const [barMode, setBarMode] = useState<"weekly" | "source" | "cp">("weekly");
 
   const interestData = useMemo(() => {
-    const c: Record<string, number> = { Interested: 0, "Not Interested": 0, Maybe: 0, Pending: 0 };
+    const c: Record<string, number> = { Interested: 0, "Not Interested": 0, "Non Qualified Lead": 0, Pending: 0 };
     leads.forEach(l => { const s = l.leadInterestStatus; if (s && s !== "Pending" && c[s] !== undefined) c[s]++; else c["Pending"]++; });
     return Object.entries(c).filter(([, v]) => v > 0).map(([name, value]) => ({ name, value }));
   }, [leads]);
@@ -826,7 +832,7 @@ function DashboardAnalytics({ leads, theme, isDark }: { leads: any[]; theme: any
     return Object.entries(c).map(([cp, count]) => ({ cp, count })).sort((a, b) => b.count - a.count).slice(0, 8);
   }, [leads]);
 
-  const interestColors: Record<string, string> = { Interested: "#4ade80", "Not Interested": "#f87171", Maybe: "#fbbf24", Pending: "#6b7280" };
+  const interestColors: Record<string, string> = { Interested: "#4ade80", "Not Interested": "#f87171", "Non Qualified Lead": "#fbbf24", Pending: "#6b7280" };
   const loanColors: Record<string, string> = { Approved: "#4ade80", "In Progress": "#fbbf24", Rejected: "#f87171", "N/A": "#6b7280" };
   const useTypeColors: Record<string, string> = { "Self Use": "#9E217B", Investment: "#34d399", "Personal use": "#f87171", "N/A": "#6b7280" };
   const loanReqColors: Record<string, string> = { Yes: "#9E217B", No: "#6b7280", "Not Sure": "#fbbf24", Pending: "#374151" };
@@ -1107,6 +1113,7 @@ function DashboardOverview({ managers, siteHeads, allLeads, isLoading, user, the
 
   // ── Search states — one per table, completely isolated ────────────────────
   const [overviewSearch, setOverviewSearch] = useState("");
+  const [overviewSearchColumn, setOverviewSearchColumn] = useState<string>("all");
   const [managerLeadSearch, setManagerLeadSearch] = useState("");
   const [siteHeadLeadSearch, setSiteHeadLeadSearch] = useState("");
   const [recepLeadSearch, setRecepLeadSearch] = useState("");
@@ -1114,6 +1121,7 @@ function DashboardOverview({ managers, siteHeads, allLeads, isLoading, user, the
   // ── Reset search when switching perfMode ──────────────────────────────────
   useEffect(() => {
     setOverviewSearch("");
+    setOverviewSearchColumn("all");
     setManagerLeadSearch("");
     setSiteHeadLeadSearch("");
     setRecepLeadSearch("");
@@ -1159,16 +1167,39 @@ function DashboardOverview({ managers, siteHeads, allLeads, isLoading, user, the
   const VISIT_COLORS = theme.visitPieColors;
 
   // ── Filter helper ──────────────────────────────────────────────────────────
-  const filterLeads = (leads: any[], q: string) => {
+  const filterLeads = (leads: any[], q: string, col: string = "all") => {
     if (!q.trim()) return leads;
     const lq = q.toLowerCase();
-    return leads.filter((l: any) =>
-      String(l.id).includes(q) ||
-      (l.name || "").toLowerCase().includes(lq) ||
-      (l.phone || "").includes(q) ||
-      (l.source || "").toLowerCase().includes(lq)
-    );
+
+    const fieldValue = (l: any, field: string): string => {
+      switch (field) {
+        case "lead_no": return String(l.id || "");
+        case "name": return String(l.name || "");
+        case "prop_type": return String(l.propType || l.configuration || "");
+        case "budget": return String(l.salesBudget || l.budget || "");
+        case "source": return String(l.source || "");
+        case "cp_name": return String(l.cpName || l.cp_name || "");
+        case "cp_phone": return String(l.cpPhone || l.cp_phone || "");
+        case "status": return String(l.status || "");
+        case "interest": return String(l.leadInterestStatus || "");
+        case "site_visit": return String(l.mongoVisitDate || "");
+        case "assigned_to": return String(l.assigned_receptionist || l.assigned_to || "");
+        default:
+          return [
+            l.id, l.name, l.phone, l.source, l.propType, l.configuration, l.salesBudget, l.budget,
+            l.cpName, l.cp_name, l.cpPhone, l.cp_phone, l.status, l.leadInterestStatus,
+            l.mongoVisitDate, l.assigned_receptionist, l.assigned_to
+          ].map(v => String(v || "")).join(" ");
+      }
+    };
+
+    if (col === "all") {
+      return leads.filter((l: any) => fieldValue(l, "all").toLowerCase().includes(lq));
+    }
+    return leads.filter((l: any) => fieldValue(l, col).toLowerCase().includes(lq));
   };
+
+  const filteredOverviewLeads = filterLeads(allLeads, overviewSearch, overviewSearchColumn);
 
   const formatDate = (ds: string) => {
     if (!ds) return "—";
@@ -1341,6 +1372,24 @@ function DashboardOverview({ managers, siteHeads, allLeads, isLoading, user, the
                 <FaTable className="text-[#00AEEF]" /> Enquiry Overview
               </h3>
               <div className="flex items-center gap-3 flex-wrap">
+                <select
+                  value={overviewSearchColumn}
+                  onChange={(e) => setOverviewSearchColumn(e.target.value)}
+                  className={`px-3 py-1.5 text-xs font-bold rounded-lg outline-none border cursor-pointer ${theme.select}`}
+                >
+                  <option value="all">All Columns</option>
+                  <option value="lead_no">Lead No.</option>
+                  <option value="name">Name</option>
+                  <option value="prop_type">Property Type</option>
+                  <option value="budget">Budget</option>
+                  <option value="source">Source</option>
+                  <option value="cp_name">CP Name</option>
+                  <option value="cp_phone">CP Phone</option>
+                  <option value="status">Status</option>
+                  <option value="interest">Interest</option>
+                  <option value="site_visit">Site Visit</option>
+                  <option value="assigned_to">Assigned To</option>
+                </select>
                 <TableSearchInput value={overviewSearch} onChange={setOverviewSearch} theme={theme} />
                 <button
                   onClick={() => downloadCSV(allLeads.map(formatLeadForExport), "Overall_Enquiries.csv")}
@@ -1349,7 +1398,7 @@ function DashboardOverview({ managers, siteHeads, allLeads, isLoading, user, the
                   <FaDownload size={12} /> Export CSV
                 </button>
                 <span className={`text-xs px-3 py-1 rounded-full ${theme.btnClosingBadge}`}>
-                  Total: {filterLeads(allLeads, overviewSearch).length}
+                  Total: {filteredOverviewLeads.length}
                 </span>
               </div>
             </div>
@@ -1367,9 +1416,9 @@ function DashboardOverview({ managers, siteHeads, allLeads, isLoading, user, the
                 <tbody className={`divide-y ${theme.tableDivide}`}>
                   {isLoading ? (
                     <tr><td colSpan={12} className={`text-center py-8 ${theme.textMuted}`}>Syncing...</td></tr>
-                  ) : filterLeads(allLeads, overviewSearch).length === 0 ? (
+                  ) : filteredOverviewLeads.length === 0 ? (
                     <tr><td colSpan={12} className={`text-center py-8 ${theme.textMuted}`}>No leads match your search.</td></tr>
-                  ) : filterLeads(allLeads, overviewSearch).slice(0, visibleCount).map((lead: any) => {
+                  ) : filteredOverviewLeads.slice(0, visibleCount).map((lead: any) => {
                     let assignedRole = "Unassigned";
                     let assignedName = lead.assigned_receptionist || lead.assigned_to || "";
                     if (lead.assigned_receptionist) assignedRole = "Receptionist";
@@ -1440,15 +1489,15 @@ function DashboardOverview({ managers, siteHeads, allLeads, isLoading, user, the
                 </tbody>
               </table>
 
-              {visibleCount < filterLeads(allLeads, overviewSearch).length && (
+              {visibleCount < filteredOverviewLeads.length && (
                 <div ref={loadMoreRef} className={`flex items-center justify-center gap-3 py-6 ${theme.textMuted}`}>
                   <div className="w-4 h-4 rounded-full border-2 border-[#9E217B] border-t-transparent animate-spin" />
-                  <span className="text-xs font-medium">Loading more… ({visibleCount} of {filterLeads(allLeads, overviewSearch).length})</span>
+                  <span className="text-xs font-medium">Loading more… ({visibleCount} of {filteredOverviewLeads.length})</span>
                 </div>
               )}
-              {visibleCount >= filterLeads(allLeads, overviewSearch).length && allLeads.length > 20 && (
+              {visibleCount >= filteredOverviewLeads.length && allLeads.length > 20 && (
                 <div className={`text-center py-4 text-xs font-medium ${theme.textFaint}`}>
-                  ✓ All {filterLeads(allLeads, overviewSearch).length} leads loaded
+                  ✓ All {filteredOverviewLeads.length} leads loaded
                 </div>
               )}
             </div>
@@ -2024,7 +2073,7 @@ function TableSearchInput({
       <FaSearch className={`absolute left-3 top-1/2 -translate-y-1/2 text-xs ${theme.textFaint}`} />
       <input
         type="text"
-        placeholder="Search by name, ID or phone..."
+        placeholder="Search"
         value={value}
         onChange={e => onChange(e.target.value)}
         className={`pl-9 pr-4 py-1.5 text-sm rounded-lg outline-none border w-56 ${theme.inputInner} ${theme.text} ${theme.inputFocus}`}
@@ -2549,7 +2598,7 @@ function AdminSalesView({ managers, allLeads, followUps, isLoading, adminUser, r
                             </div>
                             <div className={`border-t pt-3 ${theme.tableBorder}`}>
                               <label className={`block text-xs font-bold mb-1.5 ${isDark ? "text-[#d946a8]" : "text-[#9E217B]"}`}>Lead Interest Status *</label>
-                              <select required value={salesForm.leadStatus} onChange={e => setSalesForm({ ...salesForm, leadStatus: e.target.value })} className={formSelect}><option value="" disabled>Select Status</option><option>Interested</option><option>Not Interested</option><option>Maybe</option></select>
+                              <select required value={salesForm.leadStatus} onChange={e => setSalesForm({ ...salesForm, leadStatus: e.target.value })} className={formSelect}><option value="" disabled>Select Status</option><option>Interested</option><option>Not Interested</option><option>Non qualified Lead</option></select>
                             </div>
                             <div className={`border-t pt-3 ${theme.tableBorder}`}>
                               <label className={`block text-xs font-bold mb-1.5 ${isDark ? "text-[#d946a8]" : "text-[#9E217B]"}`}>Loan Planned?</label>
@@ -2678,6 +2727,15 @@ function AdminSalesView({ managers, allLeads, followUps, isLoading, adminUser, r
                                       </div>
                                     </div>
                                   ) : null}
+                                </div>
+                                <div className="mt-3">
+                                  <SiteVisitScheduler
+                                    lead={selectedLead}
+                                    adminUser={adminUser}
+                                    isDark={isDark}
+                                    theme={theme}
+                                    onSuccess={refetch}
+                                  />
                                 </div>
                               </div>
                             ) : (
@@ -3337,7 +3395,7 @@ function AdminSiteHeadView({ siteHeads, allLeads, followUps, isLoading, adminUse
                             </div>
                             <div className={`border-t pt-3 ${theme.tableBorder}`}>
                               <label className={`block text-xs font-bold mb-1.5 ${isDark ? "text-[#d946a8]" : "text-[#9E217B]"}`}>Lead Interest Status *</label>
-                              <select required value={salesForm.leadStatus} onChange={e => setSalesForm({ ...salesForm, leadStatus: e.target.value })} className={formSelect}><option value="" disabled>Select Status</option><option>Interested</option><option>Not Interested</option><option>Maybe</option></select>
+                              <select required value={salesForm.leadStatus} onChange={e => setSalesForm({ ...salesForm, leadStatus: e.target.value })} className={formSelect}><option value="" disabled>Select Status</option><option>Interested</option><option>Not Interested</option><option>Non Qualified Leads</option></select>
                             </div>
                             <div className={`border-t pt-3 ${theme.tableBorder}`}>
                               <label className={`block text-xs font-bold mb-1.5 ${isDark ? "text-[#d946a8]" : "text-[#9E217B]"}`}>Loan Planned?</label>
@@ -3466,6 +3524,15 @@ function AdminSiteHeadView({ siteHeads, allLeads, followUps, isLoading, adminUse
                                     </div>
                                   </div>
                                 ) : null}
+                              </div>
+                              <div className="mt-3">
+                                <SiteVisitScheduler
+                                  lead={selectedLead}
+                                  adminUser={adminUser}
+                                  isDark={isDark}
+                                  theme={theme}
+                                  onSuccess={refetch}
+                                />
                               </div>
                               </div>
                             ) : (
@@ -4376,7 +4443,7 @@ function ReceptionistView({ receptionists, allLeads, followUps, isLoading, refet
                             <div className={`border-t pt-3 mt-1 ${theme.tableBorder}`}>
                               <label className={`block text-xs font-bold mb-1.5 ${theme.accentText}`}>Lead Interest Status *</label>
                               <select required value={salesForm.leadStatus} onChange={e => setSalesForm({ ...salesForm, leadStatus: e.target.value })} className={`w-full rounded-lg px-4 py-2 text-sm outline-none cursor-pointer ${theme.select}`}>
-                                <option value="" disabled>Select Status</option><option>Interested</option><option>Not Interested</option><option>Maybe</option>
+                                <option value="" disabled>Select Status</option><option>Interested</option><option>Not Interested</option><option>Non Qualified Lead</option>
                               </select>
                             </div>
                             <div className={`border-t pt-3 mt-1 ${theme.tableBorder}`}>
@@ -4510,6 +4577,15 @@ function ReceptionistView({ receptionists, allLeads, followUps, isLoading, refet
                                     </div>
                                   </div>
                                 ) : null}
+                              </div>
+                              <div className="mt-3">
+                                <SiteVisitScheduler
+                                  lead={selectedLead}
+                                  adminUser={adminUser}
+                                  isDark={isDark}
+                                  theme={theme}
+                                  onSuccess={refetch}
+                                />
                               </div>
                               </div>
                             ) : (
@@ -4809,6 +4885,853 @@ function ReceptionistView({ receptionists, allLeads, followUps, isLoading, refet
         </div>
       )}
 
+    </div>
+  );
+}
+// ============================================================================
+// DAILY MONITORING PANEL
+// ============================================================================
+
+// ============================================================================
+// DAILY MONITORING PANEL
+// ============================================================================
+function DailyMonitoringPanel({ theme, isDark, allLeads, followUps, managers, siteHeads, receptionists }: any) {
+  const [data, setData]         = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<"overview" | "managers" | "visits" | "alerts">("overview");
+  const [lastUpdated, setLastUpdated] = useState<string>("");
+  const [visitActivityRoleFilter, setVisitActivityRoleFilter] = useState<string>("__all_roles__");
+  const [visitActivityFilter, setVisitActivityFilter] = useState<string>("__all__");
+
+  const fetchStats = async () => {
+    try {
+      const res  = await fetch("/api/monitoring/daily-stats");
+      const json = await res.json();
+      if (json.success) {
+        setData(json.data);
+        setLastUpdated(new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", second: "2-digit" }));
+      }
+    } catch (e) { console.error(e); }
+    finally { setIsLoading(false); }
+  };
+
+  useEffect(() => {
+    fetchStats();
+    const interval = setInterval(fetchStats, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    if (!data || visitActivityFilter === "__all__") return;
+    const stats = Array.isArray(data.stats) ? data.stats : [];
+    const roleFilteredStaff = visitActivityRoleFilter === "__all_roles__"
+      ? stats
+      : stats.filter((s: any) => s.role === visitActivityRoleFilter);
+    const people: string[] = Array.from(
+      new Set(
+        roleFilteredStaff
+          .map((s: any) => String(s.name || "").trim())
+          .filter((n: string) => n.length > 0)
+      )
+    );
+    if (!people.includes(visitActivityFilter)) {
+      setVisitActivityFilter("__all__");
+    }
+  }, [data, visitActivityRoleFilter, visitActivityFilter]);
+
+  if (isLoading) return (
+    <div className={`h-full flex items-center justify-center ${theme.textMuted}`}>
+      <div className="flex flex-col items-center gap-3">
+        <div className="w-8 h-8 rounded-full border-2 border-[#9E217B] border-t-transparent animate-spin"/>
+        <p className="text-sm">Loading daily stats...</p>
+      </div>
+    </div>
+  );
+
+  if (!data) return (
+    <div className={`h-full flex items-center justify-center ${theme.textMuted}`}>
+      <p>Failed to load monitoring data.</p>
+    </div>
+  );
+
+  const salesManagers = data.stats.filter((s: any) => s.role === "Sales Manager");
+  const siteHeadStats = data.stats.filter((s: any) => s.role === "Site Head");
+  const receptionistStats = data.stats.filter((s: any) => s.role === "Receptionist");
+  const allStaff      = data.stats;
+  const roleFilteredStaff = visitActivityRoleFilter === "__all_roles__"
+    ? allStaff
+    : allStaff.filter((s: any) => s.role === visitActivityRoleFilter);
+  const visitActivityPeople: string[] = Array.from(
+    new Set(
+      roleFilteredStaff
+        .map((s: any) => String(s.name || "").trim())
+        .filter((n: string) => n.length > 0)
+    )
+  );
+  const filteredSiteVisitActions = (data.siteVisitActionsToday || []).filter((a: any) =>
+    visitActivityFilter === "__all__" ? true : a.created_by_name === visitActivityFilter
+  );
+
+  const alertCount  = allStaff.filter((s: any) => s.totalLeads > 0 && s.followUpsToday === 0).length;
+  const highPending = allStaff.filter((s: any) => s.remainingToday > 5).length;
+
+  const tabs = [
+    { key: "overview",  label: "📋 Overview" },
+    { key: "managers",  label: "👤 By Role" },
+    { key: "visits",    label: "📅 Site Visits" },
+    { key: "alerts",    label: `🚨 Alerts${alertCount > 0 ? ` (${alertCount})` : ""}` },
+  ];
+
+  const getRoleBadge = (role: string) => {
+    if (role === "Sales Manager") return isDark
+      ? "text-[#d946a8] border-[#9E217B]/30 bg-[#9E217B]/10"
+      : "text-[#9E217B] border-[#9E217B]/20 bg-[#9E217B]/5";
+    if (role === "Site Head") return isDark
+      ? "text-blue-400 border-blue-500/30 bg-blue-500/10"
+      : "text-blue-700 border-blue-200 bg-blue-50";
+    return isDark
+      ? "text-purple-400 border-purple-500/30 bg-purple-500/10"
+      : "text-purple-700 border-purple-200 bg-purple-50";
+  };
+
+  const getStatusColor = (done: number, total: number) => {
+    if (total === 0) return theme.textFaint;
+    const pct = (done / total) * 100;
+    if (pct >= 80) return "text-green-500";
+    if (pct >= 40) return "text-yellow-500";
+    return "text-red-500";
+  };
+
+  const getBarColor = (done: number, total: number) => {
+    if (total === 0) return "bg-gray-500";
+    const pct = (done / total) * 100;
+    if (pct >= 80) return "bg-green-500";
+    if (pct >= 40) return "bg-yellow-500";
+    return "bg-red-500";
+  };
+
+  return (
+    <div className="h-full flex flex-col overflow-hidden">
+      {/* ── Header ── */}
+      <div className={`p-5 border-b flex-shrink-0 ${theme.header}`} style={theme.headerGlass}>
+        <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
+          <div>
+            <h2 className={`text-lg font-bold flex items-center gap-2 ${theme.text}`}>
+              📊 Daily Activity Monitor
+            </h2>
+            <p className={`text-xs mt-0.5 ${theme.textFaint}`}>
+              {data.date} · Last updated: {lastUpdated} · Auto-refreshes every 30s
+            </p>
+          </div>
+          <div className="flex items-center gap-3 flex-wrap">
+            {alertCount > 0 && (
+              <span className={`text-xs font-bold px-3 py-1.5 rounded-full border flex items-center gap-1.5 ${isDark ? "text-red-400 border-red-500/30 bg-red-500/10" : "text-red-700 border-red-200 bg-red-50"}`}>
+                🚨 {alertCount} no activity
+              </span>
+            )}
+            {highPending > 0 && (
+              <span className={`text-xs font-bold px-3 py-1.5 rounded-full border flex items-center gap-1.5 ${isDark ? "text-yellow-400 border-yellow-500/30 bg-yellow-500/10" : "text-yellow-700 border-yellow-200 bg-yellow-50"}`}>
+                ⚠️ {highPending} high pending
+              </span>
+            )}
+            <button onClick={fetchStats} className={`text-xs font-bold px-3 py-1.5 rounded-lg border transition-colors ${isDark ? "bg-[#222] border-[#333] text-white hover:bg-[#333]" : "bg-white border-indigo-200 text-[#9E217B] hover:bg-[#F8FAFC]"}`}>
+              ↻ Refresh
+            </button>
+          </div>
+        </div>
+
+        {/* Tabs */}
+        <div className="flex gap-2 flex-wrap">
+          {tabs.map(tab => (
+            <button key={tab.key} onClick={() => setActiveTab(tab.key as any)}
+              className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${activeTab === tab.key ? "bg-[#9E217B] text-white shadow-md" : `${theme.textMuted} ${isDark ? "hover:bg-[#222]" : "hover:bg-[#F1F5F9]"}`}`}>
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Content ── */}
+      <div className={`flex-1 overflow-y-auto p-6 ${theme.scroll}`}>
+
+        {/* ════ OVERVIEW TAB ════ */}
+        {activeTab === "overview" && (
+          <div className="space-y-6 animate-fadeIn">
+            {/* Summary stat cards */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {[
+                { label: "Total Staff",         value: allStaff.length,             glow: theme.statGlow1, color: isDark ? "text-[#d946a8]" : "text-[#9E217B]" },
+                { label: "Follow-ups Today",    value: data.totalFollowUpsToday,    glow: theme.statGlow5, color: isDark ? "text-green-400" : "text-emerald-600" },
+                { label: "WhatsApp Sent Today", value: data.totalWaToday,           glow: theme.statGlow3, color: isDark ? "text-blue-400" : "text-blue-600" },
+                { label: "Site Visits Today",   value: data.siteVisitsToday.length, glow: theme.statGlow4, color: isDark ? "text-orange-400" : "text-orange-600" },
+              ].map((card, i) => (
+                <div key={i} className={`rounded-2xl p-5 border relative overflow-hidden ${theme.card}`} style={theme.cardGlass}>
+                  <div className={`absolute -right-4 -top-4 w-20 h-20 rounded-full blur-2xl pointer-events-none ${card.glow}`}/>
+                  <p className={`text-xs font-bold uppercase tracking-wider mb-2 ${theme.textFaint}`}>{card.label}</p>
+                  <p className={`text-3xl font-black ${card.color}`}>{card.value}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Team Performance Table */}
+            <div className={`rounded-2xl border overflow-hidden ${theme.tableWrap}`} style={theme.tableGlass}>
+              <div className={`p-4 border-b flex items-center justify-between ${theme.tableBorder} ${theme.modalHeader}`}>
+                <h3 className={`font-bold flex items-center gap-2 text-sm ${theme.text}`}>
+                  📊 Team Performance Table — Today
+                </h3>
+                <span className={`text-xs px-2 py-0.5 rounded-full border font-bold ${isDark ? "text-green-400 border-green-500/30 bg-green-500/10" : "text-green-700 border-green-200 bg-green-50"}`}>
+                  🟢 Live
+                </span>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm whitespace-nowrap">
+                  <thead className={`${theme.tableHead} ${theme.textHeader}`}>
+                    <tr>
+                      {["Sr", "Employee", "Role", "Total Leads", "Follow-ups Today", "WhatsApp Today", "Pending", "Status"].map(h => (
+                        <th key={h} className={`px-4 py-3 text-xs font-bold uppercase ${theme.tableBorder}`}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className={`divide-y ${theme.tableDivide}`}>
+                    {allStaff.length === 0 ? (
+                      <tr><td colSpan={8} className={`text-center py-8 ${theme.textMuted}`}>No staff data found.</td></tr>
+                    ) : allStaff.map((s: any, i: number) => {
+                      const hasNoActivity = s.totalLeads > 0 && s.followUpsToday === 0;
+                      const isHighPending = s.remainingToday > 5;
+                      return (
+                        <tr key={s.name} className={`transition-colors ${theme.tableRow} ${hasNoActivity ? (isDark ? "bg-red-500/5" : "bg-red-50/50") : ""}`}>
+                          <td className={`px-4 py-3 text-xs font-bold ${theme.textFaint}`}>{i + 1}</td>
+                          <td className={`px-4 py-3 font-bold ${theme.text}`}>{s.name}</td>
+                          <td className="px-4 py-3">
+                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${getRoleBadge(s.role)}`}>{s.role}</span>
+                          </td>
+                          <td className={`px-4 py-3 font-bold ${theme.text}`}>{s.totalLeads}</td>
+                          <td className="px-4 py-3">
+                            <span className={`font-bold text-sm ${getStatusColor(s.followUpsToday, Math.max(s.totalLeads, 1))}`}>
+                              {s.followUpsToday}
+                            </span>
+                            <span className={`text-xs ml-1 ${theme.textFaint}`}></span>
+                          </td>
+                          <td className={`px-4 py-3 font-bold ${s.waToday > 0 ? "text-green-500" : theme.textFaint}`}>
+                            {s.waToday > 0 ? `📱 ${s.waToday}` : "—"}
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${
+                              s.remainingToday === 0 ? (isDark ? "text-green-400 border-green-500/30 bg-green-500/10" : "text-green-700 border-green-200 bg-green-50") :
+                              isHighPending       ? (isDark ? "text-red-400 border-red-500/30 bg-red-500/10"   : "text-red-700 border-red-200 bg-red-50") :
+                                                    (isDark ? "text-yellow-400 border-yellow-500/30 bg-yellow-500/10" : "text-yellow-700 border-yellow-200 bg-yellow-50")
+                            }`}>{s.remainingToday}</span>
+                          </td>
+                          <td className="px-4 py-3">
+                            {hasNoActivity ? (
+                              <span className="text-xs font-bold text-red-500">⚠️ No activity</span>
+                            ) : s.remainingToday === 0 ? (
+                              <span className="text-xs font-bold text-green-500">✅ All done</span>
+                            ) : (
+                              <span className={`text-xs font-bold ${isDark ? "text-yellow-400" : "text-yellow-600"}`}>🔄 In progress</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ════ BY ROLE TAB ════ */}
+        {activeTab === "managers" && (
+          <div className="space-y-8 animate-fadeIn">
+            {/* Sales Managers */}
+            <div>
+              <h3 className={`text-sm font-bold uppercase tracking-wider mb-4 flex items-center gap-2 ${theme.text}`}>
+                <span className={`w-2 h-2 rounded-full ${isDark ? "bg-[#d946a8]" : "bg-[#9E217B]"}`}/>
+                Sales Managers — Daily Follow-up Status
+              </h3>
+              {salesManagers.length === 0 ? (
+                <p className={`text-sm ${theme.textFaint}`}>No sales managers found.</p>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                  {salesManagers.map((s: any) => <StaffCard key={s.name} s={s} isDark={isDark} theme={theme} getRoleBadge={getRoleBadge} getBarColor={getBarColor} />)}
+                </div>
+              )}
+            </div>
+
+            {/* Site Heads */}
+            {siteHeadStats.length > 0 && (
+              <div>
+                <h3 className={`text-sm font-bold uppercase tracking-wider mb-4 flex items-center gap-2 ${theme.text}`}>
+                  <span className="w-2 h-2 rounded-full bg-blue-500"/>
+                  Site Heads — Daily Follow-up Status
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                  {siteHeadStats.map((s: any) => <StaffCard key={s.name} s={s} isDark={isDark} theme={theme} getRoleBadge={getRoleBadge} getBarColor={getBarColor} />)}
+                </div>
+              </div>
+            )}
+
+            {/* Receptionists */}
+            {receptionistStats.length > 0 && (
+              <div>
+                <h3 className={`text-sm font-bold uppercase tracking-wider mb-4 flex items-center gap-2 ${theme.text}`}>
+                  <span className="w-2 h-2 rounded-full bg-purple-500"/>
+                  Receptionists — Daily Follow-up Status
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                  {receptionistStats.map((s: any) => <StaffCard key={s.name} s={s} isDark={isDark} theme={theme} getRoleBadge={getRoleBadge} getBarColor={getBarColor} />)}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ════ SITE VISITS TAB ════ */}
+        {activeTab === "visits" && (
+          <div className="space-y-6 animate-fadeIn">
+            {/* REPLACE the 3 stat cards in visits tab with: */}
+            <div className="grid grid-cols-3 gap-4">
+              {[
+                { label: "Total Today",  value: data.siteVisitsToday.length,        color: isDark ? "text-[#d946a8]" : "text-[#9E217B]" },
+                { label: "Completed",    value: data.completedVisitsToday ?? 0,      color: "text-green-500" },
+                { label: "Scheduled",    value: data.pendingVisitsToday ?? 0,        color: "text-orange-500" },
+              ].map((c, i) => (
+                <div key={i} className={`rounded-2xl p-5 border ${theme.card}`} style={theme.cardGlass}>
+                  <p className={`text-xs font-bold uppercase tracking-wider mb-2 ${theme.textFaint}`}>{c.label}</p>
+                  <p className={`text-3xl font-black ${c.color}`}>{c.value}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className={`rounded-2xl border overflow-hidden ${theme.tableWrap}`} style={theme.tableGlass}>
+              <div className={`p-4 border-b ${theme.tableBorder} ${theme.modalHeader}`}>
+                <h3 className={`font-bold text-sm ${theme.text}`}>📅 Site Visits Scheduled Today</h3>
+              </div>
+              {data.siteVisitsToday.length === 0 ? (
+                <div className={`p-12 text-center ${theme.textMuted}`}>
+                  <p className="text-4xl mb-3">📅</p>
+                  <p className="font-semibold">No site visits scheduled for today</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-sm whitespace-nowrap">
+                    <thead className={`${theme.tableHead} ${theme.textHeader}`}>
+                      <tr>
+                        {["Lead #", "Client Name", "Assigned Manager", "Visit Time", "Status"].map(h => (
+                          <th key={h} className={`px-4 py-3 text-xs font-bold uppercase ${theme.tableBorder}`}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className={`divide-y ${theme.tableDivide}`}>
+                      {data.siteVisitsToday.map((v: any) => (
+                        <tr key={v.id} className={`transition-colors ${theme.tableRow}`}>
+                          <td className={`px-4 py-3 font-bold ${isDark ? "text-[#d946a8]" : "text-[#9E217B]"}`}>#{v.id}</td>
+                          <td className={`px-4 py-3 font-semibold ${theme.text}`}>{v.name}</td>
+                          <td className={`px-4 py-3 ${theme.textMuted}`}>{v.assigned_to || "—"}</td>
+                         {/* In the visits table tbody, update the time cell: */}
+                          <td className="px-4 py-3 text-orange-500 font-semibold">
+                            {v.visit_date
+                              ? new Date(v.visit_date).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })
+                              : "—"}
+                          </td>
+                          {/* Add status badge cell */}
+                          <td className="px-4 py-3">
+                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border uppercase ${
+                              v.status === "completed" ? "text-green-400 border-green-500/30 bg-green-500/10" :
+                              v.status === "cancelled" ? "text-red-400 border-red-500/30 bg-red-500/10" :
+                              "text-yellow-400 border-yellow-500/30 bg-yellow-500/10"
+                            }`}>{v.status || "Scheduled"}</span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            <div className={`rounded-2xl border overflow-hidden ${theme.tableWrap}`} style={theme.tableGlass}>
+              <div className={`p-4 border-b ${theme.tableBorder} ${theme.modalHeader} flex items-center justify-between gap-3 flex-wrap`}>
+                <h3 className={`font-bold text-sm ${theme.text}`}>📝 Site Visit Activity Logged Today</h3>
+                <div className="flex items-center gap-2">
+                  <label className={`text-xs font-bold ${theme.textMuted}`}>Filter</label>
+                  <select
+                    value={visitActivityRoleFilter}
+                    onChange={(e) => setVisitActivityRoleFilter(e.target.value)}
+                    className={`text-xs font-semibold rounded-lg px-3 py-1.5 outline-none border ${theme.select}`}
+                  >
+                    <option value="__all_roles__">Select role</option>
+                    <option value="Sales Manager">Sales Manager</option>
+                    <option value="Receptionist">Receptionist</option>
+                    <option value="Site Head">Site Head</option>
+                  </select>
+                  <select
+                    value={visitActivityFilter}
+                    onChange={(e) => setVisitActivityFilter(e.target.value)}
+                    className={`text-xs font-semibold rounded-lg px-3 py-1.5 outline-none border ${theme.select}`}
+                  >
+                    <option value="__all__">All Employees</option>
+                    {visitActivityPeople.map((name) => (
+                      <option key={name} value={name}>{name}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              {!filteredSiteVisitActions || filteredSiteVisitActions.length === 0 ? (
+                <div className={`p-8 text-center text-sm ${theme.textMuted}`}>
+                  No site visit/revisit updates were logged today.
+                </div>
+              ) : (
+                <div className="divide-y">
+                  {filteredSiteVisitActions.map((a: any) => (
+                    <div key={a.id} className={`px-4 py-3 flex items-start justify-between gap-4 ${theme.tableRow}`}>
+                      <div>
+                        <p className={`text-sm font-semibold ${theme.text}`}>
+                          {a.created_by_name || "Unknown"} • {a.lead_name || `Lead #${a.lead_id}`}
+                        </p>
+                        <p className={`text-xs mt-1 whitespace-pre-wrap ${theme.textMuted}`}>{a.message}</p>
+                      </div>
+                      <div className={`text-xs font-semibold whitespace-nowrap ${theme.textFaint}`}>
+                        {a.created_at ? new Date(a.created_at).toLocaleString("en-IN") : "—"}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ════ ALERTS TAB ════ */}
+        {activeTab === "alerts" && (
+          <div className="space-y-4 animate-fadeIn">
+            {/* No Activity */}
+            <AlertSection
+              title="🚨 No Activity Today"
+              subtitle="employees"
+              items={allStaff.filter((s: any) => s.totalLeads > 0 && s.followUpsToday === 0)}
+              emptyMsg="✅ All employees have activity today!"
+              badgeText={(s: any) => `0 follow-ups`}
+              borderColor={isDark ? "border-red-500/20" : "border-red-200"}
+              headerBg={isDark ? "bg-red-500/10 border-red-500/20" : "bg-red-50 border-red-200"}
+              titleColor="text-red-500"
+              badgeColor={isDark ? "text-red-400 bg-red-500/10 border-red-500/30" : "text-red-700 border-red-200 bg-red-50"}
+              itemBg={isDark ? "bg-red-500/5 border-red-500/20" : "bg-red-50 border-red-100"}
+              theme={theme}
+              isDark={isDark}
+            />
+
+            {/* High Pending */}
+            <AlertSection
+              title="⚠️ High Pending Follow-ups"
+              subtitle="employees"
+              items={allStaff.filter((s: any) => s.remainingToday > 5)}
+              emptyMsg="✅ No one has excessive pending follow-ups!"
+              badgeText={(s: any) => `${s.remainingToday} pending`}
+              borderColor={isDark ? "border-yellow-500/20" : "border-yellow-200"}
+              headerBg={isDark ? "bg-yellow-500/10 border-yellow-500/20" : "bg-yellow-50 border-yellow-200"}
+              titleColor="text-yellow-500"
+              badgeColor={isDark ? "text-yellow-400 bg-yellow-500/10 border-yellow-500/30" : "text-yellow-700 border-yellow-200 bg-yellow-50"}
+              itemBg={isDark ? "bg-yellow-500/5 border-yellow-500/20" : "bg-yellow-50 border-yellow-100"}
+              theme={theme}
+              isDark={isDark}
+            />
+
+            {/* All Caught Up */}
+            <AlertSection
+              title="✅ All Caught Up Today"
+              subtitle="employees"
+              items={allStaff.filter((s: any) => s.followUpsToday > 0 && s.remainingToday === 0)}
+              emptyMsg="No one has completed all follow-ups yet today."
+              badgeText={(s: any) => `✅ ${s.followUpsToday} done`}
+              borderColor={isDark ? "border-green-500/20" : "border-green-200"}
+              headerBg={isDark ? "bg-green-500/10 border-green-500/20" : "bg-green-50 border-green-200"}
+              titleColor="text-green-500"
+              badgeColor={isDark ? "text-green-400 bg-green-500/10 border-green-500/30" : "text-green-700 border-green-200 bg-green-50"}
+              itemBg={isDark ? "bg-green-500/5 border-green-500/20" : "bg-green-50 border-green-100"}
+              theme={theme}
+              isDark={isDark}
+            />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Sub-components ──────────────────────────────────────────────────────────
+
+function SiteVisitScheduler({
+  lead, adminUser, isDark, theme, onSuccess
+}: {
+  lead: any; adminUser: any; isDark: boolean;
+  theme: any; onSuccess: () => void;
+}) {
+  const [visits, setVisits] = useState<any[]>([]);
+  const [showModal, setShowModal] = useState(false);
+  const [visitDate, setVisitDate] = useState("");
+  const [visitNotes, setVisitNotes] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+  const [editVisit, setEditVisit] = useState<any>(null);
+  const [toast, setToast] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const fetchVisits = async () => {
+    try {
+      const res = await fetch(`/api/site-visits?lead_id=${lead.id}`);
+      const json = await res.json();
+      if (json.success) setVisits(json.data);
+    } catch {}
+  };
+
+  useEffect(() => { fetchVisits(); }, [lead.id]);
+
+  const showToast = (msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  const handleSchedule = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!visitDate) return;
+    setIsSaving(true);
+    try {
+      const method = editVisit ? "PATCH" : "POST";
+      const body = editVisit
+        ? { id: editVisit.id, visit_date: visitDate, notes: visitNotes }
+        : { lead_id: lead.id, visit_date: visitDate, created_by: adminUser?.name || "Admin", role: adminUser?.role || "admin", notes: visitNotes };
+
+      const res = await fetch("/api/site-visits", {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const json = await res.json();
+      if (!json.success) {
+        showToast("❌ " + json.message);
+        return;
+      }
+
+      const visitLabel = editVisit ? "Re-Site Visit Rescheduled" : visits.length === 0 ? "Site Visit Scheduled" : "Re-Site Visit Scheduled";
+      await fetch("/api/followups", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          leadId: String(lead.id),
+          salesManagerName: adminUser?.name || "Admin",
+          createdBy: adminUser?.role === "admin" ? "admin" : adminUser?.role === "receptionist" ? "receptionist" : "sales",
+          message: `📅 ${visitLabel}:\n• Date: ${new Date(visitDate).toLocaleString("en-IN")}\n• Notes: ${visitNotes || "N/A"}`,
+          siteVisitDate: visitDate,
+          createdAt: new Date().toISOString(),
+        }),
+      });
+
+      showToast(`✅ ${visitLabel}!`);
+      setShowModal(false);
+      setVisitDate("");
+      setVisitNotes("");
+      setEditVisit(null);
+      fetchVisits();
+      onSuccess();
+    } catch {
+      showToast("❌ Something went wrong.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleStatusChange = async (visitId: number, status: string) => {
+    try {
+      const res = await fetch("/api/site-visits", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: visitId, status }),
+      });
+      const json = await res.json();
+      if (!json.success) {
+        showToast("❌ " + json.message);
+        return;
+      }
+
+      await fetch("/api/followups", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          leadId: String(lead.id),
+          salesManagerName: adminUser?.name || "Admin",
+          createdBy: adminUser?.role === "admin" ? "admin" : adminUser?.role === "receptionist" ? "receptionist" : "sales",
+          message: `🔄 Site Visit marked as ${status.toUpperCase()} by ${adminUser?.name || "Admin"}`,
+          siteVisitDate: null,
+          createdAt: new Date().toISOString(),
+        }),
+      });
+
+      showToast(`✅ Visit marked as ${status}`);
+      fetchVisits();
+      onSuccess();
+    } catch {
+      showToast("❌ Update failed.");
+    }
+  };
+
+  const upcomingVisit = visits.find((v: any) => v.status === "scheduled" && new Date(v.visit_date) >= new Date());
+  const isClosing = lead.status === "Closing" || !!lead.closingDate;
+
+  const statusBadge = (status: string) => {
+    if (status === "completed") return "text-green-400 border-green-500/30 bg-green-500/10";
+    if (status === "cancelled") return "text-red-400 border-red-500/30 bg-red-500/10";
+    return "text-yellow-400 border-yellow-500/30 bg-yellow-500/10";
+  };
+
+  return (
+    <div className={`rounded-xl border p-4 ${isDark ? "bg-[#1a1a1a] border-[#2a2a2a]" : "bg-white border-indigo-200"}`}>
+      {toast && (
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[200] px-5 py-3 rounded-xl shadow-lg text-sm font-bold text-white bg-green-600 animate-fadeIn border border-green-400">
+          {toast}
+        </div>
+      )}
+
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h3 className={`font-bold text-sm flex items-center gap-2 ${theme.text}`}>
+            <FaCalendarAlt className="text-orange-400" /> Site Visit History
+          </h3>
+          {upcomingVisit && (
+            <p className="text-xs text-orange-400 font-semibold mt-0.5">
+              Next: {new Date(upcomingVisit.visit_date).toLocaleDateString("en-IN", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
+            </p>
+          )}
+        </div>
+        {!isClosing && (
+          <button
+            onClick={() => { setEditVisit(null); setVisitDate(""); setVisitNotes(""); setShowModal(true); }}
+            className={`text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 cursor-pointer transition-colors ${
+              visits.length === 0
+                ? (isDark ? "bg-orange-600 hover:bg-orange-500 text-white" : "bg-orange-500 hover:bg-orange-400 text-white")
+                : (isDark ? "bg-orange-600/20 hover:bg-orange-600 border border-orange-500/30 text-orange-400 hover:text-white" : "bg-orange-50 hover:bg-orange-500 border border-orange-300 text-orange-600 hover:text-white")
+            }`}
+          >
+            <FaCalendarAlt className="text-[10px]" />
+            {visits.length === 0 ? "Schedule Visit" : "Re-Site Visit"}
+          </button>
+        )}
+      </div>
+
+      {visits.length === 0 ? (
+        <p className={`text-xs text-center py-4 ${theme.textFaint}`}>No site visits scheduled yet.</p>
+      ) : (
+        <div className="relative">
+          <div className={`absolute left-3 top-0 bottom-0 w-px ${isDark ? "bg-[#333]" : "bg-indigo-100"}`} />
+          <div className="space-y-4 pl-8">
+            {visits.map((v: any, i: number) => (
+              <div key={v.id} className="relative">
+                <div className={`absolute -left-5 top-1 w-2.5 h-2.5 rounded-full border-2 ${
+                  v.status === "completed" ? "bg-green-500 border-green-400" :
+                  v.status === "cancelled" ? "bg-red-500 border-red-400" :
+                  "bg-yellow-500 border-yellow-400"
+                }`} />
+
+                <div className={`rounded-xl p-3 border ${isDark ? "bg-[#222] border-[#333]" : "bg-[#F8FAFC] border-indigo-100"}`}>
+                  <div className="flex items-start justify-between gap-2 mb-1.5">
+                    <div>
+                      <p className={`text-xs font-bold ${theme.text}`}>
+                        Visit {i + 1} - {new Date(v.visit_date).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
+                      </p>
+                      <p className={`text-[10px] ${theme.textFaint}`}>
+                        {new Date(v.visit_date).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })} · by {v.created_by}
+                      </p>
+                    </div>
+                    <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border uppercase flex-shrink-0 ${statusBadge(v.status)}`}>
+                      {v.status}
+                    </span>
+                  </div>
+                  {v.notes && <p className={`text-[11px] italic ${theme.textMuted}`}>{v.notes}</p>}
+
+                  {v.status === "scheduled" && (
+                    <div className="flex gap-2 mt-2 flex-wrap">
+                      {adminUser?.role?.toLowerCase() !== "receptionist" && (
+                        <button onClick={() => handleStatusChange(v.id, "completed")}
+                          className="text-[10px] font-bold px-2 py-1 rounded-lg bg-green-500/10 border border-green-500/30 text-green-400 hover:bg-green-500 hover:text-white transition-colors cursor-pointer">
+                          ✓ Mark Completed
+                        </button>
+                      )}
+                      <button onClick={() => handleStatusChange(v.id, "cancelled")}
+                        className="text-[10px] font-bold px-2 py-1 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500 hover:text-white transition-colors cursor-pointer">
+                        ✕ Cancel
+                      </button>
+                      <button onClick={() => { setEditVisit(v); setVisitDate(v.visit_date.slice(0, 16)); setVisitNotes(v.notes || ""); setShowModal(true); }}
+                        className={`text-[10px] font-bold px-2 py-1 rounded-lg border transition-colors cursor-pointer ${isDark ? "bg-[#333] border-[#444] text-gray-300 hover:bg-[#444]" : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"}`}>
+                        ✎ Reschedule
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {showModal && (
+        <div className="fixed inset-0 bg-black/75 z-[200] flex items-center justify-center p-4 animate-fadeIn" style={{ backdropFilter: "blur(8px)" }}>
+          <div className={`rounded-2xl w-full max-w-md shadow-2xl border overflow-hidden ${isDark ? "bg-[#1a1a1a] border-[#2a2a2a]" : "bg-white border-indigo-200"}`}>
+            <div className={`p-5 border-b flex items-center justify-between ${isDark ? "bg-orange-900/20 border-orange-500/20" : "bg-orange-50 border-orange-200"}`}>
+              <div>
+                <h2 className={`font-bold flex items-center gap-2 ${isDark ? "text-orange-400" : "text-orange-700"}`}>
+                  <FaCalendarAlt /> {editVisit ? "Reschedule Visit" : visits.length === 0 ? "Schedule Site Visit" : "Schedule Re-Site Visit"}
+                </h2>
+                <p className={`text-xs mt-0.5 ${theme.textMuted}`}>Lead #{lead.id} - {lead.name}</p>
+              </div>
+              <button onClick={() => { setShowModal(false); setEditVisit(null); }} className={`p-2 ${theme.textMuted} hover:text-red-500`}><FaTimes /></button>
+            </div>
+            <form onSubmit={handleSchedule} className={`p-5 space-y-4 ${isDark ? "bg-[#121212]" : "bg-[#F8FAFC]"}`}>
+              <div>
+                <label className={`block text-xs font-bold mb-1.5 ${isDark ? "text-orange-400" : "text-orange-700"}`}>
+                  Visit Date & Time *
+                </label>
+                <input
+                  ref={inputRef} required type="datetime-local"
+                  value={visitDate}
+                  min={new Date().toISOString().slice(0, 16)}
+                  onChange={e => setVisitDate(e.target.value)}
+                  onClick={() => inputRef.current?.showPicker()}
+                  className={`w-full rounded-xl px-4 py-3 text-sm outline-none border-2 transition-colors ${
+                    isDark ? "bg-[#1a1a1a] border-orange-500/40 text-white focus:border-orange-500" : "bg-white border-orange-300 text-[#1A1A1A] focus:border-orange-500"
+                  }`}
+                />
+              </div>
+              <div>
+                <label className={`block text-xs font-bold mb-1.5 ${isDark ? "text-orange-400" : "text-orange-700"}`}>
+                  Notes / Reason
+                </label>
+                <textarea
+                  value={visitNotes} onChange={e => setVisitNotes(e.target.value)} rows={3}
+                  placeholder={visits.length > 0 ? "e.g. Customer needs to see the 3BHK units again..." : "e.g. First visit scheduled with customer..."}
+                  className={`w-full rounded-xl px-4 py-3 text-sm outline-none resize-none border-2 transition-colors ${
+                    isDark ? "bg-[#1a1a1a] border-orange-500/30 text-white focus:border-orange-500" : "bg-white border-orange-200 text-[#1A1A1A] focus:border-orange-500"
+                  }`}
+                />
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button type="button" onClick={() => { setShowModal(false); setEditVisit(null); }}
+                  className={`flex-1 py-2.5 rounded-lg font-bold cursor-pointer transition-colors ${theme.textMuted} hover:text-red-500 border ${isDark ? "border-[#333]" : "border-gray-200"}`}>
+                  Cancel
+                </button>
+                <button type="submit" disabled={isSaving || !visitDate}
+                  className={`flex-1 py-2.5 rounded-lg font-bold transition-colors flex items-center justify-center gap-2 ${
+                    isSaving || !visitDate
+                      ? "bg-gray-400 text-white cursor-not-allowed"
+                      : (isDark ? "bg-orange-600 hover:bg-orange-500 text-white" : "bg-orange-500 hover:bg-orange-400 text-white")
+                  }`}>
+                  {isSaving ? "Saving..." : editVisit ? "Reschedule" : "Schedule"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function StaffCard({ s, isDark, theme, getRoleBadge, getBarColor }: any) {
+  const hasNoActivity = s.totalLeads > 0 && s.followUpsToday === 0;
+  const completedPct  = s.requiredToday > 0 ? Math.round((s.followUpsToday / s.requiredToday) * 100) : 0;
+  return (
+    <div className={`rounded-2xl border p-5 transition-all ${hasNoActivity ? (isDark ? "border-red-500/30 bg-red-500/5" : "border-red-200 bg-red-50") : theme.card}`}
+      style={!hasNoActivity ? theme.cardGlass : {}}>
+      <div className="flex items-start justify-between mb-3">
+        <div>
+          <h4 className={`font-bold text-base ${theme.text}`}>{s.name}</h4>
+          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border mt-1 inline-block ${getRoleBadge(s.role)}`}>{s.role}</span>
+        </div>
+        <span className="text-xl">{hasNoActivity ? "⚠️" : completedPct >= 80 ? "✅" : "🔄"}</span>
+      </div>
+
+      {hasNoActivity && (
+        <div className="mb-3 px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/30 text-red-500 text-xs font-bold">
+          ⚠️ No follow-ups done today
+        </div>
+      )}
+
+      <div className="grid grid-cols-3 gap-2 mb-4">
+        {[
+          { label: "Total",     value: s.totalLeads,      color: theme.text },
+          { label: "Done",      value: s.followUpsToday,  color: "text-green-500" },
+          { label: "Remaining", value: s.remainingToday,  color: s.remainingToday > 0 ? "text-red-500" : "text-green-500" },
+        ].map(stat => (
+          <div key={stat.label} className={`rounded-xl p-2 text-center border ${theme.settingsBg}`}>
+            <p className={`text-[10px] font-bold ${theme.textFaint}`}>{stat.label}</p>
+            <p className={`text-xl font-black ${stat.color}`}>{stat.value}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="mb-3">
+        <div className="flex justify-between text-xs mb-1">
+          <span className={theme.textFaint}>Progress</span>
+          <span className={`font-bold ${completedPct >= 80 ? "text-green-500" : completedPct >= 40 ? "text-yellow-500" : "text-red-500"}`}>{completedPct}%</span>
+        </div>
+        <div className={`w-full h-2 rounded-full ${isDark ? "bg-[#333]" : "bg-gray-200"}`}>
+          <div className={`h-2 rounded-full transition-all ${getBarColor(s.followUpsToday, s.requiredToday)}`}
+            style={{ width: `${Math.min(completedPct, 100)}%` }}/>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between text-xs">
+        <span className={theme.textFaint}>WhatsApp Today</span>
+        <span className={`font-bold ${s.waToday > 0 ? "text-green-500" : theme.textFaint}`}>
+          {s.waToday > 0 ? `📱 ${s.waToday} sent` : "None"}
+        </span>
+      </div>
+
+      {s.noFupLeads.length > 0 && (
+        <div className={`mt-3 pt-3 border-t ${isDark ? "border-[#333]" : "border-gray-200"}`}>
+          <p className={`text-[10px] font-bold uppercase tracking-wider mb-2 ${theme.textFaint}`}>
+            Leads needing follow-up ({s.noFupLeads.length})
+          </p>
+          <div className="flex flex-col gap-1 max-h-24 overflow-y-auto">
+            {s.noFupLeads.slice(0, 5).map((l: any) => (
+              <div key={l.id} className={`flex items-center gap-2 text-xs px-2 py-1 rounded ${isDark ? "bg-[#222]" : "bg-gray-50"}`}>
+                <span className={`font-bold ${isDark ? "text-[#d946a8]" : "text-[#9E217B]"}`}>#{l.id}</span>
+                <span className={theme.textMuted}>{l.name}</span>
+              </div>
+            ))}
+            {s.noFupLeads.length > 5 && (
+              <p className={`text-[10px] px-2 ${theme.textFaint}`}>+{s.noFupLeads.length - 5} more...</p>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AlertSection({ title, subtitle, items, emptyMsg, badgeText, borderColor, headerBg, titleColor, badgeColor, itemBg, theme, isDark }: any) {
+  return (
+    <div className={`rounded-2xl border overflow-hidden ${borderColor}`}>
+      <div className={`p-4 border-b flex items-center justify-between ${headerBg}`}>
+        <h3 className={`font-bold flex items-center gap-2 ${titleColor}`}>{title}</h3>
+        <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${badgeColor}`}>
+          {items.length} {subtitle}
+        </span>
+      </div>
+      <div className="p-4 space-y-3">
+        {items.length === 0 ? (
+          <p className={`text-sm text-center py-4 ${theme.textMuted}`}>{emptyMsg}</p>
+        ) : items.map((s: any) => (
+          <div key={s.name} className={`flex items-center justify-between p-3 rounded-xl border ${itemBg}`}>
+            <div>
+              <p className={`font-bold text-sm ${theme.text}`}>{s.name}</p>
+              <p className={`text-xs ${theme.textFaint}`}>{s.role} · {s.totalLeads} leads assigned</p>
+            </div>
+            <span className={`text-xs font-bold px-2 py-1 rounded-full border ${badgeColor}`}>
+              {badgeText(s)}
+            </span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

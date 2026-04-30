@@ -610,7 +610,7 @@ function InterestBadge({ status, size = "md" }: { status: string; size?: "sm"|"m
   const colorMap: Record<string,string> = {
     Interested:      "border-green-500/40 text-green-400 bg-green-500/10",
     "Not Interested":"border-red-500/40 text-red-400 bg-red-500/10",
-    Maybe:           "border-yellow-500/40 text-yellow-400 bg-yellow-500/10",
+    "Non Qualified lead":           "border-yellow-500/40 text-yellow-400 bg-yellow-500/10",
   };
   const cls = colorMap[status] ?? "border-blue-500/30 text-blue-400 bg-blue-500/10";
   const sz  = size === "sm" ? "text-[9px] px-2 py-0.5" : "text-[10px] px-3 py-1";
@@ -634,7 +634,7 @@ function DashboardAnalytics({ leads, isDark, t }: { leads: any[]; isDark: boolea
   const [pieMode, setPieMode] = useState<"interest"|"loan"|"usetype"|"loanrequired"|"visits">("interest");
   const [barMode, setBarMode] = useState<"weekly"|"source">("weekly");
 
-  const interestData    = useMemo(() => { const c: Record<string,number> = {Interested:0,"Not Interested":0,Maybe:0,Pending:0}; leads.forEach(l=>{const s=l.leadInterestStatus;if(s&&s!=="Pending"&&c[s]!==undefined)c[s]++;else c["Pending"]++;});return Object.entries(c).filter(([,v])=>v>0).map(([name,value])=>({name,value})); },[leads]);
+  const interestData    = useMemo(() => { const c: Record<string,number> = {Interested:0,"Not Interested":0,"Non Qualified Leads":0,Pending:0}; leads.forEach(l=>{const s=l.leadInterestStatus;if(s&&s!=="Pending"&&c[s]!==undefined)c[s]++;else c["Pending"]++;});return Object.entries(c).filter(([,v])=>v>0).map(([name,value])=>({name,value})); },[leads]);
   const loanPieData     = useMemo(() => { const c: Record<string,number> = {Approved:0,"In Progress":0,Rejected:0,"N/A":0}; leads.forEach(l=>{const s=l.loanStatus;if(s&&c[s]!==undefined)c[s]++;else c["N/A"]++;});return Object.entries(c).filter(([,v])=>v>0).map(([name,value])=>({name,value})); },[leads]);
   const useTypeData     = useMemo(() => { const c: Record<string,number>={}; leads.forEach(l=>{const ut=(l.useType&&l.useType!=="Pending")?l.useType:(l.purpose||"Unknown");c[ut]=(c[ut]||0)+1;});return Object.entries(c).filter(([k])=>k!=="Unknown").map(([name,value])=>({name,value})); },[leads]);
   const loanRequiredData= useMemo(() => { const c: Record<string,number>={Yes:0,No:0,"Not Sure":0,Pending:0}; leads.forEach(l=>{const lp=l.loanPlanned;if(lp&&c[lp]!==undefined)c[lp]++;else c["Pending"]++;});return Object.entries(c).filter(([,v])=>v>0).map(([name,value])=>({name,value})); },[leads]);
@@ -643,7 +643,7 @@ function DashboardAnalytics({ leads, isDark, t }: { leads: any[]; isDark: boolea
   const sourceData      = useMemo(() => { const c: Record<string,number>={};leads.forEach(l=>{const src=l.source||"Unknown";c[src]=(c[src]||0)+1;});return Object.entries(c).map(([source,count])=>({source,count})).sort((a,b)=>b.count-a.count).slice(0,6); },[leads]);
   const weeklyTotal     = weeklyData.reduce((a,b)=>a+b.leads,0);
 
-  const interestColors: Record<string,string> = { Interested:"#4ade80","Not Interested":"#f87171",Maybe:"#fbbf24",Pending:"#6b7280" };
+  const interestColors: Record<string,string> = { Interested:"#4ade80","Not Interested":"#f87171","Non Qualified Lead":"#fbbf24",Pending:"#6b7280" };
   const loanColors:     Record<string,string> = { Approved:"#4ade80","In Progress":"#fbbf24",Rejected:"#f87171","N/A":"#6b7280" };
   const useTypeColors:  Record<string,string> = { "Self Use":"#818cf8",Investment:"#34d399","Personal use":"#f87171","N/A":"#6b7280" };
   const loanReqColors:  Record<string,string> = { Yes:"#60a5fa",No:"#6b7280","Not Sure":"#fbbf24",Pending:"#374151" };
@@ -872,7 +872,85 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
   };
 
   const handleSendCustomNote=async(e:React.FormEvent<HTMLFormElement>)=>{e.preventDefault();if(!customNote.trim()||!selectedLead)return;const nm={leadId:String(selectedLead.id),salesManagerName:adminUser.name,createdBy:adminUser.role==="admin"?"admin":"sales",message:customNote,siteVisitDate:null,createdAt:new Date().toISOString()};setCustomNote("");try{await fetch("/api/followups",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(nm)});refetch();}catch(e){console.log(e);}};
-  const handleSalesFormSubmit=async(e:React.FormEvent<HTMLFormElement>)=>{e.preventDefault();if(!selectedLead)return;const msg="📝 Detailed Salesform Submitted:\n• Property Type: "+(salesForm.propertyType||"N/A")+"\n• Location: "+(salesForm.location||"N/A")+"\n• Budget: "+(salesForm.budget||"N/A")+"\n• Use Type: "+(salesForm.useType||"N/A")+"\n• Planning to Purchase: "+(salesForm.purchaseDate||"N/A")+"\n• Loan Planned: "+(salesForm.loanPlanned||"N/A")+"\n• Lead Status: "+(salesForm.leadStatus||"N/A")+"\n• Site Visit Requested: "+(salesForm.siteVisit?formatDate(salesForm.siteVisit):"No");const nm={leadId:String(selectedLead.id),salesManagerName:adminUser.name,createdBy:adminUser.role==="admin"?"admin":"sales",message:msg,siteVisitDate:salesForm.siteVisit||null,createdAt:new Date().toISOString()};const ns=salesForm.siteVisit?"Visit Scheduled":selectedLead.status;setShowSalesForm(false);setSalesForm({propertyType:"",location:"",budget:"",useType:"",purchaseDate:"",loanPlanned:"",siteVisit:"",leadStatus:""});try{await fetch("/api/followups",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(nm)});await fetch(`/api/walkin_enquiries/${selectedLead.id}`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:selectedLead.name,status:ns})});refetch();}catch(e){console.log(e);}};
+  const handleSalesFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!selectedLead) return;
+
+    const msg =
+      "📝 Detailed Salesform Submitted:\n" +
+      "• Property Type: " + (salesForm.propertyType || "N/A") + "\n" +
+      "• Location: " + (salesForm.location || "N/A") + "\n" +
+      "• Budget: " + (salesForm.budget || "N/A") + "\n" +
+      "• Use Type: " + (salesForm.useType || "N/A") + "\n" +
+      "• Planning to Purchase: " + (salesForm.purchaseDate || "N/A") + "\n" +
+      "• Loan Planned: " + (salesForm.loanPlanned || "N/A") + "\n" +
+      "• Lead Status: " + (salesForm.leadStatus || "N/A") + "\n" +
+      "• Site Visit Requested: " +
+      (salesForm.siteVisit ? formatDate(salesForm.siteVisit) : "No");
+
+    const nm = {
+      leadId: String(selectedLead.id),
+      salesManagerName: adminUser.name,
+      createdBy: adminUser.role === "admin" ? "admin" : "sales",
+      message: msg,
+      siteVisitDate: salesForm.siteVisit || null,
+      createdAt: new Date().toISOString(),
+    };
+
+    const ns = salesForm.siteVisit ? "Visit Scheduled" : selectedLead.status;
+
+    try {
+      // 1️⃣ Save follow-up
+      await fetch("/api/followups", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(nm),
+      });
+
+      // 2️⃣ Update lead status
+      await fetch(`/api/walkin_enquiries/${selectedLead.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: selectedLead.name,
+          status: ns,
+        }),
+      });
+
+      // ✅ 3️⃣ NEW: Save into site_visits table (IMPORTANT)
+      if (salesForm.siteVisit) {
+        await fetch("/api/site-visits", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            lead_id: selectedLead.id,
+            visit_date: salesForm.siteVisit,
+            created_by: adminUser.name, // (can switch to id later)
+            role: adminUser.role,
+            notes: "Scheduled via Salesform",
+          }),
+        }).catch(() => {}); // don't break flow if it fails
+      }
+
+      // 4️⃣ Reset UI (after everything succeeds)
+      setShowSalesForm(false);
+      setSalesForm({
+        propertyType: "",
+        location: "",
+        budget: "",
+        useType: "",
+        purchaseDate: "",
+        loanPlanned: "",
+        siteVisit: "",
+        leadStatus: "",
+      });
+
+      refetch();
+
+    } catch (e) {
+      console.log(e);
+    }
+  };
   const handleLoanFormSubmit=async(e:React.FormEvent<HTMLFormElement>)=>{e.preventDefault();if(!selectedLead)return;const msg="🏦 Loan Update:\n• Loan Required: "+(loanForm.loanRequired||"N/A")+"\n• Status: "+(loanForm.status||"N/A")+"\n• Bank Name: "+(loanForm.bank||"N/A")+"\n• Amount Requested: "+(loanForm.amountReq||"N/A")+"\n• Amount Approved: "+(loanForm.amountApp||"N/A")+"\n• CIBIL Score: "+(loanForm.cibil||"N/A")+"\n• Agent Name: "+(loanForm.agent||"N/A")+"\n• Agent Contact: "+(loanForm.agentContact||"N/A")+"\n• Employment Type: "+(loanForm.empType||"N/A")+"\n• Monthly Income: "+(loanForm.income||"N/A")+"\n• Existing EMIs: "+(loanForm.emi||"N/A")+"\n• PAN Card: "+(loanForm.docPan||"Pending")+"\n• Aadhaar Card: "+(loanForm.docAadhaar||"Pending")+"\n• Salary Slips: "+(loanForm.docSalary||"Pending")+"\n• Bank Statements: "+(loanForm.docBank||"Pending")+"\n• Property Docs: "+(loanForm.docProperty||"Pending")+"\n• Notes: "+(loanForm.notes||"N/A");const nm={leadId:String(selectedLead.id),salesManagerName:adminUser.name,createdBy:adminUser.role==="admin"?"admin":"sales",message:msg,siteVisitDate:null,createdAt:new Date().toISOString()};const dbp={leadId:String(selectedLead.id),salesManagerName:adminUser.name,...loanForm};setShowLoanForm(false);setToastMsg({title:`Loan Data Logged for ${selectedLead.name}`,icon:<FaCheckCircle/>,color:"blue"});setTimeout(()=>setToastMsg(null),3000);try{await fetch("/api/followups",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(nm)});await fetch("/api/loan/update",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(dbp)}).catch(()=>{});refetch();}catch(e){console.log(e);}};
   const prefillSalesForm=()=>{if(!selectedLead)return;const sf=currentLeadFollowUps.filter((f:any)=>f.message?.includes("Detailed Salesform Submitted"));if(sf.length===0)return;const msg=sf[sf.length-1].message;const g=(label:string)=>{const m=msg.match(new RegExp(`• ${label}: (.*)`));return m&&m[1].trim()!=="N/A"?m[1].trim():"";};setSalesForm({propertyType:g("Property Type"),location:g("Location"),budget:g("Budget"),useType:g("Use Type"),purchaseDate:g("Planning to Purchase"),loanPlanned:g("Loan Planned"),leadStatus:g("Lead Status"),siteVisit:""});};
   const prefillLoanForm=()=>{const cur=getLatestLoanDetails();if(!cur)return;setLoanForm({loanRequired:cur.loanRequired!=="N/A"?cur.loanRequired:"",status:cur.status!=="Pending"?cur.status:"",bank:cur.bankName!=="N/A"?cur.bankName:"",amountReq:cur.amountReq!=="N/A"?cur.amountReq:"",amountApp:cur.amountApp!=="N/A"?cur.amountApp:"",cibil:cur.cibil!=="N/A"?cur.cibil:"",agent:cur.agent!=="N/A"?cur.agent:"",agentContact:cur.agentContact!=="N/A"?cur.agentContact:"",empType:cur.empType!=="N/A"?cur.empType:"",income:cur.income!=="N/A"?cur.income:"",emi:cur.emi!=="N/A"?cur.emi:"",docPan:cur.docPan!=="N/A"?cur.docPan:"Pending",docAadhaar:cur.docAadhaar!=="N/A"?cur.docAadhaar:"Pending",docSalary:cur.docSalary!=="N/A"?cur.docSalary:"Pending",docBank:cur.docBank!=="N/A"?cur.docBank:"Pending",docProperty:cur.docProperty!=="N/A"?cur.docProperty:"Pending",notes:cur.notes!=="N/A"?cur.notes:""});};
@@ -1298,7 +1376,7 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
                       </div>
                       <div className={`border-t pt-3 mt-1 ${t.tableBorder}`}>
                         <label className={`block text-xs font-bold mb-1.5 ${t.accentText}`}>Lead Interest Status *</label>
-                        <select required value={salesForm.leadStatus} onChange={e=>setSalesForm({...salesForm,leadStatus:e.target.value})} className={formSelect}><option value="" disabled>Select Status</option><option>Interested</option><option>Not Interested</option><option>Maybe</option></select>
+                        <select required value={salesForm.leadStatus} onChange={e=>setSalesForm({...salesForm,leadStatus:e.target.value})} className={formSelect}><option value="" disabled>Select Status</option><option>Interested</option><option>Not Interested</option><option>Non Qualified Lead</option></select>
                       </div>
                       <div className={`border-t pt-3 mt-1 ${t.tableBorder}`}>
                         <label className={`block text-xs font-bold mb-1.5 ${isDark?"text-[#00AEEF]":"text-[#00AEEF]"}`}>Loan Planned?</label>
@@ -1307,6 +1385,7 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
                       <div className={`mt-2 border-t pt-3 ${t.tableBorder}`}>
                         <label className="text-xs text-orange-400 font-bold mb-1.5 block">Schedule a Site Visit?</label>
                         <input ref={inputRef} type="datetime-local" value={salesForm.siteVisit} onChange={e=>setSalesForm({...salesForm,siteVisit:e.target.value})} onClick={()=>inputRef.current?.showPicker()} className={`${formInput} focus:border-orange-500`}/>
+                 
                       </div>
                       <button type="submit" className={`mt-auto w-full font-bold py-3 sm:py-3.5 rounded-xl shadow-md transition-colors flex-shrink-0 ${t.btnPrimary}`}>Submit Salesform</button>
                     </form>
@@ -1471,11 +1550,25 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
                             );
                           })()}
                         </div>
+                        
+                        
                       )}
+                       {/* Site Visit History — outside with gap */}
+                      <div className="mt-3">
+                        <SiteVisitScheduler
+                          lead={selectedLead}
+                          adminUser={adminUser}
+                          isDark={isDark}
+                          t={t}
+                          onSuccess={refetch}
+                        />
+                      </div>
+                     
                     </div>
-
+                      
                     {/* Call / WhatsApp buttons */}
                     <div className="grid grid-cols-2 gap-3 flex-shrink-0">
+                     
                       <button
                         onClick={() => { setCallOpen(true); setCallHidden(false); }}
                         className={`border flex flex-col items-center justify-center py-2 sm:py-3 rounded-xl transition-all cursor-pointer gap-1 min-h-[48px] ${isDark?"bg-[#00AEEF]/10 border-[#00AEEF]/30 hover:bg-[#00AEEF] text-[#00AEEF] hover:text-white":"bg-[#00AEEF]/10 border-[#00AEEF]/30 hover:bg-[#00AEEF] text-[#00AEEF] hover:text-white"}`}>
@@ -1778,7 +1871,264 @@ function AssistantView({ allLeads, isDark, t }: { allLeads: any[]; isDark: boole
     </div>
   );
 }
+// ============================================================================
+// SITE VISIT SCHEDULER COMPONENT
+// ============================================================================
+function SiteVisitScheduler({
+  lead, adminUser, isDark, t, onSuccess
+}: {
+  lead: any; adminUser: any; isDark: boolean;
+  t: ReturnType<typeof buildTheme>; onSuccess: () => void;
+}) {
+  const [visits, setVisits]         = useState<any[]>([]);
+  const [showModal, setShowModal]   = useState(false);
+  const [visitDate, setVisitDate]   = useState("");
+  const [visitNotes, setVisitNotes] = useState("");
+  const [isSaving, setIsSaving]     = useState(false);
+  const [editVisit, setEditVisit]   = useState<any>(null);
+  const [toast, setToast]           = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
+  const fetchVisits = async () => {
+    try {
+      const res  = await fetch(`/api/site-visits?lead_id=${lead.id}`);
+      const json = await res.json();
+      if (json.success) setVisits(json.data);
+    } catch {}
+  };
+
+  useEffect(() => { fetchVisits(); }, [lead.id]);
+
+  const showToast = (msg: string) => {
+    setToast(msg); setTimeout(() => setToast(null), 3000);
+  };
+
+  const handleSchedule = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!visitDate) return;
+    setIsSaving(true);
+    try {
+      const url    = editVisit ? `/api/site-visits` : `/api/site-visits`;
+      const method = editVisit ? "PATCH" : "POST";
+      const body   = editVisit
+        ? { id: editVisit.id, visit_date: visitDate, notes: visitNotes }
+        : { lead_id: lead.id, visit_date: visitDate, created_by: adminUser.name, role: adminUser.role, notes: visitNotes };
+
+      const res  = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      const json = await res.json();
+
+      if (!json.success) { showToast("❌ " + json.message); return; }
+
+      // Post follow-up note to MongoDB timeline
+      const visitLabel = editVisit ? "Re-Site Visit Rescheduled" : visits.length === 0 ? "Site Visit Scheduled" : "Re-Site Visit Scheduled";
+      await fetch("/api/followups", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          leadId:          String(lead.id),
+          salesManagerName: adminUser.name,
+          createdBy:        adminUser.role === "admin" ? "admin" : "sales",
+          message:          `📅 ${visitLabel}:\n• Date: ${new Date(visitDate).toLocaleString("en-IN")}\n• Notes: ${visitNotes || "N/A"}`,
+          siteVisitDate:    visitDate,
+          createdAt:        new Date().toISOString(),
+        }),
+      });
+
+      showToast(`✅ ${visitLabel}!`);
+      setShowModal(false); setVisitDate(""); setVisitNotes(""); setEditVisit(null);
+      fetchVisits(); onSuccess();
+    } catch { showToast("❌ Something went wrong."); }
+    finally { setIsSaving(false); }
+  };
+
+  const handleStatusChange = async (visitId: number, status: string) => {
+    try {
+      const res  = await fetch("/api/site-visits", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: visitId, status }) });
+      const json = await res.json();
+      if (!json.success) { showToast("❌ " + json.message); return; }
+
+      await fetch("/api/followups", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          leadId:          String(lead.id),
+          salesManagerName: adminUser.name,
+          createdBy:        "sales",
+          message:          `🔄 Site Visit marked as ${status.toUpperCase()} by ${adminUser.name}`,
+          siteVisitDate:    null,
+          createdAt:        new Date().toISOString(),
+        }),
+      });
+
+      showToast(`✅ Visit marked as ${status}`);
+      fetchVisits(); onSuccess();
+    } catch { showToast("❌ Update failed."); }
+  };
+
+  const upcomingVisit = visits.find(v => v.status === "scheduled" && new Date(v.visit_date) >= new Date());
+  const isClosing     = lead.status === "Closing" || !!lead.closingDate;
+
+  const statusBadge = (status: string) => {
+    if (status === "completed") return "text-green-400 border-green-500/30 bg-green-500/10";
+    if (status === "cancelled") return "text-red-400 border-red-500/30 bg-red-500/10";
+    return "text-yellow-400 border-yellow-500/30 bg-yellow-500/10";
+  };
+
+  return (
+    <div className={`rounded-xl border p-4 ${isDark ? "bg-[#1a1a1a] border-[#2a2a2a]" : "bg-white border-indigo-200"}`}>
+      {/* Toast */}
+      {toast && (
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[200] px-5 py-3 rounded-xl shadow-lg text-sm font-bold text-white bg-green-600 animate-fadeIn border border-green-400">
+          {toast}
+        </div>
+      )}
+
+      {/* Header */}
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h3 className={`font-bold text-sm flex items-center gap-2 ${t.text}`}>
+            <FaCalendarAlt className="text-orange-400" /> Site Visit History
+          </h3>
+          {upcomingVisit && (
+            <p className="text-xs text-orange-400 font-semibold mt-0.5">
+              Next: {new Date(upcomingVisit.visit_date).toLocaleDateString("en-IN", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
+            </p>
+          )}
+        </div>
+        {!isClosing && (
+          <button
+            onClick={() => { setEditVisit(null); setVisitDate(""); setVisitNotes(""); setShowModal(true); }}
+            className={`text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 cursor-pointer transition-colors ${
+              visits.length === 0
+                ? (isDark ? "bg-orange-600 hover:bg-orange-500 text-white" : "bg-orange-500 hover:bg-orange-400 text-white")
+                : (isDark ? "bg-orange-600/20 hover:bg-orange-600 border border-orange-500/30 text-orange-400 hover:text-white" : "bg-orange-50 hover:bg-orange-500 border border-orange-300 text-orange-600 hover:text-white")
+            }`}
+          >
+            <FaCalendarAlt className="text-[10px]" />
+            {visits.length === 0 ? "Schedule Visit" : "Re-Site Visit"}
+          </button>
+        )}
+      </div>
+
+      {/* Visit Timeline */}
+      {visits.length === 0 ? (
+        <p className={`text-xs text-center py-4 ${t.textFaint}`}>No site visits scheduled yet.</p>
+      ) : (
+        <div className="relative">
+          {/* Vertical line */}
+          <div className={`absolute left-3 top-0 bottom-0 w-px ${isDark ? "bg-[#333]" : "bg-indigo-100"}`} />
+          <div className="space-y-4 pl-8">
+            {visits.map((v, i) => (
+              <div key={v.id} className="relative">
+                {/* Dot */}
+                <div className={`absolute -left-5 top-1 w-2.5 h-2.5 rounded-full border-2 ${
+                  v.status === "completed" ? "bg-green-500 border-green-400" :
+                  v.status === "cancelled" ? "bg-red-500 border-red-400" :
+                  "bg-yellow-500 border-yellow-400"
+                }`} />
+
+                <div className={`rounded-xl p-3 border ${isDark ? "bg-[#222] border-[#333]" : "bg-[#F8FAFC] border-indigo-100"}`}>
+                  <div className="flex items-start justify-between gap-2 mb-1.5">
+                    <div>
+                      <p className={`text-xs font-bold ${t.text}`}>
+                        Visit {i + 1} — {new Date(v.visit_date).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
+                      </p>
+                      <p className={`text-[10px] ${t.textFaint}`}>
+                        {new Date(v.visit_date).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })} · by {v.created_by}
+                      </p>
+                    </div>
+                    <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border uppercase flex-shrink-0 ${statusBadge(v.status)}`}>
+                      {v.status}
+                    </span>
+                  </div>
+                  {v.notes && <p className={`text-[11px] italic ${t.textMuted}`}>{v.notes}</p>}
+
+                  {/* Action buttons for scheduled visits */}
+                  {v.status === "scheduled" && (
+                    <div className="flex gap-2 mt-2 flex-wrap">
+                      <button onClick={() => handleStatusChange(v.id, "completed")}
+                        className="text-[10px] font-bold px-2 py-1 rounded-lg bg-green-500/10 border border-green-500/30 text-green-400 hover:bg-green-500 hover:text-white transition-colors cursor-pointer">
+                        ✓ Mark Completed
+                      </button>
+                      <button onClick={() => handleStatusChange(v.id, "cancelled")}
+                        className="text-[10px] font-bold px-2 py-1 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500 hover:text-white transition-colors cursor-pointer">
+                        ✕ Cancel
+                      </button>
+                      <button onClick={() => { setEditVisit(v); setVisitDate(v.visit_date.slice(0, 16)); setVisitNotes(v.notes || ""); setShowModal(true); }}
+                        className={`text-[10px] font-bold px-2 py-1 rounded-lg border transition-colors cursor-pointer ${isDark ? "bg-[#333] border-[#444] text-gray-300 hover:bg-[#444]" : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"}`}>
+                        ✎ Reschedule
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Schedule Modal */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black/75 z-[200] flex items-center justify-center p-4 animate-fadeIn" style={{ backdropFilter: "blur(8px)" }}>
+          <div className={`rounded-2xl w-full max-w-md shadow-2xl border overflow-hidden ${isDark ? "bg-[#1a1a1a] border-[#2a2a2a]" : "bg-white border-indigo-200"}`}>
+            <div className={`p-5 border-b flex items-center justify-between ${isDark ? "bg-orange-900/20 border-orange-500/20" : "bg-orange-50 border-orange-200"}`}>
+              <div>
+                <h2 className={`font-bold flex items-center gap-2 ${isDark ? "text-orange-400" : "text-orange-700"}`}>
+                  <FaCalendarAlt /> {editVisit ? "Reschedule Visit" : visits.length === 0 ? "Schedule Site Visit" : "Schedule Re-Site Visit"}
+                </h2>
+                <p className={`text-xs mt-0.5 ${t.textMuted}`}>Lead #{lead.id} — {lead.name}</p>
+              </div>
+              <button onClick={() => { setShowModal(false); setEditVisit(null); }} className={`p-2 ${t.textMuted} hover:text-red-500`}><FaTimes /></button>
+            </div>
+            <form onSubmit={handleSchedule} className={`p-5 space-y-4 ${isDark ? "bg-[#121212]" : "bg-[#F8FAFC]"}`}>
+              <div>
+                <label className={`block text-xs font-bold mb-1.5 ${isDark ? "text-orange-400" : "text-orange-700"}`}>
+                  Visit Date & Time *
+                </label>
+                <input
+                  ref={inputRef} required type="datetime-local"
+                  value={visitDate}
+                  min={new Date().toISOString().slice(0, 16)}
+                  onChange={e => setVisitDate(e.target.value)}
+                  onClick={() => inputRef.current?.showPicker()}
+                  className={`w-full rounded-xl px-4 py-3 text-sm outline-none border-2 transition-colors ${
+                    isDark ? "bg-[#1a1a1a] border-orange-500/40 text-white focus:border-orange-500" : "bg-white border-orange-300 text-[#1A1A1A] focus:border-orange-500"
+                  }`}
+                />
+              </div>
+              <div>
+                <label className={`block text-xs font-bold mb-1.5 ${isDark ? "text-orange-400" : "text-orange-700"}`}>
+                  Notes / Reason
+                </label>
+                <textarea
+                  value={visitNotes} onChange={e => setVisitNotes(e.target.value)} rows={3}
+                  placeholder={visits.length > 0 ? "e.g. Customer needs to see the 3BHK units again..." : "e.g. First visit scheduled with customer..."}
+                  className={`w-full rounded-xl px-4 py-3 text-sm outline-none resize-none border-2 transition-colors ${
+                    isDark ? "bg-[#1a1a1a] border-orange-500/30 text-white focus:border-orange-500" : "bg-white border-orange-200 text-[#1A1A1A] focus:border-orange-500"
+                  }`}
+                />
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button type="button" onClick={() => { setShowModal(false); setEditVisit(null); }}
+                  className={`flex-1 py-2.5 rounded-lg font-bold cursor-pointer transition-colors ${t.textMuted} hover:text-red-500 border ${isDark ? "border-[#333]" : "border-gray-200"}`}>
+                  Cancel
+                </button>
+                <button type="submit" disabled={isSaving || !visitDate}
+                  className={`flex-1 py-2.5 rounded-lg font-bold transition-colors flex items-center justify-center gap-2 ${
+                    isSaving || !visitDate
+                      ? "opacity-50 cursor-not-allowed bg-orange-400 text-white"
+                      : "cursor-pointer bg-orange-500 hover:bg-orange-400 text-white shadow-lg shadow-orange-500/20"
+                  }`}>
+                  {isSaving ? "Saving..." : <><FaCalendarAlt /> {editVisit ? "Reschedule" : "Schedule"}</>}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 function SettingsView({ adminUser, isDark, t, onSaved }: { 
   adminUser: any; 
   isDark: boolean; 

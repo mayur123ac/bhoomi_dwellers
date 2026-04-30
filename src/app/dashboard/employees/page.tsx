@@ -12,7 +12,7 @@ import {
   FaPhoneAlt, FaSearch, FaChevronLeft, FaComments, FaUpload, FaDownload,
   FaFileExcel, FaDesktop, FaCheckCircle, FaTimes, FaPaperPlane,
   FaCalendarAlt, FaHeart, FaTimesCircle, FaAngleLeft, FaCommentAlt,
-  FaMoneyBillWave, FaMapMarkerAlt, FaBullseye, FaSave, FaUniversity, FaBriefcase // ← add this
+  FaMoneyBillWave, FaMapMarkerAlt, FaBullseye, FaSave, FaUniversity, FaBriefcase, FaChartPie // ← add this
 } from "react-icons/fa";
 import { useCallerSync } from "@/lib/hooks/useCallerSync";
 import { label } from "framer-motion/client";
@@ -153,10 +153,10 @@ const interestBadge = (status?: string) => {
   const map: Record<string, string> = {
     "Interested": "text-green-400 bg-green-500/10 border-green-500/30",
     "Not Interested": "text-red-400 bg-red-500/10 border-red-500/30",
-    "Maybe": "text-yellow-400 bg-yellow-500/10 border-yellow-500/30",
+    "Non Qualified Lead": "text-yellow-400 bg-yellow-500/10 border-yellow-500/30",
   };
   const short: Record<string, string> = {
-    "Interested": "Interested", "Not Interested": "Not Int.", "Maybe": "Maybe",
+    "Interested": "Interested", "Not Interested": "Not Int.", "Non Qualified Lead": "Non Qualified Lead",
   };
   return (
     <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border whitespace-nowrap ${map[status] ?? "text-gray-400 bg-gray-500/10 border-gray-500/30"}`}>
@@ -701,6 +701,7 @@ export default function EmployeesPage() {
     { id: "receptionist", icon: FaClipboardList, label: "Receptionist", link: "/dashboard", section: null },
     { id: "sales", icon: FaUsers, label: "Sales Managers", link: "/dashboard", section: null },
     { id: "site_head", icon: FaUniversity, label: "Site Heads", link: "/dashboard", section: null },
+    { id: "monitoring",  icon: FaChartPie,      label: "Daily Monitor", link: "/dashboard",            section: null },
     { id: "callers", icon: FaPhoneAlt, label: "Caller Panel", link: "/dashboard/employees", section: "callers" as const },
     { id: "employees", icon: FaIdCard, label: "Add Employee", link: "/dashboard/employees", section: "employees" as const },
   ];
@@ -1616,9 +1617,9 @@ function CallerControlMode({ leads, savedLeads, setSavedLeads, adminName, onExit
     const map: Record<string, string> = {
       "Interested": "text-green-400 bg-green-500/10 border-green-500/30",
       "Not Interested": "text-red-400 bg-red-500/10 border-red-500/30",
-      "Maybe": "text-yellow-400 bg-yellow-500/10 border-yellow-500/30",
+      "Non Qualified Lead": "text-yellow-400 bg-yellow-500/10 border-yellow-500/30",
     };
-    const short: Record<string, string> = { "Interested": "Interested", "Not Interested": "Not Int.", "Maybe": "Maybe" };
+    const short: Record<string, string> = { "Interested": "Interested", "Not Interested": "Not Int.", "Non Qualified Lead": "Non Qualified Lead" };
     return <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border whitespace-nowrap ${map[status] ?? "text-gray-400 bg-gray-500/10 border-gray-500/30"}`}>{short[status] ?? status}</span>;
   };
 
@@ -1630,7 +1631,7 @@ function CallerControlMode({ leads, savedLeads, setSavedLeads, adminName, onExit
     if (lead.dbId) fetch(`/api/caller-leads/${lead.dbId}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: "saved" }) }).catch(() => { });
   };
 
-  const setInterest = async (lead: any, status: "Interested" | "Not Interested" | "Maybe") => {
+  const setInterest = async (lead: any, status: "Interested" | "Not Interested" | "Non Qualified Lead") => {
     setSavedLeads(prev => prev.map(l => l.id === lead.id ? { ...l, interestStatus: status, status: status === "Not Interested" ? "not_interested" : "saved" } : l));
     if (detailLead?.id === lead.id) setDetailLead((p: any) => ({ ...p, interestStatus: status }));
     if (lead.dbId) await fetch(`/api/caller-leads/${lead.dbId}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ interest_status: status, status: status === "Not Interested" ? "not_interested" : "saved" }) }).catch(() => { });
@@ -2210,7 +2211,7 @@ function CallerControlMode({ leads, savedLeads, setSavedLeads, adminName, onExit
                     {sl.interestStatus && iBadge(sl.interestStatus)}
                     {sl.interestStatus !== "Interested" && <button onClick={() => setInterest(sl, "Interested")} className="flex items-center gap-2 bg-green-600/10 hover:bg-green-600 border border-green-500/30 text-green-400 hover:text-white font-bold px-3 py-2 rounded-lg text-xs cursor-pointer transition-colors"><FaCheckCircle /> Interested</button>}
                     {sl.interestStatus !== "Not Interested" && <button onClick={() => setInterest(sl, "Not Interested")} className="flex items-center gap-2 bg-red-600/10 hover:bg-red-600 border border-red-500/30 text-red-400 hover:text-white font-bold px-3 py-2 rounded-lg text-xs cursor-pointer transition-colors"><FaTimes /> Not Interested</button>}
-                    {sl.interestStatus !== "Maybe" && <button onClick={() => setInterest(sl, "Maybe")} className="flex items-center gap-2 bg-yellow-600/10 hover:bg-yellow-600 border border-yellow-500/30 text-yellow-400 hover:text-white font-bold px-3 py-2 rounded-lg text-xs cursor-pointer transition-colors">Maybe</button>}
+                    {sl.interestStatus !== "Non Qualified Lead" && <button onClick={() => setInterest(sl, "Non Qualified Lead")} className="flex items-center gap-2 bg-yellow-600/10 hover:bg-yellow-600 border border-yellow-500/30 text-yellow-400 hover:text-white font-bold px-3 py-2 rounded-lg text-xs cursor-pointer transition-colors">Non Qualified Lead</button>}
                   </div>
                 </div>
                 <div className="flex flex-col lg:flex-row gap-4 flex-1 min-h-0">
