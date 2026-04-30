@@ -329,7 +329,23 @@ export default function SalesDashboard() {
     if (storedUser) {
       try {
         const parsedUser = JSON.parse(storedUser);
-        setUser({ ...parsedUser, name: parsedUser.name || "User", password: parsedUser.password || "********" });
+        setUser({ 
+          ...parsedUser, 
+          name:     parsedUser.name || "User", 
+          password: parsedUser.password || "********",
+          whatsapp_number: "" // will be fetched below
+        });
+
+        // Fetch WhatsApp number from DB
+        fetch(`/api/users/update-whatsapp?name=${encodeURIComponent(parsedUser.name)}`)
+          .then(r => r.json())
+          .then(data => {
+            if (data.success) {
+              setUser(prev => ({ ...prev, whatsapp_number: data.whatsapp_number || "" }));
+            }
+          })
+          .catch(console.error);
+
         if (parsedUser.role?.toLowerCase() !== "sales manager" && parsedUser.role?.toLowerCase() !== "admin")
           router.push("/dashboard");
       } catch { router.push("/"); }
@@ -354,6 +370,7 @@ export default function SalesDashboard() {
               { view: "forms",        icon: <FaFileInvoice className="w-5 h-5" />,   title: "Assigned Leads" },
               { view: "closed-leads", icon: <FaCheckCircle className="w-5 h-5" />,   title: "Closed Leads" },
               { view: "assistant",    icon: <FaRobot className="w-5 h-5" />,         title: "CRM AI Assistant" },
+              { view: "settings", icon: <FaCog className="w-5 h-5" />, title: "Settings" },
             ].map(({ view, icon, title }) => (
             <div key={view} onClick={() => setActiveView(view)} className="group relative flex justify-center cursor-pointer w-full" title={title}>
               {(activeView === view || (view === "forms" && activeView === "detail")) &&
@@ -543,8 +560,15 @@ export default function SalesDashboard() {
               allLeads={user.role === "admin" ? allLeads : allLeads.filter((l: any) => l.assigned_to === user.name)}
               isDark={isDark} t={t}
             />
+          ) : activeView === "settings" ? (
+            <SettingsView 
+              adminUser={user} 
+              isDark={isDark} 
+              t={t}
+              onSaved={(number: string) => setUser(prev => ({ ...prev, whatsapp_number: number }))}
+            />
           ) : (
-            <div className={`text-center mt-20 ${t.textMuted}`}>Settings Module Loading...</div>
+            <div className={`text-center mt-20 ${t.textMuted}`}>...</div>
           )}
         </main>
       </div>
@@ -868,42 +892,40 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
     e.preventDefault();
     if (!selectedLead || !waMessage.trim()) return;
 
+    // Guard: no WhatsApp number configured
+    if (!adminUser.whatsapp_number) {
+      alert("⚠️ Please set your WhatsApp number in Settings first.");
+      return;
+    }
+
     setIsSendingWa(true);
     try {
-      const waRes = await fetch("/api/whatsapp", {
+      // 1. Log to whatsapp_logs + follow_ups
+      await fetch("/api/whatsapp-logs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          phone: selectedLead.phone || selectedLead.contact_no, 
-          message: waMessage.trim() 
-        })
+        body: JSON.stringify({
+          lead_id:          String(selectedLead.id),
+          sender_name:      adminUser.name,
+          sender_number:    adminUser.whatsapp_number,
+          recipient_number: selectedLead.phone || selectedLead.contact_no,
+          message_preview:  waMessage.trim(),
+        }),
       });
 
-      if (!waRes.ok) throw new Error("Failed to send WhatsApp message");
+      // 2. Open WhatsApp click-to-chat using manager's own number
+      const phone   = String(selectedLead.phone || selectedLead.contact_no || "").replace(/\D/g, "");
+      const encoded = encodeURIComponent(waMessage.trim());
+      window.open(`https://wa.me/${phone}?text=${encoded}`, "_blank");
 
-      const followUpMsg = `🟢 Sent via WhatsApp Business:\n"${waMessage.trim()}"`;
-      const nm = { 
-        leadId: String(selectedLead.id), 
-        salesManagerName: adminUser.name || "Sales Manager", 
-        createdBy: adminUser.role?.toLowerCase() === "admin" ? "admin" : "sales", 
-        message: followUpMsg, 
-        siteVisitDate: null, 
-        createdAt: new Date().toISOString() 
-      };
-      
-      await fetch("/api/followups", { 
-        method: "POST", 
-        headers: { "Content-Type": "application/json" }, 
-        body: JSON.stringify(nm) 
-      });
-
-      setToastMsg({ title: "WhatsApp Sent & Logged!", icon: <FaCheckCircle/>, color: "green" });
+      setToastMsg({ title: "WhatsApp Opened & Logged!", icon: <FaCheckCircle/>, color: "green" });
       setTimeout(() => setToastMsg(null), 3000);
       setIsWaModalOpen(false);
       setWaMessage("");
-      refetch(); 
+      refetch();
+
     } catch (err) {
-      alert("Error sending WhatsApp message. Check API credentials.");
+      alert("Error logging WhatsApp message.");
     } finally {
       setIsSendingWa(false);
     }
@@ -1488,6 +1510,7 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
                     const isLoan    = msg.message.includes("🏦 Loan Update");
                     const isSF      = msg.message.includes("📝 Detailed Salesform Submitted");
                     const isClosing = msg.message.includes("✅ Lead Marked as Closing");
+                    const isWA      = msg.message.includes("📱 WhatsApp sent by");
                     const bubbleCls = isLoan ? t.fupLoan : isSF ? t.fupSalesform : isClosing ? t.fupClosing : t.fupDefault;
                     return (
                       <div key={idx} className="flex justify-start">
@@ -1497,6 +1520,19 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
                             <span className={`text-[9px] sm:text-[10px] ${t.textFaint}`}>{formatDate(msg.createdAt)}</span>
                           </div>
                           <p className={`text-xs sm:text-sm whitespace-pre-wrap leading-relaxed break-words ${t.textMuted}`}>{msg.message}</p>
+                          
+                          {/* Log Reply button — only on WhatsApp messages */}
+                         {isWA && (
+                            <button
+                              onClick={() => {
+                                setCustomNote(`📲 WhatsApp Reply from ${selectedLead.name}: `);
+                                setTimeout(() => inputRef.current?.focus(), 50);
+                              }}
+                              className="mt-2 text-[10px] font-bold text-green-500 hover:text-green-400 border border-green-500/30 hover:border-green-400/50 bg-green-500/5 hover:bg-green-500/10 px-3 py-1 rounded-full transition-all flex items-center gap-1"
+                            >
+                              <FaWhatsapp className="text-[9px]"/> Log their reply
+                            </button>
+                          )}
                         </div>
                       </div>
                     );
@@ -1505,6 +1541,7 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
                 </div>
                 <form onSubmit={handleSendCustomNote} className={`p-3 sm:p-4 border-t flex gap-2 sm:gap-3 items-center flex-shrink-0 ${t.header} ${t.tableBorder}`} style={t.headerGlass}>
                   <input
+                    ref={inputRef}
                     type="text" value={customNote} onChange={e => setCustomNote(e.target.value)}
                     placeholder="Add follow-up note..."
                     className={`flex-1 rounded-xl px-3 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm outline-none transition-colors border ${t.inputBg} ${t.text} ${t.inputFocus}`}
@@ -1738,6 +1775,160 @@ function AssistantView({ allLeads, isDark, t }: { allLeads: any[]; isDark: boole
           <p className={`text-center text-[9px] sm:text-[10px] mt-1 sm:mt-2 ${t.textFaint}`}>Press Enter to send · Shift+Enter for new line</p>
         </div>
       </div>
+    </div>
+  );
+}
+
+function SettingsView({ adminUser, isDark, t, onSaved }: { 
+  adminUser: any; 
+  isDark: boolean; 
+  t: ReturnType<typeof buildTheme>;
+  onSaved: (number: string) => void;
+}) {
+  const [whatsappNumber, setWhatsappNumber] = useState("");
+  const [isSaving, setIsSaving]             = useState(false);
+  const [isLoading, setIsLoading]           = useState(true);
+  const [toast, setToast]                   = useState<{ msg: string; ok: boolean } | null>(null);
+
+  useEffect(() => {
+    const fetchNumber = async () => {
+      try {
+        const res  = await fetch(`/api/users/update-whatsapp?name=${encodeURIComponent(adminUser.name)}`);
+        const data = await res.json();
+        if (data.success) setWhatsappNumber(data.whatsapp_number || "");
+      } catch (e) { console.error(e); } 
+      finally { setIsLoading(false); }
+    };
+    if (adminUser.name) fetchNumber();
+  }, [adminUser.name]);
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const cleaned = whatsappNumber.replace(/\D/g, "");
+    if (cleaned.length < 10 || cleaned.length > 15) {
+      setToast({ msg: "Enter a valid number with country code (e.g. 918369787919)", ok: false });
+      setTimeout(() => setToast(null), 3500);
+      return;
+    }
+    setIsSaving(true);
+    try {
+      const res  = await fetch("/api/users/update-whatsapp", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ name: adminUser.name, whatsapp_number: cleaned }),
+      });
+      const data = await res.json();
+      if (data.success) onSaved(cleaned); // update parent state instantly
+      setToast({ msg: data.success ? "✅ WhatsApp number saved!" : "❌ " + data.message, ok: data.success });
+      setTimeout(() => setToast(null), 3500);
+    } catch {
+      setToast({ msg: "❌ Network error. Try again.", ok: false });
+      setTimeout(() => setToast(null), 3500);
+    } finally { setIsSaving(false); }
+  };
+
+  return (
+    <div className="animate-fadeIn max-w-xl mx-auto space-y-6">
+
+      {/* Toast */}
+      {toast && (
+        <div className={`fixed top-6 left-1/2 -translate-x-1/2 z-[100] px-6 py-3 rounded-xl shadow-lg flex items-center gap-3 animate-fadeIn border ${toast.ok ? "bg-green-600 border-green-400 text-white" : "bg-red-600 border-red-400 text-white"}`}>
+          <span className="text-sm font-bold">{toast.msg}</span>
+        </div>
+      )}
+
+      <div>
+        <h1 className={`text-2xl font-bold ${t.text}`}>Settings</h1>
+        <p className={`text-sm mt-1 ${t.textFaint}`}>Manage your personal CRM preferences</p>
+      </div>
+
+      {/* WhatsApp Card */}
+      <div className={`rounded-2xl border p-6 shadow-sm ${t.card}`} style={t.cardGlass}>
+        <div className={`flex items-center gap-3 mb-6 pb-4 border-b ${t.tableBorder}`}>
+          <div className="w-10 h-10 rounded-xl bg-green-500/10 border border-green-500/30 flex items-center justify-center">
+            <FaWhatsapp className="text-green-500 text-lg"/>
+          </div>
+          <div>
+            <h2 className={`font-bold text-base ${t.text}`}>My WhatsApp Number</h2>
+            <p className={`text-xs ${t.textFaint}`}>Leads will receive messages from this number</p>
+          </div>
+        </div>
+
+        {isLoading ? (
+          <div className={`text-center py-6 text-sm ${t.textMuted}`}>Loading...</div>
+        ) : (
+          <form onSubmit={handleSave} className="space-y-4">
+
+            {/* Who is saving */}
+            <div className={`flex items-center justify-between p-3 rounded-xl border ${t.settingsBg}`}>
+              <span className={`text-xs ${t.textFaint}`}>Saving for</span>
+              <span className={`text-xs font-bold ${t.text}`}>{adminUser.name}</span>
+            </div>
+
+            {/* Number Input */}
+            <div>
+              <label className={`text-xs font-bold block mb-2 ${t.textMuted}`}>Your WhatsApp Number</label>
+              <div className="relative">
+                <span className={`absolute left-3 top-1/2 -translate-y-1/2 text-xs font-mono font-bold ${t.textFaint}`}>+</span>
+                <input
+                  type="tel"
+                  value={whatsappNumber}
+                  onChange={e => setWhatsappNumber(e.target.value.replace(/\D/g, ""))}
+                  placeholder="918369787919"
+                  maxLength={15}
+                  className={`w-full rounded-xl pl-7 pr-4 py-3 text-sm font-mono outline-none border transition-colors ${t.inputInner} ${t.text} ${t.inputFocus}`}
+                />
+              </div>
+              <p className={`text-[10px] mt-2 ${t.textFaint}`}>
+                Include country code, no spaces or symbols. 
+                Example: <span className="font-mono font-bold">918369787919</span>
+              </p>
+            </div>
+
+            {/* Live Preview */}
+            {whatsappNumber.length >= 10 && (
+              <div className="p-3 rounded-xl border border-green-500/20 bg-green-500/5 text-xs">
+                <p className="text-green-500 font-bold mb-1">📱 Preview — WhatsApp will open as:</p>
+                <p className={`font-mono break-all ${t.textMuted}`}>
+                  https://wa.me/{whatsappNumber}?text=...
+                </p>
+              </div>
+            )}
+
+            {/* Current saved number */}
+            {adminUser.whatsapp_number && (
+              <div className={`p-3 rounded-xl border border-green-500/20 text-xs flex items-center justify-between ${t.settingsBg}`}>
+                <span className={t.textFaint}>Currently saved:</span>
+                <span className="font-mono font-bold text-green-500">+{adminUser.whatsapp_number}</span>
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={isSaving || whatsappNumber.length < 10}
+              className={`w-full font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2 ${
+                isSaving || whatsappNumber.length < 10
+                  ? "opacity-50 cursor-not-allowed bg-green-600/40 text-white"
+                  : "bg-green-600 hover:bg-green-500 text-white shadow-lg shadow-green-600/20 cursor-pointer"
+              }`}
+            >
+              <FaWhatsapp/>
+              {isSaving ? "Saving..." : "Save WhatsApp Number"}
+            </button>
+          </form>
+        )}
+      </div>
+
+      {/* Info Box */}
+      <div className={`rounded-2xl border p-4 text-xs space-y-2 ${t.settingsBg}`}>
+        <p className={`font-bold ${t.textMuted}`}>ℹ️ How this works</p>
+        <p className={t.textFaint}>
+          When you click "Send WhatsApp" on a lead, it opens WhatsApp Web/App 
+          using <strong>your personal number</strong>. Each Sales Manager 
+          sends from their own WhatsApp — not a shared company number.
+        </p>
+      </div>
+
     </div>
   );
 }
