@@ -7,7 +7,7 @@ export function getPool(): Pool {
   if (!pool) {
     pool = new Pool({
       connectionString: process.env.DATABASE_URL,
-      // ssl: { rejectUnauthorized: false }, // ← Always ON for Neon
+      ssl: { rejectUnauthorized: false }, // ← Always ON for Neon
       max: 10,
       idleTimeoutMillis: 30_000,
       connectionTimeoutMillis: 5_000,
