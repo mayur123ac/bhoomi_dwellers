@@ -966,19 +966,19 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
       Loading more leads…
     </div>
   );
-  const handleSendWhatsApp = async (e: React.FormEvent) => {
+  // BEFORE
+
+
+// AFTER — accept phone from modal
+  const handleSendWhatsApp = async (e: React.FormEvent, chosenPhone: string) => {
     e.preventDefault();
     if (!selectedLead || !waMessage.trim()) return;
-
-    // Guard: no WhatsApp number configured
     if (!adminUser.whatsapp_number) {
       alert("⚠️ Please set your WhatsApp number in Settings first.");
       return;
     }
-
     setIsSendingWa(true);
     try {
-      // 1. Log to whatsapp_logs + follow_ups
       await fetch("/api/whatsapp-logs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -986,23 +986,18 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
           lead_id:          String(selectedLead.id),
           sender_name:      adminUser.name,
           sender_number:    adminUser.whatsapp_number,
-          recipient_number: selectedLead.phone || selectedLead.contact_no,
+          recipient_number: chosenPhone,           // ← use chosen number
           message_preview:  waMessage.trim(),
         }),
       });
-
-      // 2. Open WhatsApp click-to-chat using manager's own number
-      const phone   = String(selectedLead.phone || selectedLead.contact_no || "").replace(/\D/g, "");
       const encoded = encodeURIComponent(waMessage.trim());
-      window.open(`https://wa.me/${phone}?text=${encoded}`, "_blank");
-
+      window.open(`https://wa.me/${chosenPhone}?text=${encoded}`, "_blank");
       setToastMsg({ title: "WhatsApp Opened & Logged!", icon: <FaCheckCircle/>, color: "green" });
       setTimeout(() => setToastMsg(null), 3000);
       setIsWaModalOpen(false);
       setWaMessage("");
       refetch();
-
-    } catch (err) {
+    } catch {
       alert("Error logging WhatsApp message.");
     } finally {
       setIsSendingWa(false);
@@ -1658,46 +1653,31 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
           />
         )}
         {/* ── WHATSAPP MODAL ── */}
-        {isWaModalOpen && selectedLead && (
-          <div className="fixed inset-0 bg-black/75 z-[200] flex justify-center items-center p-4 animate-fadeIn" style={{backdropFilter:"blur(8px)"}}>
-            <div className={`rounded-2xl w-full max-w-lg shadow-2xl border overflow-hidden ${t.modalCard}`} style={t.modalGlass}>
-              
-              <div className="p-4 sm:p-5 border-b border-green-500/20 bg-green-500/10 flex justify-between items-center">
-                <div>
-                  <h2 className="text-base sm:text-lg font-bold flex items-center gap-2 text-green-500"><FaWhatsapp/> Send WhatsApp</h2>
-                  <p className={`text-[10px] sm:text-xs mt-1 ${t.textMuted}`}>To: <strong>{selectedLead.name}</strong> ({maskPhone(selectedLead.phone || selectedLead.contact_no)})</p>
-                </div>
-                <button onClick={() => { setIsWaModalOpen(false); setWaMessage(""); }} className={`p-2 ${t.textMuted} hover:text-red-500 transition-colors`}><FaTimes/></button>
-              </div>
+        {isWaModalOpen && selectedLead && (() => {
+  const phoneOptions = (() => {
+    const opts: { label: string; value: string }[] = [];
+    const primary = String(selectedLead.phone || selectedLead.contact_no || "").replace(/\D/g, "");
+    const alt     = String(selectedLead.altPhone || selectedLead.alt_phone || "").replace(/\D/g, "");
+    if (primary) opts.push({ label: `Primary — ${primary}`, value: primary });
+    if (alt && alt !== primary) opts.push({ label: `Alt — ${alt}`, value: alt });
+    return opts;
+  })();
 
-              <form onSubmit={handleSendWhatsApp}>
-                <div className={`p-4 sm:p-6 ${t.modalInner}`}>
-                  <label className={`block text-xs sm:text-sm font-bold mb-2 ${isDark?"text-green-400":"text-green-600"}`}>
-                    Message (will be logged in CRM timeline)
-                  </label>
-                  <textarea 
-                    required 
-                    value={waMessage} 
-                    onChange={e => setWaMessage(e.target.value)} 
-                    rows={6}
-                    placeholder="Type your message here..."
-                    className={`w-full rounded-xl px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm outline-none resize-none leading-relaxed border-2 transition-colors custom-scrollbar ${isDark?"bg-[#14141B] border-green-500/30 text-white focus:border-green-500":"bg-white border-green-200 text-[#1A1A1A] focus:border-green-500"}`}
-                  />
-                </div>
-                
-                <div className={`p-4 sm:p-5 border-t flex flex-col sm:flex-row justify-end gap-3 ${t.modalHeader} ${t.tableBorder}`}>
-                  <button type="button" onClick={() => { setIsWaModalOpen(false); setWaMessage(""); }}
-                    className={`px-4 sm:px-6 py-2.5 rounded-lg font-bold cursor-pointer transition-colors w-full sm:w-auto text-center ${t.textMuted} hover:text-red-500`}>Cancel</button>
-                  <button type="submit" disabled={isSendingWa || !waMessage.trim()}
-                    className={`px-4 sm:px-8 py-2.5 rounded-lg font-bold transition-colors flex items-center justify-center gap-2 w-full sm:w-auto ${isSendingWa||!waMessage.trim()?"opacity-50 cursor-not-allowed bg-green-600/50 text-white":"cursor-pointer bg-[#25D366] hover:bg-green-500 text-white shadow-lg shadow-green-600/20"}`}>
-                    {isSendingWa ? "Sending..." : <><FaPaperPlane/> Send</>}
-                  </button>
-                </div>
-              </form>
-
-            </div>
-          </div>
-        )}
+  return (
+    <WaModalWithPicker
+      lead={selectedLead}
+      adminUser={adminUser}
+      waMessage={waMessage}
+      setWaMessage={setWaMessage}
+      isSendingWa={isSendingWa}
+      phoneOptions={phoneOptions}
+      isDark={isDark}
+      t={t}
+      onClose={() => { setIsWaModalOpen(false); setWaMessage(""); }}
+      onSubmit={handleSendWhatsApp}
+    />
+  );
+        })()}
       </main>
     </div>
   );
@@ -1711,6 +1691,125 @@ function LucideIcon({ name, className }: { name: string; className?: string }) {
     "check-circle":<CheckCircle className={className}/>,"x-circle":<XCircle className={className}/>,"help-circle":<HelpCircle className={className}/>,"landmark":<Landmark className={className}/>,"clock":<Clock className={className}/>,"alert-triangle":<AlertTriangle className={className}/>,"banknote":<Banknote className={className}/>,"calendar-check":<CalendarCheck className={className}/>,"map-pin":<MapPin className={className}/>,"calendar":<CalendarDays className={className}/>,"zap":<Zap className={className}/>,"trending-up":<TrendingUp className={className}/>,"home":<Home className={className}/>,"building-2":<Building2 className={className}/>,"globe":<Globe className={className}/>,"star":<Star className={className}/>,"share-2":<Share2 className={className}/>,"users":<Users className={className}/>,"bar-chart-2":<BarChart2 className={className}/>,"badge-check":<BadgeCheck className={className}/>,"lightbulb":<Lightbulb className={className}/>,"target":<Target className={className}/>,"brain-circuit":<BrainCircuit className={className}/>,
   };
   return <>{icons[name] ?? <ArrowRight className={className}/>}</>;
+}
+function WaModalWithPicker({ lead, adminUser, waMessage, setWaMessage, isSendingWa, phoneOptions, isDark, t, onClose, onSubmit }: {
+  lead: any; adminUser: any;
+  waMessage: string; setWaMessage: (v: string) => void;
+  isSendingWa: boolean;
+  phoneOptions: { label: string; value: string }[];
+  isDark: boolean; t: any;
+  onClose: () => void;
+  onSubmit: (e: React.FormEvent, phone: string) => void;
+}) {
+  const [selectedPhone, setSelectedPhone] = useState(phoneOptions[0]?.value || "");
+
+  return (
+    <div className="fixed inset-0 bg-black/75 z-[200] flex justify-center items-center p-4 animate-fadeIn"
+      style={{ backdropFilter: "blur(8px)" }}>
+      <div className={`rounded-2xl w-full max-w-lg shadow-2xl border overflow-hidden ${t.modalCard}`}
+        style={t.modalGlass}>
+
+        {/* Header */}
+        <div className="p-5 border-b border-green-500/20 bg-green-500/10 flex justify-between items-center">
+          <div>
+            <h2 className="text-lg font-bold flex items-center gap-2 text-green-500">
+              <FaWhatsapp /> Send WhatsApp
+            </h2>
+            <p className={`text-xs mt-1 ${t.textMuted}`}>To: <strong>{lead.name}</strong></p>
+            {adminUser.whatsapp_number && (
+              <p className={`text-[10px] mt-0.5 ${t.textFaint}`}>From: +{adminUser.whatsapp_number}</p>
+            )}
+          </div>
+          <button onClick={onClose} className={`p-2 ${t.textMuted} hover:text-red-500`}><FaTimes /></button>
+        </div>
+
+        <form onSubmit={e => onSubmit(e, selectedPhone)}>
+          <div className={`p-6 space-y-4 ${t.modalInner}`}>
+
+            {/* ── Phone Picker ── */}
+            <div>
+              <label className={`block text-sm font-bold mb-2 ${isDark ? "text-green-400" : "text-green-600"}`}>
+                Send to number
+              </label>
+              {phoneOptions.length === 0 ? (
+                <p className="text-xs text-red-400">No phone number on this lead.</p>
+              ) : phoneOptions.length === 1 ? (
+                <div className={`flex items-center gap-3 px-4 py-3 rounded-xl border font-mono text-sm ${
+                  isDark
+                    ? "bg-green-500/10 border-green-500/30 text-green-300"
+                    : "bg-green-50 border-green-200 text-green-700"
+                }`}>
+                  <FaWhatsapp /> {phoneOptions[0].label}
+                </div>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  {phoneOptions.map(opt => (
+                    <label key={opt.value}
+                      className={`flex items-center gap-3 px-4 py-3 rounded-xl border cursor-pointer transition-all ${
+                        selectedPhone === opt.value
+                          ? (isDark
+                              ? "bg-green-500/15 border-green-500/50 text-green-300"
+                              : "bg-green-50 border-green-400 text-green-700")
+                          : (isDark
+                              ? "bg-transparent border-[#333] text-gray-400 hover:border-green-500/30"
+                              : "bg-white border-gray-200 text-gray-500 hover:border-green-300")
+                      }`}>
+                      <input
+                        type="radio"
+                        name="wa_phone_sm"
+                        value={opt.value}
+                        checked={selectedPhone === opt.value}
+                        onChange={() => setSelectedPhone(opt.value)}
+                        className="accent-green-500"
+                      />
+                      <FaWhatsapp className={selectedPhone === opt.value ? "text-green-500" : "text-gray-400"} />
+                      <span className="font-mono text-sm">{opt.label}</span>
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* ── Message ── */}
+            <div>
+              <label className={`block text-sm font-bold mb-2 ${isDark ? "text-green-400" : "text-green-600"}`}>
+                Message <span className={`text-xs font-normal ${t.textFaint}`}>(logged in CRM timeline)</span>
+              </label>
+              <textarea
+                required
+                value={waMessage}
+                onChange={e => setWaMessage(e.target.value)}
+                rows={6}
+                placeholder="Type your message here..."
+                className={`w-full rounded-xl px-4 py-3 text-sm outline-none resize-none leading-relaxed border-2 transition-colors custom-scrollbar ${
+                  isDark
+                    ? "bg-[#14141B] border-green-500/30 text-white focus:border-green-500"
+                    : "bg-white border-green-200 text-[#1A1A1A] focus:border-green-500"
+                }`}
+              />
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className={`p-5 border-t flex justify-end gap-3 ${t.modalHeader} ${t.tableBorder}`}>
+            <button type="button" onClick={onClose}
+              className={`px-6 py-2.5 rounded-lg font-bold cursor-pointer ${t.textMuted} hover:text-red-500`}>
+              Cancel
+            </button>
+            <button type="submit"
+              disabled={isSendingWa || !waMessage.trim() || !selectedPhone}
+              className={`px-8 py-2.5 rounded-lg font-bold transition-colors flex items-center gap-2 ${
+                isSendingWa || !waMessage.trim() || !selectedPhone
+                  ? "opacity-50 cursor-not-allowed bg-green-600/40 text-white"
+                  : "cursor-pointer bg-[#25D366] hover:bg-green-500 text-white shadow-lg shadow-green-600/20"
+              }`}>
+              {isSendingWa ? "Opening..." : <><FaWhatsapp /> Open WhatsApp</>}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
 }
 
 // ============================================================================

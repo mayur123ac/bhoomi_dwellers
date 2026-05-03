@@ -2091,16 +2091,10 @@ function TableSearchInput({
   );
 }
 
-async function logAndOpenWhatsApp({
-  lead,
-  sender,
-  message,
-}: {
-  lead: any;
-  sender: any;
-  message: string;
+async function logAndOpenWhatsApp({ lead, sender, message, phoneOverride }: {
+  lead: any; sender: any; message: string; phoneOverride?: string;
 }) {
-  const phone = String(lead?.phone || lead?.contact_no || "").replace(/\D/g, "");
+  const phone = String(phoneOverride || lead?.phone || lead?.contact_no || "").replace(/\D/g, "");
   if (!phone) throw new Error("Lead phone number is missing.");
 
   await fetch("/api/whatsapp-logs", {
@@ -2110,7 +2104,7 @@ async function logAndOpenWhatsApp({
       lead_id: String(lead.id),
       sender_name: sender?.name || "User",
       sender_number: sender?.whatsapp_number || "",
-      recipient_number: lead.phone || lead.contact_no,
+      recipient_number: phone,
       message_preview: message.trim(),
     }),
   });
@@ -2119,56 +2113,136 @@ async function logAndOpenWhatsApp({
 }
 
 function WhatsAppSendModal({
-  lead,
-  sender,
-  message,
-  setMessage,
-  isSending,
-  onClose,
-  onSubmit,
-  theme,
-  isDark,
+  lead, sender, message, setMessage, isSending,
+  onClose, onSubmit, theme, isDark,
 }: {
-  lead: any;
-  sender: any;
-  message: string;
-  setMessage: (value: string) => void;
+  lead: any; sender: any;
+  message: string; setMessage: (v: string) => void;
   isSending: boolean;
   onClose: () => void;
-  onSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
-  theme: any;
-  isDark: boolean;
+  onSubmit: (e: React.FormEvent<HTMLFormElement>, phone: string) => void;  // ← added phone
+  theme: any; isDark: boolean;
 }) {
+  // Build list of available numbers
+  const phoneOptions = useMemo(() => {
+    const opts: { label: string; value: string }[] = [];
+    const primary = String(lead?.phone || lead?.contact_no || "").replace(/\D/g, "");
+    const alt     = String(lead?.alt_phone || lead?.altPhone || "").replace(/\D/g, "");
+    if (primary) opts.push({ label: `Primary — ${primary}`, value: primary });
+    if (alt && alt !== primary) opts.push({ label: `Alt — ${alt}`, value: alt });
+    return opts;
+  }, [lead]);
+
+  const [selectedPhone, setSelectedPhone] = useState(phoneOptions[0]?.value || "");
+
   return (
-    <div className="fixed inset-0 bg-black/75 z-[220] flex justify-center items-center p-4 animate-fadeIn" style={{ backdropFilter: "blur(8px)" }}>
-      <div className={`rounded-2xl w-full max-w-lg shadow-2xl border overflow-hidden ${theme.modalCard}`} style={theme.modalGlass}>
+    <div className="fixed inset-0 bg-black/75 z-[220] flex justify-center items-center p-4 animate-fadeIn"
+      style={{ backdropFilter: "blur(8px)" }}>
+      <div className={`rounded-2xl w-full max-w-lg shadow-2xl border overflow-hidden ${theme.modalCard}`}
+        style={theme.modalGlass}>
+
+        {/* Header */}
         <div className="p-5 border-b border-green-500/20 bg-green-500/10 flex justify-between items-center">
           <div>
-            <h2 className="text-lg font-bold flex items-center gap-2 text-green-500"><FaWhatsapp /> Send WhatsApp</h2>
-            <p className={`text-xs mt-1 ${theme.textMuted}`}>To: <strong>{lead?.name}</strong> ({maskPhone(lead?.phone || lead?.contact_no || "N/A", "admin", true)})</p>
-            {sender?.whatsapp_number && <p className={`text-[10px] mt-1 ${theme.textFaint}`}>Logging sender: +{sender.whatsapp_number}</p>}
+            <h2 className="text-lg font-bold flex items-center gap-2 text-green-500">
+              <FaWhatsapp /> Send WhatsApp
+            </h2>
+            <p className={`text-xs mt-1 ${theme.textMuted}`}>
+              To: <strong>{lead?.name}</strong>
+            </p>
+            {sender?.whatsapp_number && (
+              <p className={`text-[10px] mt-1 ${theme.textFaint}`}>
+                Logging sender: +{sender.whatsapp_number}
+              </p>
+            )}
           </div>
-          <button onClick={onClose} className={`p-2 ${theme.textMuted} hover:text-red-500 transition-colors`}><FaTimes /></button>
+          <button onClick={onClose} className={`p-2 ${theme.textMuted} hover:text-red-500 transition-colors`}>
+            <FaTimes />
+          </button>
         </div>
 
-        <form onSubmit={onSubmit}>
-          <div className={`p-6 ${theme.modalInner}`}>
-            <label className={`block text-sm font-bold mb-2 ${isDark ? "text-green-400" : "text-green-600"}`}>
-              Message (will be logged in CRM timeline)
-            </label>
-            <textarea
-              required
-              value={message}
-              onChange={e => setMessage(e.target.value)}
-              rows={6}
-              placeholder="Type your message here..."
-              className={`w-full rounded-xl px-4 py-3 text-sm outline-none resize-none leading-relaxed border-2 transition-colors custom-scrollbar ${isDark ? "bg-[#14141B] border-green-500/30 text-white focus:border-green-500" : "bg-white border-green-200 text-[#1A1A1A] focus:border-green-500"}`}
-            />
+        <form onSubmit={e => onSubmit(e, selectedPhone)}>
+          <div className={`p-6 space-y-4 ${theme.modalInner}`}>
+
+            {/* ── Phone Number Picker ── */}
+            <div>
+              <label className={`block text-sm font-bold mb-2 ${isDark ? "text-green-400" : "text-green-600"}`}>
+                Send to number
+              </label>
+              {phoneOptions.length === 0 ? (
+                <p className="text-xs text-red-400">No phone number on this lead.</p>
+              ) : phoneOptions.length === 1 ? (
+                /* Only one number — show it as a static badge */
+                <div className={`flex items-center gap-3 px-4 py-3 rounded-xl border font-mono text-sm ${
+                  isDark ? "bg-green-500/10 border-green-500/30 text-green-300"
+                         : "bg-green-50 border-green-200 text-green-700"
+                }`}>
+                  <FaWhatsapp />
+                  {phoneOptions[0].label}
+                </div>
+              ) : (
+                /* Multiple numbers — let them pick */
+                <div className="flex flex-col gap-2">
+                  {phoneOptions.map(opt => (
+                    <label key={opt.value}
+                      className={`flex items-center gap-3 px-4 py-3 rounded-xl border cursor-pointer transition-all ${
+                        selectedPhone === opt.value
+                          ? (isDark
+                              ? "bg-green-500/15 border-green-500/50 text-green-300"
+                              : "bg-green-50 border-green-400 text-green-700")
+                          : (isDark
+                              ? "bg-transparent border-[#333] text-gray-400 hover:border-green-500/30"
+                              : "bg-white border-gray-200 text-gray-500 hover:border-green-300")
+                      }`}>
+                      <input
+                        type="radio"
+                        name="wa_phone"
+                        value={opt.value}
+                        checked={selectedPhone === opt.value}
+                        onChange={() => setSelectedPhone(opt.value)}
+                        className="accent-green-500"
+                      />
+                      <FaWhatsapp className={selectedPhone === opt.value ? "text-green-500" : "text-gray-400"} />
+                      <span className="font-mono text-sm">{opt.label}</span>
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* ── Message ── */}
+            <div>
+              <label className={`block text-sm font-bold mb-2 ${isDark ? "text-green-400" : "text-green-600"}`}>
+                Message <span className={`text-xs font-normal ${theme.textFaint}`}>(logged in CRM timeline)</span>
+              </label>
+              <textarea
+                required
+                value={message}
+                onChange={e => setMessage(e.target.value)}
+                rows={6}
+                placeholder="Type your message here..."
+                className={`w-full rounded-xl px-4 py-3 text-sm outline-none resize-none leading-relaxed border-2 transition-colors custom-scrollbar ${
+                  isDark
+                    ? "bg-[#14141B] border-green-500/30 text-white focus:border-green-500"
+                    : "bg-white border-green-200 text-[#1A1A1A] focus:border-green-500"
+                }`}
+              />
+            </div>
           </div>
 
+          {/* Footer */}
           <div className={`p-5 border-t flex justify-end gap-3 ${theme.modalHeader} ${theme.tableBorder}`}>
-            <button type="button" onClick={onClose} className={`px-6 py-2.5 rounded-lg font-bold cursor-pointer transition-colors ${theme.textMuted} hover:text-red-500`}>Cancel</button>
-            <button type="submit" disabled={isSending || !message.trim()} className={`px-8 py-2.5 rounded-lg font-bold transition-colors flex items-center gap-2 ${isSending || !message.trim() ? "opacity-50 cursor-not-allowed bg-green-600/40 text-white" : "cursor-pointer bg-green-600 hover:bg-green-500 text-white shadow-lg shadow-green-600/20"}`}>
+            <button type="button" onClick={onClose}
+              className={`px-6 py-2.5 rounded-lg font-bold cursor-pointer transition-colors ${theme.textMuted} hover:text-red-500`}>
+              Cancel
+            </button>
+            <button type="submit"
+              disabled={isSending || !message.trim() || !selectedPhone}
+              className={`px-8 py-2.5 rounded-lg font-bold transition-colors flex items-center gap-2 ${
+                isSending || !message.trim() || !selectedPhone
+                  ? "opacity-50 cursor-not-allowed bg-green-600/40 text-white"
+                  : "cursor-pointer bg-green-600 hover:bg-green-500 text-white shadow-lg shadow-green-600/20"
+              }`}>
               {isSending ? "Opening..." : <><FaWhatsapp /> Open WhatsApp</>}
             </button>
           </div>
@@ -2381,12 +2455,17 @@ function AdminSalesView({ managers, allLeads, followUps, isLoading, adminUser, r
     try { await fetch("/api/followups", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(nm) }); refetch(); } catch { }
   };
 
-  const handleSendWhatsApp = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSendWhatsApp = async (e: React.FormEvent<HTMLFormElement>, phone: string) => {
     e.preventDefault();
     if (!selectedLead || !waMessage.trim()) return;
     setIsSendingWa(true);
     try {
-      await logAndOpenWhatsApp({ lead: selectedLead, sender: adminUser, message: waMessage });
+      await logAndOpenWhatsApp({
+        lead: selectedLead,
+        sender: adminUser,      // or `user` in receptionist
+        message: waMessage,
+        phoneOverride: phone,   // ← the number the user picked
+      });
       showToast("WhatsApp opened and logged!");
       setIsWaModalOpen(false);
       setWaMessage("");
