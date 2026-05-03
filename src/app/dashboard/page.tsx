@@ -423,6 +423,15 @@ export default function AdminAtlasDashboard() {
       const parsedUser = JSON.parse(storedUser);
       setUser(parsedUser);
 
+      fetch(`/api/users/update-whatsapp?name=${encodeURIComponent(parsedUser.name)}`)
+        .then(r => r.json())
+        .then(data => {
+          if (data.success) {
+            setUser((prev: any) => ({ ...prev, whatsapp_number: data.whatsapp_number || "" }));
+          }
+        })
+        .catch(() => { });
+
       // 👇 THIS IS THE MISSING CODE THAT GETS THE PASSWORD 👇
       const fetchLivePassword = async () => {
         try {
@@ -432,7 +441,7 @@ export default function AdminAtlasDashboard() {
             if (Array.isArray(data)) {
               const liveUser = data.find((u: any) => u.email === parsedUser.email);
               if (liveUser?.password) {
-                setUser((prev: any) => ({ ...prev, password: liveUser.password }));
+                setUser((prev: any) => ({ ...prev, password: liveUser.password, whatsapp_number: prev.whatsapp_number || liveUser.whatsapp_number || "" }));
               }
             }
           }
@@ -2082,6 +2091,93 @@ function TableSearchInput({
   );
 }
 
+async function logAndOpenWhatsApp({
+  lead,
+  sender,
+  message,
+}: {
+  lead: any;
+  sender: any;
+  message: string;
+}) {
+  const phone = String(lead?.phone || lead?.contact_no || "").replace(/\D/g, "");
+  if (!phone) throw new Error("Lead phone number is missing.");
+
+  await fetch("/api/whatsapp-logs", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      lead_id: String(lead.id),
+      sender_name: sender?.name || "User",
+      sender_number: sender?.whatsapp_number || "",
+      recipient_number: lead.phone || lead.contact_no,
+      message_preview: message.trim(),
+    }),
+  });
+
+  window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message.trim())}`, "_blank");
+}
+
+function WhatsAppSendModal({
+  lead,
+  sender,
+  message,
+  setMessage,
+  isSending,
+  onClose,
+  onSubmit,
+  theme,
+  isDark,
+}: {
+  lead: any;
+  sender: any;
+  message: string;
+  setMessage: (value: string) => void;
+  isSending: boolean;
+  onClose: () => void;
+  onSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
+  theme: any;
+  isDark: boolean;
+}) {
+  return (
+    <div className="fixed inset-0 bg-black/75 z-[220] flex justify-center items-center p-4 animate-fadeIn" style={{ backdropFilter: "blur(8px)" }}>
+      <div className={`rounded-2xl w-full max-w-lg shadow-2xl border overflow-hidden ${theme.modalCard}`} style={theme.modalGlass}>
+        <div className="p-5 border-b border-green-500/20 bg-green-500/10 flex justify-between items-center">
+          <div>
+            <h2 className="text-lg font-bold flex items-center gap-2 text-green-500"><FaWhatsapp /> Send WhatsApp</h2>
+            <p className={`text-xs mt-1 ${theme.textMuted}`}>To: <strong>{lead?.name}</strong> ({maskPhone(lead?.phone || lead?.contact_no || "N/A", "admin", true)})</p>
+            {sender?.whatsapp_number && <p className={`text-[10px] mt-1 ${theme.textFaint}`}>Logging sender: +{sender.whatsapp_number}</p>}
+          </div>
+          <button onClick={onClose} className={`p-2 ${theme.textMuted} hover:text-red-500 transition-colors`}><FaTimes /></button>
+        </div>
+
+        <form onSubmit={onSubmit}>
+          <div className={`p-6 ${theme.modalInner}`}>
+            <label className={`block text-sm font-bold mb-2 ${isDark ? "text-green-400" : "text-green-600"}`}>
+              Message (will be logged in CRM timeline)
+            </label>
+            <textarea
+              required
+              value={message}
+              onChange={e => setMessage(e.target.value)}
+              rows={6}
+              placeholder="Type your message here..."
+              className={`w-full rounded-xl px-4 py-3 text-sm outline-none resize-none leading-relaxed border-2 transition-colors custom-scrollbar ${isDark ? "bg-[#14141B] border-green-500/30 text-white focus:border-green-500" : "bg-white border-green-200 text-[#1A1A1A] focus:border-green-500"}`}
+            />
+          </div>
+
+          <div className={`p-5 border-t flex justify-end gap-3 ${theme.modalHeader} ${theme.tableBorder}`}>
+            <button type="button" onClick={onClose} className={`px-6 py-2.5 rounded-lg font-bold cursor-pointer transition-colors ${theme.textMuted} hover:text-red-500`}>Cancel</button>
+            <button type="submit" disabled={isSending || !message.trim()} className={`px-8 py-2.5 rounded-lg font-bold transition-colors flex items-center gap-2 ${isSending || !message.trim() ? "opacity-50 cursor-not-allowed bg-green-600/40 text-white" : "cursor-pointer bg-green-600 hover:bg-green-500 text-white shadow-lg shadow-green-600/20"}`}>
+              {isSending ? "Opening..." : <><FaWhatsapp /> Open WhatsApp</>}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 // ============================================================================
 // ADMIN SALES VIEW
 // ============================================================================
@@ -2102,6 +2198,9 @@ function AdminSalesView({ managers, allLeads, followUps, isLoading, adminUser, r
   const [loanForm, setLoanForm] = useState({ loanRequired: "", status: "", bank: "", amountReq: "", amountApp: "", cibil: "", agent: "", agentContact: "", empType: "", income: "", emi: "", docPan: "Pending", docAadhaar: "Pending", docSalary: "Pending", docBank: "Pending", docProperty: "Pending", notes: "" });
   const [customNote, setCustomNote] = useState("");
   const [toastMsg, setToastMsg] = useState<{ title: string; icon: any; color: string } | null>(null);
+  const [isWaModalOpen, setIsWaModalOpen] = useState(false);
+  const [waMessage, setWaMessage] = useState("");
+  const [isSendingWa, setIsSendingWa] = useState(false);
 
   // Transfer States
   const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
@@ -2280,6 +2379,23 @@ function AdminSalesView({ managers, allLeads, followUps, isLoading, adminUser, r
     const nm = { leadId: String(selectedLead.id), salesManagerName: adminUser.name, createdBy: "admin", message: customNote, siteVisitDate: null, createdAt: new Date().toISOString() };
     setCustomNote("");
     try { await fetch("/api/followups", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(nm) }); refetch(); } catch { }
+  };
+
+  const handleSendWhatsApp = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!selectedLead || !waMessage.trim()) return;
+    setIsSendingWa(true);
+    try {
+      await logAndOpenWhatsApp({ lead: selectedLead, sender: adminUser, message: waMessage });
+      showToast("WhatsApp opened and logged!");
+      setIsWaModalOpen(false);
+      setWaMessage("");
+      refetch();
+    } catch (err: any) {
+      alert(err?.message || "Error logging WhatsApp message.");
+    } finally {
+      setIsSendingWa(false);
+    }
   };
 
   const handleSalesFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -2772,7 +2888,7 @@ function AdminSalesView({ managers, allLeads, followUps, isLoading, adminUser, r
                           </div>
                           <div className="grid grid-cols-2 gap-3 mt-4 flex-shrink-0">
                             <button className={`border flex flex-col items-center justify-center py-3 rounded-xl transition-all cursor-pointer gap-1 ${isDark ? "bg-[#9E217B]/10 border-[#9E217B]/30 hover:bg-[#9E217B] text-[#d946a8] hover:text-white" : "bg-[#9E217B]/10 border-[#9E217B]/30 hover:bg-[#9E217B] text-[#9E217B] hover:text-white"}`}><FaMicrophone className="text-lg" /><span className="font-bold text-[10px]">Browser Call</span></button>
-                            <button className="bg-green-600/10 border border-green-500/30 hover:bg-green-600 text-green-400 hover:text-white flex flex-col items-center justify-center py-3 rounded-xl transition-all cursor-pointer gap-1"><FaWhatsapp className="text-xl" /><span className="font-bold text-[10px]">WhatsApp</span></button>
+                            <button onClick={() => setIsWaModalOpen(true)} className="bg-green-600/10 border border-green-500/30 hover:bg-green-600 text-green-400 hover:text-white flex flex-col items-center justify-center py-3 rounded-xl transition-all cursor-pointer gap-1"><FaWhatsapp className="text-xl" /><span className="font-bold text-[10px]">WhatsApp</span></button>
                           </div>
                         </div>
                       )}
@@ -2824,6 +2940,20 @@ function AdminSalesView({ managers, allLeads, followUps, isLoading, adminUser, r
                   </div>
                 </div>
               </div>
+            )}
+
+            {isWaModalOpen && selectedLead && (
+              <WhatsAppSendModal
+                lead={selectedLead}
+                sender={adminUser}
+                message={waMessage}
+                setMessage={setWaMessage}
+                isSending={isSendingWa}
+                onClose={() => { setIsWaModalOpen(false); setWaMessage(""); }}
+                onSubmit={handleSendWhatsApp}
+                theme={theme}
+                isDark={isDark}
+              />
             )}
 
             {/* ── TRANSFER MODAL ── */}
@@ -2899,6 +3029,9 @@ function AdminSiteHeadView({ siteHeads, allLeads, followUps, isLoading, adminUse
   const [loanForm, setLoanForm] = useState({ loanRequired: "", status: "", bank: "", amountReq: "", amountApp: "", cibil: "", agent: "", agentContact: "", empType: "", income: "", emi: "", docPan: "Pending", docAadhaar: "Pending", docSalary: "Pending", docBank: "Pending", docProperty: "Pending", notes: "" });
   const [customNote, setCustomNote] = useState("");
   const [toastMsg, setToastMsg] = useState<{ title: string; icon: any; color: string } | null>(null);
+  const [isWaModalOpen, setIsWaModalOpen] = useState(false);
+  const [waMessage, setWaMessage] = useState("");
+  const [isSendingWa, setIsSendingWa] = useState(false);
 
   // Transfer States
   const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
@@ -3079,6 +3212,22 @@ function AdminSiteHeadView({ siteHeads, allLeads, followUps, isLoading, adminUse
     try { await fetch("/api/followups", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(nm) }); refetch(); } catch { }
   };
 
+  const handleSendWhatsApp = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!selectedLead || !waMessage.trim()) return;
+    setIsSendingWa(true);
+    try {
+      await logAndOpenWhatsApp({ lead: selectedLead, sender: adminUser, message: waMessage });
+      showToast("WhatsApp opened and logged!");
+      setIsWaModalOpen(false);
+      setWaMessage("");
+      refetch();
+    } catch (err: any) {
+      alert(err?.message || "Error logging WhatsApp message.");
+    } finally {
+      setIsSendingWa(false);
+    }
+  };
   const handleSalesFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!selectedLead) return;
@@ -3569,7 +3718,7 @@ function AdminSiteHeadView({ siteHeads, allLeads, followUps, isLoading, adminUse
                           </div>
                           <div className="grid grid-cols-2 gap-3 mt-4 flex-shrink-0">
                             <button className={`border flex flex-col items-center justify-center py-3 rounded-xl transition-all cursor-pointer gap-1 ${isDark ? "bg-[#9E217B]/10 border-[#9E217B]/30 hover:bg-[#9E217B] text-[#d946a8] hover:text-white" : "bg-[#9E217B]/10 border-[#9E217B]/30 hover:bg-[#9E217B] text-[#9E217B] hover:text-white"}`}><FaMicrophone className="text-lg" /><span className="font-bold text-[10px]">Browser Call</span></button>
-                            <button className="bg-green-600/10 border border-green-500/30 hover:bg-green-600 text-green-400 hover:text-white flex flex-col items-center justify-center py-3 rounded-xl transition-all cursor-pointer gap-1"><FaWhatsapp className="text-xl" /><span className="font-bold text-[10px]">WhatsApp</span></button>
+                            <button onClick={() => setIsWaModalOpen(true)} className="bg-green-600/10 border border-green-500/30 hover:bg-green-600 text-green-400 hover:text-white flex flex-col items-center justify-center py-3 rounded-xl transition-all cursor-pointer gap-1"><FaWhatsapp className="text-xl" /><span className="font-bold text-[10px]">WhatsApp</span></button>
                           </div>
                         </div>
                       )}
@@ -3621,6 +3770,20 @@ function AdminSiteHeadView({ siteHeads, allLeads, followUps, isLoading, adminUse
                   </div>
                 </div>
               </div>
+            )}
+
+            {isWaModalOpen && selectedLead && (
+              <WhatsAppSendModal
+                lead={selectedLead}
+                sender={adminUser}
+                message={waMessage}
+                setMessage={setWaMessage}
+                isSending={isSendingWa}
+                onClose={() => { setIsWaModalOpen(false); setWaMessage(""); }}
+                onSubmit={handleSendWhatsApp}
+                theme={theme}
+                isDark={isDark}
+              />
             )}
 
             {/* ── TRANSFER MODAL ── */}
@@ -3702,6 +3865,9 @@ function ReceptionistView({ receptionists, allLeads, followUps, isLoading, refet
   const [siteHeads, setSiteHeads] = useState<any[]>([]);
   const [isFetchingManagers, setIsFetchingManagers] = useState(true);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
+  const [isWaModalOpen, setIsWaModalOpen] = useState(false);
+  const [waMessage, setWaMessage] = useState("");
+  const [isSendingWa, setIsSendingWa] = useState(false);
 
   // ── Auto-drill into a lead when navigated from Enquiry Overview ──
   useEffect(() => {
@@ -3802,6 +3968,22 @@ function ReceptionistView({ receptionists, allLeads, followUps, isLoading, refet
     try { await fetch("/api/followups", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(nm) }); refetch(); } catch { }
   };
 
+  const handleSendWhatsApp = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!selectedLead || !waMessage.trim()) return;
+    setIsSendingWa(true);
+    try {
+      await logAndOpenWhatsApp({ lead: selectedLead, sender: adminUser, message: waMessage });
+      showToast("WhatsApp opened and logged!");
+      setIsWaModalOpen(false);
+      setWaMessage("");
+      refetch();
+    } catch (err: any) {
+      alert(err?.message || "Error logging WhatsApp message.");
+    } finally {
+      setIsSendingWa(false);
+    }
+  };
   const handleSalesFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedLead) return;
@@ -4624,7 +4806,7 @@ function ReceptionistView({ receptionists, allLeads, followUps, isLoading, refet
                             <button className={`border flex flex-col items-center justify-center py-3 rounded-xl transition-all cursor-pointer gap-1 ${isDark ? "bg-[#9E217B]/10 border-[#9E217B]/30 hover:bg-[#9E217B] text-[#d946a8] hover:text-white" : "bg-[#9E217B]/10 border-[#9E217B]/30 hover:bg-[#9E217B] text-[#9E217B] hover:text-white"}`}>
                               <FaMicrophone className="text-lg" /><span className="font-bold text-[10px]">Browser Call</span>
                             </button>
-                            <button className="bg-green-50 dark:bg-green-600/10 border border-green-200 dark:border-green-500/30 hover:bg-green-100 dark:hover:bg-green-600 text-green-600 dark:text-green-400 flex flex-col items-center justify-center py-3 rounded-xl transition-all cursor-pointer gap-1">
+                            <button onClick={() => setIsWaModalOpen(true)} className="bg-green-50 dark:bg-green-600/10 border border-green-200 dark:border-green-500/30 hover:bg-green-100 dark:hover:bg-green-600 text-green-600 dark:text-green-400 flex flex-col items-center justify-center py-3 rounded-xl transition-all cursor-pointer gap-1">
                               <FaWhatsapp className="text-xl" /><span className="font-bold text-[10px]">WhatsApp</span>
                             </button>
                           </div>
@@ -4787,6 +4969,20 @@ function ReceptionistView({ receptionists, allLeads, followUps, isLoading, refet
           </div>
         )}
       </div>
+
+      {isWaModalOpen && selectedLead && (
+        <WhatsAppSendModal
+          lead={selectedLead}
+          sender={adminUser}
+          message={waMessage}
+          setMessage={setWaMessage}
+          isSending={isSendingWa}
+          onClose={() => { setIsWaModalOpen(false); setWaMessage(""); }}
+          onSubmit={handleSendWhatsApp}
+          theme={theme}
+          isDark={isDark}
+        />
+      )}
 
       {/* ── TRANSFER MODAL (Moved to the absolute root level of the component) ── */}
       {isTransferModalOpen && selectedLead && (

@@ -187,7 +187,7 @@ export default function ReceptionistDashboard() {
   const t = buildTheme(isDark);
 
   // ── User & UI state ──
-  const [user, setUser] = useState({ name: "Loading...", role: "Receptionist", email: "", password: "" });
+  const [user, setUser] = useState<any>({ name: "Loading...", role: "Receptionist", email: "", password: "" });
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
   const [showPassword, setShowPassword] = useState(false);
@@ -243,6 +243,9 @@ export default function ReceptionistDashboard() {
   // ── Assigned tab (full Sales-Manager panel) ──
   const [assignedSubView, setAssignedSubView] = useState<"cards" | "detail">("cards");
   const [selectedLead, setSelectedLead] = useState<any>(null);
+  const [isWaModalOpen, setIsWaModalOpen] = useState(false);
+  const [waMessage, setWaMessage] = useState("");
+  const [isSendingWa, setIsSendingWa] = useState(false);
   const [detailTab, setDetailTab] = useState<"personal" | "loan">("personal");
   const [showSalesForm, setShowSalesForm] = useState(false);
   const [showLoanForm, setShowLoanForm] = useState(false);
@@ -311,6 +314,42 @@ export default function ReceptionistDashboard() {
   const showToast = (title: string, color = "green") => {
     setToastMsg({ title, color });
     setTimeout(() => setToastMsg(null), 3500);
+  };
+
+  const handleSendWhatsApp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedLead || !waMessage.trim()) return;
+
+    const phone = String(selectedLead.phone || selectedLead.contact_no || "").replace(/\D/g, "");
+    if (!phone) {
+      alert("Lead phone number is missing.");
+      return;
+    }
+
+    setIsSendingWa(true);
+    try {
+      await fetch("/api/whatsapp-logs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          lead_id: String(selectedLead.id),
+          sender_name: user.name,
+          sender_number: user.whatsapp_number || "",
+          recipient_number: selectedLead.phone || selectedLead.contact_no,
+          message_preview: waMessage.trim(),
+        }),
+      });
+
+      window.open(`https://wa.me/${phone}?text=${encodeURIComponent(waMessage.trim())}`, "_blank");
+      showToast("WhatsApp opened and logged!");
+      setIsWaModalOpen(false);
+      setWaMessage("");
+      fetchFollowUps();
+    } catch {
+      alert("Error logging WhatsApp message.");
+    } finally {
+      setIsSendingWa(false);
+    }
   };
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -414,6 +453,14 @@ export default function ReceptionistDashboard() {
       try {
         const p = JSON.parse(stored);
         setUser({ ...p, name: p.name || "User", password: p.password || "********" });
+        fetch(`/api/users/update-whatsapp?name=${encodeURIComponent(p.name)}`)
+          .then(r => r.json())
+          .then(data => {
+            if (data.success) {
+              setUser((prev: any) => ({ ...prev, whatsapp_number: data.whatsapp_number || "" }));
+            }
+          })
+          .catch(() => { });
         const role = (p.role || "").toLowerCase();
         if (role === "receptionist" || role === "admin") {
           fetchSalesManagers();
@@ -2392,7 +2439,7 @@ export default function ReceptionistDashboard() {
 
                           <div className="grid grid-cols-2 gap-3 mt-4 flex-shrink-0">
                             <button className={`border flex flex-col items-center justify-center py-3 rounded-xl transition-all cursor-pointer gap-1 ${isDark ? "bg-[#00AEEF]/10 border-[#00AEEF]/30 hover:bg-[#00AEEF] text-[#00AEEF] hover:text-white" : "bg-[#00AEEF]/10 border-[#00AEEF]/30 hover:bg-[#00AEEF] text-[#00AEEF] hover:text-white"}`}><FaMicrophone className="text-lg" /><span className="font-bold text-[10px]">Browser Call</span></button>
-                            <button className="bg-green-600/10 border border-green-500/30 hover:bg-green-600 text-green-400 hover:text-white flex flex-col items-center justify-center py-3 rounded-xl transition-all cursor-pointer gap-1"><FaWhatsapp className="text-xl" /><span className="font-bold text-[10px]">WhatsApp</span></button>
+                            <button onClick={() => setIsWaModalOpen(true)} className="bg-green-600/10 border border-green-500/30 hover:bg-green-600 text-green-400 hover:text-white flex flex-col items-center justify-center py-3 rounded-xl transition-all cursor-pointer gap-1"><FaWhatsapp className="text-xl" /><span className="font-bold text-[10px]">WhatsApp</span></button>
                           </div>
                         </div>
                       )}
@@ -3049,6 +3096,43 @@ export default function ReceptionistDashboard() {
       {/* ════════════════════════════════════════════════════
           TRANSFER LEAD MODAL
       ════════════════════════════════════════════════════ */}
+      {isWaModalOpen && selectedLead && (
+        <div className="fixed inset-0 bg-black/75 z-[220] flex justify-center items-center p-4 animate-fadeIn" style={{ backdropFilter: "blur(8px)" }}>
+          <div className={`rounded-2xl w-full max-w-lg shadow-2xl border overflow-hidden ${t.modalCard}`} style={t.modalGlass}>
+            <div className="p-5 border-b border-green-500/20 bg-green-500/10 flex justify-between items-center">
+              <div>
+                <h2 className="text-lg font-bold flex items-center gap-2 text-green-500"><FaWhatsapp /> Send WhatsApp</h2>
+                <p className={`text-xs mt-1 ${t.textMuted}`}>To: <strong>{selectedLead.name}</strong> ({maskPhone(selectedLead.phone || selectedLead.contact_no || "N/A")})</p>
+                {user.whatsapp_number && <p className={`text-[10px] mt-1 ${t.textFaint}`}>Logging sender: +{user.whatsapp_number}</p>}
+              </div>
+              <button onClick={() => { setIsWaModalOpen(false); setWaMessage(""); }} className={`p-2 ${t.textMuted} hover:text-red-500 transition-colors`}><FaTimes /></button>
+            </div>
+
+            <form onSubmit={handleSendWhatsApp}>
+              <div className={`p-6 ${t.modalInner}`}>
+                <label className={`block text-sm font-bold mb-2 ${isDark ? "text-green-400" : "text-green-600"}`}>
+                  Message (will be logged in CRM timeline)
+                </label>
+                <textarea
+                  required
+                  value={waMessage}
+                  onChange={e => setWaMessage(e.target.value)}
+                  rows={6}
+                  placeholder="Type your message here..."
+                  className={`w-full rounded-xl px-4 py-3 text-sm outline-none resize-none leading-relaxed border-2 transition-colors custom-scrollbar ${isDark ? "bg-[#14141B] border-green-500/30 text-white focus:border-green-500" : "bg-white border-green-200 text-[#1A1A1A] focus:border-green-500"}`}
+                />
+              </div>
+
+              <div className={`p-5 border-t flex justify-end gap-3 ${t.modalHeader} ${t.tableBorder}`}>
+                <button type="button" onClick={() => { setIsWaModalOpen(false); setWaMessage(""); }} className={`px-6 py-2.5 rounded-lg font-bold cursor-pointer transition-colors ${t.textMuted} hover:text-red-500`}>Cancel</button>
+                <button type="submit" disabled={isSendingWa || !waMessage.trim()} className={`px-8 py-2.5 rounded-lg font-bold transition-colors flex items-center gap-2 ${isSendingWa || !waMessage.trim() ? "opacity-50 cursor-not-allowed bg-green-600/40 text-white" : "cursor-pointer bg-green-600 hover:bg-green-500 text-white shadow-lg shadow-green-600/20"}`}>
+                  {isSendingWa ? "Opening..." : <><FaWhatsapp /> Open WhatsApp</>}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
       {isTransferModalOpen && selectedLead && (
         <div className="fixed inset-0 bg-black/75 z-[200] flex justify-center items-center p-4 sm:p-6 animate-fadeIn" style={{ backdropFilter: "blur(8px)" }}>
           <div className={`rounded-2xl w-full max-w-lg shadow-2xl border overflow-hidden ${t.modalCard}`} style={t.modalGlass}>
@@ -3402,3 +3486,4 @@ function SiteVisitScheduler({
     </div>
   );
 }
+

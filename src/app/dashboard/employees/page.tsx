@@ -495,10 +495,18 @@ export default function EmployeesPage() {
   }, [activeSection]);
 
   const handleLogout = () => { localStorage.removeItem("crm_user"); router.push("/"); };
-
+// Temporarily add before the fetch call:
+  console.log("Submitting:", { empName, email, password: !!password, role });
   // ── Employee API ──
+  // ✅ Add error feedback to fetchRoles
   const fetchRoles = async () => {
-    try { const r = await fetch("/api/roles"); if (r.ok) setDbRoles(await r.json()); } catch { }
+    try {
+      const r = await fetch("/api/roles");
+      if (r.ok) setDbRoles(await r.json());
+      else console.error("Failed to fetch roles:", r.status);
+    } catch (err) {
+      console.error("fetchRoles network error:", err);
+    }
   };
   const fetchEmployees = async () => {
     try { const r = await fetch("/api/employees"); if (r.ok) setEmployees(await r.json()); } catch { }
@@ -511,19 +519,36 @@ export default function EmployeesPage() {
     else { const d = await r.json(); alert(`Error: ${d.message}`); }
   };
 
+  // ✅ Fixed — with try-catch + detailed error feedback
   const handleAddEmployee = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isPasswordValid) {
       alert("Password does not meet security requirements");
       return;
     }
-    const r = await fetch("/api/employees", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: empName, username: empName.toLowerCase().replace(/\s+/g, "."), email, password, role }),
-    });
-    if (r.ok) { setEmpName(""); setEmail(""); setPassword(""); setRole(""); fetchEmployees(); }
-    else { const d = await r.json(); alert(`Error: ${d.message}`); }
+    try {
+      const r = await fetch("/api/employees", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: empName,
+          username: empName.toLowerCase().replace(/\s+/g, "."),
+          email,
+          password,
+          role,
+        }),
+      });
+      const d = await r.json();
+      if (r.ok) {
+        setEmpName(""); setEmail(""); setPassword(""); setRole("");
+        fetchEmployees();
+      } else {
+        alert(`Error: ${d.message || "Unknown error from server"}`);
+      }
+    } catch (err: any) {
+      alert(`Network/Server Error: ${err.message}`);
+      console.error("Add employee error:", err);
+    }
   };
 
   const handleToggleStatus = async (userId: string, currentStatus: boolean) => {
@@ -2476,4 +2501,4 @@ function CallerControlMode({ leads, savedLeads, setSavedLeads, adminName, onExit
       </div>
     </div>
   );
-}
+}
