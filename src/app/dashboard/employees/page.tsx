@@ -479,7 +479,7 @@ export default function EmployeesPage() {
     const interval = setInterval(checkNotifs, 10000);
     return () => clearInterval(interval);
   }, [siteHeads]);
-
+  console.log("DB:", process.env.DATABASE_URL?.slice(0, 20))
   // 👇 3. TRIGGER POPUP LOGIC (Exactly 2 Seconds, Duplicates Removed) 👇
   useEffect(() => {
     if (activeNotif || notifQueue.length === 0) return;

@@ -3035,7 +3035,7 @@ export default function ReceptionistDashboard() {
                               {/* Dropdown list — only shown when open */}
                               {showManagerDropdown && (
                                 <div className={`max-h-[200px] overflow-y-auto custom-scrollbar border-t ${isDark ? "border-[#2a2a35]" : "border-gray-100"}`}>
-                                  <div
+                                  {/* <div
                                     onClick={() => {
                                       setEnquiryForm({ ...enquiryForm, assignedTo: "" });
                                       setShowManagerDropdown(false);
@@ -3045,7 +3045,7 @@ export default function ReceptionistDashboard() {
                                     }`}
                                   >
                                     -- Clear Selection --
-                                  </div>
+                                  </div> */}
                                   {combinedAssignees.map((m: any, i: number) => (
                                     <div
                                       key={i}
