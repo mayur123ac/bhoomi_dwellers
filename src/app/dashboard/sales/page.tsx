@@ -3,6 +3,7 @@
 
 import { useEffect, useState, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { clearCrmSession, getStoredCrmUser, installLoggedOutBackGuard } from "@/lib/authSession";
 import {
   Bot, User, Send, BarChart2, AlertTriangle, Landmark, CalendarDays,
   Lightbulb, ClipboardList, Wifi, CheckCircle, XCircle, HelpCircle,
@@ -325,10 +326,10 @@ export default function SalesDashboard() {
   }, [allLeads, dismissedVisits]);
 
   useEffect(() => {
-    const storedUser = localStorage.getItem("crm_user");
-    if (storedUser) {
+    const cleanupBackGuard = installLoggedOutBackGuard(() => router.replace("/"));
+    const parsedUser = getStoredCrmUser();
+    if (parsedUser) {
       try {
-        const parsedUser = JSON.parse(storedUser);
         setUser({ 
           ...parsedUser, 
           name:     parsedUser.name || "User", 
@@ -347,12 +348,13 @@ export default function SalesDashboard() {
           .catch(console.error);
 
         if (parsedUser.role?.toLowerCase() !== "sales manager" && parsedUser.role?.toLowerCase() !== "admin")
-          router.push("/dashboard");
-      } catch { router.push("/"); }
-    } else { router.push("/"); }
+          router.replace("/dashboard");
+      } catch { router.replace("/"); }
+    } else { router.replace("/"); }
+    return cleanupBackGuard;
   }, [router]);
 
-  const handleLogout = () => { localStorage.removeItem("crm_user"); router.push("/"); };
+  const handleLogout = () => { clearCrmSession(); router.replace("/"); };
 
   return (
     <div

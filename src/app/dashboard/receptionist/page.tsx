@@ -3,6 +3,7 @@
 
 import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { clearCrmSession, getStoredCrmUser, installLoggedOutBackGuard } from "@/lib/authSession";
 import {
   FaThLarge, FaCog, FaBell, FaTimes, FaClipboardList,
   FaChevronLeft, FaRobot, FaPaperPlane, FaCalendarAlt, FaEye, FaEyeSlash,
@@ -521,10 +522,10 @@ export default function ReceptionistDashboard() {
   }, [chatMessages, activeTab]);
 
   useEffect(() => {
-    const stored = localStorage.getItem("crm_user");
-    if (stored) {
+    const cleanupBackGuard = installLoggedOutBackGuard(() => router.replace("/"));
+    const p = getStoredCrmUser();
+    if (p) {
       try {
-        const p = JSON.parse(stored);
         setUser({ ...p, name: p.name || "User", password: p.password || "********" });
         fetch(`/api/users/update-whatsapp?name=${encodeURIComponent(p.name)}`)
           .then(r => r.json())
@@ -539,9 +540,10 @@ export default function ReceptionistDashboard() {
           fetchSalesManagers();
           initialLoad();
           fetchFollowUps();
-        } else { router.push("/dashboard"); }
-      } catch { router.push("/"); }
-    } else { router.push("/"); }
+        } else { router.replace("/dashboard"); }
+      } catch { router.replace("/"); }
+    } else { router.replace("/"); }
+    return cleanupBackGuard;
   }, [router]);
 
   // Infinite scroll: table
@@ -1051,7 +1053,7 @@ export default function ReceptionistDashboard() {
     }, 600);
   };
 
-  const handleLogout = () => { localStorage.removeItem("crm_user"); router.push("/"); };
+  const handleLogout = () => { clearCrmSession(); router.replace("/"); };
 
   // ─────────────────────────────────────────────────────────────────────────
   // FILTERED SETS

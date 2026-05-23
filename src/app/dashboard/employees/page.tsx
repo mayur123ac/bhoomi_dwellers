@@ -4,6 +4,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { clearCrmSession, getStoredCrmUser, installLoggedOutBackGuard } from "@/lib/authSession";
 import { motion, AnimatePresence } from "framer-motion";
 import * as XLSX from "xlsx";
 import {
@@ -327,9 +328,12 @@ export default function EmployeesPage() {
 
   // ── Auth ──
   useEffect(() => {
-    const stored = localStorage.getItem("crm_user");
-    if (!stored) { router.push("/"); return; }
-    const parsed = JSON.parse(stored);
+    const cleanupBackGuard = installLoggedOutBackGuard(() => router.replace("/"));
+    const parsed = getStoredCrmUser();
+    if (!parsed) {
+      router.replace("/");
+      return cleanupBackGuard;
+    }
     setUser(parsed);
 
     const params = new URLSearchParams(window.location.search);
@@ -343,6 +347,7 @@ export default function EmployeesPage() {
     } else {
       setIsAuthorized(false);
     }
+    return cleanupBackGuard;
   }, [router]);
 
   useEffect(() => {
@@ -494,7 +499,7 @@ export default function EmployeesPage() {
     if (activeSection === "callers") fetchCallerData();
   }, [activeSection]);
 
-  const handleLogout = () => { localStorage.removeItem("crm_user"); router.push("/"); };
+  const handleLogout = () => { clearCrmSession(); router.replace("/"); };
 // Temporarily add before the fetch call:
   console.log("Submitting:", { empName, email, password: !!password, role });
   // ── Employee API ──

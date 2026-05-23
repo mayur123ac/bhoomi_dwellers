@@ -1,4 +1,7 @@
+//call/route.ts
 import { NextRequest, NextResponse } from "next/server";
+
+export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
   try {
@@ -7,15 +10,13 @@ export async function POST(req: NextRequest) {
     const fromNumber = process.env.TWILIO_PHONE_NUMBER;
 
     if (!accountSid || !authToken || !fromNumber) {
-      return NextResponse.json(
-        { error: "Missing Twilio env vars" },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: "Missing Twilio env vars" }, { status: 500 });
     }
 
     const { to } = await req.json();
+
     if (!to) {
-      return NextResponse.json({ error: "Missing 'to' number" }, { status: 400 });
+      return NextResponse.json({ error: "Missing to number" }, { status: 400 });
     }
 
     const twilio = (await import("twilio")).default;
@@ -24,7 +25,7 @@ export async function POST(req: NextRequest) {
     const call = await client.calls.create({
       to,
       from: fromNumber,
-      twiml: `<Response><Say>Connecting your call.</Say></Response>`,
+      twiml: "<Response><Say>Connecting your call.</Say></Response>",
     });
 
     return NextResponse.json({ success: true, callSid: call.sid });

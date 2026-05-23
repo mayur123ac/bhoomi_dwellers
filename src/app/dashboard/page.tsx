@@ -3,6 +3,7 @@
 
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { clearCrmSession, getStoredCrmUser, installLoggedOutBackGuard } from "@/lib/authSession";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   FaThLarge, FaClipboardList, FaUsers, FaIdCard,
@@ -418,9 +419,9 @@ export default function AdminAtlasDashboard() {
   }, [allLeads, siteHeads, receptionists]); // Added receptionists here
   // ── Load User & Fetch Live Password ──
   useEffect(() => {
-    const storedUser = localStorage.getItem("crm_user");
-    if (storedUser) {
-      const parsedUser = JSON.parse(storedUser);
+    const cleanupBackGuard = installLoggedOutBackGuard(() => router.replace("/"));
+    const parsedUser = getStoredCrmUser();
+    if (parsedUser) {
       setUser(parsedUser);
 
       fetch(`/api/users/update-whatsapp?name=${encodeURIComponent(parsedUser.name)}`)
@@ -448,10 +449,13 @@ export default function AdminAtlasDashboard() {
         } catch { }
       };
       fetchLivePassword();
+    } else {
+      router.replace("/");
     }
     const returnTab = localStorage.getItem("return_tab");
     if (returnTab) { setActiveView(returnTab); localStorage.removeItem("return_tab"); }
-  }, []);
+    return cleanupBackGuard;
+  }, [router]);
 
   // ── Toast Notification Queue Populator ──
   // ── Toast Notification Queue Populator ──
@@ -546,7 +550,7 @@ export default function AdminAtlasDashboard() {
     return () => clearTimeout(timer);
   }, [activeNotif, notifQueue]);
 
-  const handleLogout = () => { localStorage.removeItem("crm_user"); router.push("/"); };
+  const handleLogout = () => { clearCrmSession(); router.replace("/"); };
 
   const menuItems = [
     { id: "dashboard",   icon: FaThLarge,       label: "Overview" },

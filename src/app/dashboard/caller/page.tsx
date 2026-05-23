@@ -3,6 +3,7 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import * as XLSX from "xlsx";
+import { clearCrmSession, getStoredCrmUser, installLoggedOutBackGuard } from "@/lib/authSession";
 import { useCallerSync } from "@/lib/hooks/useCallerSync";
 import {
   FaThLarge, FaClipboardList, FaTimesCircle, FaUpload, FaFileExcel,
@@ -548,16 +549,24 @@ export default function PresalesCallerPanel() {
   const [isDeleting, setIsDeleting] = useState(false);
     // ── Load user ──
   useEffect(() => {
-    const stored = localStorage.getItem("crm_user");
-    if (stored) { try { setUser(JSON.parse(stored)); } catch {} }
-  }, []);
+    const cleanupBackGuard = installLoggedOutBackGuard(() => router.replace("/"));
+    const storedUser = getStoredCrmUser();
+    if (!storedUser) {
+      router.replace("/");
+    } else {
+      queueMicrotask(() => setUser(storedUser));
+    }
+    return cleanupBackGuard;
+  }, [router]);
 
   // ── Load from DB ──
   const loadFromDB = useCallback(async () => {
     try {
-      const stored = localStorage.getItem("crm_user");
-      if (!stored) return;
-      const callerUser = JSON.parse(stored);
+      const callerUser = getStoredCrmUser();
+      if (!callerUser) {
+        router.replace("/");
+        return;
+      }
       setDbState("saving"); setDbMessage("Loading your leads...");
       const res = await fetch("/api/caller-leads");
       if (!res.ok) { setDbState("idle"); setDbMessage(""); return; }
@@ -654,7 +663,7 @@ export default function PresalesCallerPanel() {
       console.error("Load from DB failed:", err);
       setDbState("idle"); setDbMessage("");
     }
-  }, []);
+  }, [router]);
 
   useEffect(() => { loadFromDB(); }, [loadFromDB]);
     const deleteAllMyLeads = useCallback(async () => {
@@ -884,7 +893,7 @@ export default function PresalesCallerPanel() {
   const formLeads       = savedLeads.filter(l=>l.status!=="not_interested");
   const interestedLeads = savedLeads.filter(l=>l.interestStatus==="Interested");
   const notIntLeads     = savedLeads.filter(l=>l.status==="not_interested");
-  const handleLogout    = () => { localStorage.removeItem("crm_user"); router.push("/"); };
+  const handleLogout    = () => { clearCrmSession(); router.replace("/"); };
 
   const sidebarItems = [
     {id:"dashboard"      as SidebarSection,icon:FaThLarge,      label:"Dashboard",     badge:null,                  activeColor:"text-purple-400 bg-purple-500/10",dotColor:"bg-purple-500"},
