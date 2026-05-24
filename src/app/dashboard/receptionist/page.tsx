@@ -16,6 +16,8 @@ import {
   PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend,
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
 } from "recharts";
+import { Ghost, AlertTriangle } from "lucide-react";
+import LostLeadModal from "@/components/LostLeadModal";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CONSTANTS
@@ -78,6 +80,13 @@ function buildTheme(isDark: boolean) {
       : "bg-gradient-to-r from-[#f1f5ff] via-[#eef2ff] to-[#f5f3ff] border-[#9CA3AF] transition-all duration-300 hover:border-[#9E217B] hover:shadow-xl",
     cardGlass: isDark ? {} : { boxShadow: "0 1px 2px rgba(0,0,0,0.04), 0 4px 12px rgba(0,174,239,0.07)" },
 
+    statusLost: isDark ? "text-red-300 border-red-500/30 bg-red-950/30" : "text-red-700 border-red-300 bg-red-50",
+  cardLost: isDark
+    ? "bg-[#171717] border border-red-900/25 opacity-70 grayscale saturate-50 transition-all duration-300 hover:opacity-90 hover:border-red-500/30"
+    : "bg-slate-100 border border-red-200 opacity-75 grayscale saturate-50 transition-all duration-300 hover:opacity-90 hover:border-red-300",
+  rowLost: isDark
+    ? "bg-[#151515]/80 text-gray-500 opacity-75 grayscale"
+    : "bg-slate-100/80 text-slate-500 opacity-80 grayscale",
     tableWrap: isDark ? "bg-[#121218] border-[#2A2A35]" : "bg-white border-[#9CA3AF]",
     tableGlass: isDark ? {} : { boxShadow: "0 1px 2px rgba(0,0,0,0.04), 0 4px 12px rgba(158,33,123,0.06), 0 16px 36px rgba(0,0,0,0.09)" },
     tableHead: isDark ? "bg-[#1A1A28]" : "bg-[#F1F5F9]",
@@ -286,7 +295,12 @@ export default function ReceptionistDashboard() {
     selfAssign: false,
   });
   const [showCpDropdown, setShowCpDropdown] = useState(false);
-
+ 
+  // ___Lost Leads
+  const [showLostModal, setShowLostModal] = useState(false);
+  const [lostReason, setLostReason] = useState("");
+  const [lostError, setLostError] = useState("");
+  const [isSavingLost, setIsSavingLost] = useState(false);
   // ── Data ──
   const [salesManagers, setSalesManagers] = useState<any[]>([]);
 
@@ -345,8 +359,40 @@ export default function ReceptionistDashboard() {
   const [transferTarget, setTransferTarget] = useState("");
   const [isTransferring, setIsTransferring] = useState(false);
   // ── Receptionist Leads tab ──
+  // ── Receptionist Leads tab ──
   const [searchRecepLeads, setSearchRecepLeads] = useState("");
   const recepLeadsSentinelRef = useRef<HTMLDivElement>(null);
+
+  // Advanced Filter States
+  const [searchColumn, setSearchColumn] = useState<string>("all");
+  const [leadStatusFilter, setLeadStatusFilter] = useState<string>("all");
+  const [showLostLeads, setShowLostLeads] = useState<boolean>(true);
+
+  // Centralized Search Logic
+  const applySearch = useCallback((leads: any[], query: string, col: string) => {
+    if (!query.trim()) return leads;
+    const lq = query.toLowerCase();
+
+    return leads.filter((l: any) => {
+      const getField = (field: string) => {
+        switch (field) {
+          case "lead_no": return String(l.id || "");
+          case "name": return String(l.name || "");
+          case "phone": return String(l.phone || "");
+          case "budget": return String(l.salesBudget || l.budget || "");
+          case "prop_type": return String(l.propType || l.configuration || "");
+          case "source": return String(l.source || "");
+          case "status": return String(l.status || "");
+          default:
+            return [
+              l.id, l.name, l.phone, l.altPhone, l.alt_phone, l.source,
+              l.propType, l.configuration, l.salesBudget, l.budget, l.status, l.assignedTo, l.assignedReceptionist
+            ].map(v => String(v || "")).join(" ");
+        }
+      };
+      return getField(col).toLowerCase().includes(lq);
+    });
+  }, []);
   // ── Closed Leads tab ──
   const [selectedClosedLead, setSelectedClosedLead] = useState<any>(null);
   const [closedLeadView, setClosedLeadView] = useState<"table" | "detail">("table");
@@ -806,13 +852,14 @@ export default function ReceptionistDashboard() {
   }, [enquiries, followUps]);
 
   // Receptionist-owned leads = assigned_receptionist === user.name OR assigned_to === user.name
+// This is already correct — lost leads are NOT excluded here, keep as is:
   const myAssignedLeads = useMemo(() =>
     mergedLeads.filter((l: any) =>
       (l.assignedReceptionist === user.name || l.assigned_to === user.name) &&
       l.status !== "Closing" &&
       !l.closingDate
     )
-    , [mergedLeads, user.name]);
+  , [mergedLeads, user.name]);
 
   const currentLeadFollowUps = useMemo(() =>
     followUps.filter((f: any) => String(f.leadId) === String(selectedLead?.id))
@@ -992,7 +1039,60 @@ export default function ReceptionistDashboard() {
       refetchAll();
     } catch (e) { console.error(e); }
   };
+  const openLostLeadModal = () => {
+    setLostReason("");
+    setLostError("");
+    setShowLostModal(true);
+  };
 
+  const handleMarkLostLead = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!selectedLead) return;
+    const reason = lostReason.trim();
+    if (reason.length < 10) { setLostError("Reason must be at least 10 characters."); return; }
+    setIsSavingLost(true);
+    try {
+      const res = await fetch("/api/leads/lost", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          leadId: selectedLead.id,
+          is_lost_lead: true,
+          reason,
+          marked_by: user.name,
+        }),
+      });
+      const json = await res.json();
+      if (!json.success) { setLostError(json.message || "Could not mark as lost."); return; }
+      setSelectedLead((prev: any) => ({ ...prev, ...json.data, is_lost_lead: true }));
+      setShowLostModal(false);
+      showToast(`${selectedLead.name} marked as Lost Lead`, "red");
+      refetchAll();
+    } catch { setLostError("Network error. Please try again."); }
+    finally { setIsSavingLost(false); }
+  };
+
+  const handleRestoreLead = async () => {
+    if (!selectedLead) return;
+    setIsSavingLost(true);
+    try {
+      const res = await fetch("/api/leads/lost", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          leadId: selectedLead.id,
+          is_lost_lead: false,
+          restored_by: user.name,
+        }),
+      });
+      const json = await res.json();
+      if (!json.success) { showToast(json.message || "Could not restore lead", "red"); return; }
+      setSelectedLead((prev: any) => ({ ...prev, ...json.data, is_lost_lead: false }));
+      showToast(`${selectedLead.name} restored to Active`);
+      refetchAll();
+    } catch { showToast("Network error while restoring", "red"); }
+    finally { setIsSavingLost(false); }
+  };
   // ─────────────────────────────────────────────────────────────────────────
   // TRANSFER LEAD
   // ─────────────────────────────────────────────────────────────────────────
@@ -2250,17 +2350,37 @@ export default function ReceptionistDashboard() {
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                       {paginatedAssigned.map((lead: any) => {
                         const isClosing = lead.status === "Closing";
+                        const isLost = !!lead.is_lost_lead; 
                         return (
-                          <div key={lead.id} onClick={() => { setSelectedLead(lead); setAssignedSubView("detail"); setDetailTab("personal"); setShowSalesForm(false); setShowLoanForm(false); }}
-                            className={`rounded-2xl p-6 border shadow-sm cursor-pointer group flex flex-col justify-between transition-all duration-300 ${isClosing ? `${isDark ? "bg-yellow-900/10 border-yellow-500/30" : "bg-amber-50 border-amber-200"} hover:-translate-y-1.5 hover:scale-[1.02] hover:border-yellow-400/60 hover:shadow-xl` : t.card}`} style={t.cardGlass}>
+                          <div key={lead.id} onClick={() => { setSelectedLead(lead); setAssignedSubView("detail"); setDetailTab("personal"); setShowSalesForm(false); setShowLoanForm(false); }} 
+                          className={`rounded-2xl p-6 border shadow-sm cursor-pointer group flex flex-col justify-between transition-all duration-300 ${
+                            isLost ? t.cardLost :
+                            isClosing ? `${isDark ? "bg-yellow-900/10 border-yellow-500/30" : "bg-amber-50 border-amber-200"} hover:-translate-y-1.5 hover:scale-[1.02] hover:border-yellow-400/60 hover:shadow-xl` 
+                            : t.card
+                          }`} style={t.cardGlass}>
                             <div>
                               <div className={`flex justify-between items-start mb-5 pb-4 border-b ${t.tableBorder}`}>
                                 <h3 className={`text-xl font-bold transition-colors line-clamp-1 pr-2 ${t.text} ${isDark ? "group-hover:text-[#d4006e]" : "group-hover:text-[#9E217B]"}`}>
                                   <span className={`mr-2 transition-colors ${isDark ? "text-[#d4006e]" : "text-[#00AEEF] group-hover:text-[#9E217B]"}`}>#{lead.id}</span>{lead.name}
                                 </h3>
-                                <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border flex-shrink-0 ${isClosing ? t.statusClosing : lead.status === "Visit Scheduled" ? t.statusVisit : t.statusRouted
-                                  }`}>{lead.status || "ROUTED"}</span>
+                                <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border flex-shrink-0 ${
+                                  isLost ? t.statusLost :
+                                  isClosing ? t.statusClosing : 
+                                  lead.status === "Visit Scheduled" ? t.statusVisit : t.statusRouted
+                                }`}>{isLost ? "LOST LEAD" : (lead.status || "ROUTED")}</span>
                               </div>
+
+                              {/* Lost lead banner — shown immediately after the header */}
+                              {isLost && (
+                                <div className={`mb-3 flex items-center justify-between gap-2 rounded-lg px-3 py-2 border ${t.statusLost}`}>
+                                  <span className="text-[10px] font-black uppercase tracking-wider flex items-center gap-2">
+                                    <Ghost className="w-3.5 h-3.5"/> Lost Lead
+                                  </span>
+                                  <span className="text-[10px] font-semibold normal-case truncate">
+                                    {lead.lost_lead_reason || "Unresponsive"}
+                                  </span>
+                                </div>
+                              )}
                               <div className="space-y-3 mb-5">
                                 <div className="flex justify-between items-center">
                                   <div><p className={`text-xs font-medium ${t.textFaint}`}>Budget</p><p className={`text-sm font-semibold ${isDark ? "text-green-400" : "text-emerald-600"}`}>{lead.salesBudget || lead.budget}</p></div>
@@ -2333,11 +2453,23 @@ export default function ReceptionistDashboard() {
                               <FaHandshake /> Mark Closing
                             </button>
                           )}
+                          {!selectedLead.is_lost_lead && (
+                            <button onClick={openLostLeadModal}
+                              className={`font-bold px-4 py-2 rounded-lg text-sm flex items-center gap-2 transition-colors cursor-pointer ${t.btnDanger}`}>
+                              <AlertTriangle className="w-4 h-4" /> Mark Lost
+                            </button>
+                          )}
+                          {selectedLead.is_lost_lead && (
+                            <button onClick={handleRestoreLead} disabled={isSavingLost}
+                              className={`font-bold px-4 py-2 rounded-lg text-sm flex items-center gap-2 transition-colors cursor-pointer disabled:opacity-60 ${t.btnPrimary}`}>
+                              <FaCheckCircle /> Restore Lead
+                            </button>
+                          )}
                           {/* TRANSFER BUTTON */}
-                          <button onClick={() => { setTransferTarget(""); setTransferNote(""); setIsTransferModalOpen(true); }}
+                          {/* <button onClick={() => { setTransferTarget(""); setTransferNote(""); setIsTransferModalOpen(true); }}
                             className={`font-bold px-4 py-2 rounded-lg text-sm flex items-center gap-2 transition-colors cursor-pointer ${t.btnTransfer}`}>
                             <FaExchangeAlt /> Transfer Lead
-                          </button>
+                          </button> */}
                         </>
                       )}
                     </div>
@@ -2467,6 +2599,18 @@ export default function ReceptionistDashboard() {
                                     <p className={`text-xs font-bold uppercase tracking-wider mb-0.5 ${isDark ? "text-[#00AEEF]" : "text-[#00AEEF]"}`}>📍 Site Visit Date</p>
                                     <p className={`text-base font-black ${t.text}`}>{selectedLead.mongoVisitDate ? formatDate(selectedLead.mongoVisitDate) : "Not Scheduled"}</p>
                                   </div>
+                                  {/* ── Lost Lead Record ── */}
+                                  {selectedLead.is_lost_lead && (
+                                    <div className="col-span-2 mt-1 border rounded-xl p-3 text-red-300 border-red-500/30 bg-red-950/30">
+                                      <h3 className="text-xs font-bold uppercase tracking-wider mb-2 flex items-center gap-2">
+                                        <Ghost className="w-3.5 h-3.5" /> Lost Lead Record
+                                      </h3>
+                                      <p className="text-xs leading-relaxed">{selectedLead.lost_lead_reason || "No reason recorded."}</p>
+                                      <p className="text-[10px] mt-2 text-gray-500">
+                                        Marked by {selectedLead.lost_lead_marked_by || "Unknown"} on {selectedLead.lost_lead_marked_at ? formatDate(selectedLead.lost_lead_marked_at) : "-"}
+                                      </p>
+                                    </div>
+                                  )}
                                 </div>
                                 <div className={`mt-3 border rounded-xl p-3 ${t.settingsBg}`} style={t.settingsBgGl}>
                                   <h3 className={`text-xs font-bold uppercase tracking-wider mb-2 border-b pb-2 ${t.sectionTitle} ${t.sectionBorder}`}>Channel Partner Data</h3>
@@ -2573,6 +2717,20 @@ export default function ReceptionistDashboard() {
             </div>
           )}
 
+          {showLostModal && selectedLead && (
+            <LostLeadModal
+              lead={selectedLead}
+              reason={lostReason}
+              error={lostError}
+              isSaving={isSavingLost}
+              isDark={isDark}
+              theme={t}
+              onReasonChange={(v) => { setLostReason(v); if (lostError) setLostError(""); }}
+              onClose={() => setShowLostModal(false)}
+              onSubmit={handleMarkLostLead}
+            />
+          )}
+
           {/* ════════════════════════════════════════════════════
               RECEPTIONIST LEADS TAB
           ════════════════════════════════════════════════════ */}
@@ -2616,9 +2774,16 @@ export default function ReceptionistDashboard() {
                           <p className={`text-sm mt-2 ${t.textFaint}`}>Self-assign leads when creating new entries.</p>
                         </td></tr>
                       ) : filteredRecepLeads.map((lead: any) => (
-                        <tr key={lead.id} className={`transition-colors ${t.tableRow}`}>
+                        <tr key={lead.id} 
+                        className={`transition-colors ${!!lead.is_lost_lead ? t.rowLost : t.tableRow}`}>
+                          
+                          {/* 1. Lead No. */}
                           <td className={`px-3 py-3 md:p-4 text-xs md:text-sm font-bold ${t.accentText}`}>#{lead.id}</td>
+                          
+                          {/* 2. Client Name */}
                           <td className={`px-3 py-3 md:p-4 text-xs md:text-sm font-semibold ${t.text}`}>{lead.name}</td>
+                          
+                          {/* 3. CP Details */}
                           <td className={`px-3 py-3 md:p-4 text-[10px] md:text-sm ${t.textMuted}`}>
                             {(lead.cp_company || lead.cpCompany) ? (
                               <div className="flex flex-col gap-0.5">
@@ -2629,17 +2794,37 @@ export default function ReceptionistDashboard() {
                               </div>
                             ) : <span className="italic text-[10px]">—</span>}
                           </td>
+                          
+                          {/* 4. Budget */}
                           <td className={`px-3 py-3 md:p-4 text-xs md:text-sm font-bold ${isDark ? "text-green-700" : "text-emerald-600"}`}>{lead.salesBudget || lead.budget}</td>
+                          
+                          {/* 5. Phone */}
                           <td className={`px-3 py-3 md:p-4 text-[10px] md:text-sm font-mono ${t.text}`}>{maskPhone(lead.phone)}</td>
+                          
+                          {/* 6. Alt Phone */}
                           <td className={`px-3 py-3 md:p-4 text-[10px] md:text-sm font-mono ${t.textMuted}`}>{maskPhone(lead.altPhone)}</td>
+                          
+                          {/* 7. Date Created */}
                           <td className={`px-3 py-3 md:p-4 text-[10px] md:text-xs ${t.textFaint}`}>{lead.date}</td>
+                          
+                          {/* 8. Assigned to Receptionist */}
                           <td className="px-3 py-3 md:p-4">
                             <span className={`px-2 py-1 rounded-md text-[10px] font-semibold ${isDark ? "bg-purple-500/10 text-purple-400 border border-purple-500/30" : "bg-[#9E217B]/10 text-[#9E217B] border border-[#9E217B]/30"}`}>{lead.assignedReceptionist || user.name}</span>
                           </td>
+                          
+                          {/* 9. Status (Merged Lost Lead logic here) */}
                           <td className="px-3 py-3 md:p-4">
-                            <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase border ${lead.status === "Closing" ? t.statusClosing : lead.status === "Visit Scheduled" ? t.statusVisit : t.statusRouted
-                              }`}>{lead.status || "Routed"}</span>
+                            {lead.is_lost_lead ? (
+                              <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase border inline-flex items-center gap-1 ${t.statusLost}`}>
+                                <Ghost className="w-3 h-3"/> Lost
+                              </span>
+                            ) : (
+                              <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase border ${lead.status === "Closing" ? t.statusClosing : lead.status === "Visit Scheduled" ? t.statusVisit : t.statusRouted
+                                }`}>{lead.status || "Routed"}</span>
+                            )}
                           </td>
+                          
+                          {/* 10. Actions */}
                           <td className="px-3 py-3 md:p-4">
                             <button onClick={() => { setSelectedLead(lead); setAssignedSubView("detail"); setDetailTab("personal"); setShowSalesForm(false); setShowLoanForm(false); setActiveTab("assigned"); }}
                               className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${t.btnPrimary}`}>

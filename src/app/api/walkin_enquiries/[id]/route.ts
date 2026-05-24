@@ -14,7 +14,8 @@ export async function PUT(
     const {
       name, status, alt_phone, loan_planned,
       source_other, cp_name, cp_company, cp_phone,
-      assigned_to, // ← NEW: for transfer flow
+      assigned_to, // for transfer flow
+      is_lost_lead, lost_lead_reason, lost_lead_marked_at, lost_lead_marked_by,
       // assigned_receptionist is intentionally NEVER accepted here
     } = body;
 
@@ -30,7 +31,11 @@ export async function PUT(
     if (cp_name      !== undefined) { fields.push(`cp_name = $${i++}`);      values.push(cp_name); }
     if (cp_company   !== undefined) { fields.push(`cp_company = $${i++}`);   values.push(cp_company); }
     if (cp_phone     !== undefined) { fields.push(`cp_phone = $${i++}`);     values.push(cp_phone); }
-    if (assigned_to  !== undefined) { fields.push(`assigned_to = $${i++}`);  values.push(assigned_to); } // ← NEW
+    if (assigned_to  !== undefined) { fields.push(`assigned_to = $${i++}`);  values.push(assigned_to); }
+    if (is_lost_lead !== undefined) { fields.push(`is_lost_lead = $${i++}`); values.push(is_lost_lead); }
+    if (lost_lead_reason    !== undefined) { fields.push(`lost_lead_reason = $${i++}`);    values.push(lost_lead_reason); }
+    if (lost_lead_marked_at !== undefined) { fields.push(`lost_lead_marked_at = $${i++}`); values.push(lost_lead_marked_at); }
+    if (lost_lead_marked_by !== undefined) { fields.push(`lost_lead_marked_by = $${i++}`); values.push(lost_lead_marked_by); }
 
     if (fields.length === 0) {
       return NextResponse.json({ success: false, message: "No fields to update" }, { status: 400 });

@@ -1,14 +1,14 @@
 // sales manager
 "use client";
 
-import { useEffect, useState, useRef, useMemo } from "react";
+import { useEffect, useState, useRef, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { clearCrmSession, getStoredCrmUser, installLoggedOutBackGuard } from "@/lib/authSession";
 import {
   Bot, User, Send, BarChart2, AlertTriangle, Landmark, CalendarDays,
   Lightbulb, ClipboardList, Wifi, CheckCircle, XCircle, HelpCircle,
   Clock, MapPin, Zap, TrendingUp, Home, Building2, Globe, Star,
-  Share2, Image, Banknote, Users, BadgeCheck, CalendarCheck,
+  Share2, Image, Banknote, Users, BadgeCheck, CalendarCheck, Ghost,
   ArrowRight, Target, BrainCircuit, Flame
 } from "lucide-react";
 
@@ -17,7 +17,7 @@ import {
   FaChevronLeft, FaCheckCircle, FaPaperPlane, FaTimes, FaPhoneAlt,
   FaCalendarAlt, FaUserCircle, FaMicrophone, FaWhatsapp, FaRobot,
   FaEyeSlash, FaSearch, FaUniversity, FaUsers, FaFileAlt, FaCheck,
-  FaClock, FaBell, FaHandshake
+  FaClock, FaBell, FaHandshake , FaClipboardList
 } from "react-icons/fa";
 import {
   PieChart, Pie, Cell, Tooltip as RTooltip, ResponsiveContainer,
@@ -26,6 +26,8 @@ import {
 import CallButton from "@/components/CallButton";
 import CallModal from "@/components/CallModal";
 import OnCallBadge from "@/components/OnCallBadge";
+import LostLeadModal from "@/components/LostLeadModal";
+import { handleMarkLostLead as markLostLeadApi, restoreLostLead, updateLeadLostState, useLostLeadEvents } from "@/lib/lostLeadSync";
 
 const CARDS_PER_PAGE = 20;
 const MONTH_NAMES = [
@@ -168,6 +170,9 @@ function buildTheme(isDark: boolean) {
     statusRouted:  isDark ? "text-[#d946a8] border-[#9E217B]/30 bg-[#9E217B]/10" : "text-[#00AEEF] border-[#00AEEF]/30 bg-[#00AEEF]/10",
     statusVisit:   isDark ? "text-orange-400 border-orange-500/30 bg-orange-500/10" : "text-orange-500 border-orange-400/40 bg-orange-50",
     statusClosing: isDark ? "text-yellow-400 border-yellow-500/40 bg-yellow-500/10" : "text-amber-600 border-amber-400/50 bg-amber-50",
+    statusLost:    isDark ? "text-red-300 border-red-500/30 bg-red-950/30" : "text-red-700 border-red-300 bg-red-50",
+    cardLost:      isDark ? "bg-[#171717] border border-red-900/25 opacity-70 grayscale saturate-50 transition-all duration-300 hover:opacity-90 hover:border-red-500/30 flex flex-col h-full" : "bg-slate-100 border border-red-200 opacity-75 grayscale saturate-50 transition-all duration-300 hover:opacity-90 hover:border-red-300 flex flex-col h-full",
+    rowLost:       isDark ? "bg-[#151515]/80 text-gray-500 opacity-75 grayscale" : "bg-slate-100/80 text-slate-500 opacity-80 grayscale",
 
     // ── Select / form elements ──
     select:        isDark ? "bg-[#121212] border-[#333] text-white focus:border-[#d946a8]" : "bg-white border-[#9CA3AF] text-[#1A1A1A] focus:border-[#00AEEF]",
@@ -188,7 +193,7 @@ function useAdminData() {
   const [followUps, setFollowUps]     = useState<any[]>([]);
   const [isLoading, setIsLoading]     = useState(true);
 
-  const fetchAdminData = async () => {
+  const fetchAdminData = useCallback(async () => {
     try {
       let smData: any[] = [];
       const resUsers = await fetch("/api/users/sales-manager");
@@ -254,13 +259,19 @@ function useAdminData() {
       setFollowUps(mongoFollowUps);
       setIsLoading(false);
     } catch (e) { console.error("Admin data sync failed", e); }
-  };
+  }, []);
+
+  const applyLeadUpdate = useCallback((updatedLead: any) => {
+    setAllLeads(prev => updateLeadLostState(prev, updatedLead));
+  }, []);
 
   useEffect(() => {
     fetchAdminData();
     const interval = setInterval(fetchAdminData, 5000);
     return () => clearInterval(interval);
-  }, []);
+  }, [fetchAdminData]);
+
+  useLostLeadEvents(applyLeadUpdate, fetchAdminData);
 
   return { managers, receptionists, allLeads, followUps, isLoading, refetch: fetchAdminData };
 }
@@ -288,6 +299,7 @@ export default function SalesDashboard() {
     const now     = new Date();
     const myLeads = user.role === "admin" ? allLeads : allLeads.filter((l: any) => l.assigned_to === user.name);
     return myLeads.filter((lead: any) => {
+      if (lead.is_lost_lead) return false;
       if (lead.status === "Completed" || lead.status === "Closing") return false;
       if (lead.leadInterestStatus === "Not Interested") return false;
       const leadFups      = followUps.filter((f: any) => String(f.leadId) === String(lead.id));
@@ -310,6 +322,7 @@ export default function SalesDashboard() {
     const myLeads = user.role === "admin" ? allLeads : allLeads.filter((l: any) => l.assigned_to === user.name);
     return myLeads
       .filter((lead: any) => {
+        if (lead.is_lost_lead) return false;
         if (!lead.mongoVisitDate) return false;
         if (dismissedVisits.has(String(lead.id))) return false;
         const visitDay = new Date(lead.mongoVisitDate);
@@ -759,6 +772,9 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
   const [selectedLead, setSelectedLead] = useState<any>(null);
   const [searchTerm, setSearchTerm]     = useState("");
   const [searchClosed, setSearchClosed] = useState(""); 
+  const [leadStatusFilter, setLeadStatusFilter] = useState<"all"|"active"|"lost">("all");
+  const [showLostLeads, setShowLostLeads]       = useState(true);
+  const [columnFilter, setColumnFilter] = useState<string>("all");
   const [detailTab, setDetailTab]       = useState<"personal"|"loan">("personal");
   const [showSalesForm, setShowSalesForm]   = useState(false);
   const [salesForm, setSalesForm]           = useState({ propertyType:"",location:"",budget:"",useType:"",purchaseDate:"",loanPlanned:"",siteVisit:"",leadStatus:"" });
@@ -766,6 +782,10 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
   const [showLoanForm, setShowLoanForm]     = useState(false);
   const [loanForm, setLoanForm]             = useState({ loanRequired:"",status:"",bank:"",amountReq:"",amountApp:"",cibil:"",agent:"",agentContact:"",empType:"",income:"",emi:"",docPan:"Pending",docAadhaar:"Pending",docSalary:"Pending",docBank:"Pending",docProperty:"Pending",notes:"" });
   const [customNote, setCustomNote]         = useState("");
+  const [showLostModal, setShowLostModal]   = useState(false);
+  const [lostReason, setLostReason]         = useState("");
+  const [lostError, setLostError]           = useState("");
+  const [isSavingLost, setIsSavingLost]     = useState(false);
 
   // ── WhatsApp States ──
   const [isWaModalOpen, setIsWaModalOpen] = useState(false);
@@ -794,13 +814,16 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
       }
     } 
   }, [allLeads, adminUser]);
-  useEffect(() => { setCardsPage(1); }, [searchTerm]);
+  useEffect(() => { setCardsPage(1); }, [searchTerm, leadStatusFilter, showLostLeads, columnFilter]);
 
   const baseManagerLeads   = adminUser.role==="admin" ? allLeads : allLeads.filter((l:any)=>l.assigned_to===adminUser.name);
   const currentLeadFollowUps = followUps.filter((f:any)=>String(f.leadId)===String(selectedLead?.id));
 
-  const activeManagerLeads = baseManagerLeads.filter((l:any) => l.status !== "Closing" && !l.closingDate);
+  const pipelineManagerLeads = baseManagerLeads.filter((l:any) => l.status !== "Closing" && !l.closingDate);
+  const lostManagerLeads   = pipelineManagerLeads.filter((l:any) => !!l.is_lost_lead);
+  const activeManagerLeads = pipelineManagerLeads.filter((l:any) => !l.is_lost_lead);
   const closingLeads       = baseManagerLeads.filter((l:any) => l.status === "Closing" || !!l.closingDate);
+  const lostRatio = baseManagerLeads.length > 0 ? ((lostManagerLeads.length / baseManagerLeads.length) * 100).toFixed(1) : "0.0";
 
   const enquiriesAttended = useMemo(() =>
     baseManagerLeads.filter((l:any) => followUps.some((f:any) => String(f.leadId) === String(l.id))).length
@@ -827,10 +850,60 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
       : "0.0"
   , [closingLeads, baseManagerLeads]);
 
-  const filteredLeads   = activeManagerLeads.filter((lead:any) =>
-    (lead.name||"").toLowerCase().includes(searchTerm.toLowerCase()) ||
-    String(lead.id).includes(searchTerm)
-  );
+  const applyLostVisibility = (lead:any) => {
+    if (leadStatusFilter === "lost") return !!lead.is_lost_lead;
+    if (leadStatusFilter === "active") return !lead.is_lost_lead;
+    return showLostLeads || !lead.is_lost_lead;
+  };
+
+  const filteredLeads = useMemo(() => {
+    let leads = pipelineManagerLeads.filter(applyLostVisibility);
+    if (!searchTerm.trim()) return leads;
+    const lq = searchTerm.toLowerCase();
+    if (columnFilter === "all") {
+      return leads.filter((l: any) =>
+        [l.id, l.name, l.phone, l.altPhone, l.alt_phone, l.salesBudget,
+        l.budget, l.propType, l.configuration, l.source, l.status,
+        l.leadInterestStatus, l.assigned_to]
+          .map(v => String(v || "")).join(" ").toLowerCase().includes(lq)
+      );
+    }
+    return leads.filter((l: any) => {
+      switch (columnFilter) {
+        case "name":    return String(l.name || "").toLowerCase().includes(lq);
+        case "phone":   return [l.phone, l.altPhone, l.alt_phone].map(v => String(v||"")).join(" ").toLowerCase().includes(lq);
+        case "budget":  return String(l.salesBudget || l.budget || "").toLowerCase().includes(lq);
+        case "propType":return String(l.propType || l.configuration || "").toLowerCase().includes(lq);
+        case "source":  return String(l.source || "").toLowerCase().includes(lq);
+        case "status":  return String(l.status || "").toLowerCase().includes(lq);
+        default:        return true;
+      }
+    });
+  }, [pipelineManagerLeads, searchTerm, columnFilter, applyLostVisibility]);
+    const filteredDatabaseLeads = useMemo(() => {
+    let leads = baseManagerLeads.filter(applyLostVisibility);
+    if (!searchTerm.trim()) return leads;
+    const lq = searchTerm.toLowerCase();
+    if (columnFilter === "all") {
+      return leads.filter((l: any) =>
+        [l.id, l.name, l.phone, l.altPhone, l.alt_phone, l.salesBudget,
+        l.budget, l.propType, l.configuration, l.source, l.status,
+        l.leadInterestStatus, l.assigned_to]
+          .map(v => String(v || "")).join(" ").toLowerCase().includes(lq)
+      );
+    }
+    return leads.filter((l: any) => {
+      switch (columnFilter) {
+        case "name":    return String(l.name || "").toLowerCase().includes(lq);
+        case "phone":   return [l.phone, l.altPhone, l.alt_phone].map(v => String(v||"")).join(" ").toLowerCase().includes(lq);
+        case "budget":  return String(l.salesBudget || l.budget || "").toLowerCase().includes(lq);
+        case "propType":return String(l.propType || l.configuration || "").toLowerCase().includes(lq);
+        case "source":  return String(l.source || "").toLowerCase().includes(lq);
+        case "status":  return String(l.status || "").toLowerCase().includes(lq);
+        default:        return true;
+      }
+    });
+  }, [baseManagerLeads, searchTerm, columnFilter, applyLostVisibility]);
   const paginatedLeads  = filteredLeads.slice(0, cardsPage * CARDS_PER_PAGE);
   const hasMoreCards    = paginatedLeads.length < filteredLeads.length;
 
@@ -871,6 +944,61 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
       setTimeout(()=>setToastMsg(null),3500);
       refetch();
     } catch(e){console.log(e);}
+  };
+
+  const openLostLeadModal = () => {
+    setLostReason("");
+    setLostError("");
+    setShowLostModal(true);
+  };
+
+  const handleMarkLostLead = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!selectedLead) return;
+    const reason = lostReason.trim();
+    if (reason.length < 10) {
+      setLostError("Reason must be at least 10 characters.");
+      return;
+    }
+    setIsSavingLost(true);
+    try {
+      const json = await markLostLeadApi({ leadId: selectedLead.id, reason, markedBy: adminUser.name });
+      if (!json.success) {
+        setLostError(json.message || "Could not mark this lead as lost.");
+        return;
+      }
+      setSelectedLead(json.data);
+      setShowLostModal(false);
+      setToastMsg({ title: `${selectedLead.name} marked as Lost Lead`, icon: <Ghost className="w-5 h-5"/>, color: "red" });
+      setTimeout(()=>setToastMsg(null),3500);
+      refetch();
+    } catch {
+      setLostError("Network error. Please try again.");
+    } finally {
+      setIsSavingLost(false);
+    }
+  };
+
+  const handleRestoreLead = async () => {
+    if (!selectedLead) return;
+    setIsSavingLost(true);
+    try {
+      const json = await restoreLostLead({ leadId: selectedLead.id, restoredBy: adminUser.name });
+      if (!json.success) {
+        setToastMsg({ title: json.message || "Could not restore lead", icon: <AlertTriangle className="w-5 h-5"/>, color: "red" });
+        setTimeout(()=>setToastMsg(null),3500);
+        return;
+      }
+      setSelectedLead(json.data);
+      setToastMsg({ title: `${selectedLead.name} restored to Active`, icon: <FaCheckCircle/>, color: "green" });
+      setTimeout(()=>setToastMsg(null),3500);
+      refetch();
+    } catch {
+      setToastMsg({ title: "Network error while restoring lead", icon: <AlertTriangle className="w-5 h-5"/>, color: "red" });
+      setTimeout(()=>setToastMsg(null),3500);
+    } finally {
+      setIsSavingLost(false);
+    }
   };
 
   const handleSendCustomNote=async(e:React.FormEvent<HTMLFormElement>)=>{e.preventDefault();if(!customNote.trim()||!selectedLead)return;const nm={leadId:String(selectedLead.id),salesManagerName:adminUser.name,createdBy:adminUser.role==="admin"?"admin":"sales",message:customNote,siteVisitDate:null,createdAt:new Date().toISOString()};setCustomNote("");try{await fetch("/api/followups",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(nm)});refetch();}catch(e){console.log(e);}};
@@ -1017,7 +1145,9 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
         <div className={`fixed top-6 left-1/2 -translate-x-1/2 z-[100] px-4 sm:px-6 py-3 rounded-xl shadow-lg flex items-center gap-3 sm:gap-4 animate-fadeIn border ${
           toastMsg.color === "green"
             ? "bg-green-600 border-green-400 text-white"
-            : "bg-blue-600 border-blue-400 text-white"
+            : toastMsg.color === "red"
+              ? "bg-red-600 border-red-400 text-white"
+              : "bg-blue-600 border-blue-400 text-white"
         }`}>
           <div className="text-base sm:text-lg">{toastMsg.icon}</div>
           <span className="text-xs sm:text-sm font-bold">{toastMsg.title}</span>
@@ -1045,13 +1175,14 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
             </div>
 
             {/* ── 5-CARD STATS GRID ── */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 sm:gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 sm:gap-6">
               {[
-                { label: "Total Enquiries",             value: activeManagerLeads.length,  sub: "in your pipeline",        glow: t.statGlow1, textColor: t.text },
+                { label: "Total Enquiries",             value: baseManagerLeads.length,  sub: `${activeManagerLeads.length} active`,        glow: t.statGlow1, textColor: t.text },
                 { label: "Enquiries Attended",          value: enquiriesAttended,           sub: `of ${activeManagerLeads.length} total`, glow: t.statGlow1, textColor: isDark?"text-purple-400":"text-[#00AEEF]" },
                 { label: "Enquiries Attended This Month", value: enquiriesThisMonth,        sub: `in ${MONTH_NAMES[selectedMonth].slice(0,3)}`, glow: t.statGlow3, textColor: isDark?"text-blue-400":"text-[#9E217B]", monthSelect: true },
                 { label: "Closing",                     value: closingThisMonth > 0 ? closingThisMonth : "—", sub: `${closingLeads.length} total closed`, glow: t.statGlow4, textColor: isDark?"text-yellow-400":"text-amber-500", monthSelect: true },
                 { label: "Closing Rate",                value: `${closingPct}%`,            sub: `${closingLeads.length} of ${activeManagerLeads.length} leads`, glow: t.statGlow5, textColor: isDark?"text-green-400":"text-emerald-600" },
+                { label: "Lost Leads",                  value: lostManagerLeads.length,      sub: `${lostRatio}% lost ratio`, glow: "bg-red-500/10", textColor: isDark?"text-red-300":"text-red-600" },
               ].map((stat, i) => (
                 <div key={i} className={`rounded-2xl p-4 sm:p-5 shadow-sm border relative overflow-hidden transition-all flex flex-col justify-between ${t.card}`} style={t.cardGlass}>
                   <div className={`absolute -right-6 -top-6 w-24 h-24 rounded-full blur-2xl pointer-events-none ${stat.glow}`} />
@@ -1078,37 +1209,95 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
 
             {/* Overview table */}
             <div className={`rounded-2xl border shadow-sm overflow-hidden ${t.tableWrap}`} style={t.tableGlass}>
-              <div className={`p-4 sm:p-5 border-b flex justify-between items-center ${t.tableBorder} ${t.modalHeader}`}>
-                <h3 className={`font-bold flex items-center gap-2 text-sm sm:text-base ${t.text}`}><FaUsers className={t.accentText}/> Leads Database</h3>
+              <div className={`p-4 sm:p-5 border-b flex flex-col gap-3 ${t.tableBorder} ${t.modalHeader}`}>
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <h3 className={`font-bold flex items-center gap-2 text-sm sm:text-base ${t.text}`}>
+                    <FaClipboardList className={t.accentText}/> Leads Database
+                  </h3>
+                  <span className={`text-xs font-bold px-3 py-1 rounded-full border ${t.btnClosingBadge}`}>
+                    Total: {filteredDatabaseLeads.length}
+                  </span>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                 
+                  <label className={`flex items-center gap-1.5 text-xs font-semibold cursor-pointer select-none border rounded-xl px-3 py-2 ${t.selectSmall}`}>
+                    <input
+                      type="checkbox"
+                      checked={showLostLeads}
+                      onChange={e => setShowLostLeads(e.target.checked)}
+                      disabled={leadStatusFilter !== "all"}
+                      className="accent-[#9E217B] w-3.5 h-3.5 cursor-pointer"
+                    />
+                    Show Lost
+                  </label>
+                  <select
+                    value={columnFilter}
+                    onChange={e => setColumnFilter(e.target.value)}
+                    className={`rounded-xl px-3 py-2 text-xs font-semibold outline-none cursor-pointer border ${t.select}`}
+                  >
+                    <option value="all">All Columns</option>
+                    <option value="name">Name</option>
+                    <option value="phone">Phone</option>
+                    <option value="budget">Budget</option>
+                    <option value="propType">Property Type</option>
+                    <option value="source">Source</option>
+                    <option value="status">Status</option>
+                  </select>
+                  <div className="relative flex-1 min-w-[180px]">
+                    <FaSearch className={`absolute left-3 top-1/2 -translate-y-1/2 text-xs ${t.textFaint}`}/>
+                    <input
+                      type="text"
+                      placeholder="Search leads..."
+                      value={searchTerm}
+                      onChange={e => setSearchTerm(e.target.value)}
+                      className={`w-full rounded-xl pl-9 pr-4 py-2 text-sm outline-none transition-colors border ${t.inputBg} ${t.text} ${t.inputFocus}`}
+                    />
+                    {searchTerm && (
+                      <button onClick={() => setSearchTerm("")} className={`absolute right-3 top-1/2 -translate-y-1/2 ${t.textFaint} hover:text-red-400`}>
+                        <FaTimes className="text-xs"/>
+                      </button>
+                    )}
+                  </div>
+                </div>
               </div>
               <div className="overflow-x-auto w-full custom-scrollbar">
                 <table className="w-full text-left text-sm whitespace-nowrap">
                   <thead className={t.tableHead}>
                     <tr>
-                      {["LEAD NO.","NAME","PROP. TYPE","BUDGET","STATUS","LOAN STATUS","AMT REQ / APP","SITE VISIT"].map(h => (
+                      {["LEAD NO.","NAME","PROP. TYPE","BUDGET","STATUS","LOST STATUS","LOAN STATUS","AMT REQ / APP","SITE VISIT"].map(h => (
                         <th key={h} className={`px-4 sm:px-6 py-3 sm:py-4 font-bold tracking-wider border-b ${t.textHeader} ${t.tableBorder}`}>{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody className={`divide-y ${t.tableDivide}`}>
                     {isLoading
-                      ? <tr><td colSpan={8} className={`text-center py-8 ${t.textMuted}`}>Loading...</td></tr>
-                      : baseManagerLeads.length === 0
-                        ? <tr><td colSpan={8} className={`text-center py-8 ${t.textMuted}`}>No leads found.</td></tr>
-                        : baseManagerLeads.map((lead:any) => {
+                      ? <tr><td colSpan={9} className={`text-center py-8 ${t.textMuted}`}>Loading...</td></tr>
+                      : filteredDatabaseLeads.length === 0
+                        ? <tr><td colSpan={9} className={`text-center py-8 ${t.textMuted}`}>No leads found.</td></tr>
+                        : filteredDatabaseLeads.map((lead:any) => {
                             const isClosed = lead.status === "Closing" || lead.status === "Completed" || lead.status === "Closed" || lead.closingDate;
+                            const isLost = !!lead.is_lost_lead;
                             return (
-                              <tr key={lead.id} className={`transition-colors cursor-pointer ${t.tableRow}`} onClick={() => { setSelectedLead(lead); setMainView("detail"); setSubView("detail"); }}>
+                              <tr key={lead.id} className={`transition-colors cursor-pointer ${isLost ? t.rowLost : t.tableRow}`} onClick={() => { setSelectedLead(lead); setMainView("detail"); setSubView("detail"); }}>
                                 <td className={`px-4 sm:px-6 py-3 sm:py-4 font-bold ${t.accentText}`}>#{lead.id}</td>
                                 <td className={`px-4 py-3 sm:py-4 font-medium ${t.text}`}>{lead.name}</td>
                                 <td className={`px-4 py-3 sm:py-4 ${t.textMuted}`}>{lead.propType || "Pending"}</td>
                                 <td className={`px-4 py-3 sm:py-4 font-semibold ${isDark ? "text-green-400" : "text-emerald-600"}`}>{lead.salesBudget}</td>
                                 <td className="px-4 py-3 sm:py-4">
                                   <span className={`px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold uppercase border ${
-                                    isClosed 
+                                    isLost
+                                      ? t.statusLost
+                                      : isClosed 
                                       ? (isDark ? "text-emerald-400 border-emerald-500/30 bg-emerald-500/10" : "text-emerald-600 border-emerald-400/40 bg-emerald-50")
                                       : lead.status === "Visit Scheduled" ? t.statusVisit : t.statusRouted
-                                  }`}>{isClosed ? "CLOSED" : (lead.status || "ROUTED")}</span>
+                                  }`}>{isLost ? "LOST" : isClosed ? "CLOSED" : (lead.status || "ROUTED")}</span>
+                                </td>
+                                <td className="px-4 py-3 sm:py-4">
+                                  {isLost ? (
+                                    <span className={`px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold uppercase border inline-flex items-center gap-1 ${t.statusLost}`}>
+                                      <Ghost className="w-3 h-3"/> Lost Lead
+                                    </span>
+                                  ) : <span className={`text-xs font-semibold ${t.textMuted}`}>Active</span>}
                                 </td>
                                 <td className="px-4 py-3 sm:py-4">
                                   {lead.loanStatus && lead.loanStatus !== "N/A"
@@ -1137,21 +1326,72 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
         {/* ── CARDS ── */}
         {subView === "cards" && (
           <div className="animate-fadeIn">
-            <div className={`flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6 sm:mb-8 border-b pb-4 sm:pb-6 ${t.tableBorder}`}>
-              <div>
-                <h1 className={`text-xl sm:text-2xl font-bold ${t.text}`}>Active Leads</h1>
-                <p className={`text-xs sm:text-sm mt-0.5 ${t.textFaint}`}>
-                  {paginatedLeads.length} shown · {filteredLeads.length} total
+            {/* ── Admin-style Enquiry Toolbar ── */}
+            <div className={`rounded-2xl border p-4 mb-6 ${t.tableWrap}`} style={t.tableGlass}>
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <h2 className={`font-bold text-base flex items-center gap-2 ${t.text}`}>
+                    <FaClipboardList className={t.accentText}/> Leads Overview
+                  </h2>
+                  <span className={`text-xs font-bold px-3 py-1 rounded-full border ${t.btnClosingBadge}`}>
+                    Total: {filteredLeads.length}
+                  </span>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  {/* Lead Status Filter */}
+                  
+
+                  {/* Show Lost Checkbox */}
+                  <label className={`flex items-center gap-1.5 text-xs font-semibold cursor-pointer select-none border rounded-xl px-3 py-2 ${t.selectSmall}`}>
+                    <input
+                      type="checkbox"
+                      checked={showLostLeads}
+                      onChange={e => setShowLostLeads(e.target.checked)}
+                      disabled={leadStatusFilter !== "all"}
+                      className="accent-[#9E217B] w-3.5 h-3.5 cursor-pointer"
+                    />
+                    Show Lost
+                  </label>
+
+                  {/* Column Filter */}
+                  <select
+                    value={columnFilter}
+                    onChange={e => setColumnFilter(e.target.value)}
+                    className={`rounded-xl px-3 py-2 text-xs font-semibold outline-none cursor-pointer border ${t.select}`}
+                  >
+                    <option value="all">All Columns</option>
+                    <option value="name">Name</option>
+                    <option value="phone">Phone</option>
+                    <option value="budget">Budget</option>
+                    <option value="propType">Property Type</option>
+                    <option value="source">Source</option>
+                    <option value="status">Status</option>
+                  </select>
+
+                  {/* Search Bar */}
+                  <div className="relative flex-1 min-w-[180px]">
+                    <FaSearch className={`absolute left-3 top-1/2 -translate-y-1/2 text-xs ${t.textFaint}`}/>
+                    <input
+                      type="text"
+                      placeholder="Search leads..."
+                      value={searchTerm}
+                      onChange={e => setSearchTerm(e.target.value)}
+                      className={`w-full rounded-xl pl-9 pr-4 py-2 text-sm outline-none transition-colors border ${t.inputBg} ${t.text} ${t.inputFocus}`}
+                    />
+                    {searchTerm && (
+                      <button
+                        onClick={() => setSearchTerm("")}
+                        className={`absolute right-3 top-1/2 -translate-y-1/2 ${t.textFaint} hover:text-red-400`}
+                      >
+                        <FaTimes className="text-xs"/>
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <p className={`text-[10px] ${t.textFaint}`}>
+                  {paginatedLeads.length} shown · {filteredLeads.length} filtered
                   {hasMoreCards && <span className={t.accentText}> · scroll for more</span>}
                 </p>
-              </div>
-              <div className="relative w-full sm:w-auto">
-                <FaSearch className={`absolute left-3 top-1/2 -translate-y-1/2 text-xs ${t.textFaint}`}/>
-                <input
-                  type="text" placeholder="Search..." value={searchTerm}
-                  onChange={e => setSearchTerm(e.target.value)}
-                  className={`rounded-lg pl-9 pr-4 py-2 text-sm outline-none w-full sm:w-64 transition-colors border ${t.inputBg} ${t.text} ${t.inputFocus}`}
-                />
               </div>
             </div>
 
@@ -1165,10 +1405,11 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
                         const interest  = lead.leadInterestStatus && lead.leadInterestStatus !== "Pending" ? lead.leadInterestStatus : null;
                         const loanSt    = lead.loanStatus && lead.loanStatus !== "N/A" ? lead.loanStatus : null;
                         const isClosing = lead.status === "Closing";
+                        const isLost    = !!lead.is_lost_lead;
                         return (
                           <div
                             key={lead.id}
-                            className={`rounded-2xl p-4 sm:p-5 border shadow-sm transition-all group flex flex-col justify-between cursor-pointer h-full ${isClosing ? t.cardClosing : t.card}`}
+                            className={`rounded-2xl p-4 sm:p-5 border shadow-sm transition-all group flex flex-col justify-between cursor-pointer h-full ${isLost ? t.cardLost : isClosing ? t.cardClosing : t.card}`}
                             style={t.cardGlass}
                             onClick={() => { setSelectedLead(lead); setMainView("detail"); setSubView("detail"); }}
                           >
@@ -1178,10 +1419,17 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
                                   <span className={`mr-2 ${t.accentText}`}>#{lead.id}</span>{lead.name}
                                 </h3>
                                 <span className={`px-2 sm:px-3 py-1 rounded-full text-[9px] sm:text-[10px] font-bold uppercase tracking-wider border flex-shrink-0 whitespace-nowrap ${
+                                  isLost ? t.statusLost :
                                   isClosing ? t.statusClosing :
                                   lead.status === "Visit Scheduled" ? t.statusVisit : t.statusRouted
-                                }`}>{lead.status || "ROUTED"}</span>
+                                }`}>{isLost ? "LOST LEAD" : (lead.status || "ROUTED")}</span>
                               </div>
+                              {isLost && (
+                                <div className={`mb-4 flex items-center justify-between gap-2 rounded-lg px-3 py-2 border ${t.statusLost}`}>
+                                  <span className="text-[10px] font-black uppercase tracking-wider flex items-center gap-2"><Ghost className="w-3.5 h-3.5"/> Lost Lead</span>
+                                  <span className="text-[10px] font-semibold normal-case truncate">{lead.lost_lead_reason || "Unresponsive"}</span>
+                                </div>
+                              )}
                               <div className="space-y-3 mb-4 sm:mb-5">
                                 <div className="flex justify-between items-start gap-2">
                                   <div>
@@ -1304,7 +1552,7 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
         {subView === "detail" && selectedLead && (
           <div className="animate-fadeIn w-full flex flex-col gap-4 pb-4">
             {/* Detail header */}
-            <div className={`flex flex-col md:flex-row md:items-center justify-between gap-4 rounded-2xl border p-4 shadow-sm flex-shrink-0 ${t.card}`} style={t.cardGlass}>
+            <div className={`flex flex-col md:flex-row md:items-center justify-between gap-4 rounded-2xl border p-4 shadow-sm flex-shrink-0 ${selectedLead.is_lost_lead ? t.cardLost : t.card}`} style={t.cardGlass}>
               <div className="flex items-center gap-3 sm:gap-4 min-w-0">
                 <button onClick={() => { setMainView("forms"); setSubView("cards"); }} className={`w-9 h-9 sm:w-10 sm:h-10 flex flex-shrink-0 items-center justify-center border rounded-xl transition-colors cursor-pointer shadow-sm ${t.textMuted} ${t.tableBorder} ${isDark?"bg-[#222] hover:bg-[#333]":"bg-white hover:bg-[#F8FAFC]"}`}><FaChevronLeft className="text-sm"/></button>
                 <h1 className={`text-lg sm:text-xl md:text-2xl font-bold flex items-center gap-2 sm:gap-3 flex-wrap min-w-0 ${t.text}`}>
@@ -1313,6 +1561,11 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
                   {selectedLead.status === "Closing" && (
                     <span className={`text-[10px] sm:text-[11px] font-bold px-2 sm:px-3 py-1 rounded-full border flex items-center gap-1.5 flex-shrink-0 ${t.statusClosing}`}>
                       <FaHandshake className="text-xs"/> Closing
+                    </span>
+                  )}
+                  {selectedLead.is_lost_lead && (
+                    <span className={`text-[10px] sm:text-[11px] font-bold px-2 sm:px-3 py-1 rounded-full border flex items-center gap-1.5 flex-shrink-0 ${t.statusLost}`}>
+                      <Ghost className="w-3 h-3"/> Lost Lead
                     </span>
                   )}
                   {callHidden && (
@@ -1334,7 +1587,17 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
                       className={`font-bold px-4 sm:px-5 py-2 rounded-lg text-xs sm:text-sm flex items-center gap-2 transition-colors cursor-pointer shadow-lg flex-1 sm:flex-none justify-center ${t.btnSecondary} ${isDark?"shadow-blue-600/20":"shadow-[#00AEEF]/20"}`}>
                       <FaUniversity/> <span className="hidden sm:inline">Track</span> Loan
                     </button>
-                    {selectedLead.mongoVisitDate && selectedLead.status !== "Closing" && (
+                    {!selectedLead.is_lost_lead && (
+                      <button onClick={openLostLeadModal} className={`font-bold px-4 sm:px-5 py-2 rounded-lg text-xs sm:text-sm flex items-center gap-2 transition-colors cursor-pointer shadow-lg flex-1 sm:flex-none justify-center ${t.btnDanger}`}>
+                        <AlertTriangle className="w-4 h-4"/> Mark <span className="hidden sm:inline">as</span> Lost Lead
+                      </button>
+                    )}
+                    {selectedLead.is_lost_lead && (
+                      <button onClick={handleRestoreLead} disabled={isSavingLost} className={`font-bold px-4 sm:px-5 py-2 rounded-lg text-xs sm:text-sm flex items-center gap-2 transition-colors cursor-pointer shadow-lg flex-1 sm:flex-none justify-center ${t.btnPrimary} disabled:opacity-60`}>
+                        <FaCheckCircle className="text-xs"/> Restore Lead
+                      </button>
+                    )}
+                    {selectedLead.mongoVisitDate && selectedLead.status !== "Closing" && !selectedLead.is_lost_lead && (
                       <button onClick={handleMarkAsClosing} className={`font-bold px-4 sm:px-5 py-2 rounded-lg text-xs sm:text-sm flex items-center gap-2 transition-colors cursor-pointer shadow-lg flex-1 sm:flex-none justify-center ${t.btnWarning} shadow-amber-600/20`}>
                         <FaHandshake/> Mark <span className="hidden sm:inline">as</span> Closing
                       </button>
@@ -1473,11 +1736,22 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
                             <div><p className={`text-[10px] sm:text-xs font-medium mb-1 ${t.textFaint}`}>Planning to Buy?</p><p className={`font-semibold ${t.text}`}>{selectedLead.planningPurchase||"Pending"}</p></div>
                             <div><p className={`text-[10px] sm:text-xs font-medium mb-1 ${t.textFaint}`}>Loan Required?</p><p className={`font-semibold ${t.text}`}>{getLatestLoanDetails()?.loanRequired}</p></div>
                             <div><p className={`text-[10px] sm:text-xs font-medium mb-1 ${t.textFaint}`}>Status</p><span className={`text-xs sm:text-sm font-bold ${selectedLead.status==="Closing"?"text-amber-500":selectedLead.status==="Visit Scheduled"?"text-orange-400":t.accentText}`}>{selectedLead.status||"Routed"}</span></div>
-                            <div className={`col-span-1 sm:col-span-2 p-3 sm:p-4 rounded-xl border ${t.settingsBg}`} style={t.settingsBgGl}>
+                            {/* <div className={`col-span-1 sm:col-span-2 p-3 sm:p-4 rounded-xl border ${t.settingsBg}`} style={t.settingsBgGl}>
                               <p className={`text-[10px] sm:text-xs font-bold uppercase tracking-wider mb-0.5 sm:mb-1 ${isDark?"text-[#00AEEF]":"text-[#00AEEF]"}`}>📍 Site Visit Date</p>
                               <p className={`text-sm sm:text-base font-black ${t.text}`}>{selectedLead.mongoVisitDate?formatDate(selectedLead.mongoVisitDate):"Not Scheduled"}</p>
-                            </div>
+                            </div> */}
                           </div>
+                          {selectedLead.is_lost_lead && (
+                            <div className={`mt-4 border rounded-xl p-3 sm:p-4 ${t.statusLost}`}>
+                              <h3 className="text-[10px] sm:text-xs font-bold uppercase tracking-wider mb-2 flex items-center gap-2">
+                                <Ghost className="w-3.5 h-3.5"/> Lost Lead Record
+                              </h3>
+                              <p className={`text-xs sm:text-sm leading-relaxed ${t.textMuted}`}>{selectedLead.lost_lead_reason || "No reason recorded."}</p>
+                              <p className={`text-[10px] mt-2 ${t.textFaint}`}>
+                                Marked by {selectedLead.lost_lead_marked_by || "Unknown"} on {selectedLead.lost_lead_marked_at ? formatDate(selectedLead.lost_lead_marked_at) : "-"}
+                              </p>
+                            </div>
+                          )}
                           <div className={`mt-4 border rounded-xl p-3 sm:p-4 ${t.settingsBg}`} style={t.settingsBgGl}>
                             <h3 className={`text-[10px] sm:text-xs font-bold uppercase tracking-wider mb-2 sm:mb-3 border-b pb-2 ${t.sectionTitle} ${t.sectionBorder}`}>
                               {selectedLead.source && selectedLead.source !== "N/A" ? `${selectedLead.source} Data` : "Source Data"}
@@ -1644,6 +1918,19 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
           </div>
         )}
         {/* ── CALL MODAL ── */}
+        {showLostModal && selectedLead && (
+          <LostLeadModal
+            lead={selectedLead}
+            reason={lostReason}
+            error={lostError}
+            isSaving={isSavingLost}
+            isDark={isDark}
+            theme={t}
+            onReasonChange={(value) => { setLostReason(value); if (lostError) setLostError(""); }}
+            onClose={() => setShowLostModal(false)}
+            onSubmit={handleMarkLostLead}
+          />
+        )}
         {selectedLead && (
           <CallModal
             leadName={selectedLead.name}
@@ -2068,6 +2355,7 @@ function SiteVisitScheduler({
 
   const upcomingVisit = visits.find(v => v.status === "scheduled" && new Date(v.visit_date) >= new Date());
   const isClosing     = lead.status === "Closing" || !!lead.closingDate;
+  const isLost        = !!lead.is_lost_lead;
 
   const statusBadge = (status: string) => {
     if (status === "completed") return "text-green-400 border-green-500/30 bg-green-500/10";
@@ -2096,7 +2384,7 @@ function SiteVisitScheduler({
             </p>
           )}
         </div>
-        {!isClosing && (
+        {!isClosing && !isLost && (
           <button
             onClick={() => { setEditVisit(null); setVisitDate(""); setVisitNotes(""); setShowModal(true); }}
             className={`text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 cursor-pointer transition-colors ${

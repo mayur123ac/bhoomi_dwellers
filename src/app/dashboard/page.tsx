@@ -1,7 +1,7 @@
 //dashboard/page.tsx
 "use client";
 
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { clearCrmSession, getStoredCrmUser, installLoggedOutBackGuard } from "@/lib/authSession";
 import { motion, AnimatePresence } from "framer-motion";
@@ -15,6 +15,14 @@ import {
   BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, Cell,
   CartesianGrid, PieChart, Pie,
 } from "recharts";
+import LostLeadModal from "@/components/LostLeadModal";
+import {
+  handleMarkLostLead as markLostLeadApi,
+  handleRestoreLead as restoreLeadApi,
+  updateLeadLostState,
+  updateLeadRestoreState,
+  useLostLeadEvents,
+} from "@/lib/lostLeadSync";
 
 // ─── SUN/MOON ICONS ───────────────────────────────────────────────────────────
 const SunIcon = () => (
@@ -114,6 +122,11 @@ function buildTheme(isDark: boolean) {
     statusClosing: isDark ? "text-yellow-400 border border-yellow-500/40 bg-yellow-500/10" : "text-amber-600 border-amber-400/50 bg-amber-50",
     select: isDark ? "bg-[#121212] border border-[#333] text-white focus:border-[#9E217B]" : "bg-white border border-indigo-300 text-[#1A1A1A] focus:border-[#9E217B]",
     selectSmall: isDark ? "bg-[#222] border border-[#333] text-white" : "bg-white border border-indigo-200 text-[#6B7280]",
+    statusLost: isDark ? "text-red-400 border-red-500/30 bg-red-500/10" : "text-red-600 border-red-300 bg-red-50",
+    lostLeadBadge: isDark ? "bg-red-900/20 border border-red-500/30 text-red-400" : "bg-red-50 border border-red-300 text-red-600",
+    lostLeadRow: isDark ? "opacity-50" : "opacity-50 bg-gray-50/50",
+    cardLost: isDark ? "bg-[#171717] border border-red-900/25 opacity-70 grayscale saturate-50 hover:opacity-90 hover:border-red-500/30" : "bg-slate-100 border border-red-200 opacity-75 grayscale saturate-50 hover:opacity-90 hover:border-red-300",
+    rowLost: isDark ? "bg-[#151515]/80 text-gray-500 opacity-75 grayscale" : "bg-slate-100/80 text-slate-500 opacity-80 grayscale",
     scroll: isDark ? "scrollbar-dark" : "scrollbar-light",
   };
 }
@@ -129,7 +142,7 @@ function useAdminData() {
   const [followUps, setFollowUps] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchAdminData = async () => {
+  const fetchAdminData = useCallback(async () => {
     try {
       let smData: any[] = [];
       const resUsers = await fetch("/api/users/sales-manager");
@@ -222,13 +235,19 @@ function useAdminData() {
       setFollowUps(mongoFollowUps);
       setIsLoading(false);
     } catch (e) { console.error("Admin data sync failed", e); }
-  };
+  }, []);
+
+  const applyLeadUpdate = useCallback((updatedLead: any) => {
+    setAllLeads(prev => updateLeadLostState(prev, updatedLead));
+  }, []);
 
   useEffect(() => {
     fetchAdminData();
     const interval = setInterval(fetchAdminData, 5000);
     return () => clearInterval(interval);
-  }, []);
+  }, [fetchAdminData]);
+
+  useLostLeadEvents(applyLeadUpdate, fetchAdminData);
 
   return { managers, receptionists, siteHeads, allLeads, followUps, isLoading, refetch: fetchAdminData };
 }
@@ -1131,6 +1150,10 @@ function DashboardOverview({ managers, siteHeads, allLeads, isLoading, user, the
   const [siteHeadLeadSearch, setSiteHeadLeadSearch] = useState("");
   const [recepLeadSearch, setRecepLeadSearch] = useState("");
 
+  // Lost Lead filter states
+  const [lostLeadFilter, setLostLeadFilter] = useState<"all" | "active" | "lost">("all");
+  const [showLostLeads, setShowLostLeads] = useState(true);
+
   // ── Reset search when switching perfMode ──────────────────────────────────
   useEffect(() => {
     setOverviewSearch("");
@@ -1212,7 +1235,17 @@ function DashboardOverview({ managers, siteHeads, allLeads, isLoading, user, the
     return leads.filter((l: any) => fieldValue(l, col).toLowerCase().includes(lq));
   };
 
-  const filteredOverviewLeads = filterLeads(allLeads, overviewSearch, overviewSearchColumn);
+  const filteredOverviewLeads = useMemo(() => {
+    let leads = filterLeads(allLeads, overviewSearch, overviewSearchColumn);
+    if (lostLeadFilter === "active") {
+      leads = leads.filter((l: any) => !l.is_lost_lead);
+    } else if (lostLeadFilter === "lost") {
+      leads = leads.filter((l: any) => l.is_lost_lead);
+    } else if (!showLostLeads) {
+      leads = leads.filter((l: any) => !l.is_lost_lead);
+    }
+    return leads;
+  }, [allLeads, overviewSearch, overviewSearchColumn, lostLeadFilter, showLostLeads]);
 
   const formatDate = (ds: string) => {
     if (!ds) return "—";
@@ -1227,6 +1260,26 @@ function DashboardOverview({ managers, siteHeads, allLeads, isLoading, user, the
       <div className={`${theme.card} rounded-2xl p-6 mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4`} style={theme.cardGlass}>
         <h2 className={`text-xl font-bold ${theme.text}`}>Welcome back, {user?.name || "Admin"}!</h2>
         <p className={`text-sm ${theme.textMuted}`}>Here is what's happening with your team today.</p>
+      </div>
+
+      {/* ── Quick Stats ── */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+        <div className={`${theme.card} rounded-2xl p-4`} style={theme.cardGlass}>
+          <p className={`text-xs font-bold uppercase tracking-wider ${theme.textFaint}`}>Total Leads</p>
+          <p className={`text-2xl font-black mt-1 ${theme.text}`}>{allLeads.length}</p>
+        </div>
+        <div className={`${theme.card} rounded-2xl p-4`} style={theme.cardGlass}>
+          <p className={`text-xs font-bold uppercase tracking-wider ${theme.textFaint}`}>Active Leads</p>
+          <p className={`text-2xl font-black mt-1 ${isDark ? "text-green-400" : "text-emerald-600"}`}>{allLeads.filter((l: any) => !l.is_lost_lead && l.status !== "Closing").length}</p>
+        </div>
+        <div className={`${theme.card} rounded-2xl p-4`} style={theme.cardGlass}>
+          <p className={`text-xs font-bold uppercase tracking-wider ${theme.textFaint}`}>Closing Leads</p>
+          <p className={`text-2xl font-black mt-1 ${isDark ? "text-yellow-400" : "text-amber-500"}`}>{allLeads.filter((l: any) => l.status === "Closing").length}</p>
+        </div>
+        <div className={`${theme.card} rounded-2xl p-4`} style={theme.cardGlass}>
+          <p className={`text-xs font-bold uppercase tracking-wider ${theme.textFaint}`}>Lost / Ghosted</p>
+          <p className={`text-2xl font-black mt-1 ${isDark ? "text-red-400" : "text-red-600"}`}>👻 {allLeads.filter((l: any) => l.is_lost_lead).length}</p>
+        </div>
       </div>
 
       {/* ── Top performers + site visits ── */}
@@ -1386,6 +1439,25 @@ function DashboardOverview({ managers, siteHeads, allLeads, isLoading, user, the
               </h3>
               <div className="flex items-center gap-3 flex-wrap">
                 <select
+                  value={lostLeadFilter}
+                  onChange={(e) => setLostLeadFilter(e.target.value as any)}
+                  className={`px-3 py-1.5 text-xs font-bold rounded-lg outline-none border cursor-pointer ${theme.select}`}
+                >
+                  <option value="all">All Leads</option>
+                  <option value="active">Active Leads</option>
+                  <option value="lost">Lost Leads</option>
+                </select>
+                <label className={`flex items-center gap-1.5 text-xs font-semibold cursor-pointer select-none ${theme.textMuted}`}>
+                  <input
+                    type="checkbox"
+                    checked={showLostLeads}
+                    onChange={(e) => setShowLostLeads(e.target.checked)}
+                    className="accent-[#9E217B] w-3.5 h-3.5 cursor-pointer"
+                    disabled={lostLeadFilter !== "all"}
+                  />
+                  Show Lost
+                </label>
+                <select
                   value={overviewSearchColumn}
                   onChange={(e) => setOverviewSearchColumn(e.target.value)}
                   className={`px-3 py-1.5 text-xs font-bold rounded-lg outline-none border cursor-pointer ${theme.select}`}
@@ -1421,16 +1493,16 @@ function DashboardOverview({ managers, siteHeads, allLeads, isLoading, user, the
               <table className="w-full text-left text-sm">
                 <thead className={`text-xs uppercase ${theme.tableHead} ${theme.textHeader}`}>
                   <tr>
-                    {["LEAD NO.", "NAME", "PROP. TYPE", "BUDGET", "SOURCE", "CP NAME", "CP PHONE", "STATUS", "INTEREST", "SITE VISIT", "ASSIGNED TO", "REASSIGN"].map(h => (
+                    {["LEAD NO.", "NAME", "PROP. TYPE", "BUDGET", "SOURCE", "CP NAME", "CP PHONE", "STATUS", "LOST STATUS", "INTEREST", "SITE VISIT", "ASSIGNED TO", "REASSIGN"].map(h => (
                       <th key={h} className="px-3 py-4">{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody className={`divide-y ${theme.tableDivide}`}>
                   {isLoading ? (
-                    <tr><td colSpan={12} className={`text-center py-8 ${theme.textMuted}`}>Syncing...</td></tr>
+                    <tr><td colSpan={13} className={`text-center py-8 ${theme.textMuted}`}>Syncing...</td></tr>
                   ) : filteredOverviewLeads.length === 0 ? (
-                    <tr><td colSpan={12} className={`text-center py-8 ${theme.textMuted}`}>No leads match your search.</td></tr>
+                    <tr><td colSpan={13} className={`text-center py-8 ${theme.textMuted}`}>No leads match your search.</td></tr>
                   ) : filteredOverviewLeads.slice(0, visibleCount).map((lead: any) => {
                     let assignedRole = "Unassigned";
                     let assignedName = lead.assigned_receptionist || lead.assigned_to || "";
@@ -1439,7 +1511,7 @@ function DashboardOverview({ managers, siteHeads, allLeads, isLoading, user, the
                     else if (lead.assigned_to) assignedRole = "Sales Manager";
 
                     return (
-                      <tr key={lead.id} className={`transition-colors cursor-pointer ${theme.tableRow}`} onClick={() => onNavigateToSales && onNavigateToSales(lead)}>
+                      <tr key={lead.id} className={`transition-colors cursor-pointer ${theme.tableRow}`} style={lead.is_lost_lead ? { opacity: 0.5, filter: "grayscale(0.5)" } : {}} onClick={() => onNavigateToSales && onNavigateToSales(lead)}>
                         <td className={`px-6 py-4 font-bold ${isDark ? "text-[#d946a8]" : "text-[#9E217B]"}`}>#{lead.id}</td>
                         <td className={`px-4 py-4 font-medium ${theme.text}`}>
                           {(lead.assigned_to || lead.assigned_receptionist) ? (
@@ -1463,6 +1535,15 @@ function DashboardOverview({ managers, siteHeads, allLeads, isLoading, user, the
                           <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase border flex-shrink-0 whitespace-nowrap ${lead.status === "Closing" ? theme.statusClosing : lead.status === "Visit Scheduled" ? theme.statusVisit : theme.statusRouted}`}>
                             {lead.status || "Routed"}
                           </span>
+                        </td>
+                        <td className="px-4 py-4">
+                          {lead.is_lost_lead ? (
+                            <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase border flex-shrink-0 whitespace-nowrap ${theme.statusLost}`}>
+                              👻 Lost Lead
+                            </span>
+                          ) : (
+                            <span className={`text-[10px] font-semibold uppercase ${isDark ? "text-green-400" : "text-emerald-600"}`}>Active</span>
+                          )}
                         </td>
                         <td className="px-4 py-4">
                           {lead.leadInterestStatus && lead.leadInterestStatus !== "Pending"
@@ -2279,6 +2360,13 @@ function AdminSalesView({ managers, allLeads, followUps, isLoading, adminUser, r
   const [isWaModalOpen, setIsWaModalOpen] = useState(false);
   const [waMessage, setWaMessage] = useState("");
   const [isSendingWa, setIsSendingWa] = useState(false);
+  const [leadStatusFilter, setLeadStatusFilter] = useState<"all" | "active" | "lost">("all");
+  const [showLostLeads, setShowLostLeads] = useState(true);
+  const [showLostModal, setShowLostModal] = useState(false);
+  const [lostReason, setLostReason] = useState("");
+  const [lostError, setLostError] = useState("");
+  const [isSavingLost, setIsSavingLost] = useState(false);
+  const [optimisticLeadOverrides, setOptimisticLeadOverrides] = useState<Record<string, any>>({});
 
   // Transfer States
   const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
@@ -2341,7 +2429,11 @@ function AdminSalesView({ managers, allLeads, followUps, isLoading, adminUser, r
 
   // Enrich Leads with Follow-up Data (Copied exact logic from ReceptionistView)
   const mergedLeads = useMemo(() => {
-    return allLeads.map((lead: any) => {
+    const sourceLeads = updateLeadRestoreState(allLeads, null).map((lead: any) => ({
+      ...lead,
+      ...(optimisticLeadOverrides[String(lead.id)] || {}),
+    }));
+    return sourceLeads.map((lead: any) => {
       const lf = (followUps || []).filter((f: any) => String(f.leadId) === String(lead.id));
       const salesForms = lf.filter((f: any) => f.message?.includes("Detailed Salesform Submitted"));
       const latestMsg = salesForms.length > 0 ? salesForms[salesForms.length - 1].message : "";
@@ -2374,11 +2466,22 @@ function AdminSalesView({ managers, allLeads, followUps, isLoading, adminUser, r
         status: lead.status === "Closing" ? "Closing" : mongoVisitDate ? "Visit Scheduled" : lead.status,
       };
     });
-  }, [allLeads, followUps]);
+  }, [allLeads, followUps, optimisticLeadOverrides]);
+
+  useEffect(() => {
+    if (!selectedLead) return;
+    const updated = mergedLeads.find((lead: any) => String(lead.id) === String(selectedLead.id));
+    if (updated) setSelectedLead(updated);
+  }, [mergedLeads, selectedLead?.id]);
 
   // Derived Datasets for Tabs
   const managerName = selectedManager?.name ?? "";
-  const assignedLeads = useMemo(() => mergedLeads.filter((l: any) => l.assigned_to === managerName && l.status !== "Closing" && !l.closingDate), [mergedLeads, managerName]);
+  const applyLostVisibility = useCallback((lead: any) => {
+    if (leadStatusFilter === "lost") return !!lead.is_lost_lead;
+    if (leadStatusFilter === "active") return !lead.is_lost_lead;
+    return showLostLeads || !lead.is_lost_lead;
+  }, [leadStatusFilter, showLostLeads]);
+  const assignedLeads = useMemo(() => mergedLeads.filter((l: any) => l.assigned_to === managerName && l.status !== "Closing" && !l.closingDate && applyLostVisibility(l)), [mergedLeads, managerName, applyLostVisibility]);
   const closedLeads = useMemo(() => mergedLeads.filter((l: any) => l.assigned_to === managerName && (l.status === "Closing" || l.status === "Closed" || !!l.closingDate)), [mergedLeads, managerName]);
   const filteredManagers = (managers || []).filter((s: any) => s.name?.toLowerCase().includes(searchManager.toLowerCase()));
   // ── Bottom sentinel: load 20 more on scroll down ──────────────────────────────
@@ -2524,6 +2627,40 @@ function AdminSalesView({ managers, allLeads, followUps, isLoading, adminUser, r
     } catch { }
   };
 
+  const openLostLeadModal = (lead = selectedLead) => {
+    if (!lead || lead.is_lost_lead) return;
+    setSelectedLead(lead);
+    setLostReason("");
+    setLostError("");
+    setShowLostModal(true);
+  };
+
+  const handleMarkLostLead = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!selectedLead) return;
+    const reason = lostReason.trim();
+    if (reason.length < 10) {
+      setLostError("Reason must be at least 10 characters.");
+      return;
+    }
+    setIsSavingLost(true);
+    try {
+      const json = await markLostLeadApi({ leadId: selectedLead.id, reason, markedBy: adminUser.name });
+      if (!json.success) {
+        setLostError(json.message || "Could not mark this lead as lost.");
+        return;
+      }
+      setSelectedLead(json.data);
+      setShowLostModal(false);
+      showToast(`${selectedLead.name} marked as Lost Lead`, "red");
+      refetch();
+    } catch {
+      setLostError("Network error. Please try again.");
+    } finally {
+      setIsSavingLost(false);
+    }
+  };
+
   const handleTransferLead = async () => {
     if (!selectedLead || !transferTarget || !transferNote.trim()) return;
     setIsTransferring(true);
@@ -2536,6 +2673,58 @@ function AdminSalesView({ managers, allLeads, followUps, isLoading, adminUser, r
       refetch();
     } catch (e: any) { alert(e.message ?? "Transfer failed."); }
     finally { setIsTransferring(false); }
+  };
+
+  const handleRestoreLead = async (lead = selectedLead) => {
+    if (!lead || !lead.is_lost_lead || isSavingLost) return;
+    const leadId = String(lead.id);
+    const optimisticLead = {
+      ...lead,
+      is_lost_lead: false,
+      lost_lead_reason: null,
+      lost_lead_marked_at: null,
+      lost_lead_marked_by: null,
+      lost_reason: null,
+      lost_marked_at: null,
+      lost_marked_by: null,
+    };
+
+    setIsSavingLost(true);
+    setOptimisticLeadOverrides(prev => ({ ...prev, [leadId]: optimisticLead }));
+    if (selectedLead && String(selectedLead.id) === leadId) setSelectedLead(optimisticLead);
+
+    try {
+      const json = await restoreLeadApi({ leadId: lead.id, restoredBy: adminUser.name });
+      if (!json.success) {
+        setOptimisticLeadOverrides(prev => {
+          const next = { ...prev };
+          delete next[leadId];
+          return next;
+        });
+        if (selectedLead && String(selectedLead.id) === leadId) setSelectedLead(lead);
+        showToast(json.message || "Could not restore lead", "red");
+        return;
+      }
+      setOptimisticLeadOverrides(prev => ({ ...prev, [leadId]: json.data }));
+      if (selectedLead && String(selectedLead.id) === leadId) setSelectedLead(json.data);
+      showToast(`${lead.name} restored to Active`, "green");
+      await refetch();
+      setOptimisticLeadOverrides(prev => {
+        const next = { ...prev };
+        delete next[leadId];
+        return next;
+      });
+    } catch {
+      setOptimisticLeadOverrides(prev => {
+        const next = { ...prev };
+        delete next[leadId];
+        return next;
+      });
+      if (selectedLead && String(selectedLead.id) === leadId) setSelectedLead(lead);
+      showToast("Network error while restoring lead", "red");
+    } finally {
+      setIsSavingLost(false);
+    }
   };
 
   // Status Classes & Sections
@@ -2577,16 +2766,18 @@ function AdminSalesView({ managers, allLeads, followUps, isLoading, adminUser, r
               <tr><td colSpan={10} className={`text-center py-8 ${theme.textMuted}`}>Syncing…</td></tr>
             ) : leads.length === 0 ? (
               <tr><td colSpan={10} className={`text-center py-12 ${theme.textMuted}`}>No leads found.</td></tr>
-            ) : leads.map((lead: any) => (
-              <tr key={lead.id} className={`transition-colors cursor-pointer ${theme.tableRow}`} onClick={() => { setSelectedLead(lead); setSubView("detail"); }}>
+            ) : leads.map((lead: any) => {
+              const isLost = !!lead.is_lost_lead;
+              return (
+              <tr key={lead.id} className={`transition-colors cursor-pointer ${isLost ? theme.rowLost : theme.tableRow}`} onClick={() => { setSelectedLead(lead); setSubView("detail"); }}>
                 <td className={`px-4 py-4 font-black text-sm ${isDark ? "text-[#d946a8]" : "text-[#9E217B]"}`}>#{lead.id}</td>
                 <td className={`px-4 py-4 font-semibold ${theme.text}`}>{lead.name}</td>
                 <td className={`px-4 py-4 font-semibold ${isDark ? "text-green-400" : "text-emerald-600"}`}>{lead.salesBudget || lead.budget || "N/A"}</td>
                 <td className={`px-4 py-4 font-mono text-xs ${theme.textMuted}`}>{maskPhone(lead.phone, adminUser?.role, lead.assigned_to === adminUser?.name)}</td>
                 <td className={`px-4 py-4 text-xs ${theme.textMuted}`}>{lead.source || "—"}</td>
                 <td className="px-4 py-4">
-                  <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase border flex-shrink-0 ${statusCls(lead.status)}`}>
-                    {lead.status || "Routed"}
+                  <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase border flex-shrink-0 ${isLost ? theme.statusLost : statusCls(lead.status)}`}>
+                    {isLost ? "Lost" : (lead.status || "Routed")}
                   </span>
                 </td>
                 <td className="px-4 py-4">
@@ -2601,12 +2792,25 @@ function AdminSalesView({ managers, allLeads, followUps, isLoading, adminUser, r
                   {formatDate(lead.created_at).split(",")[0]}
                 </td>
                 <td className="px-4 py-4">
-                  <button className={`text-xs font-bold px-3 py-1.5 rounded-lg cursor-pointer transition-colors ${theme.btnPrimary}`}>
-                    View
-                  </button>
+                  {isLost ? (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleRestoreLead(lead); }}
+                      disabled={isSavingLost}
+                      className={`text-xs font-bold px-3 py-1.5 rounded-lg cursor-pointer transition-colors ${theme.btnPrimary} disabled:opacity-60`}
+                    >
+                      Restore Lead
+                    </button>
+                  ) : (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); openLostLeadModal(lead); }}
+                      className={`text-xs font-bold px-3 py-1.5 rounded-lg cursor-pointer transition-colors ${theme.btnDanger}`}
+                    >
+                      Lost Lead
+                    </button>
+                  )}
                 </td>
               </tr>
-            ))}
+            );})}
           </tbody>
         </table>
         {/* ── BOTTOM SENTINEL — triggers load more ── */}
@@ -2716,16 +2920,31 @@ function AdminSalesView({ managers, allLeads, followUps, isLoading, adminUser, r
                   </div>
 
                   {/* Table Rendering */}
-                  <div className="flex items-center justify-between mb-4">
+                  <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-4">
                     <h3 className={`text-lg font-bold ${theme.text}`}>
                       {activeSection === "assignedTable" ? "Currently Assigned Leads" : "Successfully Closed Leads"}
                     </h3>
-                    <button
-                      onClick={() => downloadCSV((activeSection === "assignedTable" ? assignedLeads : closedLeads).map(formatLeadForExport), `SiteHead_${activeSection}.csv`)}
-                      className={`flex items-center gap-2 px-4 py-2 text-xs font-bold border rounded-lg transition-colors hover:opacity-80 ${isDark ? 'bg-[#222] border-[#333] text-white' : 'bg-white border-indigo-200 text-indigo-600'}`}
-                    >
-                      <FaDownload size={14} /> Export to CSV
-                    </button>
+                    <div className="flex flex-wrap items-center gap-3">
+                      {activeSection === "assignedTable" && (
+                        <>
+                          <select value={leadStatusFilter} onChange={e => setLeadStatusFilter(e.target.value as "all" | "active" | "lost")} className={`rounded-lg px-3 py-2 text-xs outline-none cursor-pointer border ${theme.selectSmall}`}>
+                            <option value="all">All Leads</option>
+                            <option value="active">Active Leads</option>
+                            <option value="lost">Lost Leads</option>
+                          </select>
+                          <label className={`flex items-center gap-2 text-xs font-bold ${theme.textMuted}`}>
+                            <input type="checkbox" checked={showLostLeads} onChange={e => setShowLostLeads(e.target.checked)} disabled={leadStatusFilter !== "all"} className="accent-red-500" />
+                            Show Lost
+                          </label>
+                        </>
+                      )}
+                      <button
+                        onClick={() => downloadCSV((activeSection === "assignedTable" ? assignedLeads : closedLeads).map(formatLeadForExport), `SiteHead_${activeSection}.csv`)}
+                        className={`flex items-center gap-2 px-4 py-2 text-xs font-bold border rounded-lg transition-colors hover:opacity-80 ${isDark ? 'bg-[#222] border-[#333] text-white' : 'bg-white border-indigo-200 text-indigo-600'}`}
+                      >
+                        <FaDownload size={14} /> Export to CSV
+                      </button>
+                    </div>
                   </div>
                   {renderTable(activeSection === "assignedTable" ? assignedLeads : closedLeads)}
 
@@ -2738,7 +2957,7 @@ function AdminSalesView({ managers, allLeads, followUps, isLoading, adminUser, r
               <div className={`flex-1 overflow-y-auto p-6 ${theme.scroll}`}>
                 <div className="animate-fadeIn max-w-[1600px] mx-auto flex flex-col h-[calc(100vh-130px)]">
                   {/* Detail header */}
-                  <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 rounded-2xl border p-4 sm:p-5 shadow-sm flex-shrink-0 ${theme.card}`} style={theme.cardGlass}>
+                  <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 rounded-2xl border p-4 sm:p-5 shadow-sm flex-shrink-0 ${selectedLead.is_lost_lead ? theme.cardLost : theme.card}`} style={theme.cardGlass}>
                     <div className="flex items-center gap-4">
                       <button onClick={() => { setSubView("list"); setShowSalesForm(false); setShowLoanForm(false); }} className={`w-10 h-10 flex items-center justify-center border rounded-xl transition-colors cursor-pointer shadow-sm ${theme.textMuted} ${theme.tableBorder} ${isDark ? "bg-[#222] hover:bg-[#333]" : "bg-white hover:bg-[#F8FAFC]"}`}><FaChevronLeft className="text-sm" /></button>
                       <h1 className={`text-xl md:text-2xl font-bold flex items-center gap-3 ${theme.text}`}>
@@ -2746,6 +2965,9 @@ function AdminSalesView({ managers, allLeads, followUps, isLoading, adminUser, r
                         <span>{selectedLead.name}</span>
                         {selectedLead.status === "Closing" && (
                           <span className={`text-[11px] font-bold px-3 py-1 rounded-full border flex items-center gap-1.5 ${theme.statusClosing}`}><FaHandshake className="text-xs" /> Closing</span>
+                        )}
+                        {selectedLead.is_lost_lead && (
+                          <span className={`text-[11px] font-bold px-3 py-1 rounded-full border flex items-center gap-1.5 ${theme.statusLost}`}><FaEyeSlash className="text-xs" /> Lost Lead</span>
                         )}
                       </h1>
                     </div>
@@ -2758,9 +2980,19 @@ function AdminSalesView({ managers, allLeads, followUps, isLoading, adminUser, r
                           <button onClick={() => { prefillLoanForm(); setShowLoanForm(true); setShowSalesForm(false); }} className={`font-bold px-4 py-2 rounded-lg text-sm flex items-center gap-2 transition-colors cursor-pointer ${theme.btnSecondary}`}>
                             <FaUsers /> Track Loan
                           </button>
-                          {selectedLead.mongoVisitDate && selectedLead.status !== "Closing" && (
+                          {selectedLead.mongoVisitDate && selectedLead.status !== "Closing" && !selectedLead.is_lost_lead && (
                             <button onClick={handleMarkAsClosing} className={`font-bold px-4 py-2 rounded-lg text-sm flex items-center gap-2 transition-colors cursor-pointer ${theme.btnWarning}`}>
                               <FaHandshake /> Mark Closing
+                            </button>
+                          )}
+                          {!selectedLead.is_lost_lead && selectedLead.status !== "Closing" && (
+                            <button onClick={() => openLostLeadModal()} className={`font-bold px-4 py-2 rounded-lg text-sm flex items-center gap-2 transition-colors cursor-pointer ${theme.btnDanger}`}>
+                              <FaEyeSlash /> Lost Lead
+                            </button>
+                          )}
+                          {selectedLead.is_lost_lead && (
+                            <button onClick={() => handleRestoreLead()} disabled={isSavingLost} className={`font-bold px-4 py-2 rounded-lg text-sm flex items-center gap-2 transition-colors cursor-pointer ${theme.btnPrimary} disabled:opacity-60`}>
+                              <FaCheckCircle /> Restore Lead
                             </button>
                           )}
                           <button onClick={() => { setTransferTarget(""); setTransferNote(""); setIsTransferModalOpen(true); }} className={`font-bold px-4 py-2 rounded-lg text-sm flex items-center gap-2 transition-colors cursor-pointer ${isDark ? "bg-purple-600 hover:bg-purple-500 text-white" : "bg-purple-600 hover:bg-purple-700 text-white"}`}>
@@ -2898,10 +3130,17 @@ function AdminSalesView({ managers, allLeads, followUps, isLoading, adminUser, r
                                   <div><p className={`text-xs font-medium mb-1 ${theme.textFaint}`}>Planning to Buy?</p><p className={`font-semibold ${theme.text}`}>{selectedLead.planningPurchase || "Pending"}</p></div>
                                   <div><p className={`text-xs font-medium mb-1 ${theme.textFaint}`}>Loan Required?</p><p className={`font-semibold ${theme.text}`}>{getLatestLoanDetails()?.loanRequired}</p></div>
                                   <div><p className={`text-xs font-medium mb-1 ${theme.textFaint}`}>Status</p><span className={`text-sm font-bold ${selectedLead.status === "Closing" ? "text-amber-500" : selectedLead.status === "Visit Scheduled" ? "text-orange-400" : theme.accentText}`}>{selectedLead.status || "Routed"}</span></div>
-                                  <div className={`col-span-2 p-3 rounded-xl border ${theme.settingsBg}`} style={theme.settingsBgGl}>
+                                  {/* <div className={`col-span-2 p-3 rounded-xl border ${theme.settingsBg}`} style={theme.settingsBgGl}>
                                     <p className={`text-xs font-bold uppercase tracking-wider mb-0.5 ${isDark ? "text-[#d946a8]" : "text-[#9E217B]"}`}>📍 Site Visit Date</p>
                                     <p className={`text-base font-black ${theme.text}`}>{selectedLead.mongoVisitDate ? formatDate(selectedLead.mongoVisitDate) : "Not Scheduled"}</p>
-                                  </div>
+                                  </div> */}
+                                  {selectedLead.is_lost_lead && (
+                                    <div className={`col-span-2 p-3 rounded-xl border ${theme.statusLost}`}>
+                                      <p className="text-xs font-bold uppercase tracking-wider mb-1">Lost Lead Record</p>
+                                      <p className={`text-sm leading-relaxed ${theme.textMuted}`}>{selectedLead.lost_lead_reason || "No reason recorded."}</p>
+                                      <p className={`text-[10px] mt-2 ${theme.textFaint}`}>Marked by {selectedLead.lost_lead_marked_by || "Unknown"} on {selectedLead.lost_lead_marked_at ? formatDate(selectedLead.lost_lead_marked_at) : "-"}</p>
+                                    </div>
+                                  )}
                                 </div>
                                 <div className={`mt-3 border rounded-xl p-3 ${theme.settingsBg}`} style={theme.settingsBgGl}>
                                   <h3 className={`text-xs font-bold uppercase tracking-wider mb-2 border-b pb-2 ${theme.sectionTitle} ${theme.sectionBorder}`}>
@@ -3039,6 +3278,20 @@ function AdminSalesView({ managers, allLeads, followUps, isLoading, adminUser, r
               />
             )}
 
+            {showLostModal && selectedLead && (
+              <LostLeadModal
+                lead={selectedLead}
+                reason={lostReason}
+                error={lostError}
+                isSaving={isSavingLost}
+                isDark={isDark}
+                theme={theme}
+                onReasonChange={(value) => { setLostReason(value); if (lostError) setLostError(""); }}
+                onClose={() => setShowLostModal(false)}
+                onSubmit={handleMarkLostLead}
+              />
+            )}
+
             {/* ── TRANSFER MODAL ── */}
             {isTransferModalOpen && selectedLead && (
               <div className="fixed inset-0 bg-black/75 z-[200] flex justify-center items-center p-4 sm:p-6 animate-fadeIn" style={{ backdropFilter: "blur(8px)" }}>
@@ -3115,6 +3368,13 @@ function AdminSiteHeadView({ siteHeads, allLeads, followUps, isLoading, adminUse
   const [isWaModalOpen, setIsWaModalOpen] = useState(false);
   const [waMessage, setWaMessage] = useState("");
   const [isSendingWa, setIsSendingWa] = useState(false);
+  const [leadStatusFilter, setLeadStatusFilter] = useState<"all" | "active" | "lost">("all");
+  const [showLostLeads, setShowLostLeads] = useState(true);
+  const [showLostModal, setShowLostModal] = useState(false);
+  const [lostReason, setLostReason] = useState("");
+  const [lostError, setLostError] = useState("");
+  const [isSavingLost, setIsSavingLost] = useState(false);
+  const [optimisticLeadOverrides, setOptimisticLeadOverrides] = useState<Record<string, any>>({});
 
   // Transfer States
   const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
@@ -3177,7 +3437,11 @@ function AdminSiteHeadView({ siteHeads, allLeads, followUps, isLoading, adminUse
 
   // Enrich Leads with Follow-up Data (Copied exact logic from ReceptionistView)
   const mergedLeads = useMemo(() => {
-    return allLeads.map((lead: any) => {
+    const sourceLeads = updateLeadRestoreState(allLeads, null).map((lead: any) => ({
+      ...lead,
+      ...(optimisticLeadOverrides[String(lead.id)] || {}),
+    }));
+    return sourceLeads.map((lead: any) => {
       const lf = (followUps || []).filter((f: any) => String(f.leadId) === String(lead.id));
       const salesForms = lf.filter((f: any) => f.message?.includes("Detailed Salesform Submitted"));
       const latestMsg = salesForms.length > 0 ? salesForms[salesForms.length - 1].message : "";
@@ -3210,11 +3474,22 @@ function AdminSiteHeadView({ siteHeads, allLeads, followUps, isLoading, adminUse
         status: lead.status === "Closing" ? "Closing" : mongoVisitDate ? "Visit Scheduled" : lead.status,
       };
     });
-  }, [allLeads, followUps]);
+  }, [allLeads, followUps, optimisticLeadOverrides]);
+
+  useEffect(() => {
+    if (!selectedLead) return;
+    const updated = mergedLeads.find((lead: any) => String(lead.id) === String(selectedLead.id));
+    if (updated) setSelectedLead(updated);
+  }, [mergedLeads, selectedLead?.id]);
 
   // Derived Datasets for Tabs
   const siteHeadName = selectedSiteHead?.name ?? "";
-  const assignedLeads = useMemo(() => mergedLeads.filter((l: any) => l.assigned_to === siteHeadName && l.status !== "Closing" && !l.closingDate), [mergedLeads, siteHeadName]);
+  const applyLostVisibility = useCallback((lead: any) => {
+    if (leadStatusFilter === "lost") return !!lead.is_lost_lead;
+    if (leadStatusFilter === "active") return !lead.is_lost_lead;
+    return showLostLeads || !lead.is_lost_lead;
+  }, [leadStatusFilter, showLostLeads]);
+  const assignedLeads = useMemo(() => mergedLeads.filter((l: any) => l.assigned_to === siteHeadName && l.status !== "Closing" && !l.closingDate && applyLostVisibility(l)), [mergedLeads, siteHeadName, applyLostVisibility]);
   const closedLeads = useMemo(() => mergedLeads.filter((l: any) => l.assigned_to === siteHeadName && (l.status === "Closing" || l.status === "Closed" || !!l.closingDate)), [mergedLeads, siteHeadName]);
   const filteredSiteHeads = (siteHeads || []).filter((s: any) => s.name?.toLowerCase().includes(searchSiteHead.toLowerCase()));
   // ── Bottom sentinel: load 20 more on scroll down ──────────────────────────────
@@ -3354,6 +3629,92 @@ function AdminSiteHeadView({ siteHeads, allLeads, followUps, isLoading, adminUse
     } catch { }
   };
 
+  const openLostLeadModal = (lead = selectedLead) => {
+    if (!lead || lead.is_lost_lead) return;
+    setSelectedLead(lead);
+    setLostReason("");
+    setLostError("");
+    setShowLostModal(true);
+  };
+
+  const handleMarkLostLead = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!selectedLead) return;
+    const reason = lostReason.trim();
+    if (reason.length < 10) {
+      setLostError("Reason must be at least 10 characters.");
+      return;
+    }
+    setIsSavingLost(true);
+    try {
+      const json = await markLostLeadApi({ leadId: selectedLead.id, reason, markedBy: adminUser.name });
+      if (!json.success) {
+        setLostError(json.message || "Could not mark this lead as lost.");
+        return;
+      }
+      setSelectedLead(json.data);
+      setShowLostModal(false);
+      showToast(`${selectedLead.name} marked as Lost Lead`, "red");
+      refetch();
+    } catch {
+      setLostError("Network error. Please try again.");
+    } finally {
+      setIsSavingLost(false);
+    }
+  };
+
+  const handleRestoreLead = async (lead = selectedLead) => {
+    if (!lead || !lead.is_lost_lead || isSavingLost) return;
+    const leadId = String(lead.id);
+    const optimisticLead = {
+      ...lead,
+      is_lost_lead: false,
+      lost_lead_reason: null,
+      lost_lead_marked_at: null,
+      lost_lead_marked_by: null,
+      lost_reason: null,
+      lost_marked_at: null,
+      lost_marked_by: null,
+    };
+
+    setIsSavingLost(true);
+    setOptimisticLeadOverrides(prev => ({ ...prev, [leadId]: optimisticLead }));
+    if (selectedLead && String(selectedLead.id) === leadId) setSelectedLead(optimisticLead);
+
+    try {
+      const json = await restoreLeadApi({ leadId: lead.id, restoredBy: adminUser.name });
+      if (!json.success) {
+        setOptimisticLeadOverrides(prev => {
+          const next = { ...prev };
+          delete next[leadId];
+          return next;
+        });
+        if (selectedLead && String(selectedLead.id) === leadId) setSelectedLead(lead);
+        showToast(json.message || "Could not restore lead", "red");
+        return;
+      }
+      setOptimisticLeadOverrides(prev => ({ ...prev, [leadId]: json.data }));
+      if (selectedLead && String(selectedLead.id) === leadId) setSelectedLead(json.data);
+      showToast(`${lead.name} restored to Active`, "green");
+      await refetch();
+      setOptimisticLeadOverrides(prev => {
+        const next = { ...prev };
+        delete next[leadId];
+        return next;
+      });
+    } catch {
+      setOptimisticLeadOverrides(prev => {
+        const next = { ...prev };
+        delete next[leadId];
+        return next;
+      });
+      if (selectedLead && String(selectedLead.id) === leadId) setSelectedLead(lead);
+      showToast("Network error while restoring lead", "red");
+    } finally {
+      setIsSavingLost(false);
+    }
+  };
+
   const handleTransferLead = async () => {
     if (!selectedLead || !transferTarget || !transferNote.trim()) return;
     setIsTransferring(true);
@@ -3407,16 +3768,18 @@ function AdminSiteHeadView({ siteHeads, allLeads, followUps, isLoading, adminUse
               <tr><td colSpan={10} className={`text-center py-8 ${theme.textMuted}`}>Syncing…</td></tr>
             ) : leads.length === 0 ? (
               <tr><td colSpan={10} className={`text-center py-12 ${theme.textMuted}`}>No leads found.</td></tr>
-            ) : leads.map((lead: any) => (
-              <tr key={lead.id} className={`transition-colors cursor-pointer ${theme.tableRow}`} onClick={() => { setSelectedLead(lead); setSubView("detail"); }}>
+            ) : leads.map((lead: any) => {
+              const isLost = !!lead.is_lost_lead;
+              return (
+              <tr key={lead.id} className={`transition-colors cursor-pointer ${isLost ? theme.rowLost : theme.tableRow}`} onClick={() => { setSelectedLead(lead); setSubView("detail"); }}>
                 <td className={`px-4 py-4 font-black text-sm ${isDark ? "text-[#d946a8]" : "text-[#9E217B]"}`}>#{lead.id}</td>
                 <td className={`px-4 py-4 font-semibold ${theme.text}`}>{lead.name}</td>
                 <td className={`px-4 py-4 font-semibold ${isDark ? "text-green-400" : "text-emerald-600"}`}>{lead.salesBudget || lead.budget || "N/A"}</td>
                 <td className={`px-4 py-4 font-mono text-xs ${theme.textMuted}`}>{maskPhone(lead.phone, adminUser?.role, lead.assigned_to === adminUser?.name)}</td>
                 <td className={`px-4 py-4 text-xs ${theme.textMuted}`}>{lead.source || "—"}</td>
                 <td className="px-4 py-4">
-                  <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase border flex-shrink-0 ${statusCls(lead.status)}`}>
-                    {lead.status || "Routed"}
+                  <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase border flex-shrink-0 ${isLost ? theme.statusLost : statusCls(lead.status)}`}>
+                    {isLost ? "Lost" : (lead.status || "Routed")}
                   </span>
                 </td>
                 <td className="px-4 py-4">
@@ -3431,12 +3794,25 @@ function AdminSiteHeadView({ siteHeads, allLeads, followUps, isLoading, adminUse
                   {formatDate(lead.created_at).split(",")[0]}
                 </td>
                 <td className="px-4 py-4">
-                  <button className={`text-xs font-bold px-3 py-1.5 rounded-lg cursor-pointer transition-colors ${theme.btnPrimary}`}>
-                    View
-                  </button>
+                  {isLost ? (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleRestoreLead(lead); }}
+                      disabled={isSavingLost}
+                      className={`text-xs font-bold px-3 py-1.5 rounded-lg cursor-pointer transition-colors ${theme.btnPrimary} disabled:opacity-60`}
+                    >
+                      Restore Lead
+                    </button>
+                  ) : (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); openLostLeadModal(lead); }}
+                      className={`text-xs font-bold px-3 py-1.5 rounded-lg cursor-pointer transition-colors ${theme.btnDanger}`}
+                    >
+                      Lost Lead
+                    </button>
+                  )}
                 </td>
               </tr>
-            ))}
+            );})}
           </tbody>
         </table>
         {/* ── BOTTOM SENTINEL — triggers load more ── */}
@@ -3465,6 +3841,20 @@ function AdminSiteHeadView({ siteHeads, allLeads, followUps, isLoading, adminUse
           <div className="text-lg">{toastMsg.icon}</div>
           <span className="text-sm font-bold">{toastMsg.title}</span>
         </div>
+      )}
+
+      {showLostModal && selectedLead && (
+        <LostLeadModal
+          lead={selectedLead}
+          reason={lostReason}
+          error={lostError}
+          isSaving={isSavingLost}
+          isDark={isDark}
+          theme={theme}
+          onReasonChange={(value) => { setLostReason(value); if (lostError) setLostError(""); }}
+          onClose={() => setShowLostModal(false)}
+          onSubmit={handleMarkLostLead}
+        />
       )}
 
       {/* Sidebar for Site Heads */}
@@ -3546,16 +3936,31 @@ function AdminSiteHeadView({ siteHeads, allLeads, followUps, isLoading, adminUse
                   </div>
 
                   {/* Table Rendering */}
-                  <div className="flex items-center justify-between mb-4">
+                  <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-4">
                     <h3 className={`text-lg font-bold ${theme.text}`}>
                       {activeSection === "assignedTable" ? "Currently Assigned Leads" : "Successfully Closed Leads"}
                     </h3>
-                    <button
-                      onClick={() => downloadCSV((activeSection === "assignedTable" ? assignedLeads : closedLeads).map(formatLeadForExport), `SiteHead_${activeSection}.csv`)}
-                      className={`flex items-center gap-2 px-4 py-2 text-xs font-bold border rounded-lg transition-colors hover:opacity-80 ${isDark ? 'bg-[#222] border-[#333] text-white' : 'bg-white border-indigo-200 text-indigo-600'}`}
-                    >
-                      <FaDownload size={14} /> Export to CSV
-                    </button>
+                    <div className="flex flex-wrap items-center gap-3">
+                      {activeSection === "assignedTable" && (
+                        <>
+                          <select value={leadStatusFilter} onChange={e => setLeadStatusFilter(e.target.value as "all" | "active" | "lost")} className={`rounded-lg px-3 py-2 text-xs outline-none cursor-pointer border ${theme.selectSmall}`}>
+                            <option value="all">All Leads</option>
+                            <option value="active">Active Leads</option>
+                            <option value="lost">Lost Leads</option>
+                          </select>
+                          <label className={`flex items-center gap-2 text-xs font-bold ${theme.textMuted}`}>
+                            <input type="checkbox" checked={showLostLeads} onChange={e => setShowLostLeads(e.target.checked)} disabled={leadStatusFilter !== "all"} className="accent-red-500" />
+                            Show Lost
+                          </label>
+                        </>
+                      )}
+                      <button
+                        onClick={() => downloadCSV((activeSection === "assignedTable" ? assignedLeads : closedLeads).map(formatLeadForExport), `SiteHead_${activeSection}.csv`)}
+                        className={`flex items-center gap-2 px-4 py-2 text-xs font-bold border rounded-lg transition-colors hover:opacity-80 ${isDark ? 'bg-[#222] border-[#333] text-white' : 'bg-white border-indigo-200 text-indigo-600'}`}
+                      >
+                        <FaDownload size={14} /> Export to CSV
+                      </button>
+                    </div>
                   </div>
                   {renderTable(activeSection === "assignedTable" ? assignedLeads : closedLeads)}
 
@@ -3568,7 +3973,7 @@ function AdminSiteHeadView({ siteHeads, allLeads, followUps, isLoading, adminUse
               <div className={`flex-1 overflow-y-auto p-6 ${theme.scroll}`}>
                 <div className="animate-fadeIn max-w-[1600px] mx-auto flex flex-col h-[calc(100vh-130px)]">
                   {/* Detail header */}
-                  <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 rounded-2xl border p-4 sm:p-5 shadow-sm flex-shrink-0 ${theme.card}`} style={theme.cardGlass}>
+                  <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 rounded-2xl border p-4 sm:p-5 shadow-sm flex-shrink-0 ${selectedLead.is_lost_lead ? theme.cardLost : theme.card}`} style={theme.cardGlass}>
                     <div className="flex items-center gap-4">
                       <button onClick={() => { setSubView("list"); setShowSalesForm(false); setShowLoanForm(false); }} className={`w-10 h-10 flex items-center justify-center border rounded-xl transition-colors cursor-pointer shadow-sm ${theme.textMuted} ${theme.tableBorder} ${isDark ? "bg-[#222] hover:bg-[#333]" : "bg-white hover:bg-[#F8FAFC]"}`}><FaChevronLeft className="text-sm" /></button>
                       <h1 className={`text-xl md:text-2xl font-bold flex items-center gap-3 ${theme.text}`}>
@@ -3576,6 +3981,9 @@ function AdminSiteHeadView({ siteHeads, allLeads, followUps, isLoading, adminUse
                         <span>{selectedLead.name}</span>
                         {selectedLead.status === "Closing" && (
                           <span className={`text-[11px] font-bold px-3 py-1 rounded-full border flex items-center gap-1.5 ${theme.statusClosing}`}><FaHandshake className="text-xs" /> Closing</span>
+                        )}
+                        {selectedLead.is_lost_lead && (
+                          <span className={`text-[11px] font-bold px-3 py-1 rounded-full border flex items-center gap-1.5 ${theme.statusLost}`}><FaEyeSlash className="text-xs" /> Lost Lead</span>
                         )}
                       </h1>
                     </div>
@@ -3588,9 +3996,19 @@ function AdminSiteHeadView({ siteHeads, allLeads, followUps, isLoading, adminUse
                           <button onClick={() => { prefillLoanForm(); setShowLoanForm(true); setShowSalesForm(false); }} className={`font-bold px-4 py-2 rounded-lg text-sm flex items-center gap-2 transition-colors cursor-pointer ${theme.btnSecondary}`}>
                             <FaUniversity /> Track Loan
                           </button>
-                          {selectedLead.mongoVisitDate && selectedLead.status !== "Closing" && (
+                          {selectedLead.mongoVisitDate && selectedLead.status !== "Closing" && !selectedLead.is_lost_lead && (
                             <button onClick={handleMarkAsClosing} className={`font-bold px-4 py-2 rounded-lg text-sm flex items-center gap-2 transition-colors cursor-pointer ${theme.btnWarning}`}>
                               <FaHandshake /> Mark Closing
+                            </button>
+                          )}
+                          {!selectedLead.is_lost_lead && selectedLead.status !== "Closing" && (
+                            <button onClick={() => openLostLeadModal()} className={`font-bold px-4 py-2 rounded-lg text-sm flex items-center gap-2 transition-colors cursor-pointer ${theme.btnDanger}`}>
+                              <FaEyeSlash /> Lost Lead
+                            </button>
+                          )}
+                          {selectedLead.is_lost_lead && (
+                            <button onClick={() => handleRestoreLead()} disabled={isSavingLost} className={`font-bold px-4 py-2 rounded-lg text-sm flex items-center gap-2 transition-colors cursor-pointer ${theme.btnPrimary} disabled:opacity-60`}>
+                              <FaCheckCircle /> Restore Lead
                             </button>
                           )}
                           <button onClick={() => { setTransferTarget(""); setTransferNote(""); setIsTransferModalOpen(true); }} className={`font-bold px-4 py-2 rounded-lg text-sm flex items-center gap-2 transition-colors cursor-pointer ${isDark ? "bg-purple-600 hover:bg-purple-500 text-white" : "bg-purple-600 hover:bg-purple-700 text-white"}`}>
@@ -3732,6 +4150,13 @@ function AdminSiteHeadView({ siteHeads, allLeads, followUps, isLoading, adminUse
                                     <p className={`text-xs font-bold uppercase tracking-wider mb-0.5 ${isDark ? "text-[#d946a8]" : "text-[#9E217B]"}`}>📍 Site Visit Date</p>
                                     <p className={`text-base font-black ${theme.text}`}>{selectedLead.mongoVisitDate ? formatDate(selectedLead.mongoVisitDate) : "Not Scheduled"}</p>
                                   </div>
+                                  {selectedLead.is_lost_lead && (
+                                    <div className={`col-span-2 p-3 rounded-xl border ${theme.statusLost}`}>
+                                      <p className="text-xs font-bold uppercase tracking-wider mb-1">Lost Lead Record</p>
+                                      <p className={`text-sm leading-relaxed ${theme.textMuted}`}>{selectedLead.lost_lead_reason || "No reason recorded."}</p>
+                                      <p className={`text-[10px] mt-2 ${theme.textFaint}`}>Marked by {selectedLead.lost_lead_marked_by || "Unknown"} on {selectedLead.lost_lead_marked_at ? formatDate(selectedLead.lost_lead_marked_at) : "-"}</p>
+                                    </div>
+                                  )}
                                 </div>
                                <div className={`mt-3 border rounded-xl p-3 ${theme.settingsBg}`} style={theme.settingsBgGl}>
                                 <h3 className={`text-xs font-bold uppercase tracking-wider mb-2 border-b pb-2 ${theme.sectionTitle} ${theme.sectionBorder}`}>
@@ -5174,8 +5599,532 @@ function ReceptionistView({ receptionists, allLeads, followUps, isLoading, refet
 // ============================================================================
 // DAILY MONITORING PANEL
 // ============================================================================
-function DailyMonitoringPanel({ theme, isDark, allLeads, followUps, managers, siteHeads, receptionists }: any) {
-  const [data, setData]         = useState<any>(null);
+// ─────────────────────────────────────────────────────────────────────────────
+//  DailyMonitoringPanel  –  with unified "Site Visit Center" accordion
+// ─────────────────────────────────────────────────────────────────────────────
+
+function SiteVisitCenter({
+  data,
+  theme,
+  isDark,
+  allLeads,
+  adminUser,
+  expandedVisitLeadId,
+  setExpandedVisitLeadId,
+  visitActivityRoleFilter,
+  setVisitActivityRoleFilter,
+  visitActivityFilter,
+  setVisitActivityFilter,
+  visitActivityPeople,
+  filteredSiteVisitActions,
+  fetchStats,
+}: any) {
+  // which accordion panel is open: "today" | "tomorrow" | "logs" | null
+  const [openPanel, setOpenPanel] = useState<string | null>("today");
+
+  const toggle = (key: string) =>
+    setOpenPanel((prev) => (prev === key ? null : key));
+
+  // ── helpers ──────────────────────────────────────────────────────────────
+
+  const statusBadge = (status: string, variant: "today" | "tomorrow" = "today") => {
+    if (status === "completed")
+      return "text-green-400 border-green-500/30 bg-green-500/10";
+    if (status === "cancelled")
+      return "text-red-400 border-red-500/30 bg-red-500/10";
+    return variant === "tomorrow"
+      ? "text-blue-400 border-blue-500/30 bg-blue-500/10"
+      : "text-yellow-400 border-yellow-500/30 bg-yellow-500/10";
+  };
+
+  const countBadge = (n: number, color: string) => (
+    <span
+      className={`ml-2 text-[10px] font-black px-2 py-0.5 rounded-full border ${color}`}
+    >
+      {n}
+    </span>
+  );
+
+  // ── accordion header ──────────────────────────────────────────────────────
+  const AccordionHeader = ({
+    id,
+    icon,
+    title,
+    badge,
+    accentBorder,
+  }: {
+    id: string;
+    icon: string;
+    title: string;
+    badge: React.ReactNode;
+    accentBorder: string;
+  }) => {
+    const isOpen = openPanel === id;
+    return (
+      <button
+        onClick={() => toggle(id)}
+        className={`w-full flex items-center justify-between px-5 py-3.5 transition-all duration-200 group cursor-pointer
+          ${
+            isOpen
+              ? isDark
+                ? "bg-[#1e1e1e]"
+                : "bg-indigo-50/80"
+              : isDark
+              ? "hover:bg-[#1a1a1a]"
+              : "hover:bg-[#F8FAFC]"
+          }
+          ${isOpen ? `border-l-2 ${accentBorder}` : "border-l-2 border-transparent"}
+        `}
+      >
+        <div className="flex items-center gap-2.5">
+          <span className="text-base leading-none">{icon}</span>
+          <span className={`text-sm font-bold ${theme.text}`}>{title}</span>
+          {badge}
+        </div>
+        <span
+          className={`text-xs transition-transform duration-300 ${theme.textFaint} ${
+            isOpen ? "rotate-180" : "rotate-0"
+          }`}
+        >
+          ▼
+        </span>
+      </button>
+    );
+  };
+
+  // ── accordion body wrapper ────────────────────────────────────────────────
+  const AccordionBody = ({
+    id,
+    children,
+  }: {
+    id: string;
+    children: React.ReactNode;
+  }) => {
+    const isOpen = openPanel === id;
+    return (
+      <div
+        style={{
+          maxHeight: isOpen ? "9999px" : "0px",
+          opacity: isOpen ? 1 : 0,
+          overflow: "hidden",
+          transition: isOpen
+            ? "max-height 0.45s ease, opacity 0.3s ease 0.05s"
+            : "max-height 0.3s ease, opacity 0.15s ease",
+        }}
+      >
+        <div
+          className={`px-4 pb-4 pt-1 ${
+            isDark ? "bg-[#111]" : "bg-[#F8FAFC]"
+          }`}
+        >
+          {children}
+        </div>
+      </div>
+    );
+  };
+
+  // ── compact table ─────────────────────────────────────────────────────────
+  const CompactTable = ({
+    headers,
+    children,
+    colSpan,
+  }: {
+    headers: string[];
+    children: React.ReactNode;
+    colSpan?: number;
+  }) => (
+    <div className="overflow-x-auto rounded-xl border border-opacity-50 mt-2"
+      style={{ borderColor: isDark ? "#2a2a2a" : "#e0e7ef" }}
+    >
+      <table className="w-full text-left text-xs whitespace-nowrap">
+        <thead>
+          <tr
+            className={`${
+              isDark ? "bg-[#1a1a1a] text-gray-400" : "bg-[#F1F5F9] text-gray-500"
+            }`}
+          >
+            {headers.map((h) => (
+              <th
+                key={h}
+                className={`px-3 py-2.5 font-bold uppercase tracking-wider border-b ${
+                  isDark ? "border-[#2a2a2a]" : "border-indigo-100"
+                }`}
+              >
+                {h}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody
+          className={`divide-y ${
+            isDark ? "divide-[#1e1e1e]" : "divide-indigo-50"
+          }`}
+        >
+          {children}
+        </tbody>
+      </table>
+    </div>
+  );
+
+  // ── empty state ───────────────────────────────────────────────────────────
+  const EmptyState = ({ msg }: { msg: string }) => (
+    <div
+      className={`mt-2 rounded-xl border py-6 text-center ${
+        isDark
+          ? "border-[#2a2a2a] bg-[#161616]"
+          : "border-indigo-100 bg-white"
+      }`}
+    >
+      <p className="text-2xl mb-1">📭</p>
+      <p className={`text-xs font-semibold ${theme.textMuted}`}>{msg}</p>
+    </div>
+  );
+
+  // ─────────────────────────────────────────────────────────────────────────
+  return (
+    <div
+      className={`rounded-2xl border overflow-hidden ${
+        isDark ? "bg-[#161616] border-[#2a2a2a]" : "bg-white border-indigo-200"
+      }`}
+    >
+      {/* ── Module header ─────────────────────────────────────────────────── */}
+      <div
+        className={`px-5 py-4 border-b flex items-center justify-between ${
+          isDark
+            ? "bg-[#1a1a1a] border-[#2a2a2a]"
+            : "bg-white border-indigo-100"
+        }`}
+      >
+        <h3 className={`font-bold text-sm flex items-center gap-2 ${theme.text}`}>
+          🗂️ Site Visit Center
+        </h3>
+        <div className="flex items-center gap-2">
+          <span
+            className={`text-[10px] font-bold px-2.5 py-1 rounded-full border ${
+              isDark
+                ? "text-orange-400 border-orange-500/30 bg-orange-500/10"
+                : "text-orange-600 border-orange-200 bg-orange-50"
+            }`}
+          >
+            {data.siteVisitsToday.length + (data.siteVisitsTomorrow ?? []).length} total
+          </span>
+        </div>
+      </div>
+
+      {/* ══════════════════════════════════════════════════════════════════════
+          ACCORDION 1 — SITE VISITS TODAY
+      ══════════════════════════════════════════════════════════════════════ */}
+      <AccordionHeader
+        id="today"
+        icon="📅"
+        title="Site Visits Today"
+        badge={countBadge(
+          data.siteVisitsToday.length,
+          isDark
+            ? "text-orange-400 border-orange-500/30 bg-orange-500/10"
+            : "text-orange-600 border-orange-200 bg-orange-50"
+        )}
+        accentBorder="border-orange-500"
+      />
+      <AccordionBody id="today">
+        {data.siteVisitsToday.length === 0 ? (
+          <EmptyState msg="No site visits scheduled for today" />
+        ) : (
+          <CompactTable
+            headers={["Lead #", "Client", "Manager", "Time", "Status", ""]}
+          >
+            {data.siteVisitsToday.map((v: any) => {
+              const isOpen = expandedVisitLeadId === v.lead_id;
+              const leadObj =
+                allLeads?.find((l: any) => l.id === v.lead_id) ?? {
+                  id: v.lead_id,
+                  name: v.name,
+                };
+              return (
+                <>
+                  <tr
+                    key={v.id}
+                    className={`transition-colors ${
+                      isDark ? "hover:bg-[#1e1e1e]" : "hover:bg-indigo-50/40"
+                    }`}
+                  >
+                    <td
+                      className={`px-3 py-2.5 font-bold ${
+                        isDark ? "text-[#d946a8]" : "text-[#9E217B]"
+                      }`}
+                    >
+                      #{v.lead_id}
+                    </td>
+                    <td className={`px-3 py-2.5 font-semibold ${theme.text}`}>
+                      {v.name}
+                    </td>
+                    <td className={`px-3 py-2.5 ${theme.textMuted}`}>
+                      {v.assigned_to || "—"}
+                    </td>
+                    <td className="px-3 py-2.5 text-orange-500 font-semibold">
+                      {v.visit_date
+                        ? new Date(v.visit_date).toLocaleTimeString("en-IN", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })
+                        : "—"}
+                    </td>
+                    <td className="px-3 py-2.5">
+                      <span
+                        className={`text-[9px] font-bold px-2 py-0.5 rounded-full border uppercase ${statusBadge(
+                          v.status
+                        )}`}
+                      >
+                        {v.status || "Scheduled"}
+                      </span>
+                    </td>
+                    <td className="px-3 py-2.5">
+                      <button
+                        onClick={() =>
+                          setExpandedVisitLeadId(isOpen ? null : v.lead_id)
+                        }
+                        className={`text-[10px] font-bold px-2 py-1 rounded-lg border transition-all cursor-pointer ${
+                          isOpen
+                            ? isDark
+                              ? "bg-orange-600/20 border-orange-500/40 text-orange-400"
+                              : "bg-orange-50 border-orange-300 text-orange-600"
+                            : isDark
+                            ? "bg-[#222] border-[#333] text-gray-400 hover:bg-[#2a2a2a]"
+                            : "bg-white border-gray-200 text-gray-500 hover:bg-gray-50"
+                        }`}
+                      >
+                        {isOpen ? "▲ Hide" : "▼ Manage"}
+                      </button>
+                    </td>
+                  </tr>
+
+                  {isOpen && (
+                    <tr key={`expand-${v.id}`}>
+                      <td
+                        colSpan={6}
+                        className={`px-3 py-3 ${
+                          isDark ? "bg-[#0e0e0e]" : "bg-indigo-50/60"
+                        }`}
+                      >
+                        <SiteVisitScheduler
+                          lead={leadObj}
+                          adminUser={adminUser}
+                          isDark={isDark}
+                          theme={theme}
+                          onSuccess={fetchStats}
+                        />
+                      </td>
+                    </tr>
+                  )}
+                </>
+              );
+            })}
+          </CompactTable>
+        )}
+      </AccordionBody>
+
+      {/* divider */}
+      <div className={`h-px ${isDark ? "bg-[#222]" : "bg-indigo-100"}`} />
+
+      {/* ══════════════════════════════════════════════════════════════════════
+          ACCORDION 2 — SITE VISITS TOMORROW
+      ══════════════════════════════════════════════════════════════════════ */}
+      <AccordionHeader
+        id="tomorrow"
+        icon="📆"
+        title="Site Visits Tomorrow"
+        badge={countBadge(
+          (data.siteVisitsTomorrow ?? []).length,
+          isDark
+            ? "text-blue-400 border-blue-500/30 bg-blue-500/10"
+            : "text-blue-700 border-blue-200 bg-blue-50"
+        )}
+        accentBorder="border-blue-500"
+      />
+      <AccordionBody id="tomorrow">
+        {(data.siteVisitsTomorrow ?? []).length === 0 ? (
+          <EmptyState msg="No site visits scheduled for tomorrow" />
+        ) : (
+          <CompactTable
+            headers={["Lead #", "Client", "Manager", "Time", "Status"]}
+          >
+            {(data.siteVisitsTomorrow ?? []).map((v: any) => (
+              <tr
+                key={v.id}
+                className={`transition-colors ${
+                  isDark ? "hover:bg-[#1e1e1e]" : "hover:bg-indigo-50/40"
+                }`}
+              >
+                <td
+                  className={`px-3 py-2.5 font-bold ${
+                    isDark ? "text-[#d946a8]" : "text-[#9E217B]"
+                  }`}
+                >
+                  #{v.lead_id ?? v.id}
+                </td>
+                <td className={`px-3 py-2.5 font-semibold ${theme.text}`}>
+                  {v.name}
+                </td>
+                <td className={`px-3 py-2.5 ${theme.textMuted}`}>
+                  {v.assigned_to || "—"}
+                </td>
+                <td className="px-3 py-2.5 text-blue-400 font-semibold">
+                  {v.visit_date
+                    ? new Date(v.visit_date).toLocaleTimeString("en-IN", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })
+                    : "—"}
+                </td>
+                <td className="px-3 py-2.5">
+                  <span
+                    className={`text-[9px] font-bold px-2 py-0.5 rounded-full border uppercase ${statusBadge(
+                      v.status,
+                      "tomorrow"
+                    )}`}
+                  >
+                    {v.status || "Scheduled"}
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </CompactTable>
+        )}
+      </AccordionBody>
+
+      {/* divider */}
+      <div className={`h-px ${isDark ? "bg-[#222]" : "bg-indigo-100"}`} />
+
+      {/* ══════════════════════════════════════════════════════════════════════
+          ACCORDION 3 — ACTIVITY LOGS
+      ══════════════════════════════════════════════════════════════════════ */}
+      <AccordionHeader
+        id="logs"
+        icon="📝"
+        title="Activity Logs"
+        badge={countBadge(
+          filteredSiteVisitActions.length,
+          isDark
+            ? "text-purple-400 border-purple-500/30 bg-purple-500/10"
+            : "text-purple-700 border-purple-200 bg-purple-50"
+        )}
+        accentBorder="border-purple-500"
+      />
+      <AccordionBody id="logs">
+        {/* Filters */}
+        <div className="flex items-center gap-2 flex-wrap mb-3 pt-1">
+          <span className={`text-[10px] font-bold uppercase tracking-wider ${theme.textFaint}`}>
+            Filter
+          </span>
+          <select
+            value={visitActivityRoleFilter}
+            onChange={(e) => setVisitActivityRoleFilter(e.target.value)}
+            className={`text-xs font-semibold rounded-lg px-2.5 py-1.5 outline-none border ${theme.select}`}
+          >
+            <option value="__all_roles__">All Roles</option>
+            <option value="Sales Manager">Sales Manager</option>
+            <option value="Receptionist">Receptionist</option>
+            <option value="Site Head">Site Head</option>
+          </select>
+          <select
+            value={visitActivityFilter}
+            onChange={(e) => setVisitActivityFilter(e.target.value)}
+            className={`text-xs font-semibold rounded-lg px-2.5 py-1.5 outline-none border ${theme.select}`}
+          >
+            <option value="__all__">All Employees</option>
+            {visitActivityPeople.map((name: string) => (
+              <option key={name} value={name}>
+                {name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {filteredSiteVisitActions.length === 0 ? (
+          <EmptyState msg="No activity logs for today" />
+        ) : (
+          <div className="space-y-2 mt-1">
+            {filteredSiteVisitActions.map((a: any, idx: number) => (
+              <div
+                key={a.id}
+                className={`relative pl-8 pr-4 py-3 rounded-xl border transition-colors ${
+                  isDark
+                    ? "bg-[#1a1a1a] border-[#2a2a2a] hover:bg-[#1e1e1e]"
+                    : "bg-white border-indigo-100 hover:bg-indigo-50/40"
+                }`}
+              >
+                {/* timeline dot */}
+                <div
+                  className={`absolute left-3 top-4 w-2 h-2 rounded-full border-2 ${
+                    isDark
+                      ? "bg-purple-500 border-purple-400"
+                      : "bg-purple-500 border-purple-300"
+                  }`}
+                />
+                {/* vertical line except last */}
+                {idx < filteredSiteVisitActions.length - 1 && (
+                  <div
+                    className={`absolute left-[14px] top-6 bottom-[-10px] w-px ${
+                      isDark ? "bg-[#2e2e2e]" : "bg-indigo-100"
+                    }`}
+                  />
+                )}
+
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className={`text-xs font-bold leading-tight ${theme.text}`}>
+                      {a.created_by_name || "Unknown"}
+                      <span className={`font-normal ${theme.textMuted}`}>
+                        {" "}
+                        •{" "}
+                      </span>
+                      <span className={`font-semibold ${theme.textMuted}`}>
+                        {a.lead_name || `Lead #${a.lead_id}`}
+                      </span>
+                    </p>
+                    <p
+                      className={`text-[11px] mt-1 whitespace-pre-wrap leading-relaxed ${theme.textMuted}`}
+                    >
+                      {a.message}
+                    </p>
+                  </div>
+                  <span
+                    className={`text-[10px] font-semibold whitespace-nowrap flex-shrink-0 mt-0.5 ${theme.textFaint}`}
+                  >
+                    {a.created_at
+                      ? new Date(a.created_at).toLocaleString("en-IN", {
+                          day: "2-digit",
+                          month: "short",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })
+                      : "—"}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </AccordionBody>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Main Panel
+// ─────────────────────────────────────────────────────────────────────────────
+function DailyMonitoringPanel({
+  theme,
+  isDark,
+  allLeads,
+  followUps,
+  managers,
+  siteHeads,
+  receptionists,
+  adminUser,
+}: any) {
+  const [data, setData] = useState<any>(null);
+  const [expandedVisitLeadId, setExpandedVisitLeadId] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"overview" | "managers" | "visits" | "alerts">("overview");
   const [lastUpdated, setLastUpdated] = useState<string>("");
@@ -5184,14 +6133,23 @@ function DailyMonitoringPanel({ theme, isDark, allLeads, followUps, managers, si
 
   const fetchStats = async () => {
     try {
-      const res  = await fetch("/api/monitoring/daily-stats");
+      const res = await fetch("/api/monitoring/daily-stats");
       const json = await res.json();
       if (json.success) {
         setData(json.data);
-        setLastUpdated(new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", second: "2-digit" }));
+        setLastUpdated(
+          new Date().toLocaleTimeString("en-IN", {
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+          })
+        );
       }
-    } catch (e) { console.error(e); }
-    finally { setIsLoading(false); }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -5203,9 +6161,10 @@ function DailyMonitoringPanel({ theme, isDark, allLeads, followUps, managers, si
   useEffect(() => {
     if (!data || visitActivityFilter === "__all__") return;
     const stats = Array.isArray(data.stats) ? data.stats : [];
-    const roleFilteredStaff = visitActivityRoleFilter === "__all_roles__"
-      ? stats
-      : stats.filter((s: any) => s.role === visitActivityRoleFilter);
+    const roleFilteredStaff =
+      visitActivityRoleFilter === "__all_roles__"
+        ? stats
+        : stats.filter((s: any) => s.role === visitActivityRoleFilter);
     const people: string[] = Array.from(
       new Set(
         roleFilteredStaff
@@ -5218,28 +6177,33 @@ function DailyMonitoringPanel({ theme, isDark, allLeads, followUps, managers, si
     }
   }, [data, visitActivityRoleFilter, visitActivityFilter]);
 
-  if (isLoading) return (
-    <div className={`h-full flex items-center justify-center ${theme.textMuted}`}>
-      <div className="flex flex-col items-center gap-3">
-        <div className="w-8 h-8 rounded-full border-2 border-[#9E217B] border-t-transparent animate-spin"/>
-        <p className="text-sm">Loading daily stats...</p>
+  if (isLoading)
+    return (
+      <div className={`h-full flex items-center justify-center ${theme.textMuted}`}>
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 rounded-full border-2 border-[#9E217B] border-t-transparent animate-spin" />
+          <p className="text-sm">Loading daily stats...</p>
+        </div>
       </div>
-    </div>
-  );
+    );
 
-  if (!data) return (
-    <div className={`h-full flex items-center justify-center ${theme.textMuted}`}>
-      <p>Failed to load monitoring data.</p>
-    </div>
-  );
+  if (!data)
+    return (
+      <div className={`h-full flex items-center justify-center ${theme.textMuted}`}>
+        <p>Failed to load monitoring data.</p>
+      </div>
+    );
 
   const salesManagers = data.stats.filter((s: any) => s.role === "Sales Manager");
   const siteHeadStats = data.stats.filter((s: any) => s.role === "Site Head");
   const receptionistStats = data.stats.filter((s: any) => s.role === "Receptionist");
-  const allStaff      = data.stats;
-  const roleFilteredStaff = visitActivityRoleFilter === "__all_roles__"
-    ? allStaff
-    : allStaff.filter((s: any) => s.role === visitActivityRoleFilter);
+  const allStaff = data.stats;
+
+  const roleFilteredStaff =
+    visitActivityRoleFilter === "__all_roles__"
+      ? allStaff
+      : allStaff.filter((s: any) => s.role === visitActivityRoleFilter);
+
   const visitActivityPeople: string[] = Array.from(
     new Set(
       roleFilteredStaff
@@ -5247,27 +6211,35 @@ function DailyMonitoringPanel({ theme, isDark, allLeads, followUps, managers, si
         .filter((n: string) => n.length > 0)
     )
   );
-  const filteredSiteVisitActions = (data.siteVisitActionsToday || []).filter((a: any) =>
-    visitActivityFilter === "__all__" ? true : a.created_by_name === visitActivityFilter
+
+  const filteredSiteVisitActions = (data.siteVisitActionsToday || []).filter(
+    (a: any) =>
+      visitActivityFilter === "__all__"
+        ? true
+        : a.created_by_name === visitActivityFilter
   );
 
-  const alertCount  = allStaff.filter((s: any) => s.totalLeads > 0 && s.followUpsToday === 0).length;
+  const alertCount = allStaff.filter(
+    (s: any) => s.totalLeads > 0 && s.followUpsToday === 0
+  ).length;
   const highPending = allStaff.filter((s: any) => s.remainingToday > 5).length;
 
   const tabs = [
-    { key: "overview",  label: "📋 Overview" },
-    { key: "managers",  label: "👤 By Role" },
-    { key: "visits",    label: "📅 Site Visits" },
-    { key: "alerts",    label: `🚨 Alerts${alertCount > 0 ? ` (${alertCount})` : ""}` },
+    { key: "overview", label: "📋 Overview" },
+    { key: "managers", label: "👤 By Role" },
+    { key: "visits",   label: "📅 Site Visits" },
+    { key: "alerts",   label: `🚨 Alerts${alertCount > 0 ? ` (${alertCount})` : ""}` },
   ];
 
   const getRoleBadge = (role: string) => {
-    if (role === "Sales Manager") return isDark
-      ? "text-[#d946a8] border-[#9E217B]/30 bg-[#9E217B]/10"
-      : "text-[#9E217B] border-[#9E217B]/20 bg-[#9E217B]/5";
-    if (role === "Site Head") return isDark
-      ? "text-blue-400 border-blue-500/30 bg-blue-500/10"
-      : "text-blue-700 border-blue-200 bg-blue-50";
+    if (role === "Sales Manager")
+      return isDark
+        ? "text-[#d946a8] border-[#9E217B]/30 bg-[#9E217B]/10"
+        : "text-[#9E217B] border-[#9E217B]/20 bg-[#9E217B]/5";
+    if (role === "Site Head")
+      return isDark
+        ? "text-blue-400 border-blue-500/30 bg-blue-500/10"
+        : "text-blue-700 border-blue-200 bg-blue-50";
     return isDark
       ? "text-purple-400 border-purple-500/30 bg-purple-500/10"
       : "text-purple-700 border-purple-200 bg-purple-50";
@@ -5292,7 +6264,10 @@ function DailyMonitoringPanel({ theme, isDark, allLeads, followUps, managers, si
   return (
     <div className="h-full flex flex-col overflow-hidden">
       {/* ── Header ── */}
-      <div className={`p-5 border-b flex-shrink-0 ${theme.header}`} style={theme.headerGlass}>
+      <div
+        className={`p-5 border-b flex-shrink-0 ${theme.header}`}
+        style={theme.headerGlass}
+      >
         <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
           <div>
             <h2 className={`text-lg font-bold flex items-center gap-2 ${theme.text}`}>
@@ -5304,16 +6279,35 @@ function DailyMonitoringPanel({ theme, isDark, allLeads, followUps, managers, si
           </div>
           <div className="flex items-center gap-3 flex-wrap">
             {alertCount > 0 && (
-              <span className={`text-xs font-bold px-3 py-1.5 rounded-full border flex items-center gap-1.5 ${isDark ? "text-red-400 border-red-500/30 bg-red-500/10" : "text-red-700 border-red-200 bg-red-50"}`}>
+              <span
+                className={`text-xs font-bold px-3 py-1.5 rounded-full border flex items-center gap-1.5 ${
+                  isDark
+                    ? "text-red-400 border-red-500/30 bg-red-500/10"
+                    : "text-red-700 border-red-200 bg-red-50"
+                }`}
+              >
                 🚨 {alertCount} no activity
               </span>
             )}
             {highPending > 0 && (
-              <span className={`text-xs font-bold px-3 py-1.5 rounded-full border flex items-center gap-1.5 ${isDark ? "text-yellow-400 border-yellow-500/30 bg-yellow-500/10" : "text-yellow-700 border-yellow-200 bg-yellow-50"}`}>
+              <span
+                className={`text-xs font-bold px-3 py-1.5 rounded-full border flex items-center gap-1.5 ${
+                  isDark
+                    ? "text-yellow-400 border-yellow-500/30 bg-yellow-500/10"
+                    : "text-yellow-700 border-yellow-200 bg-yellow-50"
+                }`}
+              >
                 ⚠️ {highPending} high pending
               </span>
             )}
-            <button onClick={fetchStats} className={`text-xs font-bold px-3 py-1.5 rounded-lg border transition-colors ${isDark ? "bg-[#222] border-[#333] text-white hover:bg-[#333]" : "bg-white border-indigo-200 text-[#9E217B] hover:bg-[#F8FAFC]"}`}>
+            <button
+              onClick={fetchStats}
+              className={`text-xs font-bold px-3 py-1.5 rounded-lg border transition-colors ${
+                isDark
+                  ? "bg-[#222] border-[#333] text-white hover:bg-[#333]"
+                  : "bg-white border-indigo-200 text-[#9E217B] hover:bg-[#F8FAFC]"
+              }`}
+            >
               ↻ Refresh
             </button>
           </div>
@@ -5321,9 +6315,18 @@ function DailyMonitoringPanel({ theme, isDark, allLeads, followUps, managers, si
 
         {/* Tabs */}
         <div className="flex gap-2 flex-wrap">
-          {tabs.map(tab => (
-            <button key={tab.key} onClick={() => setActiveTab(tab.key as any)}
-              className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${activeTab === tab.key ? "bg-[#9E217B] text-white shadow-md" : `${theme.textMuted} ${isDark ? "hover:bg-[#222]" : "hover:bg-[#F1F5F9]"}`}`}>
+          {tabs.map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key as any)}
+              className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                activeTab === tab.key
+                  ? "bg-[#9E217B] text-white shadow-md"
+                  : `${theme.textMuted} ${
+                      isDark ? "hover:bg-[#222]" : "hover:bg-[#F1F5F9]"
+                    }`
+              }`}
+            >
               {tab.label}
             </button>
           ))}
@@ -5336,7 +6339,6 @@ function DailyMonitoringPanel({ theme, isDark, allLeads, followUps, managers, si
         {/* ════ OVERVIEW TAB ════ */}
         {activeTab === "overview" && (
           <div className="space-y-6 animate-fadeIn">
-            {/* Summary stat cards */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {[
                 { label: "Total Staff",         value: allStaff.length,             glow: theme.statGlow1, color: isDark ? "text-[#d946a8]" : "text-[#9E217B]" },
@@ -5344,21 +6346,40 @@ function DailyMonitoringPanel({ theme, isDark, allLeads, followUps, managers, si
                 { label: "WhatsApp Sent Today", value: data.totalWaToday,           glow: theme.statGlow3, color: isDark ? "text-blue-400" : "text-blue-600" },
                 { label: "Site Visits Today",   value: data.siteVisitsToday.length, glow: theme.statGlow4, color: isDark ? "text-orange-400" : "text-orange-600" },
               ].map((card, i) => (
-                <div key={i} className={`rounded-2xl p-5 border relative overflow-hidden ${theme.card}`} style={theme.cardGlass}>
-                  <div className={`absolute -right-4 -top-4 w-20 h-20 rounded-full blur-2xl pointer-events-none ${card.glow}`}/>
-                  <p className={`text-xs font-bold uppercase tracking-wider mb-2 ${theme.textFaint}`}>{card.label}</p>
+                <div
+                  key={i}
+                  className={`rounded-2xl p-5 border relative overflow-hidden ${theme.card}`}
+                  style={theme.cardGlass}
+                >
+                  <div
+                    className={`absolute -right-4 -top-4 w-20 h-20 rounded-full blur-2xl pointer-events-none ${card.glow}`}
+                  />
+                  <p className={`text-xs font-bold uppercase tracking-wider mb-2 ${theme.textFaint}`}>
+                    {card.label}
+                  </p>
                   <p className={`text-3xl font-black ${card.color}`}>{card.value}</p>
                 </div>
               ))}
             </div>
 
             {/* Team Performance Table */}
-            <div className={`rounded-2xl border overflow-hidden ${theme.tableWrap}`} style={theme.tableGlass}>
-              <div className={`p-4 border-b flex items-center justify-between ${theme.tableBorder} ${theme.modalHeader}`}>
+            <div
+              className={`rounded-2xl border overflow-hidden ${theme.tableWrap}`}
+              style={theme.tableGlass}
+            >
+              <div
+                className={`p-4 border-b flex items-center justify-between ${theme.tableBorder} ${theme.modalHeader}`}
+              >
                 <h3 className={`font-bold flex items-center gap-2 text-sm ${theme.text}`}>
                   📊 Team Performance Table — Today
                 </h3>
-                <span className={`text-xs px-2 py-0.5 rounded-full border font-bold ${isDark ? "text-green-400 border-green-500/30 bg-green-500/10" : "text-green-700 border-green-200 bg-green-50"}`}>
+                <span
+                  className={`text-xs px-2 py-0.5 rounded-full border font-bold ${
+                    isDark
+                      ? "text-green-400 border-green-500/30 bg-green-500/10"
+                      : "text-green-700 border-green-200 bg-green-50"
+                  }`}
+                >
                   🟢 Live
                 </span>
               </div>
@@ -5366,53 +6387,84 @@ function DailyMonitoringPanel({ theme, isDark, allLeads, followUps, managers, si
                 <table className="w-full text-left text-sm whitespace-nowrap">
                   <thead className={`${theme.tableHead} ${theme.textHeader}`}>
                     <tr>
-                      {["Sr", "Employee", "Role", "Total Leads", "Follow-ups Today", "WhatsApp Today", "Pending", "Status"].map(h => (
-                        <th key={h} className={`px-4 py-3 text-xs font-bold uppercase ${theme.tableBorder}`}>{h}</th>
-                      ))}
+                      {["Sr", "Employee", "Role", "Total Leads", "Follow-ups Today", "WhatsApp Today", "Pending", "Status"].map(
+                        (h) => (
+                          <th
+                            key={h}
+                            className={`px-4 py-3 text-xs font-bold uppercase ${theme.tableBorder}`}
+                          >
+                            {h}
+                          </th>
+                        )
+                      )}
                     </tr>
                   </thead>
                   <tbody className={`divide-y ${theme.tableDivide}`}>
                     {allStaff.length === 0 ? (
-                      <tr><td colSpan={8} className={`text-center py-8 ${theme.textMuted}`}>No staff data found.</td></tr>
-                    ) : allStaff.map((s: any, i: number) => {
-                      const hasNoActivity = s.totalLeads > 0 && s.followUpsToday === 0;
-                      const isHighPending = s.remainingToday > 5;
-                      return (
-                        <tr key={s.name} className={`transition-colors ${theme.tableRow} ${hasNoActivity ? (isDark ? "bg-red-500/5" : "bg-red-50/50") : ""}`}>
-                          <td className={`px-4 py-3 text-xs font-bold ${theme.textFaint}`}>{i + 1}</td>
-                          <td className={`px-4 py-3 font-bold ${theme.text}`}>{s.name}</td>
-                          <td className="px-4 py-3">
-                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${getRoleBadge(s.role)}`}>{s.role}</span>
-                          </td>
-                          <td className={`px-4 py-3 font-bold ${theme.text}`}>{s.totalLeads}</td>
-                          <td className="px-4 py-3">
-                            <span className={`font-bold text-sm ${getStatusColor(s.followUpsToday, Math.max(s.totalLeads, 1))}`}>
-                              {s.followUpsToday}
-                            </span>
-                            <span className={`text-xs ml-1 ${theme.textFaint}`}></span>
-                          </td>
-                          <td className={`px-4 py-3 font-bold ${s.waToday > 0 ? "text-green-500" : theme.textFaint}`}>
-                            {s.waToday > 0 ? `📱 ${s.waToday}` : "—"}
-                          </td>
-                          <td className="px-4 py-3">
-                            <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${
-                              s.remainingToday === 0 ? (isDark ? "text-green-400 border-green-500/30 bg-green-500/10" : "text-green-700 border-green-200 bg-green-50") :
-                              isHighPending       ? (isDark ? "text-red-400 border-red-500/30 bg-red-500/10"   : "text-red-700 border-red-200 bg-red-50") :
-                                                    (isDark ? "text-yellow-400 border-yellow-500/30 bg-yellow-500/10" : "text-yellow-700 border-yellow-200 bg-yellow-50")
-                            }`}>{s.remainingToday}</span>
-                          </td>
-                          <td className="px-4 py-3">
-                            {hasNoActivity ? (
-                              <span className="text-xs font-bold text-red-500">⚠️ No activity</span>
-                            ) : s.remainingToday === 0 ? (
-                              <span className="text-xs font-bold text-green-500">✅ All done</span>
-                            ) : (
-                              <span className={`text-xs font-bold ${isDark ? "text-yellow-400" : "text-yellow-600"}`}>🔄 In progress</span>
-                            )}
-                          </td>
-                        </tr>
-                      );
-                    })}
+                      <tr>
+                        <td colSpan={8} className={`text-center py-8 ${theme.textMuted}`}>
+                          No staff data found.
+                        </td>
+                      </tr>
+                    ) : (
+                      allStaff.map((s: any, i: number) => {
+                        const hasNoActivity = s.totalLeads > 0 && s.followUpsToday === 0;
+                        const isHighPending = s.remainingToday > 5;
+                        return (
+                          <tr
+                            key={s.name}
+                            className={`transition-colors ${theme.tableRow} ${
+                              hasNoActivity
+                                ? isDark
+                                  ? "bg-red-500/5"
+                                  : "bg-red-50/50"
+                                : ""
+                            }`}
+                          >
+                            <td className={`px-4 py-3 text-xs font-bold ${theme.textFaint}`}>{i + 1}</td>
+                            <td className={`px-4 py-3 font-bold ${theme.text}`}>{s.name}</td>
+                            <td className="px-4 py-3">
+                              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${getRoleBadge(s.role)}`}>
+                                {s.role}
+                              </span>
+                            </td>
+                            <td className={`px-4 py-3 font-bold ${theme.text}`}>{s.totalLeads}</td>
+                            <td className="px-4 py-3">
+                              <span className={`font-bold text-sm ${getStatusColor(s.followUpsToday, Math.max(s.totalLeads, 1))}`}>
+                                {s.followUpsToday}
+                              </span>
+                            </td>
+                            <td className={`px-4 py-3 font-bold ${s.waToday > 0 ? "text-green-500" : theme.textFaint}`}>
+                              {s.waToday > 0 ? `📱 ${s.waToday}` : "—"}
+                            </td>
+                            <td className="px-4 py-3">
+                              <span
+                                className={`text-xs font-bold px-2 py-0.5 rounded-full border ${
+                                  s.remainingToday === 0
+                                    ? isDark ? "text-green-400 border-green-500/30 bg-green-500/10" : "text-green-700 border-green-200 bg-green-50"
+                                    : isHighPending
+                                    ? isDark ? "text-red-400 border-red-500/30 bg-red-500/10" : "text-red-700 border-red-200 bg-red-50"
+                                    : isDark ? "text-yellow-400 border-yellow-500/30 bg-yellow-500/10" : "text-yellow-700 border-yellow-200 bg-yellow-50"
+                                }`}
+                              >
+                                {s.remainingToday}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3">
+                              {hasNoActivity ? (
+                                <span className="text-xs font-bold text-red-500">⚠️ No activity</span>
+                              ) : s.remainingToday === 0 ? (
+                                <span className="text-xs font-bold text-green-500">✅ All done</span>
+                              ) : (
+                                <span className={`text-xs font-bold ${isDark ? "text-yellow-400" : "text-yellow-600"}`}>
+                                  🔄 In progress
+                                </span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -5423,43 +6475,46 @@ function DailyMonitoringPanel({ theme, isDark, allLeads, followUps, managers, si
         {/* ════ BY ROLE TAB ════ */}
         {activeTab === "managers" && (
           <div className="space-y-8 animate-fadeIn">
-            {/* Sales Managers */}
             <div>
               <h3 className={`text-sm font-bold uppercase tracking-wider mb-4 flex items-center gap-2 ${theme.text}`}>
-                <span className={`w-2 h-2 rounded-full ${isDark ? "bg-[#d946a8]" : "bg-[#9E217B]"}`}/>
+                <span className={`w-2 h-2 rounded-full ${isDark ? "bg-[#d946a8]" : "bg-[#9E217B]"}`} />
                 Sales Managers — Daily Follow-up Status
               </h3>
               {salesManagers.length === 0 ? (
                 <p className={`text-sm ${theme.textFaint}`}>No sales managers found.</p>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                  {salesManagers.map((s: any) => <StaffCard key={s.name} s={s} isDark={isDark} theme={theme} getRoleBadge={getRoleBadge} getBarColor={getBarColor} />)}
+                  {salesManagers.map((s: any) => (
+                    <StaffCard key={s.name} s={s} isDark={isDark} theme={theme} getRoleBadge={getRoleBadge} getBarColor={getBarColor} />
+                  ))}
                 </div>
               )}
             </div>
 
-            {/* Site Heads */}
             {siteHeadStats.length > 0 && (
               <div>
                 <h3 className={`text-sm font-bold uppercase tracking-wider mb-4 flex items-center gap-2 ${theme.text}`}>
-                  <span className="w-2 h-2 rounded-full bg-blue-500"/>
+                  <span className="w-2 h-2 rounded-full bg-blue-500" />
                   Site Heads — Daily Follow-up Status
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                  {siteHeadStats.map((s: any) => <StaffCard key={s.name} s={s} isDark={isDark} theme={theme} getRoleBadge={getRoleBadge} getBarColor={getBarColor} />)}
+                  {siteHeadStats.map((s: any) => (
+                    <StaffCard key={s.name} s={s} isDark={isDark} theme={theme} getRoleBadge={getRoleBadge} getBarColor={getBarColor} />
+                  ))}
                 </div>
               </div>
             )}
 
-            {/* Receptionists */}
             {receptionistStats.length > 0 && (
               <div>
                 <h3 className={`text-sm font-bold uppercase tracking-wider mb-4 flex items-center gap-2 ${theme.text}`}>
-                  <span className="w-2 h-2 rounded-full bg-purple-500"/>
+                  <span className="w-2 h-2 rounded-full bg-purple-500" />
                   Receptionists — Daily Follow-up Status
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                  {receptionistStats.map((s: any) => <StaffCard key={s.name} s={s} isDark={isDark} theme={theme} getRoleBadge={getRoleBadge} getBarColor={getBarColor} />)}
+                  {receptionistStats.map((s: any) => (
+                    <StaffCard key={s.name} s={s} isDark={isDark} theme={theme} getRoleBadge={getRoleBadge} getBarColor={getBarColor} />
+                  ))}
                 </div>
               </div>
             )}
@@ -5468,130 +6523,57 @@ function DailyMonitoringPanel({ theme, isDark, allLeads, followUps, managers, si
 
         {/* ════ SITE VISITS TAB ════ */}
         {activeTab === "visits" && (
-          <div className="space-y-6 animate-fadeIn">
-            {/* REPLACE the 3 stat cards in visits tab with: */}
-            <div className="grid grid-cols-3 gap-4">
+          <div className="space-y-5 animate-fadeIn">
+            {/* Stat cards row */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {[
-                { label: "Total Today",  value: data.siteVisitsToday.length,        color: isDark ? "text-[#d946a8]" : "text-[#9E217B]" },
-                { label: "Completed",    value: data.completedVisitsToday ?? 0,      color: "text-green-500" },
-                { label: "Scheduled",    value: data.pendingVisitsToday ?? 0,        color: "text-orange-500" },
+                { label: "Total Today",   value: data.siteVisitsToday.length,           color: isDark ? "text-[#d946a8]" : "text-[#9E217B]" },
+                { label: "Completed",     value: data.completedVisitsToday ?? 0,         color: "text-green-500" },
+                { label: "Pending Today", value: data.pendingVisitsToday ?? 0,           color: "text-orange-500" },
+                { label: "Tomorrow",      value: (data.siteVisitsTomorrow ?? []).length, color: isDark ? "text-blue-400" : "text-blue-600" },
               ].map((c, i) => (
-                <div key={i} className={`rounded-2xl p-5 border ${theme.card}`} style={theme.cardGlass}>
-                  <p className={`text-xs font-bold uppercase tracking-wider mb-2 ${theme.textFaint}`}>{c.label}</p>
+                <div
+                  key={i}
+                  className={`rounded-2xl p-5 border ${theme.card}`}
+                  style={theme.cardGlass}
+                >
+                  <p className={`text-xs font-bold uppercase tracking-wider mb-2 ${theme.textFaint}`}>
+                    {c.label}
+                  </p>
                   <p className={`text-3xl font-black ${c.color}`}>{c.value}</p>
                 </div>
               ))}
             </div>
 
-            <div className={`rounded-2xl border overflow-hidden ${theme.tableWrap}`} style={theme.tableGlass}>
-              <div className={`p-4 border-b ${theme.tableBorder} ${theme.modalHeader}`}>
-                <h3 className={`font-bold text-sm ${theme.text}`}>📅 Site Visits Scheduled Today</h3>
-              </div>
-              {data.siteVisitsToday.length === 0 ? (
-                <div className={`p-12 text-center ${theme.textMuted}`}>
-                  <p className="text-4xl mb-3">📅</p>
-                  <p className="font-semibold">No site visits scheduled for today</p>
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-sm whitespace-nowrap">
-                    <thead className={`${theme.tableHead} ${theme.textHeader}`}>
-                      <tr>
-                        {["Lead #", "Client Name", "Assigned Manager", "Visit Time", "Status"].map(h => (
-                          <th key={h} className={`px-4 py-3 text-xs font-bold uppercase ${theme.tableBorder}`}>{h}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody className={`divide-y ${theme.tableDivide}`}>
-                      {data.siteVisitsToday.map((v: any) => (
-                        <tr key={v.id} className={`transition-colors ${theme.tableRow}`}>
-                          <td className={`px-4 py-3 font-bold ${isDark ? "text-[#d946a8]" : "text-[#9E217B]"}`}>#{v.id}</td>
-                          <td className={`px-4 py-3 font-semibold ${theme.text}`}>{v.name}</td>
-                          <td className={`px-4 py-3 ${theme.textMuted}`}>{v.assigned_to || "—"}</td>
-                         {/* In the visits table tbody, update the time cell: */}
-                          <td className="px-4 py-3 text-orange-500 font-semibold">
-                            {v.visit_date
-                              ? new Date(v.visit_date).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })
-                              : "—"}
-                          </td>
-                          {/* Add status badge cell */}
-                          <td className="px-4 py-3">
-                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border uppercase ${
-                              v.status === "completed" ? "text-green-400 border-green-500/30 bg-green-500/10" :
-                              v.status === "cancelled" ? "text-red-400 border-red-500/30 bg-red-500/10" :
-                              "text-yellow-400 border-yellow-500/30 bg-yellow-500/10"
-                            }`}>{v.status || "Scheduled"}</span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-
-            <div className={`rounded-2xl border overflow-hidden ${theme.tableWrap}`} style={theme.tableGlass}>
-              <div className={`p-4 border-b ${theme.tableBorder} ${theme.modalHeader} flex items-center justify-between gap-3 flex-wrap`}>
-                <h3 className={`font-bold text-sm ${theme.text}`}>📝 Site Visit Activity Logged Today</h3>
-                <div className="flex items-center gap-2">
-                  <label className={`text-xs font-bold ${theme.textMuted}`}>Filter</label>
-                  <select
-                    value={visitActivityRoleFilter}
-                    onChange={(e) => setVisitActivityRoleFilter(e.target.value)}
-                    className={`text-xs font-semibold rounded-lg px-3 py-1.5 outline-none border ${theme.select}`}
-                  >
-                    <option value="__all_roles__">Select role</option>
-                    <option value="Sales Manager">Sales Manager</option>
-                    <option value="Receptionist">Receptionist</option>
-                    <option value="Site Head">Site Head</option>
-                  </select>
-                  <select
-                    value={visitActivityFilter}
-                    onChange={(e) => setVisitActivityFilter(e.target.value)}
-                    className={`text-xs font-semibold rounded-lg px-3 py-1.5 outline-none border ${theme.select}`}
-                  >
-                    <option value="__all__">All Employees</option>
-                    {visitActivityPeople.map((name) => (
-                      <option key={name} value={name}>{name}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-              {!filteredSiteVisitActions || filteredSiteVisitActions.length === 0 ? (
-                <div className={`p-8 text-center text-sm ${theme.textMuted}`}>
-                  No site visit/revisit updates were logged today.
-                </div>
-              ) : (
-                <div className="divide-y">
-                  {filteredSiteVisitActions.map((a: any) => (
-                    <div key={a.id} className={`px-4 py-3 flex items-start justify-between gap-4 ${theme.tableRow}`}>
-                      <div>
-                        <p className={`text-sm font-semibold ${theme.text}`}>
-                          {a.created_by_name || "Unknown"} • {a.lead_name || `Lead #${a.lead_id}`}
-                        </p>
-                        <p className={`text-xs mt-1 whitespace-pre-wrap ${theme.textMuted}`}>{a.message}</p>
-                      </div>
-                      <div className={`text-xs font-semibold whitespace-nowrap ${theme.textFaint}`}>
-                        {a.created_at ? new Date(a.created_at).toLocaleString("en-IN") : "—"}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+            {/* ── Unified Site Visit Center accordion ── */}
+            <SiteVisitCenter
+              data={data}
+              theme={theme}
+              isDark={isDark}
+              allLeads={allLeads}
+              adminUser={adminUser}
+              expandedVisitLeadId={expandedVisitLeadId}
+              setExpandedVisitLeadId={setExpandedVisitLeadId}
+              visitActivityRoleFilter={visitActivityRoleFilter}
+              setVisitActivityRoleFilter={setVisitActivityRoleFilter}
+              visitActivityFilter={visitActivityFilter}
+              setVisitActivityFilter={setVisitActivityFilter}
+              visitActivityPeople={visitActivityPeople}
+              filteredSiteVisitActions={filteredSiteVisitActions}
+              fetchStats={fetchStats}
+            />
           </div>
         )}
 
         {/* ════ ALERTS TAB ════ */}
         {activeTab === "alerts" && (
           <div className="space-y-4 animate-fadeIn">
-            {/* No Activity */}
             <AlertSection
               title="🚨 No Activity Today"
               subtitle="employees"
               items={allStaff.filter((s: any) => s.totalLeads > 0 && s.followUpsToday === 0)}
               emptyMsg="✅ All employees have activity today!"
-              badgeText={(s: any) => `0 follow-ups`}
+              badgeText={(_s: any) => `0 follow-ups`}
               borderColor={isDark ? "border-red-500/20" : "border-red-200"}
               headerBg={isDark ? "bg-red-500/10 border-red-500/20" : "bg-red-50 border-red-200"}
               titleColor="text-red-500"
@@ -5600,8 +6582,6 @@ function DailyMonitoringPanel({ theme, isDark, allLeads, followUps, managers, si
               theme={theme}
               isDark={isDark}
             />
-
-            {/* High Pending */}
             <AlertSection
               title="⚠️ High Pending Follow-ups"
               subtitle="employees"
@@ -5616,8 +6596,6 @@ function DailyMonitoringPanel({ theme, isDark, allLeads, followUps, managers, si
               theme={theme}
               isDark={isDark}
             />
-
-            {/* All Caught Up */}
             <AlertSection
               title="✅ All Caught Up Today"
               subtitle="employees"

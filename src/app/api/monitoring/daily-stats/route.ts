@@ -11,6 +11,15 @@ export async function GET() {
     const startOfDay = dayStartIST.toISOString();
     const endOfDay = dayEndIST.toISOString();
 
+    // ── Tomorrow's date range (IST) ──────────────────────────────────────────
+    const tomorrowDate = new Date(now.getTime() + 5.5 * 60 * 60 * 1000);
+    tomorrowDate.setDate(tomorrowDate.getDate() + 1);
+    const tomorrowStrIST = tomorrowDate.toISOString().split("T")[0];
+    const tomorrowStartIST = new Date(`${tomorrowStrIST}T00:00:00.000+05:30`);
+    const tomorrowEndIST   = new Date(`${tomorrowStrIST}T23:59:59.999+05:30`);
+    const startOfTomorrow  = tomorrowStartIST.toISOString();
+    const endOfTomorrow    = tomorrowEndIST.toISOString();
+
     const safeQuery = async (sql: string, params: any[] = []) => {
       try {
         return await query(sql, params);
@@ -49,17 +58,29 @@ export async function GET() {
       GROUP BY sender_name
     `, [startOfDay, endOfDay]);
 
+    // ── Today's site visits ──────────────────────────────────────────────────
     const siteVisitRows = await safeQuery(
       `SELECT sv.*, we.name, we.assigned_to, we.status as lead_status
        FROM public.site_visits sv
        JOIN public.walkin_enquiries we ON we.id = sv.lead_id
-       WHERE sv.visit_date >= $1 AND sv.visit_date <= $2`,
+       WHERE sv.visit_date >= $1 AND sv.visit_date <= $2
+       ORDER BY sv.visit_date ASC`,
       [startOfDay, endOfDay]
     );
 
-    const siteVisitsToday = siteVisitRows;
-    const completedVisitsToday = siteVisitRows.filter((v: any) => v.status === "completed").length;
-    const pendingVisitsToday = siteVisitRows.filter((v: any) => v.status === "scheduled").length;
+    const siteVisitsToday       = siteVisitRows;
+    const completedVisitsToday  = siteVisitRows.filter((v: any) => v.status === "completed").length;
+    const pendingVisitsToday    = siteVisitRows.filter((v: any) => v.status === "scheduled").length;
+
+    // ── Tomorrow's site visits ───────────────────────────────────────────────
+    const siteVisitsTomorrow = await safeQuery(
+      `SELECT sv.*, we.name, we.assigned_to, we.status as lead_status
+       FROM public.site_visits sv
+       JOIN public.walkin_enquiries we ON we.id = sv.lead_id
+       WHERE sv.visit_date >= $1 AND sv.visit_date <= $2
+       ORDER BY sv.visit_date ASC`,
+      [startOfTomorrow, endOfTomorrow]
+    );
 
     const siteVisitActionsToday = await safeQuery(
       `SELECT
@@ -126,6 +147,7 @@ export async function GET() {
       data: {
         stats,
         siteVisitsToday,
+        siteVisitsTomorrow,
         siteVisitActionsToday,
         completedVisitsToday,
         pendingVisitsToday,
