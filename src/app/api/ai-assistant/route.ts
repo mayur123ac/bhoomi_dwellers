@@ -1,54 +1,56 @@
 import { NextResponse } from "next/server";
-import { Bot, User, Send, BarChart2, AlertTriangle, Landmark, CalendarDays,
-  Lightbulb, ClipboardList, Wifi, Flame } from "lucide-react";
+import {
+  Bot, User, Send, BarChart2, AlertTriangle, Landmark, CalendarDays,
+  Lightbulb, ClipboardList, Wifi, Flame
+} from "lucide-react";
 function analyzeLead(lead: any) {
   const suggestions: string[] = [];
   let score = 0;
 
-  const interest    = (lead.leadInterestStatus || "").toLowerCase();
+  const interest = (lead.leadInterestStatus || "").toLowerCase();
   const loanPlanned = (lead.loanPlanned || "").toLowerCase();
-  const loanStatus  = (lead.loanStatus || "").toLowerCase();
-  const visitDate   = lead.mongoVisitDate;
-  const planning    = lead.planningPurchase || "";
-  const useType     = (lead.useType || "").toLowerCase();
-  const propType    = lead.propType || "";
-  const source      = lead.source || "";
+  const loanStatus = (lead.loanStatus || "").toLowerCase();
+  const visitDate = lead.mongoVisitDate;
+  const planning = lead.planningPurchase || "";
+  const useType = (lead.useType || "").toLowerCase();
+  const propType = lead.propType || "";
+  const source = lead.source || "";
 
-  if (interest === "interested")         { score += 40; suggestions.push("Lead is actively interested — prioritize immediate follow-up."); }
-  else if (interest === "maybe")         { score += 20; suggestions.push("Lead is undecided — send property brochure and schedule a callback."); }
-  else if (interest === "not interested"){ score -= 10; suggestions.push("Lead marked not interested — try one final attempt before archiving."); }
+  if (interest === "interested") { score += 40; suggestions.push("Lead is actively interested — prioritize immediate follow-up."); }
+  else if (interest === "maybe") { score += 20; suggestions.push("Lead is undecided — send property brochure and schedule a callback."); }
+  else if (interest === "not interested") { score -= 10; suggestions.push("Lead marked not interested — try one final attempt before archiving."); }
 
   if (loanPlanned === "yes") {
     score += 15;
-    if (loanStatus === "approved")         { score += 25; suggestions.push("Loan is approved — this is a HIGH PRIORITY deal. Schedule closing meeting immediately."); }
+    if (loanStatus === "approved") { score += 25; suggestions.push("Loan is approved — this is a HIGH PRIORITY deal. Schedule closing meeting immediately."); }
     else if (loanStatus === "in progress") { score += 10; suggestions.push("Loan is in progress — follow up on pending documents with the bank agent."); }
-    else if (loanStatus === "rejected")    { score -= 5;  suggestions.push("Loan was rejected — suggest a co-applicant option or alternative bank/NBFC."); }
-    else                                   {              suggestions.push("Loan is required but not yet tracked — initiate loan discussion in next call."); }
-  } else if (loanPlanned === "no")  { score += 10; suggestions.push("Cash buyer — high confidence. Focus on property finalization."); }
-  else if (loanPlanned === "not sure")    {              suggestions.push("Loan is undecided — connect them with your loan agent for a free assessment."); }
+    else if (loanStatus === "rejected") { score -= 5; suggestions.push("Loan was rejected — suggest a co-applicant option or alternative bank/NBFC."); }
+    else { suggestions.push("Loan is required but not yet tracked — initiate loan discussion in next call."); }
+  } else if (loanPlanned === "no") { score += 10; suggestions.push("Cash buyer — high confidence. Focus on property finalization."); }
+  else if (loanPlanned === "not sure") { suggestions.push("Loan is undecided — connect them with your loan agent for a free assessment."); }
 
-  if (visitDate)              { score += 20; suggestions.push("Site visit is scheduled — confirm 24 hours before and prepare property highlights."); }
-  else if (interest === "interested")    {              suggestions.push("No site visit scheduled yet — propose 2-3 date options immediately."); }
+  if (visitDate) { score += 20; suggestions.push("Site visit is scheduled — confirm 24 hours before and prepare property highlights."); }
+  else if (interest === "interested") { suggestions.push("No site visit scheduled yet — propose 2-3 date options immediately."); }
 
-  if (planning === "Immediate")          { score += 15; suggestions.push("Immediate purchase intent — fast-track all approvals and documentation."); }
-  else if (planning === "Next 3 Months") { score += 8;  suggestions.push("3-month purchase timeline — maintain weekly touchpoints and send project updates."); }
+  if (planning === "Immediate") { score += 15; suggestions.push("Immediate purchase intent — fast-track all approvals and documentation."); }
+  else if (planning === "Next 3 Months") { score += 8; suggestions.push("3-month purchase timeline — maintain weekly touchpoints and send project updates."); }
 
-  if (useType.includes("invest"))        { suggestions.push("Investment buyer — highlight ROI, rental yield, and appreciation data for the project."); }
+  if (useType.includes("invest")) { suggestions.push("Investment buyer — highlight ROI, rental yield, and appreciation data for the project."); }
   else if (useType.includes("self") || useType.includes("personal")) { suggestions.push("Self-use buyer — emphasize lifestyle features, amenities, and neighborhood quality."); }
 
   if (propType && propType !== "Pending") { suggestions.push(`Interested in ${propType} — ensure you show only matching inventory units.`); }
 
   const sourceTips: Record<string, string> = {
     "Channel Partner": "Channel Partner lead — keep the CP updated on status to maintain the relationship.",
-    "Facebook":        "Facebook lead — typically needs more nurturing. Share video walkthroughs.",
-    "Instagram":       "Instagram lead — visual buyer. Send high-quality project imagery.",
-    "Website":         "Website lead — actively researching. Share a detailed brochure and pricing.",
-    "Referral":        "Referral lead — high trust. Fast-track this and ensure a premium experience.",
+    "Facebook": "Facebook lead — typically needs more nurturing. Share video walkthroughs.",
+    "Instagram": "Instagram lead — visual buyer. Send high-quality project imagery.",
+    "Website": "Website lead — actively researching. Share a detailed brochure and pricing.",
+    "Referral": "Referral lead — high trust. Fast-track this and ensure a premium experience.",
   };
   if (sourceTips[source]) suggestions.push(sourceTips[source]);
 
   let priority = "Low";
-  if (score >= 70)      priority = "Very High";
+  if (score >= 70) priority = "Very High";
   else if (score >= 50) priority = "High";
   else if (score >= 30) priority = "Medium";
 
@@ -57,7 +59,7 @@ function analyzeLead(lead: any) {
 
 export async function POST(req: Request) {
   try {
-    const body  = await req.json();
+    const body = await req.json();
     const query = (body.query || "").toLowerCase().trim();
     const leads: any[] = body.leads || [];
 
@@ -72,12 +74,12 @@ export async function POST(req: Request) {
 
     // ── PIPELINE OVERVIEW ──
     if (["analysis", "summary", "overview", "report"].some(k => query.includes(k))) {
-      const interested   = leads.filter(l => (l.leadInterestStatus||"").toLowerCase() === "interested").length;
-      const notInt       = leads.filter(l => (l.leadInterestStatus||"").toLowerCase() === "not interested").length;
-      const maybe        = leads.filter(l => (l.leadInterestStatus||"").toLowerCase() === "maybe").length;
-      const visits       = leads.filter(l => l.mongoVisitDate).length;
-      const loanActive   = leads.filter(l => (l.loanPlanned||"").toLowerCase() === "yes").length;
-      const loanApproved = leads.filter(l => (l.loanStatus||"").toLowerCase() === "approved").length;
+      const interested = leads.filter(l => (l.leadInterestStatus || "").toLowerCase() === "interested").length;
+      const notInt = leads.filter(l => (l.leadInterestStatus || "").toLowerCase() === "not interested").length;
+      const maybe = leads.filter(l => (l.leadInterestStatus || "").toLowerCase() === "maybe").length;
+      const visits = leads.filter(l => l.mongoVisitDate).length;
+      const loanActive = leads.filter(l => (l.loanPlanned || "").toLowerCase() === "yes").length;
+      const loanApproved = leads.filter(l => (l.loanStatus || "").toLowerCase() === "approved").length;
       const highPriority = leads.filter(l => analyzeLead(l).score >= 50);
 
       let response = `Here's your current Leads overview:\n\n`;
@@ -125,7 +127,7 @@ export async function POST(req: Request) {
     // ── LOAN SUMMARY ──
     if (["loan", "finance", "bank", "emi"].some(k => query.includes(k))) {
       const loanLeads = leads.filter(l =>
-        (l.loanPlanned||"").toLowerCase() === "yes" ||
+        (l.loanPlanned || "").toLowerCase() === "yes" ||
         (l.loanStatus && l.loanStatus !== "N/A")
       );
       if (!loanLeads.length) {
@@ -150,7 +152,7 @@ export async function POST(req: Request) {
       let response = `Here are all upcoming scheduled site visits:\n\n`;
       visitLeads.forEach((l, i) => {
         response += `${i + 1}. ${l.name} (#${l.id})\n`;
-        response += `   • Visit Date: ${(l.mongoVisitDate||"").slice(0, 10)}\n`;
+        response += `   • Visit Date: ${(l.mongoVisitDate || "").slice(0, 10)}\n`;
         response += `   • Budget: ${l.salesBudget || "N/A"}\n`;
         response += `   • Interest: ${l.leadInterestStatus || "Pending"}\n\n`;
       });
@@ -177,7 +179,7 @@ export async function POST(req: Request) {
     // ── SPECIFIC LEAD BY NAME OR ID ──
     const matched = leads.find(l => {
       const nameLower = (l.name || "").toLowerCase();
-      const leadId    = String(l.id || "");
+      const leadId = String(l.id || "");
       return (
         query.includes(nameLower) ||
         (nameLower.split(" ")[0] && query.includes(nameLower.split(" ")[0])) ||

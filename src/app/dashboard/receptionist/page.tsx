@@ -4,6 +4,7 @@
 import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { clearCrmSession, getStoredCrmUser, installLoggedOutBackGuard } from "@/lib/authSession";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   FaThLarge, FaCog, FaBell, FaTimes, FaClipboardList,
   FaChevronLeft, FaRobot, FaPaperPlane, FaCalendarAlt, FaEye, FaEyeSlash,
@@ -274,13 +275,24 @@ export default function ReceptionistDashboard() {
 
   // ── User & UI state ──
   const [user, setUser] = useState<any>({ name: "Loading...", role: "Receptionist", email: "", password: "" });
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
   const [showPassword, setShowPassword] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isClosingModalOpen, setIsClosingModalOpen] = useState(false);
-  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [toastMsg, setToastMsg] = useState<{ title: string; color: string } | null>(null);
+
+  const [activePopup, setActivePopup] = useState<"notifications" | "profile" | null>(null);
+  const topbarRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (topbarRef.current && !topbarRef.current.contains(event.target as Node)) {
+        setActivePopup(null);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   type CrmNotif = { id: string; line1: string; line2: string; type: "lead" | "visit" };
   const [notifQueue, setNotifQueue] = useState<CrmNotif[]>([]);
@@ -1276,7 +1288,7 @@ export default function ReceptionistDashboard() {
         {/* HEADER */}
         <header className={`h-16 border-b flex items-center justify-between px-6 flex-shrink-0 z-30 ${t.header}`} style={t.headerGlass}>
           <h1 className={`font-bold flex items-center text-sm md:text-base tracking-wide ${t.text}`}>BhoomiDwellersCRM</h1>
-          <div className="flex items-center space-x-4 relative">
+          <div className="flex items-center space-x-4 relative" ref={topbarRef}>
             <button onClick={() => setIsDark(!isDark)} aria-label="Toggle theme"
               className={`w-9 h-9 rounded-xl border flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm ${t.toggleWrap}`}>
               {isDark ? <SunIcon /> : <MoonIcon />}
@@ -1284,7 +1296,7 @@ export default function ReceptionistDashboard() {
             {/* ── NOTIFICATION BELL & DROPDOWN ── */}
             <div className="relative">
               <button
-                onClick={() => { setIsNotificationsOpen(!isNotificationsOpen); setNotifCount(0); setIsProfileOpen(false); }}
+                onClick={() => { setActivePopup(activePopup === "notifications" ? null : "notifications"); setNotifCount(0); }}
                 className={`${t.textMuted} transition-colors relative cursor-pointer`}
               >
                 <FaBell className="w-5 h-5" />
@@ -1295,13 +1307,20 @@ export default function ReceptionistDashboard() {
                 )}
               </button>
 
-              {isNotificationsOpen && (
-                <div className={`absolute top-12 right-0 w-[320px] border rounded-xl shadow-2xl flex flex-col z-50 animate-fadeIn ${t.dropdown}`} style={t.dropdownGlass}>
+              <AnimatePresence>
+              {activePopup === "notifications" && (
+                <motion.div
+                  initial={{ opacity: 0, y: -8, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -6, scale: 0.98 }}
+                  transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                  className={`absolute top-12 right-0 w-[320px] border rounded-xl shadow-2xl flex flex-col z-50 ${t.dropdown}`} style={t.dropdownGlass}
+                >
                   <div className={`p-4 border-b flex justify-between items-center ${t.tableBorder}`}>
                     <h3 className={`font-bold text-sm flex items-center gap-2 ${t.text}`}>
                       <FaBell className="text-[#9E217B]" /> Recent Notifications
                     </h3>
-                    <button onClick={() => setIsNotificationsOpen(false)} className={`${t.textMuted} hover:text-red-500`}><FaTimes className="text-xs" /></button>
+                    <button onClick={() => setActivePopup(null)} className={`${t.textMuted} hover:text-red-500`}><FaTimes className="text-xs" /></button>
                   </div>
                   <div className={`max-h-[360px] overflow-y-auto ${t.scroll}`}>
                     {notificationHistory.length === 0 ? (
@@ -1320,8 +1339,9 @@ export default function ReceptionistDashboard() {
                       ))
                     )}
                   </div>
-                </div>
+                </motion.div>
               )}
+              </AnimatePresence>
             </div>
             {/* {isNotificationsOpen && (
               <div className={`absolute top-12 right-12 w-72 rounded-xl shadow-2xl p-4 z-50 animate-fadeIn border ${t.dropdown}`} style={t.dropdownGlass}>
@@ -1333,12 +1353,19 @@ export default function ReceptionistDashboard() {
                 )}
               </div>
             )} */}
-            <div onClick={() => setIsProfileOpen(!isProfileOpen)}
+            <div onClick={() => setActivePopup(activePopup === "profile" ? null : "profile")}
               className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm cursor-pointer shadow-md hover:scale-105 transition-transform ${isDark ? "border border-[#9E217B]/40 text-[#d4006e] bg-[#9E217B]/15" : "border border-[#00AEEF]/40 text-[#00AEEF] bg-[#00AEEF]/10"}`}>
               {String(user?.name || "U").charAt(0).toUpperCase()}
             </div>
-            {isProfileOpen && (
-              <div className={`absolute top-12 right-0 w-64 rounded-xl shadow-2xl p-5 z-50 animate-fadeIn border ${t.dropdown}`} style={t.dropdownGlass}>
+            <AnimatePresence>
+            {activePopup === "profile" && (
+              <motion.div
+                initial={{ opacity: 0, y: -8, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -6, scale: 0.98 }}
+                transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                className={`absolute top-12 right-0 w-64 rounded-xl shadow-2xl p-5 z-50 border ${t.dropdown}`} style={t.dropdownGlass}
+              >
                 <div className="mb-4">
                   <h3 className={`font-bold text-lg ${t.text}`}>{user?.name || "User"}</h3>
                   <p className={`text-sm truncate ${t.textMuted}`}>{user?.email || "No email"}</p>
@@ -1357,8 +1384,9 @@ export default function ReceptionistDashboard() {
                   </div>
                 </div>
                 <button onClick={handleLogout} className={`w-full py-2.5 rounded-lg font-semibold transition-colors cursor-pointer ${t.btnDanger}`}>Logout</button>
-              </div>
+              </motion.div>
             )}
+            </AnimatePresence>
             {/* ── TOAST NOTIFICATION POPUP ── */}
             {/* 👇 TOAST POPUP 👇 */}
             {activeNotif && (

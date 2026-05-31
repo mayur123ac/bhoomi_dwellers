@@ -4,6 +4,7 @@
 import { useEffect, useState, useRef, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { clearCrmSession, getStoredCrmUser, installLoggedOutBackGuard } from "@/lib/authSession";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Bot, User, Send, BarChart2, AlertTriangle, Landmark, CalendarDays,
   Lightbulb, ClipboardList, Wifi, CheckCircle, XCircle, HelpCircle,
@@ -289,13 +290,23 @@ export default function SalesDashboard() {
   const t = buildTheme(isDark);
 
   const [user, setUser] = useState({ name: "Loading...", role: "Sales Manager", email: "", password: "" });
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [activeView, setActiveView] = useState("overview");
   const [showPassword, setShowPassword] = useState(false);
-  const [showNotifications, setShowNotifications] = useState(false);
   const [dismissedFollowUps, setDismissedFollowUps] = useState<Set<string>>(new Set());
   const [dismissedVisits, setDismissedVisits] = useState<Set<string>>(new Set());
-  const [showVisitNotifications, setShowVisitNotifications] = useState(false);
+
+  const [activePopup, setActivePopup] = useState<"notifications" | "profile" | "visit" | null>(null);
+  const topbarRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (topbarRef.current && !topbarRef.current.contains(event.target as Node)) {
+        setActivePopup(null);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const { managers, receptionists, allLeads, followUps, isLoading, refetch } = useAdminData();
 
@@ -412,7 +423,7 @@ export default function SalesDashboard() {
             <span className={`text-xs sm:text-sm font-normal ${t.textFaint}`}>— Sales Manager</span>
           </h1>
 
-          <div className="flex items-center gap-2 sm:gap-4 relative">
+          <div className="flex items-center gap-2 sm:gap-4 relative" ref={topbarRef}>
 
             {/* ── Theme Toggle ── */}
             <button
@@ -426,7 +437,7 @@ export default function SalesDashboard() {
             {/* Site Visit Bell */}
             <div className="relative">
               <button
-                onClick={() => { setShowVisitNotifications(!showVisitNotifications); setShowNotifications(false); setIsProfileOpen(false); }}
+                onClick={() => { setActivePopup(activePopup === "visit" ? null : "visit"); }}
                 className={`relative w-9 h-9 sm:w-10 sm:h-10 rounded-xl border flex items-center justify-center transition-colors cursor-pointer ${t.toggleWrap} hover:border-orange-500/50 ${t.textMuted}`}
               >
                 <FaCalendarAlt className="text-sm sm:text-base" />
@@ -436,45 +447,53 @@ export default function SalesDashboard() {
                   </span>
                 )}
               </button>
-              {showVisitNotifications && (
-                <div className={`absolute top-12 right-[-40] sm:right-0 w-72 sm:w-80 rounded-xl shadow-2xl z-50 animate-fadeIn overflow-hidden border ${t.dropdown}`} style={t.dropdownGlass}>
-                  <div className={`p-4 border-b flex items-center justify-between ${t.tableBorder}`}>
-                    <div>
-                      <h3 className={`font-bold text-sm ${t.text}`}>Site Visit Reminders</h3>
-                      <p className={`text-[10px] mt-0.5 ${t.textFaint}`}>Scheduled for today & tomorrow</p>
+              <AnimatePresence>
+                {activePopup === "visit" && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -8, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -6, scale: 0.98 }}
+                    transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                    className={`absolute top-12 right-[-40] sm:right-0 w-72 sm:w-80 rounded-xl shadow-2xl z-50 overflow-hidden border ${t.dropdown}`} style={t.dropdownGlass}
+                  >
+                    <div className={`p-4 border-b flex items-center justify-between ${t.tableBorder}`}>
+                      <div>
+                        <h3 className={`font-bold text-sm ${t.text}`}>Site Visit Reminders</h3>
+                        <p className={`text-[10px] mt-0.5 ${t.textFaint}`}>Scheduled for today & tomorrow</p>
+                      </div>
+                      {visitNotificationLeads.length > 0 && <span className="text-[10px] font-bold bg-orange-500/10 border border-orange-500/30 text-orange-400 px-2 py-0.5 rounded-full">{visitNotificationLeads.length} upcoming</span>}
                     </div>
-                    {visitNotificationLeads.length > 0 && <span className="text-[10px] font-bold bg-orange-500/10 border border-orange-500/30 text-orange-400 px-2 py-0.5 rounded-full">{visitNotificationLeads.length} upcoming</span>}
-                  </div>
-                  <div className="max-h-80 overflow-y-auto custom-scrollbar">
-                    {visitNotificationLeads.length === 0
-                      ? <div className={`p-6 text-center text-sm ${t.textFaint}`}><FaCalendarAlt className="text-2xl mb-2 mx-auto opacity-20" />No visits in the next 24 hours!</div>
-                      : visitNotificationLeads.map((lead: any) => {
-                        const isToday = lead.visitDiff === 0;
-                        return (
-                          <div key={lead.id} className={`p-4 border-b transition-colors group relative ${t.dropdownItem}`}>
-                            <button onClick={e => { e.stopPropagation(); setDismissedVisits(prev => new Set([...prev, String(lead.id)])); }} className={`absolute top-3 right-3 cursor-pointer opacity-0 group-hover:opacity-100 ${t.textFaint} hover:text-red-500`}><FaTimes className="text-xs" /></button>
-                            <div className="flex items-start justify-between gap-3 pr-4">
-                              <div className="flex-1 min-w-0">
-                                <p className={`font-bold text-xs group-hover:text-orange-400 truncate ${t.text}`}>#{lead.id} — {lead.name}</p>
-                                <p className={`text-[10px] mt-0.5 truncate ${t.textFaint}`}>{lead.propType !== "Pending" ? lead.propType : "Property TBD"} · {lead.salesBudget}</p>
-                                <p className={`text-[10px] mt-1 ${t.textMuted}`}>📅 {new Date(lead.mongoVisitDate).toLocaleDateString("en-IN", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}</p>
+                    <div className="max-h-80 overflow-y-auto custom-scrollbar">
+                      {visitNotificationLeads.length === 0
+                        ? <div className={`p-6 text-center text-sm ${t.textFaint}`}><FaCalendarAlt className="text-2xl mb-2 mx-auto opacity-20" />No visits in the next 24 hours!</div>
+                        : visitNotificationLeads.map((lead: any) => {
+                          const isToday = lead.visitDiff === 0;
+                          return (
+                            <div key={lead.id} className={`p-4 border-b transition-colors group relative ${t.dropdownItem}`}>
+                              <button onClick={e => { e.stopPropagation(); setDismissedVisits(prev => new Set([...prev, String(lead.id)])); }} className={`absolute top-3 right-3 cursor-pointer opacity-0 group-hover:opacity-100 ${t.textFaint} hover:text-red-500`}><FaTimes className="text-xs" /></button>
+                              <div className="flex items-start justify-between gap-3 pr-4">
+                                <div className="flex-1 min-w-0">
+                                  <p className={`font-bold text-xs group-hover:text-orange-400 truncate ${t.text}`}>#{lead.id} — {lead.name}</p>
+                                  <p className={`text-[10px] mt-0.5 truncate ${t.textFaint}`}>{lead.propType !== "Pending" ? lead.propType : "Property TBD"} · {lead.salesBudget}</p>
+                                  <p className={`text-[10px] mt-1 ${t.textMuted}`}>📅 {new Date(lead.mongoVisitDate).toLocaleDateString("en-IN", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}</p>
+                                </div>
+                                <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full border flex-shrink-0 ${isToday ? "text-red-400 bg-red-500/10 border-red-500/30" : "text-yellow-400 bg-yellow-500/10 border-yellow-500/30"}`}>{isToday ? "TODAY" : "TOMORROW"}</span>
                               </div>
-                              <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full border flex-shrink-0 ${isToday ? "text-red-400 bg-red-500/10 border-red-500/30" : "text-yellow-400 bg-yellow-500/10 border-yellow-500/30"}`}>{isToday ? "TODAY" : "TOMORROW"}</span>
                             </div>
-                          </div>
-                        );
-                      })
-                    }
-                  </div>
-                  {visitNotificationLeads.length > 0 && <div className={`p-3 border-t ${t.tableBorder}`}><p className={`text-[10px] text-center ${t.textFaint}`}>🗓️ Showing visits within the next 24 hours</p></div>}
-                </div>
-              )}
+                          );
+                        })
+                      }
+                    </div>
+                    {visitNotificationLeads.length > 0 && <div className={`p-3 border-t ${t.tableBorder}`}><p className={`text-[10px] text-center ${t.textFaint}`}>🗓️ Showing visits within the next 24 hours</p></div>}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
             {/* Follow-up Bell */}
             <div className="relative">
               <button
-                onClick={() => { setShowNotifications(!showNotifications); setShowVisitNotifications(false); setIsProfileOpen(false); }}
+                onClick={() => { setActivePopup(activePopup === "notifications" ? null : "notifications"); }}
                 className={`relative w-9 h-9 sm:w-10 sm:h-10 rounded-xl border flex items-center justify-center transition-colors cursor-pointer ${t.toggleWrap} hover:border-purple-500/50 ${t.textMuted}`}
               >
                 <FaBell className="text-sm sm:text-base" />
@@ -484,53 +503,61 @@ export default function SalesDashboard() {
                   </span>
                 )}
               </button>
-              {showNotifications && (
-                <div className={`absolute top-12 right-0 sm:right-0 w-72 sm:w-80 rounded-xl shadow-2xl z-50 animate-fadeIn overflow-hidden border ${t.dropdown}`} style={t.dropdownGlass}>
-                  <div className={`p-4 border-b flex items-center justify-between ${t.tableBorder}`}>
-                    <div>
-                      <h3 className={`font-bold text-sm ${t.text}`}>Follow-up Reminders</h3>
-                      <p className={`text-[10px] mt-0.5 ${t.textFaint}`}>Leads with no activity in 2+ days</p>
+              <AnimatePresence>
+                {activePopup === "notifications" && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -8, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -6, scale: 0.98 }}
+                    transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                    className={`absolute top-12 right-0 sm:right-0 w-72 sm:w-80 rounded-xl shadow-2xl z-50 overflow-hidden border ${t.dropdown}`} style={t.dropdownGlass}
+                  >
+                    <div className={`p-4 border-b flex items-center justify-between ${t.tableBorder}`}>
+                      <div>
+                        <h3 className={`font-bold text-sm ${t.text}`}>Follow-up Reminders</h3>
+                        <p className={`text-[10px] mt-0.5 ${t.textFaint}`}>Leads with no activity in 2+ days</p>
+                      </div>
+                      {followUpLeads.filter((l: any) => !dismissedFollowUps.has(String(l.id))).length > 0 &&
+                        <span className="text-[10px] font-bold bg-red-500/10 border border-red-500/30 text-red-400 px-2 py-0.5 rounded-full">
+                          {followUpLeads.filter((l: any) => !dismissedFollowUps.has(String(l.id))).length} pending
+                        </span>
+                      }
                     </div>
-                    {followUpLeads.filter((l: any) => !dismissedFollowUps.has(String(l.id))).length > 0 &&
-                      <span className="text-[10px] font-bold bg-red-500/10 border border-red-500/30 text-red-400 px-2 py-0.5 rounded-full">
-                        {followUpLeads.filter((l: any) => !dismissedFollowUps.has(String(l.id))).length} pending
-                      </span>
-                    }
-                  </div>
-                  <div className="max-h-80 overflow-y-auto custom-scrollbar">
-                    {followUpLeads.filter((l: any) => !dismissedFollowUps.has(String(l.id))).length === 0
-                      ? <div className={`p-6 text-center text-sm ${t.textFaint}`}><FaBell className="text-2xl mb-2 mx-auto opacity-20" />All leads are up to date!</div>
-                      : followUpLeads.filter((l: any) => !dismissedFollowUps.has(String(l.id))).map((lead: any) => (
-                        <div key={lead.id} onClick={() => { setShowNotifications(false); setActiveView("detail"); }} className={`p-4 border-b transition-colors cursor-pointer group relative ${t.dropdownItem}`}>
-                          <button onClick={e => { e.stopPropagation(); setDismissedFollowUps(prev => new Set([...prev, String(lead.id)])); }} className={`absolute top-3 right-3 cursor-pointer opacity-0 group-hover:opacity-100 ${t.textFaint} hover:text-red-500`}><FaTimes className="text-xs" /></button>
-                          <div className="flex items-start justify-between gap-3 pr-4">
-                            <div className="flex-1 min-w-0">
-                              <p className={`font-bold text-xs group-hover:text-purple-400 truncate ${t.text}`}>#{lead.id} — {lead.name}</p>
-                              <p className={`text-[10px] mt-0.5 truncate ${t.textFaint}`}>{lead.propType !== "Pending" ? lead.propType : "No property set"} · {lead.salesBudget}</p>
-                              {lead.leadInterestStatus && lead.leadInterestStatus !== "Pending" && (
-                                <span className={`inline-block mt-1 text-[9px] font-bold uppercase px-2 py-0.5 rounded-full border ${lead.leadInterestStatus === "Interested" ? "text-green-400 border-green-500/30 bg-green-500/10" : "text-yellow-400 border-yellow-500/30 bg-yellow-500/10"}`}>{lead.leadInterestStatus}</span>
-                              )}
-                            </div>
-                            <div className="flex-shrink-0 text-right">
-                              <div className={`text-xs font-black ${lead.daysSince >= 7 ? "text-red-400" : lead.daysSince >= 4 ? "text-orange-400" : "text-yellow-400"}`}>{lead.daysSince}d</div>
-                              <p className={`text-[9px] ${t.textFaint}`}>no contact</p>
+                    <div className="max-h-80 overflow-y-auto custom-scrollbar">
+                      {followUpLeads.filter((l: any) => !dismissedFollowUps.has(String(l.id))).length === 0
+                        ? <div className={`p-6 text-center text-sm ${t.textFaint}`}><FaBell className="text-2xl mb-2 mx-auto opacity-20" />All leads are up to date!</div>
+                        : followUpLeads.filter((l: any) => !dismissedFollowUps.has(String(l.id))).map((lead: any) => (
+                          <div key={lead.id} onClick={() => { setActivePopup(null); setActiveView("detail"); }} className={`p-4 border-b transition-colors cursor-pointer group relative ${t.dropdownItem}`}>
+                            <button onClick={e => { e.stopPropagation(); setDismissedFollowUps(prev => new Set([...prev, String(lead.id)])); }} className={`absolute top-3 right-3 cursor-pointer opacity-0 group-hover:opacity-100 ${t.textFaint} hover:text-red-500`}><FaTimes className="text-xs" /></button>
+                            <div className="flex items-start justify-between gap-3 pr-4">
+                              <div className="flex-1 min-w-0">
+                                <p className={`font-bold text-xs group-hover:text-purple-400 truncate ${t.text}`}>#{lead.id} — {lead.name}</p>
+                                <p className={`text-[10px] mt-0.5 truncate ${t.textFaint}`}>{lead.propType !== "Pending" ? lead.propType : "No property set"} · {lead.salesBudget}</p>
+                                {lead.leadInterestStatus && lead.leadInterestStatus !== "Pending" && (
+                                  <span className={`inline-block mt-1 text-[9px] font-bold uppercase px-2 py-0.5 rounded-full border ${lead.leadInterestStatus === "Interested" ? "text-green-400 border-green-500/30 bg-green-500/10" : "text-yellow-400 border-yellow-500/30 bg-yellow-500/10"}`}>{lead.leadInterestStatus}</span>
+                                )}
+                              </div>
+                              <div className="flex-shrink-0 text-right">
+                                <div className={`text-xs font-black ${lead.daysSince >= 7 ? "text-red-400" : lead.daysSince >= 4 ? "text-orange-400" : "text-yellow-400"}`}>{lead.daysSince}d</div>
+                                <p className={`text-[9px] ${t.textFaint}`}>no contact</p>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      ))
+                        ))
+                      }
+                    </div>
+                    {followUpLeads.filter((l: any) => !dismissedFollowUps.has(String(l.id))).length > 0 &&
+                      <div className={`p-3 border-t ${t.tableBorder}`}><p className={`text-[10px] text-center ${t.textFaint}`}>⚠️ Not Interested & Closing leads excluded</p></div>
                     }
-                  </div>
-                  {followUpLeads.filter((l: any) => !dismissedFollowUps.has(String(l.id))).length > 0 &&
-                    <div className={`p-3 border-t ${t.tableBorder}`}><p className={`text-[10px] text-center ${t.textFaint}`}>⚠️ Not Interested & Closing leads excluded</p></div>
-                  }
-                </div>
-              )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
             {/* Profile */}
             <div className="relative">
               <div
-                onClick={() => { setIsProfileOpen(!isProfileOpen); setShowNotifications(false); setShowVisitNotifications(false); }}
+                onClick={() => { setActivePopup(activePopup === "profile" ? null : "profile"); }}
                 className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-bold text-sm sm:text-base cursor-pointer shadow-md hover:scale-105 transition-transform ${isDark
                   ? "border border-purple-500/40 text-purple-400 bg-purple-500/15"
                   : "border border-[#00AEEF]/40 bg-[#9E217B]/20 text-[#d946a8]"
@@ -538,29 +565,37 @@ export default function SalesDashboard() {
               >
                 <FaUserCircle className="text-lg sm:text-xl" />
               </div>
-              {isProfileOpen && (
-                <div className={`absolute top-12 right-0 w-64 rounded-xl shadow-2xl p-5 z-50 animate-fadeIn border ${t.dropdown}`} style={t.dropdownGlass}>
-                  <div className="mb-4">
-                    <h3 className={`font-bold text-lg ${t.text}`}>{user.name}</h3>
-                    <p className={`text-sm truncate ${t.textMuted}`}>{user.email}</p>
-                  </div>
-                  <hr className={`mb-4 border-0 border-t ${t.tableBorder}`} />
-                  <div className="space-y-4 mb-6 text-sm">
-                    <p className={`flex justify-between items-center ${t.textMuted}`}>
-                      Role:
-                      <span className={`font-bold capitalize px-2 py-0.5 rounded text-xs ${isDark ? "text-purple-400 bg-purple-500/10 border border-purple-500/30" : "text-[#00AEEF] bg-[#00AEEF]/10 border border-[#00AEEF]/30"}`}>{user?.role}</span>
-                    </p>
-                    <div>
-                      <p className={`text-xs mb-1 ${t.textFaint}`}>Password</p>
-                      <div className={`flex items-center justify-between p-2 rounded-md border ${t.settingsBg}`} style={t.settingsBgGl}>
-                        <span className={`font-mono tracking-widest text-xs ${t.text}`}>{showPassword ? user.password : "••••••••"}</span>
-                        <button onClick={() => setShowPassword(!showPassword)} className={`${t.textFaint} cursor-pointer hover:text-current`}><FaEyeSlash /></button>
+              <AnimatePresence>
+                {activePopup === "profile" && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -8, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -6, scale: 0.98 }}
+                    transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                    className={`absolute top-12 right-0 w-64 rounded-xl shadow-2xl p-5 z-50 border ${t.dropdown}`} style={t.dropdownGlass}
+                  >
+                    <div className="mb-4">
+                      <h3 className={`font-bold text-lg ${t.text}`}>{user.name}</h3>
+                      <p className={`text-sm truncate ${t.textMuted}`}>{user.email}</p>
+                    </div>
+                    <hr className={`mb-4 border-0 border-t ${t.tableBorder}`} />
+                    <div className="space-y-4 mb-6 text-sm">
+                      <p className={`flex justify-between items-center ${t.textMuted}`}>
+                        Role:
+                        <span className={`font-bold capitalize px-2 py-0.5 rounded text-xs ${isDark ? "text-purple-400 bg-purple-500/10 border border-purple-500/30" : "text-[#00AEEF] bg-[#00AEEF]/10 border border-[#00AEEF]/30"}`}>{user?.role}</span>
+                      </p>
+                      <div>
+                        <p className={`text-xs mb-1 ${t.textFaint}`}>Password</p>
+                        <div className={`flex items-center justify-between p-2 rounded-md border ${t.settingsBg}`} style={t.settingsBgGl}>
+                          <span className={`font-mono tracking-widest text-xs ${t.text}`}>{showPassword ? user.password : "••••••••"}</span>
+                          <button onClick={() => setShowPassword(!showPassword)} className={`${t.textFaint} cursor-pointer hover:text-current`}><FaEyeSlash /></button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <button onClick={handleLogout} className={`w-full py-2.5 rounded-lg font-semibold transition-colors cursor-pointer ${t.btnDanger}`}>Logout</button>
-                </div>
-              )}
+                    <button onClick={handleLogout} className={`w-full py-2.5 rounded-lg font-semibold transition-colors cursor-pointer ${t.btnDanger}`}>Logout</button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </div>
         </header>

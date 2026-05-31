@@ -9,7 +9,7 @@ import {
   FaThLarge, FaClipboardList, FaUsers, FaIdCard,
   FaSearch, FaBell, FaChevronLeft, FaPhoneAlt, FaComments,
   FaCheckCircle, FaCalendarAlt, FaTimes,
-  FaFileInvoice, FaPaperPlane, FaMicrophone, FaWhatsapp, FaTable, FaChartPie, FaEyeSlash, FaUniversity, FaFileAlt, FaCheck, FaClock, FaHandshake, FaExchangeAlt, FaBriefcase, FaDownload, FaCog
+  FaFileInvoice, FaPaperPlane, FaMicrophone, FaWhatsapp, FaTable, FaChartPie, FaEyeSlash, FaUniversity, FaFileAlt, FaCheck, FaClock, FaHandshake, FaExchangeAlt, FaBriefcase, FaDownload, FaCog, FaMapMarkerAlt
 } from "react-icons/fa";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, Cell,
@@ -25,6 +25,8 @@ import {
   updateLeadRestoreState,
   useLostLeadEvents,
 } from "@/lib/lostLeadSync";
+import dynamic from "next/dynamic";
+const GeoAnalyticsView = dynamic(() => import("./GeoAnalyticsView"), { ssr: false });
 
 // ─── SUN/MOON ICONS ───────────────────────────────────────────────────────────
 const SunIcon = () => (
@@ -214,6 +216,7 @@ function useAdminData() {
         return {
           ...lead,
           propType: extractField("Property Type"),
+          preferredLocation: extractField("Location"),
           salesBudget: activeBudget,
           useType: extractField("Use Type") !== "Pending" ? extractField("Use Type") : (lead.purpose || "Pending"),
           planningPurchase: extractField("Planning to Purchase"),
@@ -370,9 +373,19 @@ export default function AdminAtlasDashboard() {
   const [isSidebarHovered, setIsSidebarHovered] = useState(false);
   const [dismissedNotifIds, setDismissedNotifIds] = useState<Set<string>>(new Set());
   const [user, setUser] = useState<any>({ name: "Admin", role: "Admin", email: "", password: "" });
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [activePopup, setActivePopup] = useState<"notifications" | "profile" | "updates" | null>(null);
+  const topbarRef = useRef<HTMLDivElement>(null);
 
-  const [isNotifOpen, setIsNotifOpen] = useState(false);
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (topbarRef.current && !topbarRef.current.contains(event.target as Node)) {
+        setActivePopup(null);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   const [showPassword, setShowPassword] = useState(false);
   const [isDark, setIsDark] = useState(() => {
     try {
@@ -608,14 +621,15 @@ export default function AdminAtlasDashboard() {
     { id: "sales", icon: FaUsers, label: "Sales Managers" },
     { id: "site_head", icon: FaUniversity, label: "Site Heads" },
     { id: "monitoring", icon: FaChartPie, label: "Daily Monitor" },
+    { id: "geo", icon: FaMapMarkerAlt, label: "Geo Analytics" },
     { id: "caller", icon: FaPhoneAlt, label: "Caller Panel" },
     { id: "employees", icon: FaIdCard, label: "Add Employee" },
   ].filter(item => {
     if (isAdmin) return true;
 
     // Non-admin roles should only see what's allowed.
-    // Site head cannot see caller or employees panel
-    if (isSiteHead && (item.id === "caller" || item.id === "employees")) {
+    // Site head cannot see caller, employees, or geo analytics panel
+    if (isSiteHead && (item.id === "caller" || item.id === "employees" || item.id === "geo")) {
       return false;
     }
 
@@ -689,7 +703,7 @@ export default function AdminAtlasDashboard() {
             <span className={`${theme.settingsBg} ${theme.textMuted} px-2 py-0.5 rounded text-xs border capitalize`}>{user?.role || "Admin"}</span>
           </h1>
 
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-6" ref={topbarRef}>
             <button onClick={() => {
               const next = !isDark;
               setIsDark(next);
@@ -710,10 +724,10 @@ export default function AdminAtlasDashboard() {
             )}
 
             {/* CRM System Updates */}
-            <CrmUpdatesNotification user={user} theme={theme} isDark={isDark} />
+            <CrmUpdatesNotification user={user} theme={theme} isDark={isDark} isOpen={activePopup === "updates"} onToggle={() => setActivePopup(activePopup === "updates" ? null : "updates")} />
 
             <div className="relative">
-              <div className="relative cursor-pointer" onClick={() => { setIsNotifOpen(!isNotifOpen); setIsProfileOpen(false); setNotifCount(0); }}>
+              <div className="relative cursor-pointer" onClick={() => { setActivePopup(activePopup === "notifications" ? null : "notifications"); setNotifCount(0); }}>
                 <FaBell className={`${theme.textMuted} hover:text-[#9E217B] transition-colors w-5 h-5`} />
                 {notifCount > 0 && (
                   <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-[#9E217B] rounded-full text-[9px] font-black text-white flex items-center justify-center">
@@ -722,75 +736,91 @@ export default function AdminAtlasDashboard() {
                 )}
               </div>
 
-              {isNotifOpen && (
-                <div className={`absolute top-12 right-0 w-[320px] border rounded-xl shadow-2xl flex flex-col z-50 animate-fadeIn ${theme.dropdown}`} style={theme.dropdownGlass}>
-                  <div className={`p-4 border-b flex justify-between items-center ${theme.tableBorder}`}>
-                    <h3 className={`font-bold text-sm flex items-center gap-2 ${theme.text}`}>
-                      <FaBell className="text-[#9E217B]" /> Recent Notifications
-                    </h3>
-                    <button onClick={() => setIsNotifOpen(false)} className={`${theme.textMuted} hover:text-red-500`}><FaTimes className="text-xs" /></button>
-                  </div>
-                  <div className={`max-h-[360px] overflow-y-auto ${theme.scroll}`}>
-                    {notificationHistory.length === 0 ? (
-                      <p className={`p-6 text-center text-xs ${theme.textMuted}`}>No notifications yet.</p>
-                    ) : (
-                      notificationHistory.map((n) => (
-                        <div key={n.id} className={`p-4 border-b last:border-b-0 transition-colors flex items-start gap-3 ${isDark ? "hover:bg-white/5 border-[#333]" : "hover:bg-black/5 border-[#E5E7EB]"}`}>
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-white ${n.type === "visit" ? "bg-orange-500" : "bg-[#25D366]"}`}>
-                            {n.type === "visit" ? <FaCalendarAlt className="text-[12px]" /> : <FaBriefcase className="text-[12px]" />}
+              <AnimatePresence>
+                {activePopup === "notifications" && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -8, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -6, scale: 0.98 }}
+                    transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                    className={`absolute top-12 right-0 w-[320px] border rounded-xl shadow-2xl flex flex-col z-50 ${theme.dropdown}`} style={theme.dropdownGlass}
+                  >
+                    <div className={`p-4 border-b flex justify-between items-center ${theme.tableBorder}`}>
+                      <h3 className={`font-bold text-sm flex items-center gap-2 ${theme.text}`}>
+                        <FaBell className="text-[#9E217B]" /> Recent Notifications
+                      </h3>
+                      <button onClick={() => setActivePopup(null)} className={`${theme.textMuted} hover:text-red-500`}><FaTimes className="text-xs" /></button>
+                    </div>
+                    <div className={`max-h-[360px] overflow-y-auto ${theme.scroll}`}>
+                      {notificationHistory.length === 0 ? (
+                        <p className={`p-6 text-center text-xs ${theme.textMuted}`}>No notifications yet.</p>
+                      ) : (
+                        notificationHistory.map((n) => (
+                          <div key={n.id} className={`p-4 border-b last:border-b-0 transition-colors flex items-start gap-3 ${isDark ? "hover:bg-white/5 border-[#333]" : "hover:bg-black/5 border-[#E5E7EB]"}`}>
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-white ${n.type === "visit" ? "bg-orange-500" : "bg-[#25D366]"}`}>
+                              {n.type === "visit" ? <FaCalendarAlt className="text-[12px]" /> : <FaBriefcase className="text-[12px]" />}
+                            </div>
+                            <div>
+                              <p className={`text-xs font-bold ${theme.text}`}>{n.line1}</p>
+                              <p className={`text-[10px] mt-1 ${theme.textMuted}`}>{n.line2}</p>
+                            </div>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDismissedNotifIds(prev => new Set([...prev, n.id]));
+                              }}
+                              className={`absolute right-3 top-3 p-1.5 rounded-md opacity-0 group-hover:opacity-100 transition-all ${theme.textMuted} hover:bg-red-500/10 hover:text-red-500 cursor-pointer`}
+                              title="Delete Notification"
+                            >
+                              <FaTimes className="text-[10px]" />
+                            </button>
                           </div>
-                          <div>
-                            <p className={`text-xs font-bold ${theme.text}`}>{n.line1}</p>
-                            <p className={`text-[10px] mt-1 ${theme.textMuted}`}>{n.line2}</p>
-                          </div>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setDismissedNotifIds(prev => new Set([...prev, n.id]));
-                            }}
-                            className={`absolute right-3 top-3 p-1.5 rounded-md opacity-0 group-hover:opacity-100 transition-all ${theme.textMuted} hover:bg-red-500/10 hover:text-red-500 cursor-pointer`}
-                            title="Delete Notification"
-                          >
-                            <FaTimes className="text-[10px]" />
-                          </button>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
-              )}
+                        ))
+                      )}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
             <div className="relative">
-              <div onClick={() => { setIsProfileOpen(!isProfileOpen); setIsNotifOpen(false); }}
+              <div onClick={() => setActivePopup(activePopup === "profile" ? null : "profile")}
                 className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm cursor-pointer shadow-sm hover:opacity-80 transition-opacity border
                   ${isDark ? "border-[#9E217B]/40 text-[#d946a8] bg-[#9E217B]/15" : "border-[#9E217B]/40 text-[#9E217B] bg-[#9E217B]/10"}`}>
                 {String(user?.name || "A").charAt(0).toUpperCase()}
               </div>
-              {isProfileOpen && (
-                <div className={`absolute top-12 right-0 w-64 border rounded-xl shadow-2xl p-5 z-50 animate-fadeIn ${theme.dropdown}`} style={theme.dropdownGlass}>
-                  <div className="mb-4">
-                    <h3 className={`font-bold text-lg ${theme.text}`}>{user?.name || "Admin"}</h3>
-                    <p className={`text-sm truncate ${theme.textMuted}`}>{user?.email || "admin@bhoomi.com"}</p>
-                  </div>
-                  <hr className={`mb-4 ${theme.tableBorder}`} />
-                  <div className="space-y-4 mb-6 text-sm">
-                    <p className={`flex justify-between items-center ${theme.textMuted}`}>Role:
-                      <span className={`font-bold capitalize px-2 py-0.5 rounded border ${isDark ? "text-[#d946a8] bg-[#9E217B]/10 border-[#9E217B]/30" : "text-[#9E217B] bg-[#9E217B]/10 border-[#9E217B]/30"}`}>{user?.role || "Admin"}</span>
-                    </p>
-                    <div>
-                      <p className={`text-xs mb-1 ${theme.textMuted}`}>Password</p>
-                      <div className={`flex items-center justify-between border p-2 rounded-md ${theme.innerBlock}`}>
-                        <span className={`font-mono tracking-widest text-xs ${theme.text}`}>{showPassword ? (user?.password || "N/A") : "••••••••"}</span>
-                        <button onClick={() => setShowPassword(!showPassword)} className={`${theme.textMuted} cursor-pointer`}>
-                          {showPassword ? <FaEyeSlash /> : <FaEye />}
-                        </button>
+              <AnimatePresence>
+                {activePopup === "profile" && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -8, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -6, scale: 0.98 }}
+                    transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                    className={`absolute top-12 right-0 w-64 border rounded-xl shadow-2xl p-5 z-50 ${theme.dropdown}`} style={theme.dropdownGlass}
+                  >
+                    <div className="mb-4">
+                      <h3 className={`font-bold text-lg ${theme.text}`}>{user?.name || "Admin"}</h3>
+                      <p className={`text-sm truncate ${theme.textMuted}`}>{user?.email || "admin@bhoomi.com"}</p>
+                    </div>
+                    <hr className={`mb-4 ${theme.tableBorder}`} />
+                    <div className="space-y-4 mb-6 text-sm">
+                      <p className={`flex justify-between items-center ${theme.textMuted}`}>Role:
+                        <span className={`font-bold capitalize px-2 py-0.5 rounded border ${isDark ? "text-[#d946a8] bg-[#9E217B]/10 border-[#9E217B]/30" : "text-[#9E217B] bg-[#9E217B]/10 border-[#9E217B]/30"}`}>{user?.role || "Admin"}</span>
+                      </p>
+                      <div>
+                        <p className={`text-xs mb-1 ${theme.textMuted}`}>Password</p>
+                        <div className={`flex items-center justify-between border p-2 rounded-md ${theme.innerBlock}`}>
+                          <span className={`font-mono tracking-widest text-xs ${theme.text}`}>{showPassword ? (user?.password || "N/A") : "••••••••"}</span>
+                          <button onClick={() => setShowPassword(!showPassword)} className={`${theme.textMuted} cursor-pointer`}>
+                            {showPassword ? <FaEyeSlash /> : <FaEye />}
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <button onClick={handleLogout} className={`w-full py-2.5 rounded-lg font-semibold transition-colors cursor-pointer ${theme.btnDanger}`}>Logout</button>
-                </div>
-              )}
+                    <button onClick={handleLogout} className={`w-full py-2.5 rounded-lg font-semibold transition-colors cursor-pointer ${theme.btnDanger}`}>Logout</button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
             {/* 👇 NEW: UPDATED POPUP TOAST WITH DYNAMIC ICONS 👇 */}
@@ -847,6 +877,11 @@ export default function AdminAtlasDashboard() {
           {activeView === "monitoring" && (
             <div className="flex-1 overflow-hidden h-full">
               <DailyMonitoringPanel theme={theme} isDark={isDark} />
+            </div>
+          )}
+          {activeView === "geo" && isAdmin && (
+            <div className="flex flex-col h-full overflow-hidden">
+              <GeoAnalyticsView allLeads={allLeads} theme={theme} isDark={isDark} />
             </div>
           )}
         </main>

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { FaBullhorn, FaTimes, FaCheck, FaExclamationCircle } from "react-icons/fa";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface CrmUpdate {
   id: number;
@@ -15,10 +16,17 @@ interface CrmUpdate {
   has_read: boolean;
 }
 
-export default function CrmUpdatesNotification({ user, theme, isDark }: { user: any, theme: any, isDark: boolean }) {
+export default function CrmUpdatesNotification({ user, theme, isDark, isOpen, onToggle }: { user: any, theme: any, isDark: boolean, isOpen?: boolean, onToggle?: () => void }) {
   const [updates, setUpdates] = useState<CrmUpdate[]>([]);
-  const [isOpen, setIsOpen] = useState(false);
+  const [internalIsOpen, setInternalIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  const isActuallyOpen = isOpen !== undefined ? isOpen : internalIsOpen;
+
+  const handleToggle = () => {
+    if (onToggle) onToggle();
+    else setInternalIsOpen(!internalIsOpen);
+  };
 
   const userId = user?.id || user?._id;
 
@@ -64,7 +72,7 @@ export default function CrmUpdatesNotification({ user, theme, isDark }: { user: 
     <div className="relative">
       <div
         className="relative cursor-pointer"
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={handleToggle}
       >
         <FaBullhorn className={`${theme.textMuted} hover:text-[#9E217B] transition-colors w-5 h-5`} />
         {unreadCount > 0 && (
@@ -74,17 +82,22 @@ export default function CrmUpdatesNotification({ user, theme, isDark }: { user: 
         )}
       </div>
 
-      {isOpen && (
-        <div
-          className={`absolute top-12 right-0 w-[360px] border rounded-xl shadow-2xl flex flex-col z-50 animate-fadeIn ${theme.dropdown}`}
-          style={theme.dropdownGlass}
-        >
-          <div className={`p-4 border-b flex justify-between items-center ${theme.tableBorder}`}>
-            <h3 className={`font-bold text-sm flex items-center gap-2 ${theme.text}`}>
-              <FaBullhorn className="text-[#9E217B]" />
-              System Updates
-            </h3>
-            <button onClick={() => setIsOpen(false)} className={`${theme.textMuted} hover:text-red-500 transition-colors`}>
+      <AnimatePresence>
+        {isActuallyOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -8, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -6, scale: 0.98 }}
+            transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+            className={`absolute top-12 right-0 w-[360px] border rounded-xl shadow-2xl flex flex-col z-50 ${theme.dropdown}`}
+            style={theme.dropdownGlass}
+          >
+            <div className={`p-4 border-b flex justify-between items-center ${theme.tableBorder}`}>
+              <h3 className={`font-bold text-sm flex items-center gap-2 ${theme.text}`}>
+                <FaBullhorn className="text-[#9E217B]" />
+                System Updates
+              </h3>
+              <button onClick={() => onToggle ? onToggle() : setInternalIsOpen(false)} className={`${theme.textMuted} hover:text-red-500 transition-colors`}>
               <FaTimes className="text-xs" />
             </button>
           </div>
@@ -166,8 +179,10 @@ export default function CrmUpdatesNotification({ user, theme, isDark }: { user: 
               })
             )}
           </div>
-        </div>
+        </motion.div>
       )}
+      </AnimatePresence>
     </div>
   );
 }
+
