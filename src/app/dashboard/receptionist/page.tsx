@@ -1308,39 +1308,39 @@ export default function ReceptionistDashboard() {
               </button>
 
               <AnimatePresence>
-              {activePopup === "notifications" && (
-                <motion.div
-                  initial={{ opacity: 0, y: -8, scale: 0.98 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: -6, scale: 0.98 }}
-                  transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-                  className={`absolute top-12 right-0 w-[320px] border rounded-xl shadow-2xl flex flex-col z-50 ${t.dropdown}`} style={t.dropdownGlass}
-                >
-                  <div className={`p-4 border-b flex justify-between items-center ${t.tableBorder}`}>
-                    <h3 className={`font-bold text-sm flex items-center gap-2 ${t.text}`}>
-                      <FaBell className="text-[#9E217B]" /> Recent Notifications
-                    </h3>
-                    <button onClick={() => setActivePopup(null)} className={`${t.textMuted} hover:text-red-500`}><FaTimes className="text-xs" /></button>
-                  </div>
-                  <div className={`max-h-[360px] overflow-y-auto ${t.scroll}`}>
-                    {notificationHistory.length === 0 ? (
-                      <p className={`p-6 text-center text-xs ${t.textMuted}`}>No notifications yet.</p>
-                    ) : (
-                      notificationHistory.map((n) => (
-                        <div key={n.id} className={`p-4 border-b last:border-b-0 transition-colors flex items-start gap-3 ${isDark ? "hover:bg-white/5 border-[#333]" : "hover:bg-black/5 border-[#E5E7EB]"}`}>
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-white ${n.type === "visit" ? "bg-orange-500" : "bg-[#25D366]"}`}>
-                            {n.type === "visit" ? <FaCalendarAlt className="text-[12px]" /> : <FaBriefcase className="text-[12px]" />}
+                {activePopup === "notifications" && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -8, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -6, scale: 0.98 }}
+                    transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                    className={`absolute top-12 right-0 w-[320px] border rounded-xl shadow-2xl flex flex-col z-50 ${t.dropdown}`} style={t.dropdownGlass}
+                  >
+                    <div className={`p-4 border-b flex justify-between items-center ${t.tableBorder}`}>
+                      <h3 className={`font-bold text-sm flex items-center gap-2 ${t.text}`}>
+                        <FaBell className="text-[#9E217B]" /> Recent Notifications
+                      </h3>
+                      <button onClick={() => setActivePopup(null)} className={`${t.textMuted} hover:text-red-500`}><FaTimes className="text-xs" /></button>
+                    </div>
+                    <div className={`max-h-[360px] overflow-y-auto ${t.scroll}`}>
+                      {notificationHistory.length === 0 ? (
+                        <p className={`p-6 text-center text-xs ${t.textMuted}`}>No notifications yet.</p>
+                      ) : (
+                        notificationHistory.map((n) => (
+                          <div key={n.id} className={`p-4 border-b last:border-b-0 transition-colors flex items-start gap-3 ${isDark ? "hover:bg-white/5 border-[#333]" : "hover:bg-black/5 border-[#E5E7EB]"}`}>
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-white ${n.type === "visit" ? "bg-orange-500" : "bg-[#25D366]"}`}>
+                              {n.type === "visit" ? <FaCalendarAlt className="text-[12px]" /> : <FaBriefcase className="text-[12px]" />}
+                            </div>
+                            <div>
+                              <p className={`text-xs font-bold ${t.text}`}>{n.line1}</p>
+                              <p className={`text-[10px] mt-1 ${t.textMuted}`}>{n.line2}</p>
+                            </div>
                           </div>
-                          <div>
-                            <p className={`text-xs font-bold ${t.text}`}>{n.line1}</p>
-                            <p className={`text-[10px] mt-1 ${t.textMuted}`}>{n.line2}</p>
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </motion.div>
-              )}
+                        ))
+                      )}
+                    </div>
+                  </motion.div>
+                )}
               </AnimatePresence>
             </div>
             {/* {isNotificationsOpen && (
@@ -1358,34 +1358,34 @@ export default function ReceptionistDashboard() {
               {String(user?.name || "U").charAt(0).toUpperCase()}
             </div>
             <AnimatePresence>
-            {activePopup === "profile" && (
-              <motion.div
-                initial={{ opacity: 0, y: -8, scale: 0.98 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -6, scale: 0.98 }}
-                transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-                className={`absolute top-12 right-0 w-64 rounded-xl shadow-2xl p-5 z-50 border ${t.dropdown}`} style={t.dropdownGlass}
-              >
-                <div className="mb-4">
-                  <h3 className={`font-bold text-lg ${t.text}`}>{user?.name || "User"}</h3>
-                  <p className={`text-sm truncate ${t.textMuted}`}>{user?.email || "No email"}</p>
-                </div>
-                <hr className={`mb-4 border-0 border-t ${t.tableBorder}`} />
-                <div className="space-y-4 mb-6 text-sm">
-                  <p className={`flex justify-between items-center ${t.textMuted}`}>Role:
-                    <span className={`font-bold capitalize px-2 py-0.5 rounded text-xs ${isDark ? "text-[#d4006e] bg-[#9E217B]/10" : "text-[#00AEEF] bg-[#00AEEF]/10"}`}>{user?.role}</span>
-                  </p>
-                  <div>
-                    <p className={`text-xs mb-1 ${t.textFaint}`}>Password</p>
-                    <div className={`flex items-center justify-between p-2 rounded-md border ${t.settingsBg}`} style={t.settingsBgGl}>
-                      <span className={`font-mono tracking-widest ${t.text}`}>{showPassword ? user.password : "••••••••••••"}</span>
-                      <button onClick={() => setShowPassword(!showPassword)} className={`${t.textMuted} cursor-pointer`}><FaEyeSlash /></button>
+              {activePopup === "profile" && (
+                <motion.div
+                  initial={{ opacity: 0, y: -8, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -6, scale: 0.98 }}
+                  transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                  className={`absolute top-12 right-0 w-64 rounded-xl shadow-2xl p-5 z-50 border ${t.dropdown}`} style={t.dropdownGlass}
+                >
+                  <div className="mb-4">
+                    <h3 className={`font-bold text-lg ${t.text}`}>{user?.name || "User"}</h3>
+                    <p className={`text-sm truncate ${t.textMuted}`}>{user?.email || "No email"}</p>
+                  </div>
+                  <hr className={`mb-4 border-0 border-t ${t.tableBorder}`} />
+                  <div className="space-y-4 mb-6 text-sm">
+                    <p className={`flex justify-between items-center ${t.textMuted}`}>Role:
+                      <span className={`font-bold capitalize px-2 py-0.5 rounded text-xs ${isDark ? "text-[#d4006e] bg-[#9E217B]/10" : "text-[#00AEEF] bg-[#00AEEF]/10"}`}>{user?.role}</span>
+                    </p>
+                    <div>
+                      <p className={`text-xs mb-1 ${t.textFaint}`}>Password</p>
+                      <div className={`flex items-center justify-between p-2 rounded-md border ${t.settingsBg}`} style={t.settingsBgGl}>
+                        <span className={`font-mono tracking-widest ${t.text}`}>{showPassword ? user.password : "••••••••••••"}</span>
+                        <button onClick={() => setShowPassword(!showPassword)} className={`${t.textMuted} cursor-pointer`}><FaEyeSlash /></button>
+                      </div>
                     </div>
                   </div>
-                </div>
-                <button onClick={handleLogout} className={`w-full py-2.5 rounded-lg font-semibold transition-colors cursor-pointer ${t.btnDanger}`}>Logout</button>
-              </motion.div>
-            )}
+                  <button onClick={handleLogout} className={`w-full py-2.5 rounded-lg font-semibold transition-colors cursor-pointer ${t.btnDanger}`}>Logout</button>
+                </motion.div>
+              )}
             </AnimatePresence>
             {/* ── TOAST NOTIFICATION POPUP ── */}
             {/* 👇 TOAST POPUP 👇 */}
@@ -2002,7 +2002,7 @@ export default function ReceptionistDashboard() {
                   <div>
                     <h2 className={`text-base md:text-lg font-bold flex items-center gap-3 ${t.text}`}>
                       Front Desk Log
-                      <button onClick={() => downloadCSV(receptionistLeads.map((e: any) => ({ "Lead No": e.id, "Client Name": e.name, "CP Company": e.cp_company || "N/A", "Budget": e.salesBudget || "N/A", "Phone": e.phone || "N/A", "Alt Phone": e.altPhone || "N/A", "Date": e.date, "Assigned To": e.assignedTo || "Unassigned" })), "Front_Desk_Log.csv")} className={`p-1.5 border rounded-md ${t.exportBtn}`}><FaDownload size={12} /></button>
+                      <button onClick={() => downloadCSV(receptionistLeads.map((e: any) => ({ "Lead No": e.id, "Client Name": e.name, "CP Name": e.cp_name || "N/A", "CP Company": e.cp_company || "N/A", "CP Phone": e.cp_phone || "N/A", "Budget": e.salesBudget || "N/A", "Phone": e.phone || "N/A", "Alt Phone": e.altPhone || "N/A", "Date": e.date, "Assigned To": e.assignedTo || "Unassigned" })), "Front_Desk_Log.csv")} className={`p-1.5 border rounded-md ${t.exportBtn}`}><FaDownload size={12} /></button>
                     </h2>
                     <p className={`text-xs mt-0.5 ${t.textFaint}`}>{receptionistLeads.length} shown · {totalCount} total</p>
                   </div>
@@ -2018,7 +2018,7 @@ export default function ReceptionistDashboard() {
                 <div className="overflow-x-auto custom-scrollbar">
                   <table className="w-full text-left border-collapse whitespace-nowrap">
                     <thead><tr className={t.tableHead}>
-                      {["Lead No.", "Client Name", "CP Company", "Budget", "Phone", "Alt. Phone", "Date Created", "Sales Manager"].map(h => (
+                      {["Lead No.", "Client Name", "CP Name", "CP Company", "CP Phone", "Budget", "Phone", "Alt. Phone", "Date Created", "Sales Manager"].map(h => (
                         <th key={h} className={`px-3 py-3 md:p-4 font-bold uppercase tracking-wider border-b ${t.textHeader} ${t.tableBorder}`}>{h}</th>
                       ))}
                     </tr></thead>
@@ -2031,7 +2031,9 @@ export default function ReceptionistDashboard() {
                         <tr key={enquiry.id} className={`transition-colors cursor-pointer ${t.tableRow}`} onClick={() => { setSelectedLead(enquiry); setActiveTab("detail"); }}>
                           <td className={`px-3 py-3 md:p-4 text-xs md:text-sm font-bold ${t.accentText}`}>#{enquiry.id}</td>
                           <td className={`px-3 py-3 md:p-4 text-xs md:text-sm font-semibold ${t.text}`}>{enquiry.name}</td>
+                          <td className={`px-3 py-3 md:p-4 text-[10px] md:text-sm truncate max-w-[100px] ${t.textMuted}`}>{enquiry.cp_name || <span className="italic text-[10px]">—</span>}</td>
                           <td className={`px-3 py-3 md:p-4 text-[10px] md:text-sm truncate max-w-[100px] ${t.textMuted}`}>{enquiry.cp_company || <span className="italic text-[10px]">—</span>}</td>
+                          <td className={`px-3 py-3 md:p-4 text-[10px] md:text-sm truncate max-w-[100px] ${t.textMuted}`}>{enquiry.cp_phone || <span className="italic text-[10px]">—</span>}</td>
                           <td className={`px-3 py-3 md:p-4 text-xs md:text-sm font-bold ${isDark ? "text-green-700" : "text-emerald-600"}`}>{enquiry.salesBudget || enquiry.budget}</td>
                           <td className={`px-3 py-3 md:p-4 text-[10px] md:text-sm font-mono ${t.text}`}>{maskPhone(enquiry.phone)}</td>
                           <td className={`px-3 py-3 md:p-4 text-[10px] md:text-sm font-mono ${t.textMuted}`}>{maskPhone(enquiry.altPhone)}</td>
@@ -2252,6 +2254,12 @@ export default function ReceptionistDashboard() {
                         Channel Partner Details
                       </h3>
                       <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <p className={`text-xs font-medium mb-1 ${t.textFaint}`}>CP Name</p>
+                          <p className={`font-semibold text-sm ${t.text}`}>
+                            {selectedLead.cp_name || selectedLead.cpName || "N/A"}
+                          </p>
+                        </div>
                         <div>
                           <p className={`text-xs font-medium mb-1 ${t.textFaint}`}>CP Company</p>
                           <p className={`font-semibold text-sm ${t.text}`}>
@@ -3289,6 +3297,17 @@ export default function ReceptionistDashboard() {
                     {enquiryForm.source === "Channel Partner" && (
                       <div className={`sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2 p-4 rounded-xl border ${t.settingsBg} ${t.tableBorder}`}>
                         <h4 className={`sm:col-span-2 text-xs font-bold mb-1 ${t.accentText}`}>Channel Partner Details</h4>
+                        <div>
+                          <label className={`block text-xs mb-1.5 font-medium pl-2 ${t.textMuted}`}>CP Name *</label>
+                          <input
+                            required
+                            type="text"
+                            value={enquiryForm.cpDetails.name}
+                            onChange={e => setEnquiryForm({ ...enquiryForm, cpDetails: { ...enquiryForm.cpDetails, name: e.target.value } })}
+                            className={`w-full rounded-lg p-3 text-sm outline-none transition-colors border ${t.modalInput} ${t.text}`}
+                            placeholder="Contact Person Name"
+                          />
+                        </div>
 
                         {/* Smart Auto-suggest Input for Company */}
                         <div className="relative">

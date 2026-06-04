@@ -98,7 +98,13 @@ export default function LeafletMapComponent({ leads, isDark, isGeocoding }: Prop
   useEffect(() => {
     if (mapRef.current || !containerRef.current) return;
 
+    // AFTER
     const initMap = async () => {
+      if (!containerRef.current) return;
+
+      // Prevent double-init if container already has a Leaflet instance
+      if ((containerRef.current as any)._leaflet_id) return;
+
       const addCss = (href: string) => {
         if (!document.querySelector(`link[href="${href}"]`)) {
           const link = document.createElement("link");
@@ -157,7 +163,7 @@ export default function LeafletMapComponent({ leads, isDark, isGeocoding }: Prop
             let size = 32;
             let bg = "linear-gradient(135deg, #22c55e, #16a34a)";
             let shadow = "rgba(34,197,94,0.4)";
-            
+
             if (count >= 10 && count < 50) {
               size = 38;
               bg = "linear-gradient(135deg, #f97316, #ea580c)";
@@ -244,16 +250,27 @@ export default function LeafletMapComponent({ leads, isDark, isGeocoding }: Prop
 
     initMap();
 
+    // AFTER
     return () => {
       if (mapRef.current) {
-        mapRef.current.remove();
+        try {
+          mapRef.current.remove();
+        } catch (e) {
+          // already removed
+        }
         mapRef.current = null;
         clusterGroupRef.current = null;
         heatLayerRef.current = null;
         tileLayerRef.current = null;
         routeLayerRef.current = null;
+        destPinLayerRef.current = null;
+        // Clear the leaflet ID so it can re-init cleanly
+        if (containerRef.current) {
+          delete (containerRef.current as any)._leaflet_id;
+        }
       }
     };
+
   }, []); // Only once
 
   // ── Update tile layer when dark mode changes ──────────────────────────────
@@ -487,7 +504,7 @@ export default function LeafletMapComponent({ leads, isDark, isGeocoding }: Prop
           <span className={`text-sm font-black ${isDark ? 'text-white' : 'text-gray-900'}`}>Geo Intelligence</span>
           <span className="text-[10px] bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full font-bold">Zoom: {zoomLevel}</span>
         </div>
-        
+
         <div className="mb-4">
           <div className="flex justify-between items-center mb-1">
             <span className={isDark ? "text-gray-400" : "text-gray-600"}>Live Mapped Leads</span>

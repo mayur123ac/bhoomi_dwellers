@@ -876,7 +876,12 @@ export default function AdminAtlasDashboard() {
           )}
           {activeView === "monitoring" && (
             <div className="flex-1 overflow-hidden h-full">
-              <DailyMonitoringPanel theme={theme} isDark={isDark} />
+              <DailyMonitoringPanel
+                theme={theme}
+                isDark={isDark}
+                allLeads={allLeads}
+                adminUser={user}
+              />
             </div>
           )}
           {activeView === "geo" && isAdmin && (
@@ -1589,6 +1594,7 @@ function DashboardOverview({ managers, siteHeads, allLeads, isLoading, user, the
                   <option value="budget">Budget</option>
                   <option value="source">Source</option>
                   <option value="cp_name">CP Name</option>
+                  <option value="cp_company">CP Company</option>
                   <option value="cp_phone">CP Phone</option>
                   <option value="status">Status</option>
                   <option value="interest">Interest</option>
@@ -1613,7 +1619,7 @@ function DashboardOverview({ managers, siteHeads, allLeads, isLoading, user, the
               <table className="w-full text-left text-sm">
                 <thead className={`text-xs uppercase ${theme.tableHead} ${theme.textHeader}`}>
                   <tr>
-                    {["LEAD NO.", "NAME", "PROP. TYPE", "BUDGET", "SOURCE", "CP NAME", "CP PHONE", "STATUS", "LOST STATUS", "INTEREST", "SITE VISIT", "ASSIGNED TO", "REASSIGN"].map(h => (
+                    {["LEAD NO.", "NAME", "PROP. TYPE", "BUDGET", "SOURCE", "CP NAME", "CP COMPANY", "CP PHONE", "STATUS", "LOST STATUS", "INTEREST", "SITE VISIT", "ASSIGNED TO", "REASSIGN"].map(h => (
                       <th key={h} className="px-3 py-4">{h}</th>
                     ))}
                   </tr>
@@ -1650,6 +1656,7 @@ function DashboardOverview({ managers, siteHeads, allLeads, isLoading, user, the
                         <td className={`px-4 py-4 font-semibold ${isDark ? "text-green-400" : "text-emerald-600"}`}>{lead.salesBudget || lead.budget || "N/A"}</td>
                         <td className={`px-4 py-4 text-xs ${theme.textMuted}`}>{lead.source || "—"}</td>
                         <td className={`px-4 py-4 ${theme.textMuted}`}>{lead.cpName || lead.cp_name || "—"}</td>
+                        <td className={`px-4 py-4 ${theme.textMuted}`}>{lead.cpCompany || lead.cp_company || "—"}</td>
                         <td className={`px-4 py-4 font-mono text-xs ${theme.textMuted}`}>{lead.cpPhone || lead.cp_phone || "—"}</td>
                         <td className="px-4 py-4">
                           <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase border flex-shrink-0 whitespace-nowrap ${lead.status === "Closing" ? theme.statusClosing : lead.status === "Visit Scheduled" ? theme.statusVisit : theme.statusRouted}`}>
@@ -5775,13 +5782,7 @@ function ReceptionistView({ receptionists, allLeads, followUps, isLoading, refet
     </div>
   );
 }
-// ============================================================================
-// DAILY MONITORING PANEL
-// ============================================================================
 
-// ============================================================================
-// DAILY MONITORING PANEL
-// ============================================================================
 // ─────────────────────────────────────────────────────────────────────────────
 //  DailyMonitoringPanel  –  with unified "Site Visit Center" accordion
 // ─────────────────────────────────────────────────────────────────────────────
