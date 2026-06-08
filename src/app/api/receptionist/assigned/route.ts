@@ -1,9 +1,17 @@
+// src/app/api/receptionist/assigned/route.ts
+// Phase 2A: requireOrganization + tenant-scoped queries
 import { NextResponse } from "next/server";
-import { query } from "@/lib/db";
+import { tenantQuery } from "@/lib/tenantDb";
+import { requireOrganization } from "@/lib/serverAuth";
 
 // GET /api/receptionist/assigned?name=Receptionist
 export async function GET(req: Request) {
   try {
+    const auth = await requireOrganization();
+    if (!auth.isAuthorized) {
+      return NextResponse.json({ message: auth.error }, { status: auth.status });
+    }
+
     const { searchParams } = new URL(req.url);
     const name = searchParams.get("name");
 
@@ -14,12 +22,13 @@ export async function GET(req: Request) {
       );
     }
 
-    const rows = await query(
+    const rows = await tenantQuery(
+      auth.organizationId,
       `SELECT * FROM walkin_enquiries
-       WHERE assigned_to = $1
+       WHERE organization_id = $1 AND assigned_to = $2
        ORDER BY created_at DESC`,
-      [name] // <-- 'name' is the 1st item in the array, so it is $1
-    );
+      [name] 
+    ) as any[];
 
     return NextResponse.json({ success: true, data: rows, total: rows.length }, { status: 200 });
   } catch (error: any) {

@@ -1,8 +1,14 @@
 import { NextResponse } from "next/server";
-import { query } from "@/lib/db";
+import { tenantQuery } from "@/lib/tenantDb";
+import { requireOrganization } from "@/lib/serverAuth";
 
 export async function POST(req: Request) {
   try {
+    const auth = await requireOrganization();
+    if (!auth.isAuthorized) {
+      return NextResponse.json({ message: auth.error }, { status: auth.status });
+    }
+
     const { name, whatsapp_number } = await req.json();
 
     if (!name || !whatsapp_number) {
@@ -12,10 +18,11 @@ export async function POST(req: Request) {
       );
     }
 
-    await query(
+    await tenantQuery(
+      auth.organizationId,
       `UPDATE public.users 
-       SET whatsapp_number = $1 
-       WHERE name = $2`,
+       SET whatsapp_number = $2 
+       WHERE organization_id = $1 AND name = $3`,
       [whatsapp_number, name]
     );
 
@@ -32,6 +39,11 @@ export async function POST(req: Request) {
 
 export async function GET(req: Request) {
   try {
+    const auth = await requireOrganization();
+    if (!auth.isAuthorized) {
+      return NextResponse.json({ message: auth.error }, { status: auth.status });
+    }
+
     const { searchParams } = new URL(req.url);
     const name = searchParams.get("name");
 
@@ -42,8 +54,9 @@ export async function GET(req: Request) {
       );
     }
 
-    const rows = await query(
-      `SELECT whatsapp_number FROM public.users WHERE name = $1`,
+    const rows = await tenantQuery(
+      auth.organizationId,
+      `SELECT whatsapp_number FROM public.users WHERE organization_id = $1 AND name = $2`,
       [name]
     );
 

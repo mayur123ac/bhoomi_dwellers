@@ -1,15 +1,18 @@
 // app/api/lost-lead/route.ts
-// ─────────────────────────────────────────────
-// POST /api/lost-lead  — Mark a lead as lost/ghosted
-// PUT  /api/lost-lead  — Restore a lost lead to active
-// ─────────────────────────────────────────────
-
+// Phase 2A: requireOrganization + tenant-scoped queries
 import { NextResponse } from "next/server";
 import { query } from "@/lib/db";
+import { requireOrganization } from "@/lib/serverAuth";
+import { audit, AuditAction } from "@/lib/auditLog";
 
 // ── POST — Mark lead as lost ──────────────────
 export async function POST(req: Request) {
   try {
+    const auth = await requireOrganization();
+    if (!auth.isAuthorized) {
+      return NextResponse.json({ message: auth.error }, { status: auth.status });
+    }
+
     const body = await req.json();
     const { lead_id, reason, marked_by } = body as {
       lead_id: number | string;
@@ -17,7 +20,6 @@ export async function POST(req: Request) {
       marked_by: string;
     };
 
-    // Validation
     if (!lead_id || !reason || !marked_by) {
       return NextResponse.json(
         { success: false, message: "Missing required fields: lead_id, reason, marked_by" },
@@ -32,11 +34,12 @@ export async function POST(req: Request) {
       );
     }
 
-    // Check lead exists
+    // Check lead exists and belongs to this organization
     const existing = await query(
-      `SELECT id, name, is_lost_lead FROM walkin_enquiries WHERE id = $1`,
-      [lead_id]
-    );
+      `SELECT id, name, is_lost_lead FROM walkin_enquiries 
+       WHERE id = $1 AND organization_id = $2`,
+      [lead_id, auth.organizationId]
+    ) as any[];
 
     if (existing.length === 0) {
       return NextResponse.json(
@@ -59,10 +62,10 @@ export async function POST(req: Request) {
            lost_lead_reason = $1,
            lost_lead_marked_at = NOW(),
            lost_lead_marked_by = $2
-       WHERE id = $3
+       WHERE id = $3 AND organization_id = $4
        RETURNING *`,
-      [reason.trim(), marked_by, lead_id]
-    );
+      [reason.trim(), marked_by, lead_id, auth.organizationId]
+    ) as any[];
 
     // Create activity log entry via follow_ups
     const logMessage =
@@ -72,13 +75,23 @@ export async function POST(req: Request) {
 
     try {
       await query(
-        `INSERT INTO follow_ups (lead_id, message, created_by_name, site_visit_date)
-         VALUES ($1, $2, $3, $4)`,
-        [String(lead_id), logMessage, marked_by, null]
+        `INSERT INTO follow_ups (lead_id, message, created_by_name, site_visit_date, organization_id)
+         VALUES ($1, $2, $3, $4, $5)`,
+        [String(lead_id), logMessage, marked_by, null, auth.organizationId]
       );
     } catch (fuErr: any) {
       console.warn("[lost-lead] follow_ups insert failed:", fuErr.message);
     }
+
+    await audit({
+      organizationId: auth.organizationId,
+      userId: auth.session?._id,
+      action: AuditAction.LEAD_LOST,
+      entityType: "walkin_enquiry",
+      entityId: String(lead_id),
+      metadata: { reason: reason.trim() },
+      req,
+    });
 
     return NextResponse.json(
       {
@@ -100,6 +113,11 @@ export async function POST(req: Request) {
 // ── PUT — Restore a lost lead ─────────────────
 export async function PUT(req: Request) {
   try {
+    const auth = await requireOrganization();
+    if (!auth.isAuthorized) {
+      return NextResponse.json({ message: auth.error }, { status: auth.status });
+    }
+
     const body = await req.json();
     const { lead_id, restored_by } = body as {
       lead_id: number | string;
@@ -113,11 +131,11 @@ export async function PUT(req: Request) {
       );
     }
 
-    // Check lead exists and is actually lost
     const existing = await query(
-      `SELECT id, name, is_lost_lead FROM walkin_enquiries WHERE id = $1`,
-      [lead_id]
-    );
+      `SELECT id, name, is_lost_lead FROM walkin_enquiries 
+       WHERE id = $1 AND organization_id = $2`,
+      [lead_id, auth.organizationId]
+    ) as any[];
 
     if (existing.length === 0) {
       return NextResponse.json(
@@ -140,23 +158,32 @@ export async function PUT(req: Request) {
            lost_lead_reason = NULL,
            lost_lead_marked_at = NULL,
            lost_lead_marked_by = NULL
-       WHERE id = $1
+       WHERE id = $1 AND organization_id = $2
        RETURNING *`,
-      [lead_id]
-    );
+      [lead_id, auth.organizationId]
+    ) as any[];
 
     // Create activity log entry
     const logMessage = `🔄 Lead Restored to Active\nBy: ${restored_by}`;
 
     try {
       await query(
-        `INSERT INTO follow_ups (lead_id, message, created_by_name, site_visit_date)
-         VALUES ($1, $2, $3, $4)`,
-        [String(lead_id), logMessage, restored_by, null]
+        `INSERT INTO follow_ups (lead_id, message, created_by_name, site_visit_date, organization_id)
+         VALUES ($1, $2, $3, $4, $5)`,
+        [String(lead_id), logMessage, restored_by, null, auth.organizationId]
       );
     } catch (fuErr: any) {
       console.warn("[lost-lead] follow_ups insert failed:", fuErr.message);
     }
+
+    await audit({
+      organizationId: auth.organizationId,
+      userId: auth.session?._id,
+      action: AuditAction.LEAD_RESTORED,
+      entityType: "walkin_enquiry",
+      entityId: String(lead_id),
+      req,
+    });
 
     return NextResponse.json(
       {

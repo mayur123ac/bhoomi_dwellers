@@ -1,13 +1,17 @@
 // app/api/walkin_enquiries/[id]/route.ts
 import { NextResponse } from "next/server";
-import { getPool } from "@/lib/db";
+import { tenantQuery } from "@/lib/tenantDb";
+import { requireOrganization } from "@/lib/serverAuth";
 
 export async function PUT(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const pool = getPool();
+    const auth = await requireOrganization();
+    if (!auth.isAuthorized) {
+      return NextResponse.json({ message: auth.error }, { status: auth.status });
+    }
     const { id } = await params;
     const body = await req.json();
 
@@ -21,7 +25,7 @@ export async function PUT(
 
     const fields: string[] = [];
     const values: any[]    = [];
-    let i = 1;
+    let i = 2; // $1 is reserved for organizationId
 
     if (name         !== undefined) { fields.push(`name = $${i++}`);         values.push(name); }
     if (status       !== undefined) { fields.push(`status = $${i++}`);       values.push(status); }
@@ -42,14 +46,14 @@ export async function PUT(
     }
 
     values.push(id);
-    const query = `UPDATE walkin_enquiries SET ${fields.join(", ")} WHERE id = $${i} RETURNING *`;
-    const result = await pool.query(query, values);
+    const sql = `UPDATE walkin_enquiries SET ${fields.join(", ")} WHERE id = $${i} AND organization_id = $1 RETURNING *`;
+    const rows = await tenantQuery(auth.organizationId, sql, values);
 
-    if (result.rows.length === 0) {
+    if (rows.length === 0) {
       return NextResponse.json({ success: false, message: "Lead not found" }, { status: 404 });
     }
 
-    return NextResponse.json({ success: true, data: result.rows[0] }, { status: 200 });
+    return NextResponse.json({ success: true, data: rows[0] }, { status: 200 });
 
   } catch (error: any) {
     console.error("PUT walkin_enquiries error:", error);
@@ -62,9 +66,12 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const pool = getPool();
+    const auth = await requireOrganization();
+    if (!auth.isAuthorized) {
+      return NextResponse.json({ message: auth.error }, { status: auth.status });
+    }
     const { id } = await params;
-    await pool.query(`DELETE FROM walkin_enquiries WHERE id = $1`, [id]);
+    await tenantQuery(auth.organizationId, `DELETE FROM walkin_enquiries WHERE id = $2 AND organization_id = $1`, [id]);
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error: any) {
     console.error("DELETE walkin_enquiries error:", error);

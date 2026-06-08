@@ -1,11 +1,13 @@
 // app/api/transfer-leads/route.ts
+// Phase 2A: requireRoleAndOrganization + tenant-scoped queries
 import { NextResponse } from "next/server";
-import { query, transaction } from "@/lib/db";
-import { requireRole } from "@/lib/serverAuth";
+import { tenantTransaction } from "@/lib/tenantDb";
+import { requireRoleAndOrganization } from "@/lib/serverAuth";
+import { audit, AuditAction } from "@/lib/auditLog";
 
 export async function POST(req: Request) {
   try {
-    const auth = await requireRole(["admin"]);
+    const auth = await requireRoleAndOrganization(["admin", "company_admin"]);
     if (!auth.isAuthorized) {
       return NextResponse.json(
         { success: false, message: auth.error },
@@ -32,14 +34,22 @@ export async function POST(req: Request) {
     }
 
     // ── Execute transfer inside a transaction ──
-    const transferred = await transaction(async (client) => {
+    const transferred = await tenantTransaction(auth.organizationId, async (client, orgId) => {
       const result = await client.query(
         `UPDATE public.walkin_enquiries
          SET assigned_to = $2
-         WHERE assigned_to = $1`,
-        [from.trim(), to.trim()]
+         WHERE organization_id = $1 AND assigned_to = $3`,
+        [orgId, to.trim(), from.trim()]
       );
       return result.rowCount ?? 0;
+    });
+
+    await audit({
+      organizationId: auth.organizationId,
+      userId: auth.session?._id,
+      action: "leads.transferred_bulk",
+      metadata: { from: from.trim(), to: to.trim(), count: transferred },
+      req,
     });
 
     return NextResponse.json(

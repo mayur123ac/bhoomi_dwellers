@@ -12,23 +12,21 @@ export interface CrmUpdate {
   created_at: Date;
 }
 
-/**
- * Creates a new CRM update in the database
- */
 export async function createCrmUpdate(data: {
   version: string;
   title: string;
   description?: string;
   category?: string;
-  features?: any; // usually an array of strings or JSON object
+  features?: any;
   is_important?: boolean;
   created_by?: string;
+  organizationId: string;
 }) {
   const sql = `
     INSERT INTO crm_updates 
-      (version, title, description, category, features, is_important, created_by)
+      (version, title, description, category, features, is_important, created_by, organization_id)
     VALUES 
-      ($1, $2, $3, $4, $5, $6, $7)
+      ($1, $2, $3, $4, $5, $6, $7, $8)
     RETURNING *;
   `;
 
@@ -40,41 +38,38 @@ export async function createCrmUpdate(data: {
     data.features ? JSON.stringify(data.features) : null,
     data.is_important || false,
     data.created_by || null,
+    data.organizationId,
   ];
 
   const result = await query<CrmUpdate>(sql, params);
   return result[0];
 }
 
-/**
- * Retrieves all CRM updates, ordered by newest first
- */
-export async function getCrmUpdates() {
+export async function getCrmUpdates(organizationId: string) {
   const sql = `
     SELECT * FROM crm_updates 
+    WHERE organization_id = $1
     ORDER BY created_at DESC;
   `;
-  return await query<CrmUpdate>(sql);
+  return await query<CrmUpdate>(sql, [organizationId]);
 }
 
-/**
- * Marks an update as read for a specific user
- */
-export async function markUpdateAsRead(userId: number, updateId: number) {
+export async function markUpdateAsRead(userId: number, updateId: number, organizationId: string) {
+  // We double check the update actually belongs to this org before marking it read
+  const check = await query(`SELECT id FROM crm_updates WHERE id = $1 AND organization_id = $2`, [updateId, organizationId]);
+  if (check.length === 0) return false;
+
   const sql = `
-    INSERT INTO crm_update_reads (user_id, update_id)
-    VALUES ($1, $2)
+    INSERT INTO crm_update_reads (user_id, update_id, organization_id)
+    VALUES ($1, $2, $3)
     ON CONFLICT (user_id, update_id) DO NOTHING
     RETURNING *;
   `;
-  await query(sql, [userId, updateId]);
+  await query(sql, [userId, updateId, organizationId]);
   return true;
 }
 
-/**
- * Retrieves all updates along with a boolean indicating if the specific user has read them
- */
-export async function getUpdatesWithReadStatus(userId: number) {
+export async function getUpdatesWithReadStatus(userId: number, organizationId: string) {
   const sql = `
     SELECT 
       u.*,
@@ -82,15 +77,13 @@ export async function getUpdatesWithReadStatus(userId: number) {
     FROM crm_updates u
     LEFT JOIN crm_update_reads r 
       ON u.id = r.update_id AND r.user_id = $1
+    WHERE u.organization_id = $2
     ORDER BY u.created_at DESC;
   `;
   
-  return await query<CrmUpdate & { has_read: boolean }>(sql, [userId]);
+  return await query<CrmUpdate & { has_read: boolean }>(sql, [userId, organizationId]);
 }
 
-/**
- * Updates an existing CRM update
- */
 export async function updateCrmUpdate(id: number, data: {
   version: string;
   title: string;
@@ -98,6 +91,7 @@ export async function updateCrmUpdate(id: number, data: {
   category?: string;
   features?: any;
   is_important?: boolean;
+  organizationId: string;
 }) {
   const sql = `
     UPDATE crm_updates 
@@ -108,7 +102,7 @@ export async function updateCrmUpdate(id: number, data: {
       category = $4, 
       features = $5, 
       is_important = $6
-    WHERE id = $7
+    WHERE id = $7 AND organization_id = $8
     RETURNING *;
   `;
 
@@ -120,17 +114,15 @@ export async function updateCrmUpdate(id: number, data: {
     data.features ? JSON.stringify(data.features) : null,
     data.is_important || false,
     id,
+    data.organizationId,
   ];
 
   const result = await query<CrmUpdate>(sql, params);
   return result[0];
 }
 
-/**
- * Deletes a CRM update
- */
-export async function deleteCrmUpdate(id: number) {
-  const sql = `DELETE FROM crm_updates WHERE id = $1 RETURNING id;`;
-  const result = await query<{ id: number }>(sql, [id]);
+export async function deleteCrmUpdate(id: number, organizationId: string) {
+  const sql = `DELETE FROM crm_updates WHERE id = $1 AND organization_id = $2 RETURNING id;`;
+  const result = await query<{ id: number }>(sql, [id, organizationId]);
   return result.length > 0;
 }

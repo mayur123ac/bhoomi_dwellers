@@ -1,23 +1,38 @@
-//walkin_enquiries/route.ts
+// app/api/walkin_enquiries/route.ts
+// Phase 2A: requireOrganization + tenant-scoped queries
 import { NextResponse } from "next/server";
-import { query } from "@/lib/db";
+import { tenantQuery } from "@/lib/tenantDb";
+import { requireOrganization } from "@/lib/serverAuth";
+import { audit, AuditAction } from "@/lib/auditLog";
 
 export async function GET(req: Request) {
   try {
+    const auth = await requireOrganization();
+    if (!auth.isAuthorized) {
+      return NextResponse.json({ message: auth.error }, { status: auth.status });
+    }
+
     const { searchParams } = new URL(req.url);
     const rawLimit = parseInt(searchParams.get("limit") ?? "20", 10);
     // Allow bulk admin fetches (> 1000 = bypass cap), otherwise cap at 500
     const limit = rawLimit > 1000 ? rawLimit : Math.min(rawLimit, 500);
     const offset = Math.max(parseInt(searchParams.get("offset") ?? "0", 10), 0);
 
-    // Because this uses SELECT *, the new Site Head columns will be fetched automatically
     const [rows, countRows] = await Promise.all([
-      query(
-        "SELECT * FROM walkin_enquiries ORDER BY created_at DESC LIMIT $1 OFFSET $2",
+      tenantQuery(
+        auth.organizationId,
+        `SELECT * FROM walkin_enquiries 
+         WHERE organization_id = $1 
+         ORDER BY created_at DESC 
+         LIMIT $2 OFFSET $3`,
         [limit, offset]
       ),
-      query("SELECT COUNT(*)::int AS total FROM walkin_enquiries"),
-    ]);
+      tenantQuery(
+        auth.organizationId,
+        "SELECT COUNT(*)::int AS total FROM walkin_enquiries WHERE organization_id = $1",
+        []
+      ),
+    ]) as any;
 
     const total: number = countRows[0]?.total ?? 0;
     return NextResponse.json({ success: true, data: rows, total }, { status: 200 });
@@ -29,11 +44,16 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
+    const auth = await requireOrganization();
+    if (!auth.isAuthorized) {
+      return NextResponse.json({ message: auth.error }, { status: auth.status });
+    }
+
     const body = await req.json();
     const {
       name, phone, alt_phone, email, address, occupation, organization,
       budget, configuration, purpose, source, source_other,
-      referral_name,           // ← ADD THIS
+      referral_name,
       cp_name, cp_company, cp_phone, loan_planned,
       assignedTo,
       assigned_receptionist,
@@ -49,9 +69,10 @@ export async function POST(req: Request) {
       );
     }
 
-    const rows = await query(
+    const rows = await tenantQuery(
+      auth.organizationId,
       `INSERT INTO walkin_enquiries (
-        name, phone, email, address, occupation, organization,
+        organization_id, name, phone, email, address, occupation, organization,
         budget, configuration, purpose, source,
         alt_phone, source_other, referral_name,
         cp_name, cp_company, cp_phone,
@@ -59,39 +80,49 @@ export async function POST(req: Request) {
         is_global_shared, overseeing_site_head
       )
       VALUES (
-        $1,  $2,  $3,  $4,  $5,  $6,
-        $7,  $8,  $9,  $10,
-        $11, $12, $13,
-        $14, $15, $16,
-        $17, $18, $19, $20,
-        $21, $22
+        $1,  $2,  $3,  $4,  $5,  $6,  $7,
+        $8,  $9,  $10, $11,
+        $12, $13, $14,
+        $15, $16, $17,
+        $18, $19, $20, $21,
+        $22, $23
       )
       RETURNING *`,
       [
-        name,                               // $1
-        phone,                              // $2
-        email || "N/A",                     // $3
-        address || "N/A",                   // $4
-        occupation || "N/A",                // $5
-        organization || "N/A",              // $6
-        budget || "Pending",                // $7
-        configuration || "N/A",             // $8
-        purpose || "N/A",                   // $9
-        source || "Direct Walk-in",         // $10
-        alt_phone || null,                  // $11
-        source_other || null,               // $12
-        referral_name || null,              // $13  ← NEW
-        cp_name || null,                    // $14
-        cp_company || null,                 // $15
-        cp_phone || null,                   // $16
-        loan_planned || "Pending",          // $17
-        assignedTo,                         // $18
-        assigned_receptionist || null,      // $19
-        status || "Routed",                 // $20
-        is_global_shared || false,          // $21
-        overseeing_site_head || null        // $22
+        name,                               // $2
+        phone,                              // $3
+        email || "N/A",                     // $4
+        address || "N/A",                   // $5
+        occupation || "N/A",                // $6
+        organization || "N/A",              // $7
+        budget || "Pending",                // $8
+        configuration || "N/A",             // $9
+        purpose || "N/A",                   // $10
+        source || "Direct Walk-in",         // $11
+        alt_phone || null,                  // $12
+        source_other || null,               // $13
+        referral_name || null,              // $14
+        cp_name || null,                    // $15
+        cp_company || null,                 // $16
+        cp_phone || null,                   // $17
+        loan_planned || "Pending",          // $18
+        assignedTo,                         // $19
+        assigned_receptionist || null,      // $20
+        status || "Routed",                 // $21
+        is_global_shared || false,          // $22
+        overseeing_site_head || null        // $23
       ]
-    );
+    ) as any[];
+
+    await audit({
+      organizationId: auth.organizationId,
+      userId: auth.session?._id,
+      action: "enquiry.created",
+      entityType: "walkin_enquiry",
+      entityId: String(rows[0].id),
+      metadata: { name, phone },
+      req,
+    });
 
     return NextResponse.json({ success: true, data: rows[0] }, { status: 201 });
   } catch (error: any) {

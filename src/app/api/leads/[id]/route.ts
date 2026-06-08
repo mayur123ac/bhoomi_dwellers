@@ -1,14 +1,20 @@
 // app/api/leads/[id]/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { query } from "@/lib/db";
+import { requireOrganization } from "@/lib/serverAuth";
+import { audit, AuditAction } from "@/lib/auditLog";
 
-// ✅ NEW — to this
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
   try {
+    const auth = await requireOrganization();
+    if (!auth.isAuthorized) {
+      return NextResponse.json({ message: auth.error }, { status: auth.status });
+    }
+
     const leadId = Number(id);    
     if (isNaN(leadId)) return NextResponse.json({ error: "Invalid lead ID" }, { status: 400 });
 
@@ -34,20 +40,31 @@ export async function PATCH(
       return NextResponse.json({ error: "No fields to update" }, { status: 400 });
     }
 
-    values.push(leadId);
+    values.push(leadId, auth.organizationId);
     const sql = `
       UPDATE leads
       SET ${setClauses.join(", ")}, updated_at = NOW()
-      WHERE id = $${values.length}
+      WHERE id = $${values.length - 1} AND organization_id = $${values.length}
       RETURNING *
     `;
 
-    const rows = await query(sql, values);
+    const rows = await query(sql, values) as any[];
     if (rows.length === 0) return NextResponse.json({ error: "Lead not found" }, { status: 404 });
+
+    await audit({
+      organizationId: auth.organizationId,
+      userId: auth.session?._id,
+      action: AuditAction.LEAD_UPDATED,
+      entityType: "lead",
+      entityId: String(leadId),
+      metadata: { fields: setClauses.map((c) => c.split(" ")[0]) },
+      req,
+    });
 
     return NextResponse.json({ success: true, lead: rows[0] });
     } catch (err: any) {
-        console.error(`[PATCH /api/leads/${id}]`, err);  // ✅ id not params.id
+        console.error(`[PATCH /api/leads/${id}]`, err);
+        return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 
 }

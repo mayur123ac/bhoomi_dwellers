@@ -1,4 +1,15 @@
 // lib/db.ts
+// ─────────────────────────────────────────────────────────────────────────────
+// PostgreSQL connection pool + query helpers.
+//
+// Phase 1 additions:
+//   - tenantQuery()  — always injects organization_id as the first parameter
+//   - tenantTransaction() — transaction wrapper that carries the org context
+//
+// Existing functions (query, transaction, getPool) are UNCHANGED for backward
+// compatibility. No existing API routes need to be modified for this file.
+// ─────────────────────────────────────────────────────────────────────────────
+
 import { Pool, PoolClient } from "pg";
 
 let pool: Pool | undefined;
@@ -7,7 +18,7 @@ export function getPool(): Pool {
   if (!pool) {
     pool = new Pool({
       connectionString: process.env.DATABASE_URL,
-      // ssl: { rejectUnauthorized: false }, // ← Always ON for Neon
+      // ssl: { rejectUnauthorized: false }, // ← Uncomment for Neon / cloud DBs
       max: 10,
       idleTimeoutMillis: 30_000,
       connectionTimeoutMillis: 5_000,
@@ -17,6 +28,7 @@ export function getPool(): Pool {
   return pool;
 }
 
+// ── Generic query (unchanged) ─────────────────────────────────────────────────
 export async function query<T = any>(
   text: string,
   params?: any[]
@@ -30,6 +42,7 @@ export async function query<T = any>(
   }
 }
 
+// ── Generic transaction (unchanged) ──────────────────────────────────────────
 export async function transaction<T>(
   fn: (client: PoolClient) => Promise<T>
 ): Promise<T> {
@@ -47,6 +60,7 @@ export async function transaction<T>(
   }
 }
 
+// ── Keep-alive ping (unchanged) ───────────────────────────────────────────────
 if (typeof window === "undefined") {
   setInterval(async () => {
     try {

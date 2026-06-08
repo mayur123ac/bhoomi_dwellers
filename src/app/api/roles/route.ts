@@ -1,17 +1,27 @@
-// app/api/roles/route.ts
+// src/app/api/roles/route.ts
+// Phase 2A: requireRoleAndOrganization + tenant-scoped queries
 import { NextResponse } from "next/server";
-import { query } from "@/lib/db";
-import { requireRole } from "@/lib/serverAuth";
+import { tenantQuery } from "@/lib/tenantDb";
+import { requireOrganization, requireRoleAndOrganization } from "@/lib/serverAuth";
+import { audit, AuditAction } from "@/lib/auditLog";
 
-// ── GET: Fetch all roles ──────────────────────────────────────────────────────
+// ── GET: Fetch roles for this org ─────────────────────────────────────────────
 export async function GET() {
   try {
-    const roles = await query(
-      `SELECT id, name FROM roles ORDER BY name ASC`
+    const auth = await requireOrganization();
+    if (!auth.isAuthorized) {
+      return NextResponse.json({ message: auth.error }, { status: auth.status });
+    }
+
+    const roles = await tenantQuery(
+      auth.organizationId,
+      `SELECT id, name FROM roles
+       WHERE organization_id = $1
+       ORDER BY name ASC`,
+      []
     );
 
-    // Map id → _id so the employees page keeps working without changes
-    const mapped = roles.map(r => ({ ...r, _id: String(r.id) }));
+    const mapped = (roles as any[]).map((r) => ({ ...r, _id: String(r.id) }));
     return NextResponse.json(mapped, { status: 200 });
 
   } catch (error) {
@@ -23,7 +33,7 @@ export async function GET() {
 // ── POST: Add a new role ──────────────────────────────────────────────────────
 export async function POST(req: Request) {
   try {
-    const auth = await requireRole(["admin"]);
+    const auth = await requireRoleAndOrganization(["admin", "company_admin"]);
     if (!auth.isAuthorized) {
       return NextResponse.json({ message: auth.error }, { status: auth.status });
     }
@@ -34,24 +44,34 @@ export async function POST(req: Request) {
       return NextResponse.json({ message: "Role name is required." }, { status: 400 });
     }
 
-    // Conflict check
-    const existing = await query(
-      `SELECT id FROM roles WHERE LOWER(name) = LOWER($1) LIMIT 1`,
+    // Conflict check — scoped to this org
+    const existing = await tenantQuery(
+      auth.organizationId,
+      `SELECT id FROM roles WHERE organization_id = $1 AND LOWER(name) = LOWER($2) LIMIT 1`,
       [name.trim()]
     );
-    if (existing.length > 0) {
-      return NextResponse.json({ message: "Role already exists." }, { status: 400 });
+    if ((existing as any[]).length > 0) {
+      return NextResponse.json({ message: "Role already exists in this organization." }, { status: 400 });
     }
 
-    const [newRole] = await query(
-      `INSERT INTO roles (name) VALUES ($1) RETURNING id, name`,
+    const [newRole] = await tenantQuery(
+      auth.organizationId,
+      `INSERT INTO roles (organization_id, name) VALUES ($1, $2) RETURNING id, name`,
       [name.trim()]
-    );
+    ) as any[];
 
-    return NextResponse.json(
-      { ...newRole, _id: String(newRole.id) },
-      { status: 201 }
-    );
+    await audit({
+      organizationId: auth.organizationId,
+      userId: auth.session?._id,
+      userEmail: auth.session?.email,
+      action: AuditAction.ROLE_CREATED,
+      entityType: "role",
+      entityId: String(newRole.id),
+      metadata: { roleName: newRole.name },
+      req,
+    });
+
+    return NextResponse.json({ ...newRole, _id: String(newRole.id) }, { status: 201 });
 
   } catch (error) {
     console.error("POST /api/roles error:", error);

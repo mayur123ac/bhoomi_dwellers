@@ -1,12 +1,22 @@
 // app/api/loan/route.ts
+// Phase 2A: requireOrganization + tenant-scoped queries
 import { NextResponse } from "next/server";
-import { query } from "@/lib/db";
+import { tenantQuery } from "@/lib/tenantDb";
+import { requireOrganization } from "@/lib/serverAuth";
+import { audit, AuditAction } from "@/lib/auditLog";
 
-// ── GET: Fetch all loan updates ───────────────────────────────────────────────
+// ── GET: Fetch all loan updates for this org ──────────────────────────────────
 export async function GET() {
   try {
-    const loans = await query(
-      `SELECT * FROM loan_updates ORDER BY created_at ASC`
+    const auth = await requireOrganization();
+    if (!auth.isAuthorized) {
+      return NextResponse.json({ message: auth.error }, { status: auth.status });
+    }
+
+    const loans = await tenantQuery(
+      auth.organizationId,
+      `SELECT * FROM loan_updates WHERE organization_id = $1 ORDER BY created_at ASC`,
+      []
     );
     return NextResponse.json({ success: true, data: loans }, { status: 200 });
   } catch (error) {
@@ -21,6 +31,11 @@ export async function GET() {
 // ── POST: Save loan update + inject follow-up timeline message ────────────────
 export async function POST(req: Request) {
   try {
+    const auth = await requireOrganization();
+    if (!auth.isAuthorized) {
+      return NextResponse.json({ message: auth.error }, { status: auth.status });
+    }
+
     const body = await req.json();
 
     if (!body.leadId) {
@@ -30,10 +45,32 @@ export async function POST(req: Request) {
       );
     }
 
+    // Verify lead belongs to this org before inserting
+    const leadCheck = await tenantQuery(
+      auth.organizationId,
+      `SELECT id FROM walkin_enquiries WHERE organization_id = $1 AND id = $2`,
+      [body.leadId]
+    ) as any[];
+
+    if (leadCheck.length === 0) {
+      // It might be a regular lead, try checking there too if needed
+      // but usually the frontend passes leadId that works in either table
+      const leadCheck2 = await tenantQuery(
+        auth.organizationId,
+        `SELECT id FROM leads WHERE organization_id = $1 AND id = $2`,
+        [body.leadId]
+      ) as any[];
+
+      if (leadCheck2.length === 0) {
+        return NextResponse.json({ success: false, message: "Lead not found in this organization" }, { status: 404 });
+      }
+    }
+
     // 1. Save structured loan data to PostgreSQL
-    const rows = await query(
+    const rows = await tenantQuery(
+      auth.organizationId,
       `INSERT INTO loan_updates (
-        lead_id, sales_manager_name, created_by,
+        organization_id, lead_id, sales_manager_name, created_by,
         status, loan_type,
         amount_req, amount_app, processing_amt, roi, tenure,
         bank, officer, agent, agent_contact,
@@ -46,7 +83,7 @@ export async function POST(req: Request) {
         $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,
         $11,$12,$13,$14,$15,$16,$17,$18,
         $19,$20,$21,$22,$23,$24,$25,$26,
-        $27,$28,$29,$30,$31,$32,$33,$34,$35,$36
+        $27,$28,$29,$30,$31,$32,$33,$34,$35,$36,$37
       ) RETURNING *`,
       [
         String(body.leadId),
@@ -84,13 +121,13 @@ export async function POST(req: Request) {
         body.apprvDate          || null,
         body.expDisbDate        || null,
         body.disbDate           || null,
-        body.notes              || null,
+        body.notes              || null
       ]
-    );
+    ) as any[];
 
     const newLoan = rows[0];
 
-    // 2. Build the same visual summary message your frontend timeline shows
+    // 2. Build visual summary message
     const summaryMessage = `🏦 Loan Update:
 • Loan Required: Yes
 • Status: ${body.status || "N/A"}
@@ -110,16 +147,26 @@ export async function POST(req: Request) {
 • Property Docs: ${body.docProperty || "Pending"}
 • Notes: ${body.notes || "N/A"}`;
 
-    // 3. Inject into follow_ups table (PostgreSQL) instead of MongoDB FollowupMessage
-    await query(
-      `INSERT INTO follow_ups (lead_id, message, created_by_name, created_at)
-       VALUES ($1, $2, $3, NOW())`,
+    // 3. Inject into follow_ups table
+    await tenantQuery(
+      auth.organizationId,
+      `INSERT INTO follow_ups (organization_id, lead_id, message, created_by_name, created_at)
+       VALUES ($1, $2, $3, $4, NOW())`,
       [
         String(body.leadId),
         summaryMessage,
-        body.salesManagerName || body.createdBy || "sales",
+        body.salesManagerName || body.createdBy || "sales"
       ]
     );
+
+    await audit({
+      organizationId: auth.organizationId,
+      userId: auth.session?._id,
+      action: "loan.updated",
+      entityType: "loan",
+      entityId: String(newLoan.id),
+      req,
+    });
 
     return NextResponse.json({ success: true, data: newLoan }, { status: 201 });
 

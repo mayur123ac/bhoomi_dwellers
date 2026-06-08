@@ -1,6 +1,7 @@
 //api/leads/lost/route.ts
 import { NextResponse } from "next/server";
-import { query } from "@/lib/db";
+import { requireOrganization } from "@/lib/serverAuth";
+import { tenantQuery } from "@/lib/tenantDb";
 import { broadcastLeadUpdate } from "@/lib/lostLeadEvents";
 
 type LostLeadPayload = {
@@ -20,6 +21,11 @@ function getErrorMessage(error: unknown, fallback: string) {
 
 export async function PATCH(req: Request) {
   try {
+    const auth = await requireOrganization();
+    if (!auth.isAuthorized) {
+      return NextResponse.json({ message: auth.error }, { status: auth.status });
+    }
+
     const body = (await req.json()) as LostLeadPayload;
     const leadId = body.leadId ?? body.lead_id;
     const isLost = body.is_lost_lead;
@@ -40,8 +46,9 @@ export async function PATCH(req: Request) {
       );
     }
 
-    const existing = await query(
-      "SELECT id, name, is_lost_lead FROM walkin_enquiries WHERE id = $1",
+    const existing = await tenantQuery(
+      auth.organizationId,
+      "SELECT id, name, is_lost_lead FROM walkin_enquiries WHERE organization_id = $1 AND id = $2",
       [leadId]
     );
 
@@ -53,23 +60,25 @@ export async function PATCH(req: Request) {
     }
 
     const updatedRows = isLost
-      ? await query(
+      ? await tenantQuery(
+          auth.organizationId,
           `UPDATE walkin_enquiries
            SET is_lost_lead = TRUE,
-               lost_lead_reason = $1,
+               lost_lead_reason = $2,
                lost_lead_marked_at = NOW(),
-               lost_lead_marked_by = $2
-           WHERE id = $3
+               lost_lead_marked_by = $3
+           WHERE organization_id = $1 AND id = $4
            RETURNING *`,
           [reason, actor, leadId]
         )
-      : await query(
+      : await tenantQuery(
+          auth.organizationId,
           `UPDATE walkin_enquiries
            SET is_lost_lead = FALSE,
                lost_lead_reason = NULL,
                lost_lead_marked_at = NULL,
                lost_lead_marked_by = NULL
-           WHERE id = $1
+           WHERE organization_id = $1 AND id = $2
            RETURNING *`,
           [leadId]
         );
@@ -86,9 +95,10 @@ export async function PATCH(req: Request) {
       : `Lead Restored to Active\nBy: ${actor}`;
 
     try {
-      await query(
-        `INSERT INTO follow_ups (lead_id, message, created_by_name, site_visit_date)
-         VALUES ($1, $2, $3, $4)`,
+      await tenantQuery(
+        auth.organizationId,
+        `INSERT INTO follow_ups (organization_id, lead_id, message, created_by_name, site_visit_date)
+         VALUES ($1, $2, $3, $4, $5)`,
         [String(leadId), logMessage, actor, null]
       );
     } catch (fuErr: unknown) {

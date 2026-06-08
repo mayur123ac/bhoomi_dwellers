@@ -1,13 +1,24 @@
-﻿// app/api/followups/route.ts
+// app/api/followups/route.ts
+// Phase 2A: requireOrganization + tenant-scoped queries
 import { NextResponse } from "next/server";
 import { query } from "@/lib/db";
+import { requireOrganization } from "@/lib/serverAuth";
+import { audit, AuditAction } from "@/lib/auditLog";
 
-// GET: Fetch all follow-up messages
+// GET: Fetch all follow-up messages for this org
 export async function GET() {
   try {
+    const auth = await requireOrganization();
+    if (!auth.isAuthorized) {
+      return NextResponse.json({ message: auth.error }, { status: auth.status });
+    }
+
     const messages = await query(
-      `SELECT * FROM follow_ups ORDER BY created_at ASC`
-    );
+      `SELECT * FROM follow_ups 
+       WHERE organization_id = $1 
+       ORDER BY created_at ASC`,
+      [auth.organizationId]
+    ) as any[];
 
     // Return same shape as old MongoDB response so frontend needs no changes
     const mapped = messages.map(m => ({
@@ -34,6 +45,11 @@ export async function GET() {
 // POST: Save a new follow-up message
 export async function POST(req: Request) {
   try {
+    const auth = await requireOrganization();
+    if (!auth.isAuthorized) {
+      return NextResponse.json({ message: auth.error }, { status: auth.status });
+    }
+
     const body = await req.json();
     const { leadId, salesManagerName, createdBy, message, siteVisitDate } = body;
 
@@ -45,18 +61,29 @@ export async function POST(req: Request) {
     }
 
     const rows = await query(
-      `INSERT INTO follow_ups (lead_id, message, created_by_name, site_visit_date)
-       VALUES ($1, $2, $3, $4)
+      `INSERT INTO follow_ups (lead_id, message, created_by_name, site_visit_date, organization_id)
+       VALUES ($1, $2, $3, $4, $5)
        RETURNING *`,
       [
         String(leadId),
         message,
         salesManagerName || createdBy || "sales",
         siteVisitDate    || null,
+        auth.organizationId
       ]
-    );
+    ) as any[];
 
     const m = rows[0];
+
+    // Fire and forget audit
+    audit({
+      organizationId: auth.organizationId,
+      userId: auth.session?._id,
+      action: "followup.created",
+      entityType: "follow_up",
+      entityId: String(m.id),
+      req,
+    });
 
     // Return same shape as old MongoDB response
     return NextResponse.json({
