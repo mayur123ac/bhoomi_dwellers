@@ -75,7 +75,7 @@ export default function AIInsightCard({ lead, followUps, userRole, isDark }: AII
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <div className="flex items-center gap-3">
-          <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-lg ${isDark ? "bg-gradient-to-br from-purple-600 to-indigo-600 text-white" : "bg-gradient-to-br from-[#00AEEF] to-[#9E217B] text-white"}`}>
+          <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-lg ${isDark ? "bg-gradient-to-br from-purple-600 to-indigo-600 text-white" : "bg-gradient-to-br from-[#8B5CF6] to-[#A855F7] text-white"}`}>
             <FaRobot className="text-lg" />
           </div>
           <div>
@@ -131,7 +131,7 @@ export default function AIInsightCard({ lead, followUps, userRole, isDark }: AII
           <ul className={`text-sm space-y-2.5 ${isDark ? "text-gray-300" : "text-gray-700"}`}>
             {insight.summary.map((line, idx) => (
               <li key={idx} className="flex items-start gap-3">
-                <div className={`mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0 ${isDark ? "bg-purple-500" : "bg-[#00AEEF]"}`} />
+                <div className={`mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0 ${isDark ? "bg-purple-500" : "bg-[#8B5CF6]"}`} />
                 <span className="leading-snug font-medium opacity-90">{line}</span>
               </li>
             ))}

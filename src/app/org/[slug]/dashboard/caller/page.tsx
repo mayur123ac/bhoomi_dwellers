@@ -71,7 +71,7 @@ const maskPhone = (phone?: string) => {
 const SOURCE_COLORS: Record<string, string> = {
   Website: "text-blue-400 bg-blue-500/10 border-blue-500/30",
   Facebook: "text-indigo-400 bg-indigo-500/10 border-indigo-500/30",
-  Instagram: "text-pink-400 bg-pink-500/10 border-pink-500/30",
+  Instagram: "text-pink-400 bg-indigo-500/10 border-indigo-500/30",
   Referral: "text-green-400 bg-green-500/10 border-green-500/30",
   CP: "text-blue-400 bg-blue-500/10 border-blue-500/30",
   Outdoor: "text-orange-400 bg-orange-500/10 border-orange-500/30",
@@ -175,7 +175,7 @@ function TicketPopup({ lead, onClose, onSave, alreadySaved, isLocked, lockedBy, 
             </div>
             <p className="text-white font-bold text-lg">Lead Locked</p>
             <p className="text-gray-400 text-sm text-center px-4">
-              This lead has been saved by <span className="text-purple-400 font-bold">{lockedBy}</span>.<br />
+              This lead has been saved by <span className="text-[#A78BFA] font-bold">{lockedBy}</span>.<br />
               You cannot access it.
             </p>
             <button onClick={onClose} className="mt-2 bg-[#222] hover:bg-[#333] border border-[#333] text-gray-300 font-semibold py-2 px-6 rounded-xl cursor-pointer text-sm">
@@ -186,7 +186,7 @@ function TicketPopup({ lead, onClose, onSave, alreadySaved, isLocked, lockedBy, 
 
         <div className="flex items-start justify-between mb-5">
           <div>
-            <p className="text-[10px] text-purple-400 font-bold uppercase tracking-wider mb-1">Lead Ticket</p>
+            <p className="text-[10px] text-[#A78BFA] font-bold uppercase tracking-wider mb-1">Lead Ticket</p>
             <h2 className="text-xl font-bold text-white">{lead.name}</h2>
             {lead.dbId && <p className="text-[10px] text-gray-600 mt-0.5 flex items-center gap-1"><FaDatabase className="text-[8px] text-green-500" />DB #{lead.dbId}</p>}
           </div>
@@ -203,7 +203,7 @@ function TicketPopup({ lead, onClose, onSave, alreadySaved, isLocked, lockedBy, 
           {lead.assignManager && <div className="bg-[#222] rounded-xl p-3 border border-[#333]"><p className="text-[10px] text-gray-500 mb-1">Assign Manager</p><p className="text-white font-semibold text-sm">{lead.assignManager}</p></div>}
           <div className="col-span-2 flex items-center justify-between bg-[#222] rounded-xl p-3 border border-[#333]">
             <div><p className="text-[10px] text-gray-500 mb-1">Source</p>{sourceBadge(lead.source)}</div>
-            <div className="text-right"><p className="text-[10px] text-gray-500 mb-1">Lead ID</p><p className="text-purple-400 font-bold font-mono">#{lead.lead_number ?? lead.id}</p></div>
+            <div className="text-right"><p className="text-[10px] text-gray-500 mb-1">Lead ID</p><p className="text-[#A78BFA] font-bold font-mono">#{lead.lead_number ?? lead.id}</p></div>
           </div>
           <div className="col-span-2 bg-[#222] rounded-xl p-3 border border-[#333]">
             <p className="text-[10px] text-gray-500 mb-2 flex items-center gap-1"><FaCommentAlt className="text-[9px]" />Feedback</p>
@@ -212,7 +212,7 @@ function TicketPopup({ lead, onClose, onSave, alreadySaved, isLocked, lockedBy, 
               onChange={e => setFeedback(e.target.value)}
               onBlur={() => { if (feedback !== (lead.feedback || "")) onFeedbackChange(lead.id, feedback); }}
               placeholder="Add caller feedback..." rows={3}
-              className="w-full bg-[#111] border border-[#333] rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-purple-500 resize-none" />
+              className="w-full bg-[#111] border border-[#333] rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-[#A855F7] resize-none" />
           </div>
         </div>
 
@@ -221,7 +221,7 @@ function TicketPopup({ lead, onClose, onSave, alreadySaved, isLocked, lockedBy, 
           <button
             onClick={() => { if (feedback !== (lead.feedback || "")) onFeedbackChange(lead.id, feedback); onSave({ ...lead, feedback }); onClose(); }}
             disabled={alreadySaved}
-            className={`flex-1 flex items-center justify-center gap-2 font-bold py-2.5 rounded-xl cursor-pointer text-sm shadow-lg ${alreadySaved ? "bg-green-800/30 border border-green-600/30 text-green-400 cursor-not-allowed" : "bg-purple-600 hover:bg-purple-500 text-white shadow-purple-600/20"}`}>
+            className={`flex-1 flex items-center justify-center gap-2 font-bold py-2.5 rounded-xl cursor-pointer text-sm shadow-lg ${alreadySaved ? "bg-green-800/30 border border-green-600/30 text-green-400 cursor-not-allowed" : "bg-[#8B5CF6] hover:bg-[#A855F7] text-white shadow-[#8B5CF6]/20"}`}>
             {alreadySaved ? <><FaCheckCircle />Saved</> : <><FaSave />Save to Forms</>}
           </button>
         </div>
@@ -298,7 +298,7 @@ function LeadDetailView({ lead, onBack, onUpdateLead, callerName }: {
     await apiSaveFollowUp(lead.dbId, fu.message, callerName);
   };
 
-  const inputCls = "w-full bg-[#111] border border-[#2a2a2a] focus:border-purple-500 rounded-lg px-3 py-2 text-sm text-white outline-none transition-colors";
+  const inputCls = "w-full bg-[#111] border border-[#2a2a2a] focus:border-[#A855F7] rounded-lg px-3 py-2 text-sm text-white outline-none transition-colors";
   const viewFields = [
     { label: "Name", value: lead.name, icon: <FaUser className="text-[10px]" /> },
     { label: "Phone", value: lead.phone, icon: <FaPhoneAlt className="text-[10px]" />, mono: true },
@@ -346,12 +346,12 @@ function LeadDetailView({ lead, onBack, onUpdateLead, callerName }: {
           {/* Personal Info */}
           <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl p-5">
             <div className="flex items-center justify-between mb-4 border-b border-[#2a2a2a] pb-2">
-              <h3 className="text-xs font-bold text-purple-400 uppercase tracking-wider">Personal Information</h3>
+              <h3 className="text-xs font-bold text-[#A78BFA] uppercase tracking-wider">Personal Information</h3>
               {!editingInfo
-                ? <button onClick={() => setEditingInfo(true)} className="flex items-center gap-1.5 bg-[#222] hover:bg-purple-600/20 border border-[#333] hover:border-purple-500/50 text-gray-400 hover:text-purple-400 px-3 py-1.5 rounded-lg text-[11px] font-bold cursor-pointer transition-all"><FaEdit className="text-[9px]" />Edit</button>
+                ? <button onClick={() => setEditingInfo(true)} className="flex items-center gap-1.5 bg-[#222] hover:bg-[#8B5CF6]/20 border border-[#333] hover:border-[#A855F7]/50 text-gray-400 hover:text-[#A78BFA] px-3 py-1.5 rounded-lg text-[11px] font-bold cursor-pointer transition-all"><FaEdit className="text-[9px]" />Edit</button>
                 : <div className="flex gap-2">
                   <button onClick={() => setEditingInfo(false)} className="flex items-center gap-1.5 bg-[#222] border border-[#333] text-gray-400 px-3 py-1.5 rounded-lg text-[11px] font-bold cursor-pointer"><FaTimes className="text-[9px]" />Cancel</button>
-                  <button onClick={saveInfo} className="flex items-center gap-1.5 bg-purple-600 hover:bg-purple-500 text-white px-3 py-1.5 rounded-lg text-[11px] font-bold cursor-pointer shadow-lg shadow-purple-600/20"><FaCheck className="text-[9px]" />Save</button>
+                  <button onClick={saveInfo} className="flex items-center gap-1.5 bg-[#8B5CF6] hover:bg-[#A855F7] text-white px-3 py-1.5 rounded-lg text-[11px] font-bold cursor-pointer shadow-lg shadow-[#8B5CF6]/20"><FaCheck className="text-[9px]" />Save</button>
                 </div>}
             </div>
             {!editingInfo
@@ -362,12 +362,12 @@ function LeadDetailView({ lead, onBack, onUpdateLead, callerName }: {
           {/* Feedback */}
           <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl p-5">
             <div className="flex items-center justify-between mb-3 border-b border-[#2a2a2a] pb-2">
-              <h3 className="text-xs font-bold text-purple-400 uppercase tracking-wider flex items-center gap-2"><FaCommentAlt className="text-[10px]" />Feedback</h3>
-              <button onClick={saveFeedback} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold cursor-pointer transition-all ${feedbackSaved ? "bg-green-600/20 border border-green-500/40 text-green-400" : "bg-purple-600 hover:bg-purple-500 text-white shadow-lg shadow-purple-600/20"}`}>
+              <h3 className="text-xs font-bold text-[#A78BFA] uppercase tracking-wider flex items-center gap-2"><FaCommentAlt className="text-[10px]" />Feedback</h3>
+              <button onClick={saveFeedback} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold cursor-pointer transition-all ${feedbackSaved ? "bg-green-600/20 border border-green-500/40 text-green-400" : "bg-[#8B5CF6] hover:bg-[#A855F7] text-white shadow-lg shadow-[#8B5CF6]/20"}`}>
                 {feedbackSaved ? <><FaCheck className="text-[9px]" />Saved!</> : <><FaSave className="text-[9px]" />Save</>}
               </button>
             </div>
-            <textarea value={feedbackDraft} onChange={e => setFeedbackDraft(e.target.value)} placeholder="Enter feedback..." rows={4} className="w-full bg-[#111] border border-[#2a2a2a] rounded-xl px-3 py-2 text-sm text-white outline-none focus:border-purple-500 resize-none" />
+            <textarea value={feedbackDraft} onChange={e => setFeedbackDraft(e.target.value)} placeholder="Enter feedback..." rows={4} className="w-full bg-[#111] border border-[#2a2a2a] rounded-xl px-3 py-2 text-sm text-white outline-none focus:border-[#A855F7] resize-none" />
           </div>
 
           {/* Site Visit */}
@@ -392,12 +392,12 @@ function LeadDetailView({ lead, onBack, onUpdateLead, callerName }: {
         {/* Follow-up */}
         <div className="w-full lg:w-[58%] flex flex-col bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl overflow-hidden">
           <div className="p-4 border-b border-[#2a2a2a] bg-[#151515] flex-shrink-0">
-            <h3 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2"><FaClipboardList className="text-purple-400" />Follow-up Timeline</h3>
+            <h3 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2"><FaClipboardList className="text-[#A78BFA]" />Follow-up Timeline</h3>
           </div>
           <div className="flex-1 overflow-y-auto custom-scrollbar p-5 flex flex-col gap-5 bg-[#111]">
             <div className="flex justify-start">
               <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl rounded-tl-none p-4 max-w-[85%] shadow-md">
-                <div className="flex justify-between items-center mb-2 gap-6"><span className="font-bold text-xs text-purple-400">System</span><span className="text-[10px] text-gray-500">{formatDate(lead.savedAt)}</span></div>
+                <div className="flex justify-between items-center mb-2 gap-6"><span className="font-bold text-xs text-[#A78BFA]">System</span><span className="text-[10px] text-gray-500">{formatDate(lead.savedAt)}</span></div>
                 <p className="text-sm text-gray-300 leading-relaxed">Lead saved to Forms. Begin follow-up process.</p>
               </div>
             </div>
@@ -413,8 +413,8 @@ function LeadDetailView({ lead, onBack, onUpdateLead, callerName }: {
             <div ref={followUpEndRef} />
           </div>
           <form onSubmit={sendNote} className="p-4 bg-[#1a1a1a] border-t border-[#2a2a2a] flex gap-3 items-center flex-shrink-0">
-            <input type="text" value={noteInput} onChange={e => setNoteInput(e.target.value)} placeholder="Add follow-up note..." className="flex-1 bg-[#111] border border-[#333] rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-purple-500" />
-            <button type="submit" className="w-12 h-12 bg-purple-600 hover:bg-purple-500 text-white rounded-xl flex items-center justify-center cursor-pointer shadow-lg flex-shrink-0"><FaPaperPlane className="text-sm" /></button>
+            <input type="text" value={noteInput} onChange={e => setNoteInput(e.target.value)} placeholder="Add follow-up note..." className="flex-1 bg-[#111] border border-[#333] rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-[#A855F7]" />
+            <button type="submit" className="w-12 h-12 bg-[#8B5CF6] hover:bg-[#A855F7] text-white rounded-xl flex items-center justify-center cursor-pointer shadow-lg flex-shrink-0"><FaPaperPlane className="text-sm" /></button>
           </form>
         </div>
       </div>
@@ -432,8 +432,8 @@ function DashboardSection({ rawLeads, savedLeads, callerName }: { rawLeads: RawL
   const pending = savedLeads.filter(l => !l.interestStatus).length;
   const sourceMap = rawLeads.reduce<Record<string, number>>((acc, l) => { const s = l.source || "Unknown"; acc[s] = (acc[s] || 0) + 1; return acc; }, {});
   const stats = [
-    { label: "Total Uploaded", value: rawLeads.length, color: "text-white", bg: "bg-purple-500/10 border-purple-500/20" },
-    { label: "Saved to Forms", value: savedLeads.length, color: "text-purple-400", bg: "bg-purple-500/10 border-purple-500/20" },
+    { label: "Total Uploaded", value: rawLeads.length, color: "text-white", bg: "bg-[#A855F7]/10 border-[#A855F7]/20" },
+    { label: "Saved to Forms", value: savedLeads.length, color: "text-[#A78BFA]", bg: "bg-[#A855F7]/10 border-[#A855F7]/20" },
     { label: "Interested", value: interested, color: "text-green-400", bg: "bg-green-500/10 border-green-500/20" },
     { label: "Not Interested", value: notInterested, color: "text-red-400", bg: "bg-red-500/10 border-red-500/20" },
     { label: "Visits Scheduled", value: visits, color: "text-orange-400", bg: "bg-orange-500/10 border-orange-500/20" },
@@ -443,18 +443,18 @@ function DashboardSection({ rawLeads, savedLeads, callerName }: { rawLeads: RawL
     <div className="animate-fadeIn space-y-8">
       <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl p-6 flex justify-between items-center">
         <div><h2 className="text-xl font-bold text-white">Welcome, {callerName.split(" ")[0]}!</h2><p className="text-sm text-gray-500 mt-1">Presales Caller Dashboard — manage your lead pipeline below.</p></div>
-        <div className="w-12 h-12 bg-purple-600/20 border border-purple-500/30 rounded-xl flex items-center justify-center text-purple-400 text-xl font-bold">{callerName.charAt(0).toUpperCase()}</div>
+        <div className="w-12 h-12 bg-[#8B5CF6]/20 border border-[#A855F7]/30 rounded-xl flex items-center justify-center text-[#A78BFA] text-xl font-bold">{callerName.charAt(0).toUpperCase()}</div>
       </div>
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         {stats.map(s => <div key={s.label} className={`rounded-2xl p-5 border ${s.bg}`}><p className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-2">{s.label}</p><p className={`text-3xl font-black ${s.color}`}>{s.value}</p></div>)}
       </div>
       {Object.keys(sourceMap).length > 0 && (
         <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl p-6">
-          <h3 className="text-sm font-bold text-white mb-4 flex items-center gap-2"><FaChartBar className="text-purple-400" />Lead Source Breakdown</h3>
+          <h3 className="text-sm font-bold text-white mb-4 flex items-center gap-2"><FaChartBar className="text-[#A78BFA]" />Lead Source Breakdown</h3>
           <div className="space-y-3">
             {Object.entries(sourceMap).sort((a, b) => b[1] - a[1]).map(([src, count]) => {
               const pct = rawLeads.length > 0 ? Math.round((count / rawLeads.length) * 100) : 0;
-              return <div key={src}><div className="flex justify-between text-xs mb-1"><span className="text-gray-400 font-medium">{src}</span><span className="text-white font-bold">{count} ({pct}%)</span></div><div className="w-full h-1.5 bg-[#2a2a2a] rounded-full overflow-hidden"><div className="h-full bg-purple-500 rounded-full" style={{ width: `${pct}%` }} /></div></div>;
+              return <div key={src}><div className="flex justify-between text-xs mb-1"><span className="text-gray-400 font-medium">{src}</span><span className="text-white font-bold">{count} ({pct}%)</span></div><div className="w-full h-1.5 bg-[#2a2a2a] rounded-full overflow-hidden"><div className="h-full bg-[#A855F7] rounded-full" style={{ width: `${pct}%` }} /></div></div>;
             })}
           </div>
         </div>
@@ -896,8 +896,8 @@ export default function PresalesCallerPanel() {
   const handleLogout = () => { clearCrmSession(); router.replace("/"); };
 
   const sidebarItems = [
-    { id: "dashboard" as SidebarSection, icon: FaThLarge, label: "Dashboard", badge: null, activeColor: "text-purple-400 bg-purple-500/10", dotColor: "bg-purple-500" },
-    { id: "forms" as SidebarSection, icon: FaClipboardList, label: "Forms", badge: formLeads.length, activeColor: "text-purple-400 bg-purple-500/10", dotColor: "bg-purple-500" },
+    { id: "dashboard" as SidebarSection, icon: FaThLarge, label: "Dashboard", badge: null, activeColor: "text-[#A78BFA] bg-[#A855F7]/10", dotColor: "bg-[#A855F7]" },
+    { id: "forms" as SidebarSection, icon: FaClipboardList, label: "Forms", badge: formLeads.length, activeColor: "text-[#A78BFA] bg-[#A855F7]/10", dotColor: "bg-[#A855F7]" },
     { id: "interested" as SidebarSection, icon: FaHeart, label: "Interested", badge: interestedLeads.length, activeColor: "text-green-400 bg-green-500/10", dotColor: "bg-green-500" },
     { id: "not_interested" as SidebarSection, icon: FaTimesCircle, label: "Not Interested", badge: notIntLeads.length, activeColor: "text-red-400 bg-red-500/10", dotColor: "bg-red-500" },
   ];
@@ -955,14 +955,14 @@ export default function PresalesCallerPanel() {
 
       {/* SIDEBAR */}
       <aside className="w-20 bg-[#111111] border-r border-[#222] flex flex-col items-center py-6 flex-shrink-0 z-40 shadow-sm">
-        <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-blue-600 rounded-xl flex items-center justify-center text-xl font-bold text-white mb-10 shadow-lg cursor-pointer">B</div>
+        <div className="w-10 h-10 bg-gradient-to-br from-[#8B5CF6] to-[#A855F7] rounded-xl flex items-center justify-center text-xl font-bold text-white mb-10 shadow-lg cursor-pointer">B</div>
         <nav className="flex flex-col gap-2 w-full px-2 flex-1">
           {sidebarItems.map(({ id, icon: Icon, label, badge, activeColor, dotColor }) => (
             <div key={id} onClick={() => { setSection(id); setDetailLead(null); }} title={label}
               className={`relative flex flex-col items-center justify-center py-3 rounded-xl cursor-pointer transition-colors ${section === id ? activeColor : "text-gray-500 hover:bg-[#1a1a1a] hover:text-gray-300"}`}>
               {section === id && <div className={`absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 ${dotColor} rounded-r-full`} />}
               <Icon className="w-4 h-4" />
-              {badge !== null && badge! > 0 && <span className="absolute -top-1 -right-1 w-4 h-4 bg-purple-600 rounded-full text-[9px] font-black text-white flex items-center justify-center">{badge! > 9 ? "9+" : badge}</span>}
+              {badge !== null && badge! > 0 && <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#8B5CF6] rounded-full text-[9px] font-black text-white flex items-center justify-center">{badge! > 9 ? "9+" : badge}</span>}
             </div>
           ))}
         </nav>
@@ -980,20 +980,20 @@ export default function PresalesCallerPanel() {
             {dbState !== "idle" && <span className={`flex items-center gap-1.5 text-[11px] font-semibold px-3 py-1.5 rounded-lg border ${dbState === "saving" ? "text-blue-400 bg-blue-500/10 border-blue-500/20" : dbState === "saved" ? "text-green-400 bg-green-500/10 border-green-500/20" : "text-red-400 bg-red-500/10 border-red-500/20"}`}>{dbMessage}</span>}
             <button onClick={exportTemplate} className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold cursor-pointer border bg-[#1a1a1a] border-[#333] text-gray-300 hover:border-green-500/50 hover:text-green-400 transition-all"><FaDownload className="text-green-400" />Template</button>
             <div onDragOver={e => { e.preventDefault(); setIsDragging(true); }} onDragLeave={() => setIsDragging(false)} onDrop={handleDrop}>
-              <button onClick={() => fileInputRef.current?.click()} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold cursor-pointer border transition-all ${isDragging ? "bg-green-600 border-green-400 text-white" : "bg-[#1a1a1a] border-[#333] text-gray-300 hover:border-purple-500/50 hover:text-white"}`}>
+              <button onClick={() => fileInputRef.current?.click()} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold cursor-pointer border transition-all ${isDragging ? "bg-green-600 border-green-400 text-white" : "bg-[#1a1a1a] border-[#333] text-gray-300 hover:border-[#A855F7]/50 hover:text-white"}`}>
                 <FaFileExcel className="text-green-400" />{rawLeads.length > 0 ? `${rawLeads.length} Leads` : "Upload Excel"}<FaUpload className="text-xs" />
               </button>
               <input ref={fileInputRef} type="file" accept=".xlsx,.xls,.csv" onChange={handleFileChange} className="hidden" />
             </div>
             {uploadError && <span className="text-red-400 text-xs flex items-center gap-1"><FaExclamationTriangle />{uploadError}</span>}
             <div className="relative">
-              <div onClick={() => setIsProfileOpen(!isProfileOpen)} className="w-9 h-9 rounded-full bg-purple-900/30 text-purple-400 border border-purple-500/50 flex items-center justify-center font-bold text-sm cursor-pointer hover:bg-purple-900/50">{user.name.charAt(0).toUpperCase()}</div>
+              <div onClick={() => setIsProfileOpen(!isProfileOpen)} className="w-9 h-9 rounded-full bg-purple-900/30 text-[#A78BFA] border border-[#A855F7]/50 flex items-center justify-center font-bold text-sm cursor-pointer hover:bg-purple-900/50">{user.name.charAt(0).toUpperCase()}</div>
               {isProfileOpen && (
                 <div className="absolute top-12 right-0 w-56 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl shadow-2xl p-4 z-50 animate-fadeIn">
                   <h3 className="text-white font-bold">{user.name}</h3>
                   <p className="text-gray-400 text-xs truncate mb-3">{user.email}</p>
                   <hr className="border-[#2a2a2a] mb-3" />
-                  <p className="text-gray-400 text-sm flex justify-between">Role<span className="text-purple-400 font-bold capitalize">{user.role}</span></p>
+                  <p className="text-gray-400 text-sm flex justify-between">Role<span className="text-[#A78BFA] font-bold capitalize">{user.role}</span></p>
                   <button onClick={handleLogout} className="w-full mt-4 bg-red-900/30 text-red-400 hover:bg-red-900/50 border border-red-900/30 py-2 rounded-lg font-semibold cursor-pointer text-sm">Logout</button>
                 </div>
               )}
@@ -1009,13 +1009,13 @@ export default function PresalesCallerPanel() {
           {section === "dashboard" && rawLeads.length > 0 && (
             <div className="mt-8 animate-fadeIn">
               <div className="flex flex-col sm:flex-row gap-3 mb-4">
-                <div className="relative flex-1"><FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs" /><input type="text" placeholder="Search by name, phone, ID, manager..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full bg-[#1a1a1a] border border-[#222] rounded-lg pl-9 pr-4 py-2 text-sm text-white focus:border-purple-500 outline-none" /></div>
-                <select value={sourceFilter} onChange={e => setSourceFilter(e.target.value)} className="bg-[#1a1a1a] border border-[#222] rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-purple-500 cursor-pointer">{uniqueSources.map(s => <option key={s} value={s}>{s}</option>)}</select>
+                <div className="relative flex-1"><FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs" /><input type="text" placeholder="Search by name, phone, ID, manager..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full bg-[#1a1a1a] border border-[#222] rounded-lg pl-9 pr-4 py-2 text-sm text-white focus:border-[#A855F7] outline-none" /></div>
+                <select value={sourceFilter} onChange={e => setSourceFilter(e.target.value)} className="bg-[#1a1a1a] border border-[#222] rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-[#A855F7] cursor-pointer">{uniqueSources.map(s => <option key={s} value={s}>{s}</option>)}</select>
                 <span className="text-xs text-gray-500 self-center flex-shrink-0">{filteredRaw.length} of {rawLeads.length} leads</span>
               </div>
               <div className="bg-[#111111] rounded-2xl border border-[#222] overflow-hidden shadow-sm">
                 <div className="p-4 border-b border-[#222] bg-[#151515] flex justify-between items-center">
-                  <h3 className="font-bold text-white flex items-center gap-2 text-sm"><FaUpload className="text-purple-400" />Uploaded Leads</h3>
+                  <h3 className="font-bold text-white flex items-center gap-2 text-sm"><FaUpload className="text-[#A78BFA]" />Uploaded Leads</h3>
                   <div className="flex items-center gap-2">
                     <span className="text-[10px] text-gray-500 bg-[#222] px-2 py-0.5 rounded border border-[#333]">Click any row to open ticket</span>
                     {rawLeads.length > 0 && (
@@ -1044,11 +1044,11 @@ export default function PresalesCallerPanel() {
                               key={lead.id}
                               onClick={() => setTicketLead(lead)}
                               className={`transition-colors cursor-pointer group ${lockedByOther ? "bg-[#1a1010] hover:bg-[#1e1212] opacity-70" : "hover:bg-[#1a1a1a]"}`}>
-                              <td className="px-4 py-3 font-mono text-purple-400 font-bold">#{lead.lead_number ?? lead.id}</td>
+                              <td className="px-4 py-3 font-mono text-[#A78BFA] font-bold">#{lead.lead_number ?? lead.id}</td>
                               <td className="px-4 py-3 font-semibold whitespace-nowrap">
                                 <div className="flex items-center gap-2">
                                   {lockedByOther && <FaLock className="text-red-500 text-[10px] flex-shrink-0" title={`Locked by ${lockedBy}`} />}
-                                  <span className={lockedByOther ? "text-gray-500" : "text-white group-hover:text-purple-300"}>{lead.name}</span>
+                                  <span className={lockedByOther ? "text-gray-500" : "text-white group-hover:text-[#C084FC]"}>{lead.name}</span>
                                 </div>
                               </td>
                               <td className="px-4 py-3 font-mono">{maskPhone(lead.phone)}</td>
@@ -1059,7 +1059,7 @@ export default function PresalesCallerPanel() {
                               <td className="px-4 py-3" onClick={e => e.stopPropagation()}><InterestCell lead={lead} /></td>
                               <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
                                 {lead.dbSavedBy && lead.dbSavedBy !== "admin" && lead.dbSavedBy !== "unknown"
-                                  ? <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full inline-flex items-center gap-1 whitespace-nowrap border ${savedByMe ? "text-purple-300 bg-purple-500/10 border-purple-500/20" : "text-red-300 bg-red-500/10 border-red-500/20"}`}>
+                                  ? <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full inline-flex items-center gap-1 whitespace-nowrap border ${savedByMe ? "text-[#C084FC] bg-[#A855F7]/10 border-[#A855F7]/20" : "text-red-300 bg-red-500/10 border-red-500/20"}`}>
                                     {savedByMe ? <FaPhoneAlt className="text-[8px]" /> : <FaLock className="text-[8px]" />}
                                     {savedByMe ? `Caller · ${user.name}` : lead.dbSavedBy}
                                   </span>
@@ -1085,16 +1085,16 @@ export default function PresalesCallerPanel() {
           {/* Forms */}
           {section === "forms" && !detailLead && (
             <div className="animate-fadeIn">
-              <div className="flex justify-between items-center mb-6"><h2 className="text-xl font-bold text-white flex items-center gap-2"><FaClipboardList className="text-purple-400" />Saved Forms</h2><span className="text-xs text-gray-500 bg-[#1a1a1a] border border-[#222] px-3 py-1.5 rounded-full">{formLeads.length} leads</span></div>
+              <div className="flex justify-between items-center mb-6"><h2 className="text-xl font-bold text-white flex items-center gap-2"><FaClipboardList className="text-[#A78BFA]" />Saved Forms</h2><span className="text-xs text-gray-500 bg-[#1a1a1a] border border-[#222] px-3 py-1.5 rounded-full">{formLeads.length} leads</span></div>
               {formLeads.length === 0
                 ? <div className="border-2 border-dashed border-[#2a2a2a] rounded-2xl p-16 text-center text-gray-600"><FaSave className="text-5xl mx-auto mb-4 opacity-20" /><p className="font-semibold mb-1">No saved leads yet</p><p className="text-sm">Save a lead from the Leads table to see it here.</p></div>
                 : <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
                   {formLeads.map(lead => (
-                    <div key={lead.id} onClick={() => setDetailLead(lead)} className="bg-[#1a1a1a] border border-[#2a2a2a] hover:border-purple-500/50 rounded-2xl p-5 cursor-pointer transition-all group">
+                    <div key={lead.id} onClick={() => setDetailLead(lead)} className="bg-[#1a1a1a] border border-[#2a2a2a] hover:border-[#A855F7]/50 rounded-2xl p-5 cursor-pointer transition-all group">
                       <div className="flex justify-between items-start mb-4 pb-3 border-b border-[#2a2a2a]">
                         <div>
-                          <p className="text-[10px] text-purple-400 font-bold mb-1">#{lead.lead_number ?? lead.id}{lead.dbId && <span className="ml-2 text-green-600 font-mono"><FaDatabase className="inline text-[8px]" />{lead.dbId}</span>}</p>
-                          <h3 className="text-white font-bold group-hover:text-purple-300">{lead.name}</h3>
+                          <p className="text-[10px] text-[#A78BFA] font-bold mb-1">#{lead.lead_number ?? lead.id}{lead.dbId && <span className="ml-2 text-green-600 font-mono"><FaDatabase className="inline text-[8px]" />{lead.dbId}</span>}</p>
+                          <h3 className="text-white font-bold group-hover:text-[#C084FC]">{lead.name}</h3>
                         </div>
                         {lead.interestStatus ? interestBadge(lead.interestStatus) : <span className="text-[10px] font-bold text-gray-500 bg-[#222] border border-[#333] px-2 py-0.5 rounded-full">Pending</span>}
                       </div>
@@ -1106,7 +1106,7 @@ export default function PresalesCallerPanel() {
                       </div>
                       <div className="mt-4 pt-3 border-t border-[#2a2a2a] flex justify-between items-center">
                         <span className="text-[10px] text-gray-600">{formatDate(lead.savedAt).split(",")[0]}</span>
-                        <div className="flex items-center gap-2">{sourceBadge(lead.source)}<span className="text-[10px] text-gray-500 group-hover:text-purple-400 font-bold">Open →</span></div>
+                        <div className="flex items-center gap-2">{sourceBadge(lead.source)}<span className="text-[10px] text-gray-500 group-hover:text-[#A78BFA] font-bold">Open →</span></div>
                       </div>
                     </div>
                   ))}
@@ -1140,7 +1140,7 @@ export default function PresalesCallerPanel() {
                           <td className="px-5 py-3 text-[11px]">{formatDate(lead.savedAt).split(",")[0]}</td>
                           <td className="px-5 py-3">
                             <div className="flex items-center gap-2 justify-center">
-                              <button onClick={() => { setDetailLead(lead); setSection("forms"); setSavedLeads(prev => prev.map(l => l.id === lead.id ? { ...l, status: "saved", interestStatus: undefined } : l)); }} className="text-gray-500 hover:text-purple-400 cursor-pointer text-xs flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-purple-500/10 border border-transparent hover:border-purple-500/20"><FaEye className="text-[10px]" />View</button>
+                              <button onClick={() => { setDetailLead(lead); setSection("forms"); setSavedLeads(prev => prev.map(l => l.id === lead.id ? { ...l, status: "saved", interestStatus: undefined } : l)); }} className="text-gray-500 hover:text-[#A78BFA] cursor-pointer text-xs flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-[#A855F7]/10 border border-transparent hover:border-[#A855F7]/20"><FaEye className="text-[10px]" />View</button>
                               <button onClick={() => revertLead(lead.id)} className="text-gray-500 hover:text-green-400 cursor-pointer text-xs flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-green-500/10 border border-transparent hover:border-green-500/20"><FaUndo className="text-[10px]" />Revert</button>
                             </div>
                           </td>

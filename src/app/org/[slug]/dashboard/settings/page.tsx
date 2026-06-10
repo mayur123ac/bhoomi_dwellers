@@ -81,13 +81,13 @@ export default function SettingsPage() {
                   value={whatsappNumber}
                   onChange={e => setWhatsappNumber(e.target.value)}
                   placeholder="e.g. 919876543210"
-                  className="w-full bg-[#222] border border-[#333] rounded-lg p-3 text-sm outline-none transition-colors focus:border-[#9E217B] text-white"
+                  className="w-full bg-[#222] border border-[#333] rounded-lg p-3 text-sm outline-none transition-colors focus:border-[#8B5CF6] text-white"
                 />
               </div>
               <button
                 onClick={handleSave}
                 disabled={saving || !whatsappNumber.trim()}
-                className={`w-full sm:w-auto px-6 py-3 rounded-lg font-bold text-sm transition-all ${saved ? "bg-green-600 text-white" : saving || !whatsappNumber.trim() ? "opacity-50 cursor-not-allowed bg-gray-600 text-white" : "bg-[#9E217B] hover:bg-[#b8268f] text-white"
+                className={`w-full sm:w-auto px-6 py-3 rounded-lg font-bold text-sm transition-all ${saved ? "bg-green-600 text-white" : saving || !whatsappNumber.trim() ? "opacity-50 cursor-not-allowed bg-gray-600 text-white" : "bg-[#8B5CF6] hover:bg-[#7C3AED] text-white"
                   }`}
               >
                 {saved ? "✓ Saved" : saving ? "Saving..." : "Save Changes"}
@@ -127,7 +127,7 @@ export default function SettingsPage() {
                   </div>
                   <button 
                     onClick={() => router.push(`/org/${user.organizationSlug}/dashboard/settings/billing`)}
-                    className="px-4 py-2 bg-[#222] border border-[#333] hover:border-[#9E217B] text-white text-xs font-bold rounded-lg transition-colors"
+                    className="px-4 py-2 bg-[#222] border border-[#333] hover:border-[#8B5CF6] text-white text-xs font-bold rounded-lg transition-colors"
                   >
                     View Billing
                   </button>
@@ -255,7 +255,7 @@ function AdminUpdatesManager({ user }: { user: any }) {
 
   return (
     <div>
-      <h3 className="text-sm font-bold mb-2 text-[#9E217B]">Manage System Updates</h3>
+      <h3 className="text-sm font-bold mb-2 text-[#8B5CF6]">Manage System Updates</h3>
       <p className="text-xs text-gray-400 mb-6">Create, edit, or delete release notes that appear in the CRM megaphone icon.</p>
 
       <form onSubmit={handlePublish} className={`space-y-4 p-5 rounded-xl border ${editingId ? 'bg-indigo-900/10 border-indigo-500/30' : 'bg-[#1a1a1a] border-[#333]'}`}>
@@ -273,11 +273,11 @@ function AdminUpdatesManager({ user }: { user: any }) {
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-xs font-medium text-gray-400 mb-1.5">Version Number (e.g. 2.1.0)</label>
-            <input required value={version} onChange={e => setVersion(e.target.value)} className="w-full bg-[#222] border border-[#333] rounded-lg p-2.5 text-sm outline-none focus:border-[#9E217B]" />
+            <input required value={version} onChange={e => setVersion(e.target.value)} className="w-full bg-[#222] border border-[#333] rounded-lg p-2.5 text-sm outline-none focus:border-[#8B5CF6]" />
           </div>
           <div>
             <label className="block text-xs font-medium text-gray-400 mb-1.5">Category</label>
-            <select value={category} onChange={e => setCategory(e.target.value)} className="w-full bg-[#222] border border-[#333] rounded-lg p-2.5 text-sm outline-none focus:border-[#9E217B]">
+            <select value={category} onChange={e => setCategory(e.target.value)} className="w-full bg-[#222] border border-[#333] rounded-lg p-2.5 text-sm outline-none focus:border-[#8B5CF6]">
               <option>Major Update</option>
               <option>Minor Update</option>
               <option>Bug Fixes</option>
@@ -288,21 +288,21 @@ function AdminUpdatesManager({ user }: { user: any }) {
 
         <div>
           <label className="block text-xs font-medium text-gray-400 mb-1.5">Title</label>
-          <input required value={title} onChange={e => setTitle(e.target.value)} className="w-full bg-[#222] border border-[#333] rounded-lg p-2.5 text-sm outline-none focus:border-[#9E217B]" />
+          <input required value={title} onChange={e => setTitle(e.target.value)} className="w-full bg-[#222] border border-[#333] rounded-lg p-2.5 text-sm outline-none focus:border-[#8B5CF6]" />
         </div>
 
         <div>
           <label className="block text-xs font-medium text-gray-400 mb-1.5">Description (Paragraph)</label>
-          <textarea value={description} onChange={e => setDescription(e.target.value)} className="w-full bg-[#222] border border-[#333] rounded-lg p-2.5 text-sm outline-none focus:border-[#9E217B] h-20 resize-none" />
+          <textarea value={description} onChange={e => setDescription(e.target.value)} className="w-full bg-[#222] border border-[#333] rounded-lg p-2.5 text-sm outline-none focus:border-[#8B5CF6] h-20 resize-none" />
         </div>
 
         <div>
           <label className="block text-xs font-medium text-gray-400 mb-1.5">Bullet Points (One per line)</label>
-          <textarea placeholder="Added new layout&#10;Fixed bug in dashboard" value={features} onChange={e => setFeatures(e.target.value)} className="w-full bg-[#222] border border-[#333] rounded-lg p-2.5 text-sm outline-none focus:border-[#9E217B] h-28 resize-none" />
+          <textarea placeholder="Added new layout&#10;Fixed bug in dashboard" value={features} onChange={e => setFeatures(e.target.value)} className="w-full bg-[#222] border border-[#333] rounded-lg p-2.5 text-sm outline-none focus:border-[#8B5CF6] h-28 resize-none" />
         </div>
 
         <div className="flex items-center gap-2 mt-2">
-          <input type="checkbox" id="isImportant" checked={isImportant} onChange={e => setIsImportant(e.target.checked)} className="accent-[#9E217B]" />
+          <input type="checkbox" id="isImportant" checked={isImportant} onChange={e => setIsImportant(e.target.checked)} className="accent-[#8B5CF6]" />
           <label htmlFor="isImportant" className="text-xs text-gray-300 cursor-pointer">Mark as Important (Shows red warning icon)</label>
         </div>
 
@@ -313,7 +313,7 @@ function AdminUpdatesManager({ user }: { user: any }) {
         )}
 
         <div className="pt-2">
-          <button type="submit" disabled={publishing} className={`w-full hover:bg-opacity-90 disabled:opacity-50 text-white font-bold py-3 rounded-lg text-sm transition-colors ${editingId ? 'bg-indigo-600' : 'bg-[#9E217B]'}`}>
+          <button type="submit" disabled={publishing} className={`w-full hover:bg-opacity-90 disabled:opacity-50 text-white font-bold py-3 rounded-lg text-sm transition-colors ${editingId ? 'bg-indigo-600' : 'bg-[#8B5CF6]'}`}>
             {publishing ? "Saving..." : editingId ? "Save Changes" : "Publish to Megaphone"}
           </button>
         </div>

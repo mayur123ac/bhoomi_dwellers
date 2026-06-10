@@ -191,7 +191,7 @@ const LeafletMapWrapper = dynamic(
     loading: () => (
       <div className="w-full h-full flex items-center justify-center" style={{ background: "rgba(0,0,0,0.5)" }}>
         <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 border-2 border-[#9E217B] border-t-transparent rounded-full animate-spin" />
+          <div className="w-8 h-8 border-2 border-[#8B5CF6] border-t-transparent rounded-full animate-spin" />
           <p className="text-gray-400 text-xs">Loading map...</p>
         </div>
       </div>
@@ -406,7 +406,7 @@ export default function GeoAnalyticsView({
 
   const summaryCards = [
     { label: "Top Origin Region", value: analytics.topOrigin, icon: "🏠", color: "text-blue-400" },
-    { label: "Top Demand Region", value: analytics.topDest, icon: "🏢", color: "text-[#d946a8]" },
+    { label: "Top Demand Region", value: analytics.topDest, icon: "🏢", color: "text-[#A78BFA]" },
     { label: "Top Migration Flow", value: analytics.topFlow, icon: "↗️", color: "text-orange-400" },
     { label: "Average Budget", value: fmtBudget(analytics.avgBudget), icon: "💰", color: "text-green-400" },
   ];
@@ -424,7 +424,7 @@ export default function GeoAnalyticsView({
           {isGeocoding && (
             <div className="flex items-center gap-2 ml-auto">
               <div className="w-32 h-1.5 rounded-full bg-gray-700 overflow-hidden">
-                <div className="h-full bg-[#9E217B] transition-all duration-300 rounded-full" style={{ width: `${geocodeProgress}%` }} />
+                <div className="h-full bg-[#8B5CF6] transition-all duration-300 rounded-full" style={{ width: `${geocodeProgress}%` }} />
               </div>
               <span className={`text-xs ${theme.textFaint}`}>Locating leads... {geocodeProgress}%</span>
             </div>
@@ -479,7 +479,7 @@ export default function GeoAnalyticsView({
                   key={opt}
                   onClick={() => setDestFilter(opt)}
                   className={`text-[10px] font-bold px-2.5 py-1 rounded-full border transition-all cursor-pointer ${destFilter === opt
-                      ? isDark ? "bg-[#9E217B]/20 border-[#9E217B]/60 text-[#d946a8]" : "bg-[#9E217B]/15 border-[#9E217B] text-[#9E217B]"
+                      ? isDark ? "bg-[#8B5CF6]/20 border-[#8B5CF6]/60 text-[#A78BFA]" : "bg-[#8B5CF6]/15 border-[#8B5CF6] text-[#8B5CF6]"
                       : `${theme.settingsBg} ${theme.textMuted}`
                     }`}
                 >{opt}</button>

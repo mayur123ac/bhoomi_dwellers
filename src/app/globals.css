@@ -55,8 +55,8 @@ body {
 
 .scrollbar-light::-webkit-scrollbar-thumb:hover,
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background-color: #9E217B;
-  /* Magenta Accent */
+  background-color: #8B5CF6;
+  /* Violet Accent */
 }
 
 /* --- DARK MODE SCROLLBAR --- */
@@ -75,8 +75,8 @@ body {
 }
 
 .scrollbar-dark::-webkit-scrollbar-thumb:hover {
-  background-color: #d946a8;
-  /* Lighter Magenta Accent for Dark Mode */
+  background-color: #A78BFA;
+  /* Lighter Violet Accent for Dark Mode */
 }
 
 /* Firefox compatibility */

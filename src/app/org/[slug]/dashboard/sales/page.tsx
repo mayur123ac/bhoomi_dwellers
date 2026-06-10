@@ -8,6 +8,7 @@ import { useEffect, useState, useRef, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { clearCrmSession, getStoredCrmUser, installLoggedOutBackGuard } from "@/lib/authSession";
 import { getDashboardPath } from "@/lib/rbac";
+import { buildTheme } from "@/lib/theme";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Bot, User, Send, BarChart2, AlertTriangle, Landmark, CalendarDays,
@@ -53,146 +54,13 @@ const SunIcon = () => (
     <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" /><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
   </svg>
 );
+
 const MoonIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
   </svg>
 );
 
-// ─── THEME TOKEN BUILDER ──────────────────────────────────────────────────────
-function buildTheme(isDark: boolean) {
-  return {
-    // ── Page & Layout ──
-    pageWrap: isDark ? "bg-[#0A0A0F] text-white" : "text-[#1A1A1A]",
-    mainBg: isDark ? "bg-[#121212]" : "bg-[#F1F5F9]",
-
-    // ── Sidebar (stays dark in both modes, like receptionist) ──
-    sidebar: "bg-[#1a1a1a] border-[#2a2a2a]",
-
-    // ── Header ──
-    header: isDark ? "bg-[#1a1a1a] border-[#2a2a2a]" : "bg-white border-[#9CA3AF]",
-    headerGlass: isDark ? {} : { boxShadow: "0 1px 0 #9CA3AF, 0 4px 16px rgba(158,33,123,0.06)" },
-
-    // ── Cards (Hover color and shadow only, no size increase) ──
-    card: isDark
-      ? "bg-[#1a1a1a] border border-[#2a2a2a] transition-all duration-300 hover:border-[#d946a8]/50 hover:bg-[#1e1e1e] hover:shadow-2xl hover:shadow-[#d946a8]/20 flex flex-col h-full"
-      : "bg-gradient-to-r from-[#f1f5ff] via-[#eef2ff] to-[#f5f3ff] border border-indigo-300 transition-all duration-300 hover:border-[#9E217B]/50 hover:shadow-2xl hover:shadow-[#9E217B]/20 flex flex-col h-full",
-    cardGlass: isDark ? {} : { boxShadow: "0 1px 2px rgba(0,0,0,0.04), 0 4px 12px rgba(158,33,123,0.07), 0 12px 28px rgba(0,0,0,0.08)" },
-    cardClosing: isDark ? "bg-yellow-900/10 border-yellow-500/30 transition-all duration-300 hover:border-yellow-400/60 hover:shadow-2xl hover:shadow-yellow-500/20 flex flex-col h-full" : "bg-amber-50 border-amber-200 transition-all duration-300 hover:border-amber-400/60 hover:shadow-2xl hover:shadow-[0_0_20px_4px_rgba(251,191,36,0.15)] flex flex-col h-full",
-
-    // ── Tables ──
-    tableWrap: isDark ? "bg-[#1a1a1a] border-[#2a2a2a]" : "bg-white border border-indigo-300",
-    tableGlass: isDark ? {} : { boxShadow: "0 1px 2px rgba(0,0,0,0.04), 0 4px 12px rgba(158,33,123,0.06), 0 16px 36px rgba(0,0,0,0.09)" },
-    tableHead: isDark ? "bg-[#222]" : "bg-[#F1F5F9] border border-indigo-300",
-    tableRow: isDark ? "hover:bg-[#252525]" : "hover:bg-[#F8FAFC] border border-indigo-200",
-    tableDivide: isDark ? "divide-[#2a2a2a]" : "divide-[#E5E7EB]",
-    tableBorder: isDark ? "border-[#2a2a2a]" : "border-[#D1D5DB]",
-
-    // ── Inputs ──
-    inputBg: isDark ? "bg-[#1a1a1a] border-[#333]" : "bg-white border border-indigo-300",
-    inputInner: isDark ? "bg-[#121212] border-[#333]" : "bg-white border border-indigo-300",
-    inputFocus: isDark ? "focus:border-[#d946a8]" : "focus:border-[#00AEEF]",
-
-    // ── Inner blocks / settings bg ──
-    settingsBg: isDark ? "bg-[#222] border-[#2a2a2a]" : "bg-[#F8FAFC] border border-indigo-300",
-    settingsBgGl: isDark ? {} : { boxShadow: "inset 0 1px 3px rgba(0,0,0,0.04)" },
-    innerBlock: isDark ? "bg-[#121212] border-[#333]" : "bg-white border-[#D1D5DB]",
-
-    // ── Modals / panels ──
-    modalCard: isDark ? "bg-[#1a1a1a] border-[#2a2a2a]" : "bg-white border border-indigo-300",
-    modalGlass: isDark ? {} : { boxShadow: "0 2px 4px rgba(0,0,0,0.04), 0 8px 24px rgba(158,33,123,0.08), 0 32px 72px rgba(0,0,0,0.16)" },
-    modalInner: isDark ? "bg-[#121212]" : "bg-[#F8FAFC] border border-indigo-300",
-    modalHeader: isDark ? "bg-[#151515]" : "bg-[#F1F5F9]",
-
-    // ── Dropdowns / Notifications ──
-    dropdown: isDark ? "bg-[#1a1a1a] border-[#2a2a2a]" : "bg-white border-[#9CA3AF]",
-    dropdownGlass: isDark ? {} : { boxShadow: "0 2px 4px rgba(0,0,0,0.04), 0 8px 20px rgba(158,33,123,0.08), 0 20px 40px rgba(0,0,0,0.10)" },
-    dropdownItem: isDark ? "hover:bg-[#222] border-[#222]" : "hover:bg-[#F8FAFC] border-[#F0F0F0]",
-
-    // ── Typography ──
-    text: isDark ? "text-white" : "text-[#0f172a]",
-    textMuted: isDark ? "text-gray-400" : "text-[#334155]",
-    textFaint: isDark ? "text-gray-500" : "text-[#475569]",
-    textHeader: isDark ? "text-xs text-gray-500 uppercase" : "text-xs text-[#334155] font-bold uppercase",
-
-    // ── Navigation ──
-    navActive: isDark ? "bg-[#9E217B]/20 border-[#9E217B]/60 text-[#d946a8]" : "bg-[#9E217B]/20 text-[#d946a8] border-transparent",
-    navInactive: isDark ? "text-gray-500 hover:text-gray-300 hover:bg-white/5 border-transparent" : "text-[#9CA3AF] hover:bg-[#2A2A2A] hover:text-white border-transparent",
-    navIndicator: isDark ? "bg-[#d946a8] shadow-[0_0_10px_2px_rgba(158,33,123,0.5)]" : "bg-[#9E217B] shadow-[0_0_8px_rgba(158,33,123,0.4)]",
-
-    // ── Theme Toggle ──
-    toggleWrap: isDark ? "bg-[#1C1C2A] border-[#2A2A38] text-yellow-300" : "bg-[#F1F5F9] border-[#9CA3AF] text-[#1A1A1A]",
-
-    // ── Chat ──
-    chatArea: isDark ? "bg-[#0a0a0a]" : "bg-[#EDEFF3]",
-    chatBubbleAi: isDark ? "bg-[#141414] border border-[#262626] text-gray-200" : "bg-[#F3F4F6] border border-[#E2E8F0] text-gray-900 font-medium shadow-sm",
-    chatBubbleUser: isDark ? "bg-[#9E217B] text-white" : "bg-[#9E217B] text-white shadow-md",
-    chatInput: isDark
-      ? "bg-[#111] border border-[#2a2a2a] hover:border-[#3a3a3a]"
-      : "bg-[#F3F4F6] border border-[#CBD5E1] hover:border-[#64748B] shadow-inner",
-    chatInputInner: isDark ? "bg-[#111] border border-[#2a2a2a]" : "bg-white border border-[#E5E7EB]",
-    chatPanel: isDark ? "bg-[#1a1a1a] border border-[#2a2a2a]" : "bg-white border border-[#E5E7EB]",
-    chatPanelGl: isDark ? {} : { boxShadow: "0 2px 6px rgba(0,0,0,0.05), 0 8px 24px rgba(158,33,123,0.08)" },
-
-    // ── Stat glow orbs ──
-    statGlow1: isDark ? "bg-[#d946a8]/10" : "bg-[#00AEEF]/10",
-    statGlow2: isDark ? "bg-blue-600/10" : "bg-[#9E217B]/10",
-    statGlow3: isDark ? "bg-blue-600/10" : "bg-indigo-400/10",
-    statGlow4: isDark ? "bg-yellow-500/10" : "bg-amber-400/10",
-    statGlow5: isDark ? "bg-green-600/10" : "bg-emerald-400/10",
-
-    // ── Brand accent ──
-    accentText: isDark ? "text-[#d946a8]" : "text-[#00AEEF]",
-    accentBg: isDark ? "bg-[#d946a8]/10 text-[#d946a8] border border-[#d946a8]/30" : "bg-[#00AEEF]/10 text-[#00AEEF] border border-[#00AEEF]/30",
-    sectionTitle: isDark ? "text-[#d946a8]" : "text-[#9E217B]",
-    sectionBorder: isDark ? "border-[#d946a8]/20" : "border-[#9E217B]/25",
-
-    // ── Buttons ──
-    btnPrimary: isDark ? "bg-[#9E217B] hover:bg-[#7a1960] text-white shadow-md transition-colors duration-200 flex items-center justify-center min-h-[40px] px-4 py-2" : "bg-[#9E217B] hover:bg-[#7a1960] text-white shadow-sm transition-colors duration-200 flex items-center justify-center min-h-[40px] px-4 py-2",
-    btnSecondary: isDark ? "bg-[#00AEEF] hover:bg-[#0088bb] text-white shadow-md transition-colors duration-200 flex items-center justify-center min-h-[40px] px-4 py-2" : "bg-[#00AEEF] hover:bg-[#0088bb] text-white shadow-sm transition-colors duration-200 flex items-center justify-center min-h-[40px] px-4 py-2",
-    btnDanger: isDark ? "bg-[#3B1F1F] text-[#F28B82] hover:bg-[#4f2a2a] border border-red-900/30 transition-colors duration-200 flex items-center justify-center min-h-[40px] px-4 py-2" : "bg-[#9E217B]/10 text-[#9E217B] hover:bg-[#9E217B]/20 border border-[#9E217B]/30 transition-colors duration-200 flex items-center justify-center min-h-[40px] px-4 py-2",
-    btnWarning: isDark ? "bg-yellow-600 hover:bg-yellow-700 text-white shadow-md transition-colors duration-200 flex items-center justify-center min-h-[40px] px-4 py-2" : "bg-amber-500 hover:bg-amber-600 text-white shadow-sm transition-colors duration-200 flex items-center justify-center min-h-[40px] px-4 py-2",
-    btnClosingBadge: isDark ? "bg-yellow-900/20 border border-yellow-500/40 text-yellow-400 flex items-center justify-center min-h-[40px] px-4 py-2" : "bg-amber-50 border border-amber-400/60 text-amber-600 flex items-center justify-center min-h-[40px] px-4 py-2",
-
-    // ── Logo ──
-    logoBg: isDark ? "bg-[#9E217B] shadow-lg shadow-[#9E217B]/30" : "bg-[#9E217B] shadow-lg shadow-[#9E217B]/30",
-
-    // ── Chart colors ──
-    chartColors: isDark
-      ? ["#d946a8", "#8b5cf6", "#3b82f6", "#0ea5e9", "#6b7280"]
-      : ["#00AEEF", "#9E217B", "#0077b6", "#d4006e", "#9CA3AF"],
-
-    // ── Pie/chart tooltip ──
-    tooltipBg: isDark ? "#1a1a1a" : "rgba(255,255,255,0.98)",
-    tooltipColor: isDark ? "#fff" : "#1A1A1A",
-    tooltipBorder: isDark ? "1px solid rgba(158,33,123,0.3)" : "1px solid #E5E7EB",
-    legendColor: isDark ? "#9ca3af" : "#6B7280",
-
-    // ── Follow-up bubble backgrounds ──
-    fupDefault: isDark ? "bg-[#1f0a18] border border-[#9E217B]/30" : "bg-indigo-50 border border-indigo-200",
-    fupLoan: isDark ? "bg-blue-900/20 border border-blue-600/40" : "bg-blue-50 border border-blue-200",
-    fupSalesform: isDark ? "bg-[#222] border border-[#444]" : "bg-white border border-[#D1D5DB]",
-    fupClosing: isDark ? "bg-yellow-900/20 border border-yellow-600/40" : "bg-amber-50 border border-amber-300",
-
-    // ── Pill/badge status ──
-    statusRouted: isDark ? "text-[#d946a8] border-[#9E217B]/30 bg-[#9E217B]/10" : "text-[#00AEEF] border-[#00AEEF]/30 bg-[#00AEEF]/10",
-    statusVisit: isDark ? "text-orange-400 border-orange-500/30 bg-orange-500/10" : "text-orange-500 border-orange-400/40 bg-orange-50",
-    statusClosing: isDark ? "text-yellow-400 border-yellow-500/40 bg-yellow-500/10" : "text-amber-600 border-amber-400/50 bg-amber-50",
-    statusLost: isDark ? "text-red-300 border-red-500/30 bg-red-950/30" : "text-red-700 border-red-300 bg-red-50",
-    statusNGD: "bg-[rgba(251,146,60,0.12)] text-[#F97316] border border-[rgba(249,115,22,0.4)]",
-    cardLost: isDark ? "bg-[#171717] border border-red-900/25 opacity-70 grayscale saturate-50 transition-all duration-300 hover:opacity-90 hover:border-red-500/30 flex flex-col h-full" : "bg-slate-100 border border-red-200 opacity-75 grayscale saturate-50 transition-all duration-300 hover:opacity-90 hover:border-red-300 flex flex-col h-full",
-    cardNGD: "bg-[rgba(249,115,22,0.06)] border border-[rgba(249,115,22,0.35)] hover:border-[#F97316] shadow-[0_4px_12px_rgba(249,115,22,0.12)] transition-all duration-300 flex flex-col h-full",
-    rowLost: isDark ? "bg-[#151515]/80 text-gray-500 opacity-75 grayscale" : "bg-slate-100/80 text-slate-500 opacity-80 grayscale",
-    rowNGD: "bg-[rgba(249,115,22,0.03)]",
-
-    // ── Select / form elements ──
-    select: isDark ? "bg-[#121212] border-[#333] text-white focus:border-[#d946a8]" : "bg-white border-[#9CA3AF] text-[#1A1A1A] focus:border-[#00AEEF]",
-    selectSmall: isDark ? "bg-[#222] border-[#333] text-white" : "bg-white border-[#D1D5DB] text-[#6B7280]",
-
-    // ── Scroll ──
-    scroll: isDark ? "scrollbar-dark" : "scrollbar-light",
-  };
-}
 
 // ============================================================================
 // SHARED REAL-TIME DATA HOOK (unchanged)
@@ -561,7 +429,7 @@ export default function SalesDashboard() {
                 onClick={() => { setActivePopup(activePopup === "profile" ? null : "profile"); }}
                 className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-bold text-sm sm:text-base cursor-pointer shadow-md hover:scale-105 transition-transform ${isDark
                   ? "border border-purple-500/40 text-purple-400 bg-purple-500/15"
-                  : "border border-[#00AEEF]/40 bg-[#9E217B]/20 text-[#d946a8]"
+                  : "border border-[#8B5CF6]/40 bg-[#8B5CF6]/20 text-[#A78BFA]"
                   }`}
               >
                 <FaUserCircle className="text-lg sm:text-xl" />
@@ -583,7 +451,7 @@ export default function SalesDashboard() {
                     <div className="space-y-4 mb-6 text-sm">
                       <p className={`flex justify-between items-center ${t.textMuted}`}>
                         Role:
-                        <span className={`font-bold capitalize px-2 py-0.5 rounded text-xs ${isDark ? "text-purple-400 bg-purple-500/10 border border-purple-500/30" : "text-[#00AEEF] bg-[#00AEEF]/10 border border-[#00AEEF]/30"}`}>{user?.role}</span>
+                        <span className={`font-bold capitalize px-2 py-0.5 rounded text-xs ${isDark ? "text-purple-400 bg-purple-500/10 border border-purple-500/30" : "text-[#8B5CF6] bg-[#8B5CF6]/10 border border-[#8B5CF6]/30"}`}>{user?.role}</span>
                       </p>
                       <div>
                         <p className={`text-xs mb-1 ${t.textFaint}`}>Password</p>
@@ -706,10 +574,10 @@ function DashboardAnalytics({ leads, isDark, t }: { leads: any[]; isDark: boolea
   const visitColors: Record<string, string> = { Scheduled: "#f97316", Pending: "#374151" };
   const BAR_COLORS = isDark
     ? ["#a855f7", "#818cf8", "#60a5fa", "#34d399", "#fbbf24", "#f87171", "#c084fc"]
-    : ["#00AEEF", "#9E217B", "#0077b6", "#34d399", "#fbbf24", "#f87171", "#60a5fa"];
+    : ["#8B5CF6", "#8B5CF6", "#0077b6", "#34d399", "#fbbf24", "#f87171", "#60a5fa"];
   const SRC_COLORS = isDark
     ? ["#a855f7", "#60a5fa", "#4ade80", "#fbbf24", "#f87171", "#34d399"]
-    : ["#00AEEF", "#9E217B", "#0077b6", "#4ade80", "#fbbf24", "#f87171"];
+    : ["#8B5CF6", "#8B5CF6", "#0077b6", "#4ade80", "#fbbf24", "#f87171"];
 
   const pieData = pieMode === "interest" ? interestData : pieMode === "loan" ? loanPieData : pieMode === "usetype" ? useTypeData : pieMode === "loanrequired" ? loanRequiredData : visitData;
   const pieColors = pieMode === "interest" ? interestColors : pieMode === "loan" ? loanColors : pieMode === "usetype" ? useTypeColors : pieMode === "loanrequired" ? loanReqColors : visitColors;
@@ -1140,7 +1008,7 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
     <div className={`col-span-full flex items-center justify-center gap-3 text-sm py-10 ${t.textMuted}`}>
       <div className="flex gap-1.5">
         {[0, 150, 300].map(d => (
-          <span key={d} className={`w-2 h-2 rounded-full animate-bounce ${isDark ? "bg-purple-500" : "bg-[#9E217B]"}`} style={{ animationDelay: `${d}ms` }} />
+          <span key={d} className={`w-2 h-2 rounded-full animate-bounce ${isDark ? "bg-purple-500" : "bg-[#8B5CF6]"}`} style={{ animationDelay: `${d}ms` }} />
         ))}
       </div>
       Loading more leads…
@@ -1213,7 +1081,7 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
                 Hi, {String(adminUser?.name || "User").split(" ")[0]}
                 <span className={`text-xs sm:text-sm font-medium px-2 py-0.5 sm:px-3 sm:py-1 rounded-full capitalize border ${isDark
                   ? "text-purple-400 border-purple-500/30 bg-purple-500/10"
-                  : "text-[#9E217B] bg-[#9E217B]/10 border border-[#9E217B]/20"
+                  : "text-[#8B5CF6] bg-[#8B5CF6]/10 border border-[#8B5CF6]/20"
                   }`}>{adminUser.role}</span>
               </h1>
               <button
@@ -1226,8 +1094,8 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 sm:gap-6">
               {[
                 { label: "Total Enquiries", value: baseManagerLeads.length, sub: `${activeManagerLeads.length} active`, glow: t.statGlow1, textColor: t.text },
-                { label: "Enquiries Attended", value: enquiriesAttended, sub: `of ${activeManagerLeads.length} total`, glow: t.statGlow1, textColor: isDark ? "text-purple-400" : "text-[#00AEEF]" },
-                { label: "Enquiries Attended This Month", value: enquiriesThisMonth, sub: `in ${MONTH_NAMES[selectedMonth].slice(0, 3)}`, glow: t.statGlow3, textColor: isDark ? "text-blue-400" : "text-[#9E217B]", monthSelect: true },
+                { label: "Enquiries Attended", value: enquiriesAttended, sub: `of ${activeManagerLeads.length} total`, glow: t.statGlow1, textColor: isDark ? "text-purple-400" : "text-[#8B5CF6]" },
+                { label: "Enquiries Attended This Month", value: enquiriesThisMonth, sub: `in ${MONTH_NAMES[selectedMonth].slice(0, 3)}`, glow: t.statGlow3, textColor: isDark ? "text-blue-400" : "text-[#8B5CF6]", monthSelect: true },
                 { label: "Closing", value: closingThisMonth > 0 ? closingThisMonth : "—", sub: `${closingLeads.length} total closed`, glow: t.statGlow4, textColor: isDark ? "text-yellow-400" : "text-amber-500", monthSelect: true },
                 { label: "Closing Rate", value: `${closingPct}%`, sub: `${closingLeads.length} of ${activeManagerLeads.length} leads`, glow: t.statGlow5, textColor: isDark ? "text-green-400" : "text-emerald-600" },
                 { label: "Lost Leads", value: lostManagerLeads.length, sub: `${lostRatio}% lost ratio`, glow: "bg-red-500/10", textColor: isDark ? "text-red-300" : "text-red-600" },
@@ -1274,7 +1142,7 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
                       checked={showLostLeads}
                       onChange={e => setShowLostLeads(e.target.checked)}
                       disabled={leadStatusFilter !== "all"}
-                      className="accent-[#9E217B] w-3.5 h-3.5 cursor-pointer"
+                      className="accent-[#8B5CF6] w-3.5 h-3.5 cursor-pointer"
                     />
                     Show Lost
                   </label>
@@ -1398,7 +1266,7 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
                       checked={showLostLeads}
                       onChange={e => setShowLostLeads(e.target.checked)}
                       disabled={leadStatusFilter !== "all"}
-                      className="accent-[#9E217B] w-3.5 h-3.5 cursor-pointer"
+                      className="accent-[#8B5CF6] w-3.5 h-3.5 cursor-pointer"
                     />
                     Show Lost
                   </label>
@@ -1466,7 +1334,7 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
                         >
                           <div>
                             <div className={`flex flex-col sm:flex-row sm:justify-between items-start mb-4 pb-3 sm:mb-5 sm:pb-4 border-b gap-2 ${t.tableBorder}`}>
-                              <h3 className={`text-lg sm:text-xl font-bold transition-colors line-clamp-2 pr-2 ${t.text} ${isClosing ? "group-hover:text-amber-500" : isDark ? "group-hover:text-[#d946a8]" : "group-hover:text-[#9E217B]"}`}>
+                              <h3 className={`text-lg sm:text-xl font-bold transition-colors line-clamp-2 pr-2 ${t.text} ${isClosing ? "group-hover:text-amber-500" : isDark ? "group-hover:text-[#A78BFA]" : "group-hover:text-[#8B5CF6]"}`}>
                                 <span className={`mr-2 ${t.accentText}`}>#{lead.lead_number ?? lead.id}</span>{lead.name}
                               </h3>
                               <span className={`px-2 sm:px-3 py-1 rounded-full text-[9px] sm:text-[10px] font-bold uppercase tracking-wider border flex-shrink-0 whitespace-nowrap ${isLost ? t.statusLost :
@@ -1489,7 +1357,7 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
                                 </div>
                                 <div className="flex flex-col items-end gap-1 text-right">
                                   {loanSt ? <LoanStatusBadge status={loanSt} /> : lead.loanPlanned === "Yes" && (
-                                    <div className="bg-[#00AEEF]/10 border border-[#00AEEF]/30 px-2 py-1 rounded text-[#00AEEF] text-[9px] sm:text-[10px] font-bold uppercase flex items-center gap-1"><FaUniversity /> Loan Active</div>
+                                    <div className="bg-[#8B5CF6]/10 border border-[#8B5CF6]/30 px-2 py-1 rounded text-[#8B5CF6] text-[9px] sm:text-[10px] font-bold uppercase flex items-center gap-1"><FaUniversity /> Loan Active</div>
                                   )}
                                 </div>
                               </div>
@@ -1518,7 +1386,7 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
                           </div>
                           <div className={`pt-3 sm:pt-4 border-t mt-auto flex justify-between items-center ${t.tableBorder}`}>
                             <p className={`text-[9px] sm:text-[10px] flex-shrink-0 ${t.textFaint}`}>{formatDate(lead.created_at).split(",")[0]}</p>
-                            <span className={`text-[9px] sm:text-[10px] font-bold uppercase tracking-widest transition-colors ${isClosing ? (isDark ? "text-yellow-500 group-hover:text-yellow-400" : "text-amber-500 group-hover:text-amber-400") : (isDark ? "text-gray-500 group-hover:text-[#d946a8]" : "text-[#9CA3AF] group-hover:text-[#9E217B]")}`}>Details →</span>
+                            <span className={`text-[9px] sm:text-[10px] font-bold uppercase tracking-widest transition-colors ${isClosing ? (isDark ? "text-yellow-500 group-hover:text-yellow-400" : "text-amber-500 group-hover:text-amber-400") : (isDark ? "text-gray-500 group-hover:text-[#A78BFA]" : "text-[#9CA3AF] group-hover:text-[#8B5CF6]")}`}>Details →</span>
                           </div>
                         </div>
                       );
@@ -1631,11 +1499,11 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
                 {!showSalesForm && !showLoanForm && (
                   <>
                     <button onClick={() => { prefillSalesForm(); setShowSalesForm(true); setShowLoanForm(false); }}
-                      className={`font-bold px-4 sm:px-5 py-2 rounded-lg text-xs sm:text-sm flex items-center gap-2 transition-colors cursor-pointer shadow-lg flex-1 sm:flex-none justify-center ${t.btnPrimary} ${isDark ? "shadow-purple-600/20" : "shadow-[#00AEEF]/20"}`}>
+                      className={`font-bold px-4 sm:px-5 py-2 rounded-lg text-xs sm:text-sm flex items-center gap-2 transition-colors cursor-pointer shadow-lg flex-1 sm:flex-none justify-center ${t.btnPrimary} ${isDark ? "shadow-purple-600/20" : "shadow-[#8B5CF6]/20"}`}>
                       <FaFileInvoice /> <span className="hidden sm:inline">Fill</span> Salesform
                     </button>
                     <button onClick={() => { prefillLoanForm(); setShowLoanForm(true); setShowSalesForm(false); }}
-                      className={`font-bold px-4 sm:px-5 py-2 rounded-lg text-xs sm:text-sm flex items-center gap-2 transition-colors cursor-pointer shadow-lg flex-1 sm:flex-none justify-center ${t.btnSecondary} ${isDark ? "shadow-blue-600/20" : "shadow-[#00AEEF]/20"}`}>
+                      className={`font-bold px-4 sm:px-5 py-2 rounded-lg text-xs sm:text-sm flex items-center gap-2 transition-colors cursor-pointer shadow-lg flex-1 sm:flex-none justify-center ${t.btnSecondary} ${isDark ? "shadow-blue-600/20" : "shadow-[#8B5CF6]/20"}`}>
                       <FaUniversity /> <span className="hidden sm:inline">Track</span> Loan
                     </button>
                     {!selectedLead.is_lost_lead && (
@@ -1692,7 +1560,7 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
                         <select required value={salesForm.leadStatus} onChange={e => setSalesForm({ ...salesForm, leadStatus: e.target.value })} className={formSelect}><option value="" disabled>Select Status</option><option>Interested</option><option>Not Interested</option><option>NON GENUINE DEMAND (NGD)</option></select>
                       </div>
                       <div className={`border-t pt-3 mt-1 ${t.tableBorder}`}>
-                        <label className={`block text-xs font-bold mb-1.5 ${isDark ? "text-[#00AEEF]" : "text-[#00AEEF]"}`}>Loan Planned?</label>
+                        <label className={`block text-xs font-bold mb-1.5 ${isDark ? "text-[#8B5CF6]" : "text-[#8B5CF6]"}`}>Loan Planned?</label>
                         <select required value={salesForm.loanPlanned} onChange={e => setSalesForm({ ...salesForm, loanPlanned: e.target.value })} className={formSelect}><option value="" disabled>Select Option</option><option>Yes</option><option>No</option><option>Not Sure</option></select>
                       </div>
                       <div className={`mt-2 border-t pt-3 ${t.tableBorder}`}>
@@ -1707,14 +1575,14 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
                   <div className={`rounded-xl border p-4 sm:p-5 shadow-xl overflow-y-auto custom-scrollbar flex flex-col animate-fadeIn max-h-[80vh] lg:max-h-[calc(100vh-260px)] ${t.modalCard}`} style={t.modalGlass}>
                     <div className={`flex justify-between items-center mb-4 border-b pb-3 flex-shrink-0 ${t.tableBorder}`}>
                       <div>
-                        <h3 className={`text-base sm:text-lg font-bold flex items-center gap-2 ${isDark ? "text-[#00AEEF]" : "text-[#00AEEF]"}`}><FaUniversity /> Loan Tracking Workflow</h3>
+                        <h3 className={`text-base sm:text-lg font-bold flex items-center gap-2 ${isDark ? "text-[#8B5CF6]" : "text-[#8B5CF6]"}`}><FaUniversity /> Loan Tracking Workflow</h3>
                         <p className={`text-xs mt-0.5 ${t.textFaint}`}>For Lead #{selectedLead.lead_number ?? selectedLead.id}</p>
                       </div>
                       <button type="button" onClick={() => setShowLoanForm(false)} className={`p-2 ${t.textMuted} hover:text-red-500`}><FaTimes /></button>
                     </div>
                     <form onSubmit={handleLoanFormSubmit} className="flex flex-col gap-5 sm:gap-6 flex-1">
                       <div>
-                        <h4 className={`text-[10px] sm:text-xs font-bold uppercase tracking-wider mb-2 sm:mb-3 ${isDark ? "text-[#00AEEF]" : "text-[#00AEEF]"}`}>1. Loan Decision</h4>
+                        <h4 className={`text-[10px] sm:text-xs font-bold uppercase tracking-wider mb-2 sm:mb-3 ${isDark ? "text-[#8B5CF6]" : "text-[#8B5CF6]"}`}>1. Loan Decision</h4>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           <div><label className={`text-xs mb-1 block ${t.textMuted}`}>Loan Required? *</label><select required value={loanForm.loanRequired} onChange={e => setLoanForm({ ...loanForm, loanRequired: e.target.value })} className={formSelect}><option value="">Select</option><option>Yes</option><option>No</option><option>Not Sure</option></select></div>
                           <div>
@@ -1725,7 +1593,7 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
                         </div>
                       </div>
                       <div className={`border-t pt-3 sm:pt-4 ${t.tableBorder}`}>
-                        <h4 className={`text-[10px] sm:text-xs font-bold uppercase tracking-wider mb-2 sm:mb-3 ${isDark ? "text-[#00AEEF]" : "text-[#00AEEF]"}`}>2. Bank & Loan Details</h4>
+                        <h4 className={`text-[10px] sm:text-xs font-bold uppercase tracking-wider mb-2 sm:mb-3 ${isDark ? "text-[#8B5CF6]" : "text-[#8B5CF6]"}`}>2. Bank & Loan Details</h4>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           {[{ label: "Bank Name", k: "bank", ph: "e.g. HDFC" }, { label: "Amount Required", k: "amountReq", ph: "e.g. 60L" }, { label: "Amount Approved", k: "amountApp", ph: "e.g. 55L" }, { label: "CIBIL Score", k: "cibil", ph: "e.g. 750" }, { label: "Agent Name", k: "agent", ph: "Agent Name" }, { label: "Agent Contact", k: "agentContact", ph: "Agent Phone", tel: true }].map(f => (
                             <div key={f.k}><label className={`text-xs mb-1 block ${t.textMuted}`}>{f.label}</label><input type={f.tel ? "tel" : "text"} value={(loanForm as any)[f.k]} onChange={e => setLoanForm({ ...loanForm, [f.k]: e.target.value })} className={formInput} placeholder={f.ph} /></div>
@@ -1733,7 +1601,7 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
                         </div>
                       </div>
                       <div className={`border-t pt-3 sm:pt-4 ${t.tableBorder}`}>
-                        <h4 className={`text-[10px] sm:text-xs font-bold uppercase tracking-wider mb-2 sm:mb-3 ${isDark ? "text-[#00AEEF]" : "text-[#00AEEF]"}`}>3. Financial Qualification</h4>
+                        <h4 className={`text-[10px] sm:text-xs font-bold uppercase tracking-wider mb-2 sm:mb-3 ${isDark ? "text-[#8B5CF6]" : "text-[#8B5CF6]"}`}>3. Financial Qualification</h4>
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                           <div><label className={`text-xs mb-1 block ${t.textMuted}`}>Employment</label><select value={loanForm.empType} onChange={e => setLoanForm({ ...loanForm, empType: e.target.value })} className={formSelect}><option value="">Select</option><option>Salaried</option><option>Self-employed</option></select></div>
                           <div><label className={`text-xs mb-1 block ${t.textMuted}`}>Monthly Income</label><input type="text" value={loanForm.income} onChange={e => setLoanForm({ ...loanForm, income: e.target.value })} className={formInput} placeholder="e.g. 1L" /></div>
@@ -1741,7 +1609,7 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
                         </div>
                       </div>
                       <div className={`border-t pt-3 sm:pt-4 ${t.tableBorder}`}>
-                        <h4 className={`text-[10px] sm:text-xs font-bold uppercase tracking-wider mb-2 sm:mb-3 flex items-center gap-1 ${isDark ? "text-[#00AEEF]" : "text-[#00AEEF]"}`}><FaFileAlt /> 4. Document Checklist</h4>
+                        <h4 className={`text-[10px] sm:text-xs font-bold uppercase tracking-wider mb-2 sm:mb-3 flex items-center gap-1 ${isDark ? "text-[#8B5CF6]" : "text-[#8B5CF6]"}`}><FaFileAlt /> 4. Document Checklist</h4>
                         <div className={`grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 rounded-lg border ${t.settingsBg}`} style={t.settingsBgGl}>
                           {["docPan", "docAadhaar", "docSalary", "docBank", "docProperty"].map(docKey => {
                             const label = docKey === "docPan" ? "PAN Card" : docKey === "docAadhaar" ? "Aadhaar Card" : docKey === "docSalary" ? "Salary Slips / ITR" : docKey === "docBank" ? "Bank Statements" : "Property Documents";
@@ -1755,7 +1623,7 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
                         </div>
                       </div>
                       <div className={`border-t pt-3 sm:pt-4 ${t.tableBorder}`}>
-                        <h4 className={`text-[10px] sm:text-xs font-bold uppercase tracking-wider mb-2 sm:mb-3 ${isDark ? "text-[#00AEEF]" : "text-[#00AEEF]"}`}>5. Notes / Remarks</h4>
+                        <h4 className={`text-[10px] sm:text-xs font-bold uppercase tracking-wider mb-2 sm:mb-3 ${isDark ? "text-[#8B5CF6]" : "text-[#8B5CF6]"}`}>5. Notes / Remarks</h4>
                         <textarea value={loanForm.notes} onChange={e => setLoanForm({ ...loanForm, notes: e.target.value })} className={`w-full rounded-lg px-4 py-2.5 text-sm outline-none resize-none h-20 custom-scrollbar border ${t.inputInner} ${t.text} ${t.inputFocus}`} placeholder="Bank feedback, CIBIL issues, Internal notes..." />
                       </div>
                       <button type="submit" className={`mt-4 flex-shrink-0 w-full font-bold py-3 sm:py-3.5 rounded-xl shadow-md transition-colors cursor-pointer ${t.btnSecondary}`}>Save Loan Tracker Update</button>
@@ -1790,7 +1658,7 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
                             <div><p className={`text-[10px] sm:text-xs font-medium mb-1 ${t.textFaint}`}>Loan Required?</p><p className={`font-semibold ${t.text}`}>{getLatestLoanDetails()?.loanRequired}</p></div>
                             <div><p className={`text-[10px] sm:text-xs font-medium mb-1 ${t.textFaint}`}>Status</p><span className={`text-xs sm:text-sm font-bold ${selectedLead.status === "Closing" ? "text-amber-500" : selectedLead.status === "Visit Scheduled" ? "text-orange-400" : t.accentText}`}>{selectedLead.status || "Routed"}</span></div>
                             {/* <div className={`col-span-1 sm:col-span-2 p-3 sm:p-4 rounded-xl border ${t.settingsBg}`} style={t.settingsBgGl}>
-                              <p className={`text-[10px] sm:text-xs font-bold uppercase tracking-wider mb-0.5 sm:mb-1 ${isDark?"text-[#00AEEF]":"text-[#00AEEF]"}`}>📍 Site Visit Date</p>
+                              <p className={`text-[10px] sm:text-xs font-bold uppercase tracking-wider mb-0.5 sm:mb-1 ${isDark?"text-[#8B5CF6]":"text-[#8B5CF6]"}`}>📍 Site Visit Date</p>
                               <p className={`text-sm sm:text-base font-black ${t.text}`}>{selectedLead.mongoVisitDate?formatDate(selectedLead.mongoVisitDate):"Not Scheduled"}</p>
                             </div> */}
                           </div>
@@ -1860,7 +1728,7 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
                             const isHighProb = curLoan?.status?.toLowerCase() === "approved" && selectedLead.mongoVisitDate;
                             return (
                               <>
-                                <h3 className={`text-xs sm:text-sm font-bold border-b pb-2 mb-4 sm:mb-6 uppercase flex items-center justify-between ${isDark ? "text-[#00AEEF]" : "text-[#00AEEF]"} ${t.tableBorder}`}><span className="flex items-center gap-2"><FaUniversity /> Deal Loan Overview</span></h3>
+                                <h3 className={`text-xs sm:text-sm font-bold border-b pb-2 mb-4 sm:mb-6 uppercase flex items-center justify-between ${isDark ? "text-[#8B5CF6]" : "text-[#8B5CF6]"} ${t.tableBorder}`}><span className="flex items-center gap-2"><FaUniversity /> Deal Loan Overview</span></h3>
                                 {isHighProb && <div className="mb-4 sm:mb-6 bg-gradient-to-r from-orange-500/20 to-red-500/20 border border-orange-500/50 p-2 sm:p-3 rounded-lg flex items-center justify-center gap-2 text-orange-400 text-xs sm:text-sm font-bold tracking-wide shadow-md text-center">🚀 HIGH PROBABILITY DEAL</div>}
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-4 text-xs sm:text-sm">
                                   <div><p className={`text-[10px] sm:text-xs font-medium mb-1 ${t.textFaint}`}>Loan Required?</p><p className={`font-semibold ${t.text}`}>{curLoan?.loanRequired}</p></div>
@@ -1903,7 +1771,7 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
 
                       <button
                         onClick={() => { setCallOpen(true); setCallHidden(false); }}
-                        className={`border flex flex-col items-center justify-center py-2 sm:py-3 rounded-xl transition-all cursor-pointer gap-1 min-h-[48px] ${isDark ? "bg-[#00AEEF]/10 border-[#00AEEF]/30 hover:bg-[#00AEEF] text-[#00AEEF] hover:text-white" : "bg-[#00AEEF]/10 border-[#00AEEF]/30 hover:bg-[#00AEEF] text-[#00AEEF] hover:text-white"}`}>
+                        className={`border flex flex-col items-center justify-center py-2 sm:py-3 rounded-xl transition-all cursor-pointer gap-1 min-h-[48px] ${isDark ? "bg-[#8B5CF6]/10 border-[#8B5CF6]/30 hover:bg-[#8B5CF6] text-[#8B5CF6] hover:text-white" : "bg-[#8B5CF6]/10 border-[#8B5CF6]/30 hover:bg-[#8B5CF6] text-[#8B5CF6] hover:text-white"}`}>
                         <FaMicrophone className="text-base sm:text-lg" />
                         <span className="font-bold text-[10px]">Browser Call</span>
                       </button>
@@ -1971,7 +1839,7 @@ function SalesManagerView({ managers, allLeads, followUps, isLoading, adminUser,
                     placeholder="Add follow-up note..."
                     className={`flex-1 rounded-xl px-3 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm outline-none transition-colors border ${t.inputBg} ${t.text} ${t.inputFocus}`}
                   />
-                  <button type="submit" className={`w-10 h-10 sm:w-12 sm:h-12 text-white rounded-xl flex items-center justify-center cursor-pointer transition-colors shadow-lg flex-shrink-0 ${isDark ? "bg-purple-600 hover:bg-purple-500" : "bg-[#00AEEF] hover:bg-[#0099d4]"}`}><FaPaperPlane className="text-sm ml-[-2px]" /></button>
+                  <button type="submit" className={`w-10 h-10 sm:w-12 sm:h-12 text-white rounded-xl flex items-center justify-center cursor-pointer transition-colors shadow-lg flex-shrink-0 ${isDark ? "bg-purple-600 hover:bg-purple-500" : "bg-[#8B5CF6] hover:bg-[#7C3AED]"}`}><FaPaperPlane className="text-sm ml-[-2px]" /></button>
                 </form>
               </div>
 
@@ -2191,10 +2059,10 @@ function AssistantView({ allLeads, isDark, t }: { allLeads: any[]; isDark: boole
         setIsLoading(true);
         setChatMessages([{ sender: "ai", text: "", ts: getTime(), typing: true }]);
         try {
-          const res = await fetch("/api/ai-assistant/", { 
-            method: "POST", 
-            headers: { "Content-Type": "application/json" }, 
-            body: JSON.stringify({ query: "", leads: allLeads, history: [], userRole: "sales_manager" }) 
+          const res = await fetch("/api/ai-assistant/", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ query: "", leads: allLeads, history: [], userRole: "sales_manager" })
           });
           if (res.ok) {
             const data = await res.json();
@@ -2258,7 +2126,7 @@ function AssistantView({ allLeads, isDark, t }: { allLeads: any[]; isDark: boole
       {/* Chat header */}
       <div className={`flex-shrink-0 flex items-center justify-between px-4 sm:px-8 py-3 sm:py-4 border-b ${t.tableBorder} ${isDark ? "bg-transparent" : "bg-white/60 backdrop-blur-sm"}`}>
         <div className="flex items-center gap-2 sm:gap-3">
-          <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0 ${isDark ? "bg-gradient-to-br from-purple-600 to-blue-600" : "bg-gradient-to-br from-[#00AEEF] to-[#9E217B]"}`}><Bot className="text-white w-4 h-4" /></div>
+          <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0 ${isDark ? "bg-gradient-to-br from-purple-600 to-blue-600" : "bg-gradient-to-br from-[#8B5CF6] to-[#8B5CF6]"}`}><Bot className="text-white w-4 h-4" /></div>
           <div>
             <h2 className={`font-bold text-sm leading-tight ${t.text}`}>CRM AI Assistant</h2>
             <p className={`text-[10px] sm:text-[11px] ${t.textFaint}`}>{allLeads.length > 0 ? `${allLeads.length} leads loaded` : "No leads loaded"}</p>
@@ -2277,7 +2145,7 @@ function AssistantView({ allLeads, isDark, t }: { allLeads: any[]; isDark: boole
       <div className="flex-1 overflow-y-auto custom-scrollbar">
         {isEmpty ? (
           <div className="flex flex-col items-center justify-center h-full px-4 sm:px-8 py-8 sm:py-12">
-            <div className={`w-14 h-14 sm:w-16 sm:h-16 rounded-2xl border flex items-center justify-center mb-4 sm:mb-6 ${isDark ? "bg-gradient-to-br from-purple-600/20 to-blue-600/20 border-purple-500/20" : "bg-gradient-to-br from-[#00AEEF]/10 to-[#9E217B]/10 border-[#00AEEF]/20"}`}><Bot className={`w-6 h-6 sm:w-8 sm:h-8 ${t.accentText}`} /></div>
+            <div className={`w-14 h-14 sm:w-16 sm:h-16 rounded-2xl border flex items-center justify-center mb-4 sm:mb-6 ${isDark ? "bg-gradient-to-br from-purple-600/20 to-blue-600/20 border-purple-500/20" : "bg-gradient-to-br from-[#8B5CF6]/10 to-[#8B5CF6]/10 border-[#8B5CF6]/20"}`}><Bot className={`w-6 h-6 sm:w-8 sm:h-8 ${t.accentText}`} /></div>
             <h1 className={`text-xl sm:text-2xl font-bold mb-2 text-center ${t.text}`}>How can I help you today?</h1>
             <p className={`text-xs sm:text-sm text-center mb-8 sm:mb-10 max-w-md ${t.textMuted}`}>Ask me about your leads, stats, loan tracking, or type a client name for a full AI analysis.</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 w-full max-w-2xl px-4 sm:px-0">
@@ -2298,7 +2166,7 @@ function AssistantView({ allLeads, isDark, t }: { allLeads: any[]; isDark: boole
               <div key={idx} className={`flex gap-2 sm:gap-3 animate-fadeIn ${msg.sender === "user" ? "flex-row-reverse" : "flex-row"}`}>
                 <div className="flex-shrink-0 mt-1">
                   {msg.sender === "ai"
-                    ? <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center shadow-md ${isDark ? "bg-gradient-to-br from-purple-600 to-blue-600" : "bg-gradient-to-br from-[#00AEEF] to-[#9E217B]"}`}><Bot className="text-white w-3.5 h-3.5" /></div>
+                    ? <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center shadow-md ${isDark ? "bg-gradient-to-br from-purple-600 to-blue-600" : "bg-gradient-to-br from-[#8B5CF6] to-[#8B5CF6]"}`}><Bot className="text-white w-3.5 h-3.5" /></div>
                     : <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg border flex items-center justify-center ${t.settingsBg} ${t.tableBorder}`}><User className={`w-3.5 h-3.5 ${t.textMuted}`} /></div>
                   }
                 </div>
@@ -2307,7 +2175,7 @@ function AssistantView({ allLeads, isDark, t }: { allLeads: any[]; isDark: boole
                     {msg.typing ? (
                       <div className="flex items-center gap-2 sm:gap-3 py-0.5">
                         <div className="flex items-end gap-[3px] h-3 sm:h-4">
-                          {[0, 100, 200, 100, 0].map((delay, i) => <div key={i} className={`w-[2px] sm:w-[3px] rounded-full animate-pulse ${isDark ? "bg-purple-400" : "bg-[#00AEEF]"}`} style={{ height: `${[6, 10, 14, 10, 6][i]}px`, animationDelay: `${delay}ms`, animationDuration: "0.8s" }} />)}
+                          {[0, 100, 200, 100, 0].map((delay, i) => <div key={i} className={`w-[2px] sm:w-[3px] rounded-full animate-pulse ${isDark ? "bg-purple-400" : "bg-[#8B5CF6]"}`} style={{ height: `${[6, 10, 14, 10, 6][i]}px`, animationDelay: `${delay}ms`, animationDuration: "0.8s" }} />)}
                         </div>
                         <span className={`text-[10px] sm:text-[11px] italic ${t.textFaint}`}>AI is thinking...</span>
                       </div>
@@ -2336,7 +2204,7 @@ function AssistantView({ allLeads, isDark, t }: { allLeads: any[]; isDark: boole
                 className={`flex-1 bg-transparent text-xs sm:text-sm outline-none resize-none focus:ring-0 placeholder:${t.textFaint} disabled:opacity-50 leading-relaxed self-center pt-1 ${t.text}`}
                 style={{ maxHeight: "120px", minHeight: "24px" }}
               />
-              <button type="submit" disabled={isLoading || !chatInput.trim()} className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center transition-all cursor-pointer flex-shrink-0 mb-0.5 ${chatInput.trim() && !isLoading ? (isDark ? "bg-purple-600 hover:bg-purple-500 text-white shadow-lg shadow-purple-600/20" : "bg-[#00AEEF] hover:bg-[#0099d4] text-white shadow-lg shadow-[#00AEEF]/20") : `${t.settingsBg} ${t.textFaint} cursor-not-allowed`}`}>
+              <button type="submit" disabled={isLoading || !chatInput.trim()} className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center transition-all cursor-pointer flex-shrink-0 mb-0.5 ${chatInput.trim() && !isLoading ? (isDark ? "bg-purple-600 hover:bg-purple-500 text-white shadow-lg shadow-purple-600/20" : "bg-[#8B5CF6] hover:bg-[#7C3AED] text-white shadow-lg shadow-[#8B5CF6]/20") : `${t.settingsBg} ${t.textFaint} cursor-not-allowed`}`}>
                 <Send className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               </button>
             </div>
@@ -2393,39 +2261,39 @@ function SiteVisitScheduler({
   const handleSchedule = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!visitDate) return;
-    
+
     await withLock(async () => {
       try {
-      const url = editVisit ? `/api/site-visits` : `/api/site-visits`;
-      const method = editVisit ? "PATCH" : "POST";
-      const body = editVisit
-        ? { id: editVisit.id, visit_date: visitDate, notes: visitNotes }
-        : { lead_id: lead.id, visit_date: visitDate, created_by: adminUser.name, role: adminUser.role, notes: visitNotes };
+        const url = editVisit ? `/api/site-visits` : `/api/site-visits`;
+        const method = editVisit ? "PATCH" : "POST";
+        const body = editVisit
+          ? { id: editVisit.id, visit_date: visitDate, notes: visitNotes }
+          : { lead_id: lead.id, visit_date: visitDate, created_by: adminUser.name, role: adminUser.role, notes: visitNotes };
 
-      const res = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
-      const json = await res.json();
+        const res = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+        const json = await res.json();
 
-      if (!json.success) { showToast("❌ " + json.message); return; }
+        if (!json.success) { showToast("❌ " + json.message); return; }
 
-      // Post follow-up note to MongoDB timeline
-      const visitLabel = editVisit ? "Re-Site Visit Rescheduled" : visits.length === 0 ? "Site Visit Scheduled" : "Re-Site Visit Scheduled";
-      await fetch("/api/followups", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          leadId: String(lead.id),
-          salesManagerName: adminUser.name,
-          createdBy: adminUser.role === "admin" ? "admin" : "sales",
-          message: `📅 ${visitLabel}:\n• Date: ${new Date(visitDate).toLocaleString("en-IN")}\n• Notes: ${visitNotes || "N/A"}`,
-          siteVisitDate: visitDate,
-          createdAt: new Date().toISOString(),
-        }),
-      });
+        // Post follow-up note to MongoDB timeline
+        const visitLabel = editVisit ? "Re-Site Visit Rescheduled" : visits.length === 0 ? "Site Visit Scheduled" : "Re-Site Visit Scheduled";
+        await fetch("/api/followups", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            leadId: String(lead.id),
+            salesManagerName: adminUser.name,
+            createdBy: adminUser.role === "admin" ? "admin" : "sales",
+            message: `📅 ${visitLabel}:\n• Date: ${new Date(visitDate).toLocaleString("en-IN")}\n• Notes: ${visitNotes || "N/A"}`,
+            siteVisitDate: visitDate,
+            createdAt: new Date().toISOString(),
+          }),
+        });
 
-      showToast(`✅ ${visitLabel}!`);
-      setShowModal(false); setVisitDate(""); setVisitNotes(""); setEditVisit(null);
-      fetchVisits(); onSuccess();
-    } catch { showToast("❌ Something went wrong."); }
+        showToast(`✅ ${visitLabel}!`);
+        setShowModal(false); setVisitDate(""); setVisitNotes(""); setEditVisit(null);
+        fetchVisits(); onSuccess();
+      } catch { showToast("❌ Something went wrong."); }
     });
   };
 

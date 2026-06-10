@@ -1,13 +1,12 @@
-
 //receptionist frontend
 "use client";
 import { useRequestLock } from '@/lib/hooks/useRequestLock';
-
 
 import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { clearCrmSession, getStoredCrmUser, installLoggedOutBackGuard } from "@/lib/authSession";
 import { getDashboardPath } from "@/lib/rbac";
+import { buildTheme } from "@/lib/theme";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   FaThLarge, FaCog, FaBell, FaTimes, FaClipboardList,
@@ -15,7 +14,7 @@ import {
   FaPhoneAlt, FaUserCircle, FaBriefcase, FaSearch, FaDownload,
   FaFileInvoice, FaHandshake, FaUniversity, FaUsers, FaFileAlt,
   FaCheck, FaClock, FaMicrophone, FaWhatsapp, FaCheckCircle,
-  FaExchangeAlt, FaUserTie
+  FaExchangeAlt, FaUserTie, FaSun, FaMoon
 } from "react-icons/fa";
 import {
   PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend,
@@ -55,121 +54,6 @@ const CONFIG_KEYS = ["1 RK", "1 BHK", "2 BHK", "3 BHK", "4 BHK", "4+ BHK", "Othe
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SVG ICONS
-// ─────────────────────────────────────────────────────────────────────────────
-const SunIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="5" />
-    <line x1="12" y1="1" x2="12" y2="3" /><line x1="12" y1="21" x2="12" y2="23" />
-    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" /><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
-    <line x1="1" y1="12" x2="3" y2="12" /><line x1="21" y1="12" x2="23" y2="12" />
-    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" /><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
-  </svg>
-);
-const MoonIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-  </svg>
-);
-
-// ─────────────────────────────────────────────────────────────────────────────
-// THEME TOKENS
-// ─────────────────────────────────────────────────────────────────────────────
-function buildTheme(isDark: boolean) {
-  return {
-    pageWrap: isDark ? "bg-[#0A0A0F] text-white" : "text-[#1A1A1A]",
-    mainBg: isDark ? "bg-[#0A0A0F]" : "bg-transparent",
-    sidebar: isDark ? "bg-[#121218] border-[#2A2A35]" : "bg-[#1A1A1A] border-[#2A2A2A]",
-    header: isDark ? "bg-[#121218] border-[#2A2A35]" : "bg-white border-[#9CA3AF]",
-    headerGlass: isDark ? {} : { boxShadow: "0 1px 0 #9CA3AF, 0 4px 16px rgba(0,174,239,0.06)" },
-
-    // ── Cards (No intense glow in light mode, border changes to Magenta on hover) ──
-    card: isDark
-      ? "bg-[#121218] border-[#2A2A35] transition-all duration-300 hover:border-[#d4006e]/50 hover:shadow-2xl hover:shadow-[#d4006e]/20"
-      : "bg-gradient-to-r from-[#f1f5ff] via-[#eef2ff] to-[#f5f3ff] border-[#9CA3AF] transition-all duration-300 hover:border-[#9E217B] hover:shadow-xl",
-    cardGlass: isDark ? {} : { boxShadow: "0 1px 2px rgba(0,0,0,0.04), 0 4px 12px rgba(0,174,239,0.07)" },
-
-    statusLost: isDark ? "text-red-300 border-red-500/30 bg-red-950/30" : "text-red-700 border-red-300 bg-red-50",
-    cardLost: isDark
-      ? "bg-[#171717] border border-red-900/25 opacity-70 grayscale saturate-50 transition-all duration-300 hover:opacity-90 hover:border-red-500/30"
-      : "bg-slate-100 border border-red-200 opacity-75 grayscale saturate-50 transition-all duration-300 hover:opacity-90 hover:border-red-300",
-    rowLost: isDark
-      ? "bg-[#151515]/80 text-gray-500 opacity-75 grayscale"
-      : "bg-slate-100/80 text-slate-500 opacity-80 grayscale",
-    tableWrap: isDark ? "bg-[#121218] border-[#2A2A35]" : "bg-white border-[#9CA3AF]",
-    tableGlass: isDark ? {} : { boxShadow: "0 1px 2px rgba(0,0,0,0.04), 0 4px 12px rgba(158,33,123,0.06), 0 16px 36px rgba(0,0,0,0.09)" },
-    tableHead: isDark ? "bg-[#1A1A28]" : "bg-[#F1F5F9]",
-    tableRow: isDark ? "hover:bg-[#1C1C2A]" : "hover:bg-[#F8FAFC]",
-    tableDivide: isDark ? "divide-[#1E1E2A]" : "divide-[#9CA3AF]",
-    tableBorder: isDark ? "border-[#2A2A35]" : "border-[#9CA3AF]",
-    inputBg: isDark ? "bg-[#14141B] border-[#2A2A35]" : "bg-white border-[#9CA3AF]",
-    modalCard: isDark ? "bg-[#121218] border-[#2A2A35]" : "bg-white border-[#9CA3AF]",
-    modalGlass: isDark ? {} : { boxShadow: "0 2px 4px rgba(0,0,0,0.04), 0 8px 24px rgba(0,174,239,0.08), 0 32px 72px rgba(0,0,0,0.16)" },
-    modalInner: isDark ? "bg-[#0A0A0F]" : "bg-[#F8FAFC]",
-    modalHeader: isDark ? "bg-[#1A1A28]" : "bg-[#F1F5F9]",
-    modalBlock: isDark ? "bg-[#14141B] border-[#1E1E2A]" : "bg-white border-[#9CA3AF]",
-    modalBlockGl: isDark ? {} : { boxShadow: "0 1px 2px rgba(0,0,0,0.03), 0 3px 8px rgba(0,174,239,0.05)" },
-    modalInput: isDark ? "bg-[#14141B] border-[#2A2A35]" : "bg-white border-[#9CA3AF]",
-    settingsBg: isDark ? "bg-[#14141B] border-[#2A2A35]" : "bg-[#F8FAFC] border-[#9CA3AF]",
-    settingsBgGl: isDark ? {} : { boxShadow: "inset 0 1px 3px rgba(0,0,0,0.04)" },
-    innerBlock: isDark ? "bg-[#121212] border-[#333]" : "bg-white border-[#D1D5DB]",
-    inputInner: isDark ? "bg-[#14141B] border-[#2A2A35]" : "bg-white border-[#9CA3AF]",
-    inputFocus: isDark ? "focus:border-[#9E217B]" : "focus:border-[#00AEEF]",
-    dropdown: isDark ? "bg-[#121218] border-[#2A2A35]" : "bg-white border-[#9CA3AF]",
-    dropdownGlass: isDark ? {} : { boxShadow: "0 2px 4px rgba(0,0,0,0.04), 0 8px 20px rgba(0,174,239,0.08), 0 20px 40px rgba(0,0,0,0.10)" },
-
-    // ── Chat (Gray background, dark border, black text in light mode) ──
-    chatArea: isDark ? "bg-[#0A0A0F]" : "bg-[#F1F5F9]",
-    chatBubbleAi: isDark ? "bg-[#1A1A28] text-white border border-[#2A2A35]" : "bg-[#F3F4F6] border border-[#CBD5E1] text-gray-900 font-medium shadow-sm",
-    chatInput: isDark ? "bg-[#14141B] border-[#2A2A35]" : "bg-[#F3F4F6] border border-[#64748B] hover:border-[#475569] focus-within:bg-white focus-within:border-[#475569] shadow-inner",
-    chatPanel: isDark ? "bg-[#121218] border-[#2A2A35]" : "bg-white border border-[#94A3B8]",
-    chatPanelGl: isDark ? {} : { boxShadow: "0 1px 2px rgba(0,0,0,0.04), 0 4px 12px rgba(158,33,123,0.06), 0 16px 36px rgba(0,0,0,0.09)" },
-
-    fupDefault: isDark ? "bg-[#2a2135] border border-[#4c1d95]" : "bg-indigo-50 border border-indigo-200",
-    fupLoan: isDark ? "bg-blue-900/20 border border-blue-600/40" : "bg-blue-50 border border-blue-200",
-    fupSalesform: isDark ? "bg-[#222] border border-[#444]" : "bg-white border border-[#D1D5DB]",
-    fupClosing: isDark ? "bg-yellow-900/20 border border-yellow-600/40" : "bg-amber-50 border border-amber-300",
-    fupTransfer: isDark ? "bg-purple-900/20 border border-purple-600/40" : "bg-purple-50 border border-purple-300",
-
-    text: isDark ? "text-white" : "text-[#1A1A1A]",
-    textMuted: isDark ? "text-[#888899]" : "text-[#334155]", // Darker text
-    textFaint: isDark ? "text-[#55556A]" : "text-[#475569]", // Darker faint
-    textHeader: isDark ? "text-xs text-[#B0B0C4]" : "text-xs font-bold text-[#334155]", // Darker headers
-
-    navActive: isDark ? "bg-[#1A1A28] text-white" : "bg-[#2A2A2A] text-[#9E217B]",
-    navInactive: isDark ? "text-[#888899] hover:bg-[#1A1A28] hover:text-white" : "text-[#9CA3AF] hover:bg-[#2A2A2A] hover:text-white",
-    navIndicator: isDark ? "bg-[#9E217B] shadow-[0_0_10px_2px_rgba(158,33,123,0.5)]" : "bg-[#9E217B] shadow-[0_0_8px_rgba(158,33,123,0.4)]",
-    toggleWrap: isDark ? "bg-[#1C1C2A] border-[#2A2A38] text-yellow-300" : "bg-[#F1F5F9] border-[#9CA3AF] text-[#1A1A1A]",
-
-    accentText: isDark ? "text-[#d4006e]" : "text-[#00AEEF]",
-    accentBg: isDark ? "bg-[#9E217B]/10 text-[#d4006e] border border-[#9E217B]/30" : "bg-[#00AEEF]/10 text-[#00AEEF] border border-[#00AEEF]/30",
-    sectionTitle: isDark ? "text-[#d4006e]" : "text-[#9E217B]",
-    sectionBorder: isDark ? "border-[#9E217B]/20" : "border-[#9E217B]/25",
-
-    // ── Buttons (Hover Scale & Shadow Pop-out) ──
-    btnPrimary: isDark ? "bg-[#9E217B] hover:bg-[#7a1960] text-white shadow-md transition-colors duration-200" : "bg-[#00AEEF] hover:bg-[#0088bb] text-white shadow-sm transition-colors duration-200",
-    btnSecondary: isDark ? "bg-blue-700 hover:bg-blue-800 text-white shadow-md transition-colors duration-200" : "bg-[#9E217B] hover:bg-[#7a1960] text-white shadow-sm transition-colors duration-200",
-    btnWarning: isDark ? "bg-yellow-600 hover:bg-yellow-700 text-white shadow-md transition-colors duration-200" : "bg-amber-500 hover:bg-amber-600 text-white shadow-sm transition-colors duration-200",
-    btnDanger: isDark ? "bg-red-500/10 text-red-500 hover:bg-red-600/20 border border-red-500/30 transition-colors duration-200" : "bg-[#9E217B]/10 text-[#9E217B] hover:bg-[#9E217B]/20 border border-[#9E217B]/30 transition-colors duration-200",
-    btnTransfer: isDark ? "bg-purple-600 hover:bg-purple-700 text-white shadow-md transition-colors duration-200" : "bg-purple-600 hover:bg-purple-700 text-white shadow-sm transition-colors duration-200",
-    scroll: isDark ? "custom-scrollbar" : "custom-scrollbar",
-    logoBg: isDark ? "bg-[#9E217B] shadow-lg shadow-[#9E217B]/30" : "bg-[#9E217B] shadow-lg shadow-[#9E217B]/30",
-    selectSmall: isDark ? "bg-[#1A1A28] border-[#2A2A35] text-white" : "bg-white border-[#D1D5DB] text-[#6B7280]",
-    chartColors: isDark
-      ? ["#d946ef", "#8b5cf6", "#3b82f6", "#0ea5e9", "#6b7280", "#f59e0b", "#10b981"]
-      : ["#00AEEF", "#9E217B", "#0077b6", "#d4006e", "#9CA3AF", "#f59e0b", "#10b981"],
-    tooltipBg: isDark ? "#1a1a1a" : "rgba(255,255,255,0.98)",
-    tooltipColor: isDark ? "#fff" : "#1A1A1A",
-    tooltipBorder: isDark ? "1px solid rgba(158,33,123,0.3)" : "1px solid #E5E7EB",
-    legendColor: isDark ? "#9ca3af" : "#6B7280",
-    exportBtn: isDark ? "border-[#2A2A35] hover:border-[#9E217B] hover:text-[#d4006e] text-[#888899]" : "border-[#9CA3AF] hover:border-[#9E217B] hover:text-[#9E217B] text-[#6B7280]",
-    statusRouted: isDark ? "text-blue-400 border-blue-500/30 bg-blue-500/10" : "text-[#00AEEF] border-[#00AEEF]/30 bg-[#00AEEF]/10",
-    statusVisit: isDark ? "text-orange-400 border-orange-500/30 bg-orange-500/10" : "text-orange-500 border-orange-400/40 bg-orange-50",
-    statusClosing: isDark ? "text-yellow-400 border-yellow-500/40 bg-yellow-500/10" : "text-amber-600 border-amber-400/50 bg-amber-50",
-    statusNGD: "bg-[rgba(251,146,60,0.12)] text-[#F97316] border border-[rgba(249,115,22,0.4)]",
-    cardNGD: "bg-[rgba(249,115,22,0.06)] border border-[rgba(249,115,22,0.35)] hover:border-[#F97316] shadow-[0_4px_12px_rgba(249,115,22,0.12)] transition-all duration-300 flex flex-col h-full",
-    rowNGD: "bg-[rgba(249,115,22,0.03)]",
-  };
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // HELPER BADGES
@@ -242,8 +126,8 @@ function WhatsAppSettingsCard({ user, setUser, isDark, t }: {
             onChange={e => setInput(e.target.value)}
             placeholder="e.g. 919876543210"
             className={`w-full rounded-lg p-3 text-sm outline-none transition-colors border ${isDark
-              ? "bg-[#14141B] border-[#2A2A35] text-white focus:border-[#9E217B]"
-              : "bg-white border-[#9CA3AF] text-[#1A1A1A] focus:border-[#00AEEF]"
+              ? "bg-[#14141B] border-[#2A2A35] text-white focus:border-[#8B5CF6]"
+              : "bg-white border-[#9CA3AF] text-[#1A1A1A] focus:border-[#8B5CF6]"
               }`}
           />
         </div>
@@ -255,8 +139,8 @@ function WhatsAppSettingsCard({ user, setUser, isDark, t }: {
             : saving || !input.trim()
               ? "opacity-50 cursor-not-allowed bg-gray-400 text-white"
               : (isDark
-                ? "bg-[#9E217B] hover:bg-[#b8268f] text-white"
-                : "bg-[#00AEEF] hover:bg-[#0099d4] text-white")
+                ? "bg-[#8B5CF6] hover:bg-[#7C3AED] text-white"
+                : "bg-[#8B5CF6] hover:bg-[#7C3AED] text-white")
             }`}
         >
           {saved ? "✓ Saved" : saving ? "Saving..." : "Save"}
@@ -1237,7 +1121,7 @@ export default function ReceptionistDashboard() {
   const LoaderRow = () => (
     <tr><td colSpan={9} className="p-6 text-center">
       <div className={`flex items-center justify-center gap-3 text-sm ${t.textMuted}`}>
-        <div className="flex gap-1">{[0, 150, 300].map(d => <span key={d} className={`w-2 h-2 rounded-full animate-bounce ${isDark ? "bg-[#9E217B]" : "bg-[#00AEEF]"}`} style={{ animationDelay: `${d}ms` }} />)}</div>
+        <div className="flex gap-1">{[0, 150, 300].map(d => <span key={d} className={`w-2 h-2 rounded-full animate-bounce ${isDark ? "bg-[#8B5CF6]" : "bg-[#8B5CF6]"}`} style={{ animationDelay: `${d}ms` }} />)}</div>
         Loading more…
       </div>
     </td></tr>
@@ -1245,7 +1129,7 @@ export default function ReceptionistDashboard() {
 
   const CardsLoader = () => (
     <div className={`col-span-full flex items-center justify-center gap-3 text-sm py-10 ${t.textMuted}`}>
-      <div className="flex gap-1.5">{[0, 150, 300].map(d => <span key={d} className={`w-2 h-2 rounded-full animate-bounce ${isDark ? "bg-[#9E217B]" : "bg-[#00AEEF]"}`} style={{ animationDelay: `${d}ms` }} />)}</div>
+      <div className="flex gap-1.5">{[0, 150, 300].map(d => <span key={d} className={`w-2 h-2 rounded-full animate-bounce ${isDark ? "bg-[#8B5CF6]" : "bg-[#8B5CF6]"}`} style={{ animationDelay: `${d}ms` }} />)}</div>
       Loading more leads…
     </div>
   );
@@ -1290,7 +1174,7 @@ export default function ReceptionistDashboard() {
           <div className="flex items-center space-x-4 relative" ref={topbarRef}>
             <button onClick={() => setIsDark(!isDark)} aria-label="Toggle theme"
               className={`w-9 h-9 rounded-xl border flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm ${t.toggleWrap}`}>
-              {isDark ? <SunIcon /> : <MoonIcon />}
+              {isDark ? <FaSun className="w-4 h-4" /> : <FaMoon className="w-4 h-4" />}
             </button>
             {/* ── NOTIFICATION BELL & DROPDOWN ── */}
             <div className="relative">
@@ -1300,7 +1184,7 @@ export default function ReceptionistDashboard() {
               >
                 <FaBell className="w-5 h-5" />
                 {notifCount > 0 && (
-                  <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-[#9E217B] rounded-full text-[9px] font-black text-white flex items-center justify-center">
+                  <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-[#8B5CF6] rounded-full text-[9px] font-black text-white flex items-center justify-center">
                     {notifCount > 9 ? "9+" : notifCount}
                   </span>
                 )}
@@ -1317,7 +1201,7 @@ export default function ReceptionistDashboard() {
                   >
                     <div className={`p-4 border-b flex justify-between items-center ${t.tableBorder}`}>
                       <h3 className={`font-bold text-sm flex items-center gap-2 ${t.text}`}>
-                        <FaBell className="text-[#9E217B]" /> Recent Notifications
+                        <FaBell className="text-[#8B5CF6]" /> Recent Notifications
                       </h3>
                       <button onClick={() => setActivePopup(null)} className={`${t.textMuted} hover:text-red-500`}><FaTimes className="text-xs" /></button>
                     </div>
@@ -1353,7 +1237,7 @@ export default function ReceptionistDashboard() {
               </div>
             )} */}
             <div onClick={() => setActivePopup(activePopup === "profile" ? null : "profile")}
-              className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm cursor-pointer shadow-md hover:scale-105 transition-transform ${isDark ? "border border-[#9E217B]/40 text-[#d4006e] bg-[#9E217B]/15" : "border border-[#00AEEF]/40 text-[#00AEEF] bg-[#00AEEF]/10"}`}>
+              className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm cursor-pointer shadow-md hover:scale-105 transition-transform ${isDark ? "border border-[#8B5CF6]/40 text-[#d4006e] bg-[#8B5CF6]/15" : "border border-[#8B5CF6]/40 text-[#8B5CF6] bg-[#8B5CF6]/10"}`}>
               {String(user?.name || "U").charAt(0).toUpperCase()}
             </div>
             <AnimatePresence>
@@ -1372,7 +1256,7 @@ export default function ReceptionistDashboard() {
                   <hr className={`mb-4 border-0 border-t ${t.tableBorder}`} />
                   <div className="space-y-4 mb-6 text-sm">
                     <p className={`flex justify-between items-center ${t.textMuted}`}>Role:
-                      <span className={`font-bold capitalize px-2 py-0.5 rounded text-xs ${isDark ? "text-[#d4006e] bg-[#9E217B]/10" : "text-[#00AEEF] bg-[#00AEEF]/10"}`}>{user?.role}</span>
+                      <span className={`font-bold capitalize px-2 py-0.5 rounded text-xs ${isDark ? "text-[#d4006e] bg-[#8B5CF6]/10" : "text-[#8B5CF6] bg-[#8B5CF6]/10"}`}>{user?.role}</span>
                     </p>
                     <div>
                       <p className={`text-xs mb-1 ${t.textFaint}`}>Password</p>
@@ -1517,7 +1401,7 @@ export default function ReceptionistDashboard() {
                           background: isUser
                             ? (isDark
                               ? "linear-gradient(135deg,#1a73e8,#1558b0)"
-                              : "linear-gradient(135deg,#9E217B,#7a1a5e)")
+                              : "linear-gradient(135deg,#8B5CF6,#7a1a5e)")
                             : (isDark ? "#1a1a22" : "#ffffff"),
                           border: isUser
                             ? "none"
@@ -1543,7 +1427,7 @@ export default function ReceptionistDashboard() {
                                   part.startsWith("**") && part.endsWith("**")
                                     ? <span key={pi} style={{
                                       fontWeight: 700,
-                                      color: isUser ? "#fff" : (isDark ? "#8ab4f8" : "#9E217B"),
+                                      color: isUser ? "#fff" : (isDark ? "#8ab4f8" : "#8B5CF6"),
                                     }}>{part.slice(2, -2)}</span>
                                     : <span key={pi}>{part}</span>
                                 )}
@@ -1558,7 +1442,7 @@ export default function ReceptionistDashboard() {
                             width: 32, height: 32, borderRadius: "50%", flexShrink: 0,
                             background: isDark
                               ? "linear-gradient(135deg,#7c3aed,#4f46e5)"
-                              : "linear-gradient(135deg,#9E217B,#d4006e)",
+                              : "linear-gradient(135deg,#8B5CF6,#d4006e)",
                             display: "flex", alignItems: "center", justifyContent: "center",
                             fontSize: 13, marginTop: 2, color: "#fff", fontWeight: 700,
                           }}>
@@ -1586,7 +1470,7 @@ export default function ReceptionistDashboard() {
                         {[0, 1, 2].map(i => (
                           <span key={i} style={{
                             width: 7, height: 7, borderRadius: "50%",
-                            background: isDark ? "#8ab4f8" : "#9E217B",
+                            background: isDark ? "#8ab4f8" : "#8B5CF6",
                             animation: `bounce 1.2s ease-in-out ${i * 0.2}s infinite`,
                             display: "block",
                           }} />
@@ -1661,8 +1545,8 @@ export default function ReceptionistDashboard() {
                             }}
                             onMouseEnter={e => {
                               (e.currentTarget as HTMLElement).style.background = isDark ? "rgba(138,180,248,0.18)" : "#fff";
-                              (e.currentTarget as HTMLElement).style.borderColor = isDark ? "rgba(138,180,248,0.4)" : "#9E217B";
-                              (e.currentTarget as HTMLElement).style.color = isDark ? "#fff" : "#9E217B";
+                              (e.currentTarget as HTMLElement).style.borderColor = isDark ? "rgba(138,180,248,0.4)" : "#8B5CF6";
+                              (e.currentTarget as HTMLElement).style.color = isDark ? "#fff" : "#8B5CF6";
                             }}
                             onMouseLeave={e => {
                               (e.currentTarget as HTMLElement).style.background = isDark ? "rgba(138,180,248,0.08)" : "rgba(0,0,0,0.04)";
@@ -1694,7 +1578,7 @@ export default function ReceptionistDashboard() {
                       borderRadius: 26, padding: "3px 6px 3px 18px",
                       transition: "border-color 0.2s",
                     }}
-                      onFocus={e => (e.currentTarget as HTMLElement).style.borderColor = isDark ? "#8ab4f8" : "#9E217B"}
+                      onFocus={e => (e.currentTarget as HTMLElement).style.borderColor = isDark ? "#8ab4f8" : "#8B5CF6"}
                       onBlur={e => (e.currentTarget as HTMLElement).style.borderColor = isDark ? "#2a2a35" : "#cbd5e1"}
                     >
                       <input
@@ -1728,7 +1612,7 @@ export default function ReceptionistDashboard() {
                         background: chatInput.trim()
                           ? (isDark
                             ? "linear-gradient(135deg,#1a73e8,#1558b0)"
-                            : "linear-gradient(135deg,#9E217B,#d4006e)")
+                            : "linear-gradient(135deg,#8B5CF6,#d4006e)")
                           : (isDark ? "#1a1a22" : "#f1f5f9"),
                         color: chatInput.trim() ? "#ffffff" : (isDark ? "#3c3c40" : "#94a3b8"),
                         boxShadow: chatInput.trim()
@@ -1767,7 +1651,7 @@ export default function ReceptionistDashboard() {
             <div className="flex justify-between items-center mb-8">
               <h1 className={`text-xl md:text-3xl font-bold flex items-center flex-wrap gap-2 md:gap-3 ${t.text}`}>
                 Hi, {String(user?.name || "User").split(" ")[0]}
-                <span className={`text-xs md:text-sm font-medium px-2 py-0.5 md:px-3 md:py-1 rounded-full capitalize ${isDark ? "text-[#9E217B] bg-white/80 border border-[#9E217B]/40" : "text-[#9E217B] bg-[#9E217B]/10 border border-[#9E217B]/20"}`}>Front Desk</span>
+                <span className={`text-xs md:text-sm font-medium px-2 py-0.5 md:px-3 md:py-1 rounded-full capitalize ${isDark ? "text-[#8B5CF6] bg-white/80 border border-[#8B5CF6]/40" : "text-[#8B5CF6] bg-[#8B5CF6]/10 border border-[#8B5CF6]/20"}`}>Front Desk</span>
               </h1>
               <button onClick={refetchAll} className={`text-white text-xs md:text-sm font-semibold flex items-center gap-1 md:gap-2 px-3 py-1.5 md:px-4 md:py-2 rounded-lg transition-all shadow-sm ${t.btnPrimary}`}>
                 <span className="md:hidden">↻ Sync</span>
@@ -1895,7 +1779,7 @@ export default function ReceptionistDashboard() {
                 {/* Card 2: Enquiry Details */}
                 <div className={`rounded-2xl p-6 border flex flex-col gap-4 ${t.card}`} style={t.cardGlass}>
                   <div className="flex items-center justify-between">
-                    <h2 className={`text-base font-bold ${isDark ? "text-[#d4006e]" : "text-[#9E217B]"}`}>Enquiry Details</h2>
+                    <h2 className={`text-base font-bold ${isDark ? "text-[#d4006e]" : "text-[#8B5CF6]"}`}>Enquiry Details</h2>
                     <div className="flex items-center gap-2">
                       <button onClick={() => {
                         let f = mergedLeads;
@@ -1905,7 +1789,7 @@ export default function ReceptionistDashboard() {
                         else if (card2Mode === "6months") f = mergedLeads.filter((e: any) => e.created_at && new Date(e.created_at) >= sixMonthsAgo);
                         else if (card2Mode === "yearly") f = mergedLeads.filter((e: any) => e.created_at && new Date(e.created_at) >= yearStart);
                         downloadCSV(f.map((e: any) => ({ "Lead No": e.id, "Client Name": e.name, "Budget": e.salesBudget || "N/A", "Configuration": e.configuration || "N/A", "Purpose": e.purpose || "N/A", "Source": e.source || "N/A", "Date": e.date, "Assigned To": e.assignedTo || "Unassigned" })), `Enquiries_${card2Mode}.csv`);
-                      }} className={`p-1.5 border rounded-md transition-colors ${isDark ? "border-[#9E217B]/30 text-[#d4006e]" : "border-[#9E217B]/30 text-[#9E217B]"}`} title="Export CSV"><FaDownload size={12} /></button>
+                      }} className={`p-1.5 border rounded-md transition-colors ${isDark ? "border-[#8B5CF6]/30 text-[#d4006e]" : "border-[#8B5CF6]/30 text-[#8B5CF6]"}`} title="Export CSV"><FaDownload size={12} /></button>
                       <select value={card2Mode} onChange={e => setCard2Mode(e.target.value as any)} className={`text-xs rounded-lg px-2 py-1.5 outline-none cursor-pointer border ${t.selectSmall}`}>
                         <option value="today">Today</option><option value="monthly">Monthly</option>
                         <option value="3months">Last 3 Months</option><option value="6months">Last 6 Months</option>
@@ -1913,7 +1797,7 @@ export default function ReceptionistDashboard() {
                       </select>
                     </div>
                   </div>
-                  <div className={`rounded-xl p-5 border flex-1 flex flex-col ${isDark ? "bg-[#9E217B]/5 border-[#9E217B]/20" : "bg-[#9E217B]/5 border-[#9E217B]/20"}`}>
+                  <div className={`rounded-xl p-5 border flex-1 flex flex-col ${isDark ? "bg-[#8B5CF6]/5 border-[#8B5CF6]/20" : "bg-[#8B5CF6]/5 border-[#8B5CF6]/20"}`}>
                     <div className="flex items-center justify-between mb-4">
                       <p className={`text-xs font-bold uppercase tracking-wider ${t.textFaint}`}>
                         {card2Mode === "today" && "Today"}{card2Mode === "monthly" && "Monthly"}{card2Mode === "3months" && "Last 3 Months"}
@@ -1925,7 +1809,7 @@ export default function ReceptionistDashboard() {
                         </select>
                       )}
                     </div>
-                    <p className={`text-7xl font-black leading-none ${isDark ? "text-[#d4006e]" : "text-[#9E217B]"}`}>
+                    <p className={`text-7xl font-black leading-none ${isDark ? "text-[#d4006e]" : "text-[#8B5CF6]"}`}>
                       {isFetchingEnquiries ? "…" :
                         card2Mode === "today" ? enquiriesToday :
                           card2Mode === "monthly" ? monthlyEnquiriesSelected :
@@ -1934,7 +1818,7 @@ export default function ReceptionistDashboard() {
                                 card2Mode === "yearly" ? enquiriesYear : totalCount
                       }
                     </p>
-                    <p className={`text-sm mt-4 font-medium ${isDark ? "text-[#d4006e]" : "text-[#9E217B]"}`}>
+                    <p className={`text-sm mt-4 font-medium ${isDark ? "text-[#d4006e]" : "text-[#8B5CF6]"}`}>
                       {card2Mode === "today" && `Enquiries on ${now.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}`}
                       {card2Mode === "monthly" && `Enquiries in ${MONTH_NAMES[selectedMonthCard]} ${now.getFullYear()}`}
                       {card2Mode === "3months" && "Enquiries over 3 months"}
@@ -1982,7 +1866,7 @@ export default function ReceptionistDashboard() {
                           <tr key={i} className={`transition-colors ${t.tableRow}`}>
                             <td className={`py-2.5 px-1 font-semibold text-xs ${t.text}`}>
                               <div className="flex items-center gap-2">
-                                <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white bg-[#9E217B]">{String(row.name).charAt(0).toUpperCase()}</div>
+                                <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white bg-[#8B5CF6]">{String(row.name).charAt(0).toUpperCase()}</div>
                                 <span className="truncate max-w-[100px]">{row.name}</span>
                               </div>
                             </td>
@@ -2114,7 +1998,7 @@ export default function ReceptionistDashboard() {
                       <div>
                         {/* ── Card Header ── */}
                         <div className={`flex justify-between items-start mb-6 border-b pb-4 ${t.tableBorder}`}>
-                          <h3 className={`text-xl font-bold transition-colors flex items-center gap-2 ${t.text} ${isDark ? "group-hover:text-[#d4006e]" : "group-hover:text-[#9E217B]"}`}>
+                          <h3 className={`text-xl font-bold transition-colors flex items-center gap-2 ${t.text} ${isDark ? "group-hover:text-[#d4006e]" : "group-hover:text-[#8B5CF6]"}`}>
                             <span className={`flex-shrink-0 ${t.accentText}`}>#{enquiry.lead_number ?? enquiry.id}</span>
                             <span className="line-clamp-1">{enquiry.name}</span>
                           </h3>
@@ -2155,8 +2039,8 @@ export default function ReceptionistDashboard() {
                         <div className="flex justify-between items-center">
                           <div className="flex items-center gap-2">
                             <div className={`w-6 h-6 rounded-full text-white flex items-center justify-center text-xs font-bold ${isDark
-                              ? "bg-gradient-to-tr from-[#9E217B] to-[#d4006e]"
-                              : "bg-gradient-to-tr from-[#00AEEF] to-[#9E217B]"
+                              ? "bg-gradient-to-tr from-[#8B5CF6] to-[#d4006e]"
+                              : "bg-gradient-to-tr from-[#8B5CF6] to-[#8B5CF6]"
                               }`}>
                               {String(enquiry.assignedTo || "U").charAt(0).toUpperCase()}
                             </div>
@@ -2174,8 +2058,8 @@ export default function ReceptionistDashboard() {
                           <button
                             onClick={() => { setSelectedLead(enquiry); setActiveTab("detail"); }}
                             className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all border ${isDark
-                              ? "border-[#2A2A35] text-[#888899] hover:border-[#9E217B] hover:text-[#d4006e] hover:bg-[#9E217B]/10"
-                              : "border-[#D1D5DB] text-[#6B7280] hover:border-[#9E217B] hover:text-[#9E217B] hover:bg-[#9E217B]/5"
+                              ? "border-[#2A2A35] text-[#888899] hover:border-[#8B5CF6] hover:text-[#d4006e] hover:bg-[#8B5CF6]/10"
+                              : "border-[#D1D5DB] text-[#6B7280] hover:border-[#8B5CF6] hover:text-[#8B5CF6] hover:bg-[#8B5CF6]/5"
                               }`}
                           >
                             View Details →
@@ -2213,7 +2097,7 @@ export default function ReceptionistDashboard() {
               </div>
 
               <div className={`rounded-2xl border p-6 md:p-8 ${t.card}`} style={t.cardGlass}>
-                <div className={`rounded-xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8 text-white ${isDark ? "bg-gradient-to-r from-[#9E217B] to-[#7a1a5e]" : "bg-gradient-to-r from-[#00AEEF] to-[#9E217B]"}`}>
+                <div className={`rounded-xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8 text-white ${isDark ? "bg-gradient-to-r from-[#8B5CF6] to-[#7a1a5e]" : "bg-gradient-to-r from-[#8B5CF6] to-[#8B5CF6]"}`}>
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 rounded-full border border-white/30 bg-white/20 flex items-center justify-center font-bold text-xl">{String(selectedLead.assignedTo || "U").charAt(0).toUpperCase()}</div>
                     <div>
@@ -2312,7 +2196,7 @@ export default function ReceptionistDashboard() {
                     <div>
                       <h1 className={`text-2xl font-bold flex items-center gap-3 ${t.text}`}>
                         Assigned Forms
-                        <span className={`text-sm font-medium px-3 py-1 rounded-full border ${isDark ? "text-[#d4006e] border-[#9E217B]/30 bg-[#9E217B]/10" : "text-[#9E217B] bg-[#9E217B]/10 border-[#9E217B]/20"}`}>My Leads</span>
+                        <span className={`text-sm font-medium px-3 py-1 rounded-full border ${isDark ? "text-[#d4006e] border-[#8B5CF6]/30 bg-[#8B5CF6]/10" : "text-[#8B5CF6] bg-[#8B5CF6]/10 border-[#8B5CF6]/20"}`}>My Leads</span>
                       </h1>
                       <p className={`text-xs mt-1 ${t.textFaint}`}>{paginatedAssigned.length} shown · {filteredAssigned.length} total{hasMoreAssigned && <span className={` ${t.accentText}`}> · scroll for more</span>}</p>
                     </div>
@@ -2349,8 +2233,8 @@ export default function ReceptionistDashboard() {
                               }`} style={t.cardGlass}>
                             <div>
                               <div className={`flex justify-between items-start mb-5 pb-4 border-b ${t.tableBorder}`}>
-                                <h3 className={`text-xl font-bold transition-colors line-clamp-1 pr-2 ${t.text} ${isDark ? "group-hover:text-[#d4006e]" : "group-hover:text-[#9E217B]"}`}>
-                                  <span className={`mr-2 transition-colors ${isDark ? "text-[#d4006e]" : "text-[#00AEEF] group-hover:text-[#9E217B]"}`}>#{lead.lead_number ?? lead.id}</span>{lead.name}
+                                <h3 className={`text-xl font-bold transition-colors line-clamp-1 pr-2 ${t.text} ${isDark ? "group-hover:text-[#d4006e]" : "group-hover:text-[#8B5CF6]"}`}>
+                                  <span className={`mr-2 transition-colors ${isDark ? "text-[#d4006e]" : "text-[#8B5CF6] group-hover:text-[#8B5CF6]"}`}>#{lead.lead_number ?? lead.id}</span>{lead.name}
                                 </h3>
                                 <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border flex-shrink-0 ${isLost ? t.statusLost :
                                   isNGD ? t.statusNGD :
@@ -2396,7 +2280,7 @@ export default function ReceptionistDashboard() {
                             </div>
                             <div className={`pt-4 border-t mt-auto flex justify-between items-center ${t.tableBorder}`}>
                               <p className={`text-[10px] flex-shrink-0 ${t.textFaint}`}>{formatDate(lead.created_at).split(",")[0]}</p>
-                              <span className={`text-[10px] font-bold uppercase tracking-widest transition-colors ${isDark ? "text-gray-500 group-hover:text-[#d4006e]" : "text-[#00AEEF] group-hover:text-[#9E217B]"}`}>Details →</span>
+                              <span className={`text-[10px] font-bold uppercase tracking-widest transition-colors ${isDark ? "text-gray-500 group-hover:text-[#d4006e]" : "text-[#8B5CF6] group-hover:text-[#8B5CF6]"}`}>Details →</span>
                             </div>
                           </div>
                         );
@@ -2484,7 +2368,7 @@ export default function ReceptionistDashboard() {
                               <select required value={salesForm.leadStatus} onChange={e => setSalesForm({ ...salesForm, leadStatus: e.target.value })} className={formSelect}><option value="" disabled>Select Status</option><option>Interested</option><option>Not Interested</option><option>NON GENUINE DEMAND (NGD)</option></select>
                             </div>
                             <div className={`border-t pt-3 mt-1 ${t.tableBorder}`}>
-                              <label className={`block text-xs font-bold mb-1.5 ${isDark ? "text-[#00AEEF]" : "text-[#00AEEF]"}`}>Loan Planned?</label>
+                              <label className={`block text-xs font-bold mb-1.5 ${isDark ? "text-[#8B5CF6]" : "text-[#8B5CF6]"}`}>Loan Planned?</label>
                               <select required value={salesForm.loanPlanned} onChange={e => setSalesForm({ ...salesForm, loanPlanned: e.target.value })} className={formSelect}><option value="" disabled>Select Option</option><option>Yes</option><option>No</option><option>Not Sure</option></select>
                             </div>
                             <div className={`mt-2 border-t pt-3 ${t.tableBorder}`}>
@@ -2498,14 +2382,14 @@ export default function ReceptionistDashboard() {
                         <div className={`rounded-xl border p-5 shadow-xl flex-1 overflow-y-auto custom-scrollbar flex flex-col animate-fadeIn ${t.modalCard}`} style={t.modalGlass}>
                           <div className={`flex justify-between items-center mb-4 border-b pb-3 flex-shrink-0 ${t.tableBorder}`}>
                             <div>
-                              <h3 className={`text-lg font-bold flex items-center gap-2 ${isDark ? "text-[#00AEEF]" : "text-[#00AEEF]"}`}><FaUniversity /> Loan Tracking Workflow</h3>
+                              <h3 className={`text-lg font-bold flex items-center gap-2 ${isDark ? "text-[#8B5CF6]" : "text-[#8B5CF6]"}`}><FaUniversity /> Loan Tracking Workflow</h3>
                               <p className={`text-xs mt-0.5 ${t.textFaint}`}>For Lead #{selectedLead.lead_number ?? selectedLead.id}</p>
                             </div>
                             <button type="button" onClick={() => setShowLoanForm(false)} className={`p-1 ${t.textMuted} hover:text-red-500`}><FaTimes /></button>
                           </div>
                           <form onSubmit={handleLoanFormSubmit} className="flex flex-col gap-6 flex-1">
                             <div>
-                              <h4 className={`text-xs font-bold uppercase tracking-wider mb-3 ${isDark ? "text-[#00AEEF]" : "text-[#00AEEF]"}`}>1. Loan Decision</h4>
+                              <h4 className={`text-xs font-bold uppercase tracking-wider mb-3 ${isDark ? "text-[#8B5CF6]" : "text-[#8B5CF6]"}`}>1. Loan Decision</h4>
                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <div><label className={`text-xs mb-1 block ${t.textMuted}`}>Loan Required? *</label><select required value={loanForm.loanRequired} onChange={e => setLoanForm({ ...loanForm, loanRequired: e.target.value })} className={formSelect}><option value="">Select</option><option>Yes</option><option>No</option><option>Not Sure</option></select></div>
                                 <div>
@@ -2516,7 +2400,7 @@ export default function ReceptionistDashboard() {
                               </div>
                             </div>
                             <div className={`border-t pt-4 ${t.tableBorder}`}>
-                              <h4 className={`text-xs font-bold uppercase tracking-wider mb-3 ${isDark ? "text-[#00AEEF]" : "text-[#00AEEF]"}`}>2. Bank & Loan Details</h4>
+                              <h4 className={`text-xs font-bold uppercase tracking-wider mb-3 ${isDark ? "text-[#8B5CF6]" : "text-[#8B5CF6]"}`}>2. Bank & Loan Details</h4>
                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 {[{ label: "Bank Name", k: "bank", ph: "e.g. HDFC" }, { label: "Amount Required", k: "amountReq", ph: "e.g. 60L" }, { label: "Amount Approved", k: "amountApp", ph: "e.g. 55L" }, { label: "CIBIL Score", k: "cibil", ph: "e.g. 750" }, { label: "Agent Name", k: "agent", ph: "Agent Name" }, { label: "Agent Contact", k: "agentContact", ph: "Agent Phone", tel: true }].map(f => (
                                   <div key={f.k}><label className={`text-xs mb-1 block ${t.textMuted}`}>{f.label}</label><input type={f.tel ? "tel" : "text"} value={(loanForm as any)[f.k]} onChange={e => setLoanForm({ ...loanForm, [f.k]: e.target.value })} className={formInput} placeholder={f.ph} /></div>
@@ -2524,7 +2408,7 @@ export default function ReceptionistDashboard() {
                               </div>
                             </div>
                             <div className={`border-t pt-4 ${t.tableBorder}`}>
-                              <h4 className={`text-xs font-bold uppercase tracking-wider mb-3 ${isDark ? "text-[#00AEEF]" : "text-[#00AEEF]"}`}>3. Financial Qualification</h4>
+                              <h4 className={`text-xs font-bold uppercase tracking-wider mb-3 ${isDark ? "text-[#8B5CF6]" : "text-[#8B5CF6]"}`}>3. Financial Qualification</h4>
                               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                                 <div><label className={`text-xs mb-1 block ${t.textMuted}`}>Employment</label><select value={loanForm.empType} onChange={e => setLoanForm({ ...loanForm, empType: e.target.value })} className={formSelect}><option value="">Select</option><option>Salaried</option><option>Self-employed</option></select></div>
                                 <div><label className={`text-xs mb-1 block ${t.textMuted}`}>Monthly Income</label><input type="text" value={loanForm.income} onChange={e => setLoanForm({ ...loanForm, income: e.target.value })} className={formInput} placeholder="e.g. 1L" /></div>
@@ -2532,7 +2416,7 @@ export default function ReceptionistDashboard() {
                               </div>
                             </div>
                             <div className={`border-t pt-4 ${t.tableBorder}`}>
-                              <h4 className={`text-xs font-bold uppercase tracking-wider mb-3 flex items-center gap-1 ${isDark ? "text-[#00AEEF]" : "text-[#00AEEF]"}`}><FaFileAlt /> 4. Document Checklist</h4>
+                              <h4 className={`text-xs font-bold uppercase tracking-wider mb-3 flex items-center gap-1 ${isDark ? "text-[#8B5CF6]" : "text-[#8B5CF6]"}`}><FaFileAlt /> 4. Document Checklist</h4>
                               <div className={`grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 rounded-lg border ${t.settingsBg}`} style={t.settingsBgGl}>
                                 {["docPan", "docAadhaar", "docSalary", "docBank", "docProperty"].map(docKey => {
                                   const label = docKey === "docPan" ? "PAN Card" : docKey === "docAadhaar" ? "Aadhaar Card" : docKey === "docSalary" ? "Salary Slips / ITR" : docKey === "docBank" ? "Bank Statements" : "Property Documents";
@@ -2546,7 +2430,7 @@ export default function ReceptionistDashboard() {
                               </div>
                             </div>
                             <div className={`border-t pt-4 ${t.tableBorder}`}>
-                              <h4 className={`text-xs font-bold uppercase tracking-wider mb-3 ${isDark ? "text-[#00AEEF]" : "text-[#00AEEF]"}`}>5. Notes / Remarks</h4>
+                              <h4 className={`text-xs font-bold uppercase tracking-wider mb-3 ${isDark ? "text-[#8B5CF6]" : "text-[#8B5CF6]"}`}>5. Notes / Remarks</h4>
                               <textarea value={loanForm.notes} onChange={e => setLoanForm({ ...loanForm, notes: e.target.value })} className={`w-full rounded-lg px-4 py-2.5 text-sm outline-none resize-none h-20 custom-scrollbar border ${t.inputInner} ${t.text} ${t.inputFocus}`} placeholder="Bank feedback, CIBIL issues, Internal notes..." />
                             </div>
                             <button type="submit" className={`mt-4 flex-shrink-0 w-full font-bold py-3.5 rounded-xl shadow-md transition-colors cursor-pointer ${t.btnSecondary}`}>Save Loan Tracker Update</button>
@@ -2580,7 +2464,7 @@ export default function ReceptionistDashboard() {
                                   <div><p className={`text-xs font-medium mb-1 ${t.textFaint}`}>Loan Required?</p><p className={`font-semibold ${t.text}`}>{getLatestLoanDetails()?.loanRequired}</p></div>
                                   <div><p className={`text-xs font-medium mb-1 ${t.textFaint}`}>Status</p><span className={`text-sm font-bold ${selectedLead.status === "Closing" ? "text-amber-500" : selectedLead.status === "Visit Scheduled" ? "text-orange-400" : t.accentText}`}>{selectedLead.status || "Routed"}</span></div>
                                   <div className={`col-span-2 p-3 rounded-xl border ${t.settingsBg}`} style={t.settingsBgGl}>
-                                    <p className={`text-xs font-bold uppercase tracking-wider mb-0.5 ${isDark ? "text-[#00AEEF]" : "text-[#00AEEF]"}`}>📍 Site Visit Date</p>
+                                    <p className={`text-xs font-bold uppercase tracking-wider mb-0.5 ${isDark ? "text-[#8B5CF6]" : "text-[#8B5CF6]"}`}>📍 Site Visit Date</p>
                                     <p className={`text-base font-black ${t.text}`}>{selectedLead.mongoVisitDate ? formatDate(selectedLead.mongoVisitDate) : "Not Scheduled"}</p>
                                   </div>
                                   {/* ── Lost Lead Record ── */}
@@ -2619,7 +2503,7 @@ export default function ReceptionistDashboard() {
                                   const isHighProb = curLoan?.status?.toLowerCase() === "approved" && selectedLead.mongoVisitDate;
                                   return (
                                     <>
-                                      <h3 className={`text-sm font-bold border-b pb-2 mb-6 uppercase flex items-center justify-between ${isDark ? "text-[#00AEEF]" : "text-[#00AEEF]"} ${t.tableBorder}`}><span className="flex items-center gap-2"><FaUniversity /> Deal Loan Overview</span></h3>
+                                      <h3 className={`text-sm font-bold border-b pb-2 mb-6 uppercase flex items-center justify-between ${isDark ? "text-[#8B5CF6]" : "text-[#8B5CF6]"} ${t.tableBorder}`}><span className="flex items-center gap-2"><FaUniversity /> Deal Loan Overview</span></h3>
                                       {isHighProb && <div className="mb-6 bg-gradient-to-r from-orange-500/20 to-red-500/20 border border-orange-500/50 p-3 rounded-lg flex items-center justify-center gap-2 text-orange-400 font-bold tracking-wide shadow-md">🚀 HIGH PROBABILITY DEAL (Visit Done + Loan Approved)</div>}
                                       <div className="grid grid-cols-2 gap-y-5 gap-x-4 text-sm">
                                         <div><p className={`text-xs font-medium mb-1 ${t.textFaint}`}>Loan Required?</p><p className={`font-semibold ${t.text}`}>{curLoan?.loanRequired}</p></div>
@@ -2647,7 +2531,7 @@ export default function ReceptionistDashboard() {
 
 
                           <div className="grid grid-cols-2 gap-3 mt-4 flex-shrink-0">
-                            <button className={`border flex flex-col items-center justify-center py-3 rounded-xl transition-all cursor-pointer gap-1 ${isDark ? "bg-[#00AEEF]/10 border-[#00AEEF]/30 hover:bg-[#00AEEF] text-[#00AEEF] hover:text-white" : "bg-[#00AEEF]/10 border-[#00AEEF]/30 hover:bg-[#00AEEF] text-[#00AEEF] hover:text-white"}`}><FaMicrophone className="text-lg" /><span className="font-bold text-[10px]">Browser Call</span></button>
+                            <button className={`border flex flex-col items-center justify-center py-3 rounded-xl transition-all cursor-pointer gap-1 ${isDark ? "bg-[#8B5CF6]/10 border-[#8B5CF6]/30 hover:bg-[#8B5CF6] text-[#8B5CF6] hover:text-white" : "bg-[#8B5CF6]/10 border-[#8B5CF6]/30 hover:bg-[#8B5CF6] text-[#8B5CF6] hover:text-white"}`}><FaMicrophone className="text-lg" /><span className="font-bold text-[10px]">Browser Call</span></button>
                             <button onClick={() => setIsWaModalOpen(true)} className="bg-green-600/10 border border-green-500/30 hover:bg-green-600 text-green-400 hover:text-white flex flex-col items-center justify-center py-3 rounded-xl transition-all cursor-pointer gap-1"><FaWhatsapp className="text-xl" /><span className="font-bold text-[10px]">WhatsApp</span></button>
                           </div>
                         </div>
@@ -2692,7 +2576,7 @@ export default function ReceptionistDashboard() {
                           placeholder="Add follow-up note..."
                           className={`flex-1 rounded-xl px-4 py-3 text-sm outline-none transition-colors border ${t.inputBg} ${t.text} ${t.inputFocus}`}
                         />
-                        <button type="submit" className={`w-12 h-12 text-white rounded-xl flex items-center justify-center cursor-pointer transition-colors shadow-lg ${isDark ? "bg-purple-600 hover:bg-purple-500" : "bg-[#00AEEF] hover:bg-[#0099d4]"}`}><FaPaperPlane className="text-sm ml-[-2px]" /></button>
+                        <button type="submit" className={`w-12 h-12 text-white rounded-xl flex items-center justify-center cursor-pointer transition-colors shadow-lg ${isDark ? "bg-purple-600 hover:bg-purple-500" : "bg-[#8B5CF6] hover:bg-[#7C3AED]"}`}><FaPaperPlane className="text-sm ml-[-2px]" /></button>
                       </form>
                     </div>
                   </div>
@@ -2811,7 +2695,7 @@ export default function ReceptionistDashboard() {
 
                             {/* 8. Assigned to */}
                             <td className="px-3 py-3 md:p-4">
-                              <span className={`px-2 py-1 rounded-md text-[10px] font-semibold ${isDark ? "bg-purple-500/10 text-purple-400 border border-purple-500/30" : "bg-[#9E217B]/10 text-[#9E217B] border border-[#9E217B]/30"}`}>{lead.assignedReceptionist || user.name}</span>
+                              <span className={`px-2 py-1 rounded-md text-[10px] font-semibold ${isDark ? "bg-purple-500/10 text-purple-400 border border-purple-500/30" : "bg-[#8B5CF6]/10 text-[#8B5CF6] border border-[#8B5CF6]/30"}`}>{lead.assignedReceptionist || user.name}</span>
                             </td>
 
                             {/* Site Visits */}
@@ -3172,8 +3056,8 @@ export default function ReceptionistDashboard() {
                   </div>
                 </div>
 
-                <div className={`p-5 md:p-6 rounded-xl border ${isDark ? "border-[#9E217B]/20" : "border-[#00AEEF]/20"} ${t.modalBlock}`} style={t.modalBlockGl}>
-                  <h3 className={`text-sm font-bold mb-4 uppercase tracking-wider border-b pb-2 ${isDark ? "text-[#d4006e] border-[#9E217B]/20" : "text-[#00AEEF] border-[#00AEEF]/20"}`}>Routing & Source</h3>
+                <div className={`p-5 md:p-6 rounded-xl border ${isDark ? "border-[#8B5CF6]/20" : "border-[#8B5CF6]/20"} ${t.modalBlock}`} style={t.modalBlockGl}>
+                  <h3 className={`text-sm font-bold mb-4 uppercase tracking-wider border-b pb-2 ${isDark ? "text-[#d4006e] border-[#8B5CF6]/20" : "text-[#8B5CF6] border-[#8B5CF6]/20"}`}>Routing & Source</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
                     <div>
                       <label className={`block text-xs mb-1.5 font-medium pl-2 ${t.textMuted}`}>Source *</label>
@@ -3196,22 +3080,22 @@ export default function ReceptionistDashboard() {
                     </div>
 
                     {/* SELF-ASSIGN TOGGLE */}
-                    <div className={`rounded-xl p-4 border flex flex-col gap-3 ${isDark ? "bg-[#9E217B]/5 border-[#9E217B]/20" : "bg-[#9E217B]/5 border-[#9E217B]/20"}`}>
-                      <label className={`block text-xs font-bold ${isDark ? "text-[#d4006e]" : "text-[#9E217B]"}`}>Assignment Option</label>
+                    <div className={`rounded-xl p-4 border flex flex-col gap-3 ${isDark ? "bg-[#8B5CF6]/5 border-[#8B5CF6]/20" : "bg-[#8B5CF6]/5 border-[#8B5CF6]/20"}`}>
+                      <label className={`block text-xs font-bold ${isDark ? "text-[#d4006e]" : "text-[#8B5CF6]"}`}>Assignment Option</label>
                       <div className="flex items-center gap-3">
                         <button type="button"
                           onClick={() => { setEnquiryForm({ ...enquiryForm, selfAssign: false }); setShowManagerDropdown(true); }}
-                          className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold transition-colors border ${!enquiryForm.selfAssign ? (isDark ? "bg-[#9E217B] border-[#9E217B] text-white" : "bg-[#00AEEF] border-[#00AEEF] text-white") : `${t.textMuted} ${t.tableBorder}`}`}>
+                          className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold transition-colors border ${!enquiryForm.selfAssign ? (isDark ? "bg-[#8B5CF6] border-[#8B5CF6] text-white" : "bg-[#8B5CF6] border-[#8B5CF6] text-white") : `${t.textMuted} ${t.tableBorder}`}`}>
                           Assign to Manager
                         </button>
                         <button type="button"
                           onClick={() => setEnquiryForm({ ...enquiryForm, selfAssign: true, assignedTo: "" })}
-                          className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold transition-colors border ${enquiryForm.selfAssign ? (isDark ? "bg-[#9E217B] border-[#9E217B] text-white" : "bg-[#9E217B] border-[#9E217B] text-white") : `${t.textMuted} ${t.tableBorder}`}`}>
+                          className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold transition-colors border ${enquiryForm.selfAssign ? (isDark ? "bg-[#8B5CF6] border-[#8B5CF6] text-white" : "bg-[#8B5CF6] border-[#8B5CF6] text-white") : `${t.textMuted} ${t.tableBorder}`}`}>
                           Self-Assign (Me)
                         </button>
                       </div>
                       {enquiryForm.selfAssign ? (
-                        <p className={`text-xs ${isDark ? "text-[#d4006e]" : "text-[#9E217B]"}`}>✓ Lead will be assigned to <strong>{user.name}</strong> (you)</p>
+                        <p className={`text-xs ${isDark ? "text-[#d4006e]" : "text-[#8B5CF6]"}`}>✓ Lead will be assigned to <strong>{user.name}</strong> (you)</p>
                       ) : (
                         <div className={`w-full rounded-xl border-2 overflow-hidden ${isDark ? "border-purple-500/40" : "border-purple-300"}`}>
                           {isFetchingManagers ? (
@@ -3376,7 +3260,7 @@ export default function ReceptionistDashboard() {
             </div>
             <div className={`p-4 md:p-6 border-t flex flex-col md:flex-row justify-end gap-3 md:gap-4 ${t.modalHeader} ${t.tableBorder}`}>
               <button onClick={() => { setIsEnquiryModalOpen(false); setShowManagerDropdown(false); }} type="button"
-                className={`px-6 py-2.5 rounded-lg font-bold cursor-pointer transition-colors ${t.textMuted} ${isDark ? "hover:bg-red-500/10 hover:text-red-500" : "hover:bg-[#9E217B]/10 hover:text-[#9E217B]"}`}>Cancel</button>
+                className={`px-6 py-2.5 rounded-lg font-bold cursor-pointer transition-colors ${t.textMuted} ${isDark ? "hover:bg-red-500/10 hover:text-red-500" : "hover:bg-[#8B5CF6]/10 hover:text-[#8B5CF6]"}`}>Cancel</button>
               <button form="enquiryForm" type="submit" disabled={isSubmitting}
                 className={`px-8 py-2.5 rounded-lg font-bold transition-colors ${isSubmitting ? "opacity-50 cursor-not-allowed" : "cursor-pointer"} ${t.btnPrimary}`}>
                 {isSubmitting ? "Submitting..." : "Submit"}

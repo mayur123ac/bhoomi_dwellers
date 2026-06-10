@@ -8,6 +8,7 @@ import { clearCrmSession, getStoredCrmUser, installLoggedOutBackGuard } from "@/
 import { isOrgAdmin, canManageEmployees, isSiteHead } from "@/lib/rbac";
 import { motion, AnimatePresence } from "framer-motion";
 import * as XLSX from "xlsx";
+import { buildTheme } from "@/lib/theme";
 import {
   FaUserTie, FaListUl, FaPlus, FaThLarge, FaCog, FaBell, FaLock, FaIdCard,
   FaClipboardList, FaUsers, FaEyeSlash, FaTrash, FaUserEdit,
@@ -45,102 +46,7 @@ const MoonIcon = () => (
 );
 
 // ─── Theme Builder ─────────────────────────────────────────────────────────────
-function buildTheme(isDark: boolean) {
-  return {
-    // ── page shell ──
-    pageWrap: isDark ? "bg-[#0a0a0a] text-gray-200" : "text-[#1A1A1A]",
-    pageStyle: isDark ? {} : { background: "linear-gradient(135deg,#fdf0f8 0%,#f8fafc 30%,#faf0fb 62%,#f8fafc 78%,#fce8f6 100%)" },
-    mainBg: isDark ? "bg-[#0a0a0a]" : "bg-transparent",
-    // ── header ──
-    header: isDark ? "bg-[#111111]/80 backdrop-blur-md border-[#222]" : "bg-white border-[#9CA3AF]",
-    headerTitle: isDark ? "text-white" : "text-[#1A1A1A]",
-    headerBadge: isDark ? "bg-[#9E217B]/10 border-[#9E217B]/30 text-[#d946a8]" : "bg-[#9E217B]/10 border-[#9E217B]/30 text-[#9E217B]",
-    // ── panels / sections ──
-    panel: isDark ? "bg-[#111111] border-[#222]" : "bg-white border-indigo-300",
-    panelHead: isDark ? "border-[#222] bg-[#151515]" : "border-indigo-200 bg-[#F1F5F9]",
-    inner: isDark ? "bg-[#1a1a1a]" : "bg-[#F8FAFC]",
-    innerBorder: isDark ? "border-[#222]" : "border-indigo-200",
-    innerBorderSt: isDark ? "border-[#333]" : "border-indigo-300",
-    // ── text ──
-    text: isDark ? "text-white" : "text-[#1A1A1A]",
-    textMuted: isDark ? "text-gray-400" : "text-[#6B7280]",
-    textFaint: isDark ? "text-gray-500" : "text-[#9CA3AF]",
-    textLight: isDark ? "text-gray-300" : "text-[#374151]",
-    textLight2: isDark ? "text-gray-600" : "text-[#9CA3AF]",
-    accentText: isDark ? "text-[#d946a8]" : "text-[#9E217B]",
-    // ── inputs & selects ──
-    inp: isDark
-      ? "w-full bg-[#1a1a1a] border border-[#333] rounded-lg px-4 py-2.5 text-sm text-white focus:border-[#9E217B] outline-none transition-colors placeholder:text-gray-600"
-      : "w-full bg-white border border-indigo-300 rounded-lg px-4 py-2.5 text-sm text-[#1A1A1A] focus:border-[#9E217B] outline-none transition-colors placeholder:text-[#9CA3AF]",
-    sel: isDark
-      ? "w-full bg-[#1a1a1a] border border-[#333] rounded-lg px-4 py-2.5 text-sm text-gray-300 focus:border-[#9E217B] outline-none cursor-pointer transition-colors"
-      : "w-full bg-white border border-indigo-300 rounded-lg px-4 py-2.5 text-sm text-[#374151] focus:border-[#9E217B] outline-none cursor-pointer transition-colors",
-    smallSel: isDark
-      ? "w-full bg-[#1a1a1a] border border-[#333] rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-[#9E217B] cursor-pointer"
-      : "w-full bg-white border border-indigo-300 rounded-lg px-3 py-2 text-xs text-[#1A1A1A] outline-none focus:border-[#9E217B] cursor-pointer",
-    searchInp: isDark
-      ? "w-full bg-[#1a1a1a] border border-[#333] rounded-lg pl-9 pr-4 py-2 text-sm text-white focus:border-[#9E217B] outline-none transition-colors"
-      : "w-full bg-white border border-indigo-300 rounded-lg pl-9 pr-4 py-2 text-sm text-[#1A1A1A] focus:border-[#9E217B] outline-none transition-colors",
-    // ── table ──
-    tableHead: isDark ? "bg-[#1a1a1a]" : "bg-[#F1F5F9]",
-    tableHeadText: isDark ? "text-gray-500" : "text-[#6B7280]",
-    tableRow: isDark ? "hover:bg-[#151515]" : "hover:bg-[#F8FAFC]",
-    tableDivide: isDark ? "divide-[#1a1a1a]" : "divide-[#E5E7EB]",
-    tableBorderB: isDark ? "border-b border-[#222]" : "border-b border-indigo-200",
-    tableHeadBdr: isDark ? "border-b border-[#222]" : "border-b border-indigo-200",
-    // ── caller sidebar ──
-    callerSidebar: isDark ? "bg-[#111111] border-r border-[#222]" : "bg-white border-r border-indigo-200",
-    callerItemBdr: isDark ? "border-b border-[#1a1a1a]" : "border-b border-indigo-100",
-    callerItemSel: isDark ? "bg-[#1a1a1a] border-l-4 border-l-[#9E217B]" : "bg-pink-50 border-l-4 border-l-[#9E217B]",
-    callerItemDef: isDark ? "border-l-4 border-l-transparent" : "border-l-4 border-l-transparent",
-    callerItemHov: isDark ? "hover:bg-[#151515]" : "hover:bg-pink-50/50",
-    callerAvatar: isDark ? "bg-[#333] text-gray-400" : "bg-gray-300 text-gray-600",
-    // ── right panel ──
-    rightPanel: isDark ? "bg-[#0a0a0a]" : "bg-[#F8FAFC]",
-    rightHeader: isDark ? "bg-[#111111] border-b border-[#222]" : "bg-white border-b border-indigo-200",
-    // ── batch section ──
-    batchTop: isDark ? "border-t border-[#222]" : "border-t border-indigo-200",
-    batchLabel: isDark ? "text-gray-500" : "text-[#9CA3AF]",
-    batchItemSel: isDark ? "bg-[#9E217B]/10 border border-[#9E217B]/30" : "bg-pink-50 border border-pink-200",
-    batchItemDef: isDark ? "hover:bg-[#1a1a1a] border border-transparent" : "hover:bg-pink-50/30 border border-transparent",
-    // ── detail view ──
-    detailCard: isDark ? "bg-[#111111] border-[#222]" : "bg-white border-indigo-200",
-    detailSection: isDark ? "border-b border-[#222] pb-2" : "border-b border-indigo-200 pb-2",
-    detailRow: isDark ? "border-[#222]" : "border-indigo-100",
-    followBg: isDark ? "bg-[#0a0a0a]" : "bg-[#F8FAFC]",
-    followSys: isDark ? "bg-[#1a1a1a] border-[#222]" : "bg-white border-[#E5E7EB]",
-    followMsg: isDark ? "bg-[#1f0a18] border-[#9E217B]/30" : "bg-pink-50 border-pink-200",
-    chatInputWrap: isDark ? "bg-[#1a1a1a] border-t border-[#222]" : "bg-white border-t border-indigo-200",
-    chatInputInner: isDark
-      ? "flex-1 bg-[#0a0a0a] border border-[#333] rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-[#9E217B] transition-colors"
-      : "flex-1 bg-white border border-indigo-300 rounded-xl px-4 py-3 text-sm text-[#1A1A1A] outline-none focus:border-[#9E217B] transition-colors",
-    // ── table inline edit ──
-    editRow: isDark ? "bg-[#1a1a2e]" : "bg-indigo-50",
-    editInp: isDark
-      ? "w-full bg-[#0f0f0f] border border-[#9E217B]/50 rounded-lg px-2.5 py-1.5 text-sm text-white outline-none"
-      : "w-full bg-white border border-[#9E217B]/50 rounded-lg px-2.5 py-1.5 text-sm text-[#1A1A1A] outline-none",
-    editSel: isDark
-      ? "w-full bg-[#0f0f0f] border border-[#9E217B]/50 rounded-lg px-2.5 py-1.5 text-sm text-[#d946a8] outline-none cursor-pointer"
-      : "w-full bg-white border border-[#9E217B]/50 rounded-lg px-2.5 py-1.5 text-sm text-[#9E217B] outline-none cursor-pointer",
-    adminRow: isDark ? "bg-[#9E217B]/5" : "bg-pink-50/30",
-    // ── upload msg ──
-    uploadSuccess: isDark ? "text-green-400 bg-green-500/10 border-green-500/20" : "text-green-700 bg-green-50 border-green-200",
-    uploadError: isDark ? "text-red-400 bg-red-500/10 border-red-500/20" : "text-red-700 bg-red-50 border-red-200",
-    uploadInfo: isDark ? "text-[#d946a8] bg-[#9E217B]/10 border-[#9E217B]/20" : "text-[#9E217B] bg-pink-50 border-pink-200",
-    // ── profile dropdown ──
-    dropdown: isDark ? "bg-[#1a1a1a] border-[#2a2a2a]" : "bg-white border-indigo-200",
-    dropdownInner: isDark ? "bg-[#121212] border-[#2a2a2a]" : "bg-white border-indigo-200",
-    profileRole: isDark ? "text-[#d946a8] bg-[#9E217B]/10 border-[#9E217B]/30" : "text-[#9E217B] bg-[#9E217B]/10 border-[#9E217B]/30",
-    profileLogout: isDark ? "bg-[#3B1F1F] text-[#F28B82] hover:bg-red-900/40 border border-red-900/30" : "bg-[#9E217B]/10 text-[#9E217B] hover:bg-[#9E217B] hover:text-white border border-[#9E217B]/30",
-    // ── toggle button ──
-    toggleBtn: isDark ? "bg-[#1C1C2A] border-[#2A2A38] text-yellow-300" : "bg-white border-indigo-200 text-[#9E217B]",
-    // ── misc ──
-    dividerBar: "bg-[#9E217B]",
-    scroll: isDark ? "custom-scrollbar" : "custom-scrollbar-light",
-    pillBorder: isDark ? "border-[#333]" : "border-indigo-200",
-    pillBg: isDark ? "bg-[#222]" : "bg-[#F1F5F9]",
-  };
-}
+// ─── THEME TOKEN BUILDER REMOVED (IMPORTED FROM @/lib/theme) ─────────────────
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const formatDate = (ds?: string) => {
@@ -857,9 +763,9 @@ export default function EmployeesPage() {
 
             <div className="relative">
               <div className="relative cursor-pointer" onClick={() => { setIsNotifOpen(!isNotifOpen); setIsProfileOpen(false); setNotifCount(0); }}>
-                <FaBell className={`${t.textMuted} hover:text-[#9E217B] transition-colors w-5 h-5`} />
+                <FaBell className={`${t.textMuted} hover:text-[#8B5CF6] transition-colors w-5 h-5`} />
                 {notifCount > 0 && (
-                  <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-[#9E217B] rounded-full text-[9px] font-black text-white flex items-center justify-center">
+                  <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-[#8B5CF6] rounded-full text-[9px] font-black text-white flex items-center justify-center">
                     {notifCount > 9 ? "9+" : notifCount}
                   </span>
                 )}
@@ -869,7 +775,7 @@ export default function EmployeesPage() {
                 <div className={`absolute top-12 right-0 w-[320px] border rounded-xl shadow-2xl flex flex-col z-50 animate-fadeIn ${t.dropdown}`}>
                   <div className={`p-4 border-b flex justify-between items-center ${t.innerBorder}`}>
                     <h3 className={`font-bold text-sm flex items-center gap-2 ${t.text}`}>
-                      <FaBell className="text-[#9E217B]" /> Recent Notifications
+                      <FaBell className="text-[#8B5CF6]" /> Recent Notifications
                     </h3>
                     <button onClick={() => setIsNotifOpen(false)} className={`${t.textMuted} hover:text-red-500`}><FaTimes className="text-xs" /></button>
                   </div>
@@ -907,7 +813,7 @@ export default function EmployeesPage() {
             <div className="relative">
               <div onClick={() => { setIsProfileOpen(!isProfileOpen); setIsNotifOpen(false); }}
                 className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm cursor-pointer shadow-sm hover:opacity-80 transition-opacity border
-                  ${isDark ? "border-[#9E217B]/40 text-[#d946a8] bg-[#9E217B]/15" : "border-[#9E217B]/40 text-[#9E217B] bg-[#9E217B]/10"}`}>
+                  ${isDark ? "border-[#8B5CF6]/40 text-[#A78BFA] bg-[#8B5CF6]/15" : "border-[#8B5CF6]/40 text-[#8B5CF6] bg-[#8B5CF6]/10"}`}>
                 {String(user?.name || "A").charAt(0).toUpperCase()}
               </div>
               {isProfileOpen && (
@@ -919,7 +825,7 @@ export default function EmployeesPage() {
                   <hr className={`mb-4 ${t.innerBorder}`} />
                   <div className="space-y-4 mb-6 text-sm">
                     <p className={`flex justify-between items-center ${t.textMuted}`}>Role:
-                      <span className={`font-bold capitalize px-2 py-0.5 rounded border ${isDark ? "text-[#d946a8] bg-[#9E217B]/10 border-[#9E217B]/30" : "text-[#9E217B] bg-[#9E217B]/10 border-[#9E217B]/30"}`}>{user?.role || "Admin"}</span>
+                      <span className={`font-bold capitalize px-2 py-0.5 rounded border ${isDark ? "text-[#A78BFA] bg-[#8B5CF6]/10 border-[#8B5CF6]/30" : "text-[#8B5CF6] bg-[#8B5CF6]/10 border-[#8B5CF6]/30"}`}>{user?.role || "Admin"}</span>
                     </p>
                     <div>
                       <p className={`text-xs mb-1 ${t.textMuted}`}>Password</p>
@@ -972,7 +878,7 @@ export default function EmployeesPage() {
           <main className="flex-1 flex flex-col items-center justify-center text-center p-8">
             <div className="w-20 h-20 bg-red-900/20 text-red-500 rounded-full flex items-center justify-center text-4xl mb-6"><FaLock /></div>
             <h1 className={`text-3xl font-bold mb-2 ${t.text}`}>Access Denied</h1>
-            <Link href={`/org/${orgSlug}/dashboard`} className="bg-[#9E217B] hover:bg-[#b8268f] text-white font-bold py-3 px-8 rounded-lg transition-colors">Return to Dashboard</Link>
+            <Link href={`/org/${orgSlug}/dashboard`} className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-bold py-3 px-8 rounded-lg transition-colors">Return to Dashboard</Link>
           </main>
 
         ) : activeSection === "employees" ? (
@@ -984,7 +890,7 @@ export default function EmployeesPage() {
 
               {/* Tab pills */}
               <div className="flex flex-wrap gap-2 mb-8">
-                <button className="flex items-center gap-2 bg-[#9E217B] text-white px-5 py-2 rounded-lg border border-[#b8268f] shadow-lg shadow-[#9E217B]/20 font-semibold">
+                <button className="flex items-center gap-2 bg-[#8B5CF6] text-white px-5 py-2 rounded-lg border border-[#7C3AED] shadow-lg shadow-[#8B5CF6]/20 font-semibold">
                   <FaUserTie /> Employees
                 </button>
               </div>
@@ -1003,8 +909,8 @@ export default function EmployeesPage() {
                   </div>
                   <button onClick={handleAddNewRole}
                     className={`text-sm font-semibold py-2.5 px-5 rounded-lg border transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap
-                      ${isDark ? "bg-[#1a1a1a] hover:bg-[#252525] text-white border-[#333] hover:border-[#9E217B]/50" : "bg-white hover:bg-pink-50 text-[#1A1A1A] border-indigo-300 hover:border-[#9E217B]/60"}`}>
-                    <FaPlus className="text-[#9E217B] text-xs" /> Add to Dropdown
+                      ${isDark ? "bg-[#1a1a1a] hover:bg-[#252525] text-white border-[#333] hover:border-[#8B5CF6]/50" : "bg-white hover:bg-indigo-50 text-[#1A1A1A] border-indigo-300 hover:border-[#8B5CF6]/60"}`}>
+                    <FaPlus className="text-[#8B5CF6] text-xs" /> Add to Dropdown
                   </button>
                 </div>
               </div>
@@ -1058,7 +964,7 @@ export default function EmployeesPage() {
                   </div>
                   <div className="sm:col-span-2 lg:col-span-4 flex justify-end mt-2">
                     <button type="submit"
-                      className="bg-[#9E217B] hover:bg-[#b8268f] text-white font-bold py-2.5 px-8 rounded-lg transition-all cursor-pointer shadow-lg shadow-[#9E217B]/20 flex items-center gap-2">
+                      className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-bold py-2.5 px-8 rounded-lg transition-all cursor-pointer shadow-lg shadow-[#8B5CF6]/20 flex items-center gap-2">
                       <FaPlus className="text-xs" /> Add Employee
                     </button>
                   </div>
@@ -1106,7 +1012,7 @@ export default function EmployeesPage() {
               <div className={`rounded-2xl border overflow-hidden shadow-sm ${t.panel}`}>
                 <div className={`p-5 border-b flex items-center justify-between ${t.panelHead}`}>
                   <h2 className={`text-base font-bold flex items-center gap-2 ${t.text}`}>
-                    <FaUsers className="text-[#9E217B]" /> Registered Employees Database
+                    <FaUsers className="text-[#8B5CF6]" /> Registered Employees Database
                   </h2>
                   <span className={`text-[10px] px-3 py-1 rounded-full border ${t.textFaint} ${t.pillBg} ${t.pillBorder}`}>{employees.length} employees</span>
                 </div>
@@ -1132,7 +1038,7 @@ export default function EmployeesPage() {
                                 ? <input value={editForm.name || ""} onChange={e => setEditForm(p => ({ ...p, name: e.target.value }))} className={t.editInp} />
                                 : <div className="flex items-center gap-2">
                                   {emp.name}
-                                  {isAdminUser && <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase border ${isDark ? "text-[#d946a8] bg-[#9E217B]/10 border-[#9E217B]/30" : "text-[#9E217B] bg-[#9E217B]/10 border-[#9E217B]/30"}`}>Protected</span>}
+                                  {isAdminUser && <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase border ${isDark ? "text-[#A78BFA] bg-[#8B5CF6]/10 border-[#8B5CF6]/30" : "text-[#8B5CF6] bg-[#8B5CF6]/10 border-[#8B5CF6]/30"}`}>Protected</span>}
                                 </div>
                               }
                             </td>
@@ -1149,7 +1055,7 @@ export default function EmployeesPage() {
                                 ? <input value={editForm.password || ""} onChange={e => setEditForm(p => ({ ...p, password: e.target.value }))} className={t.editInp} />
                                 : <div className="flex items-center gap-3">
                                   <span className={`font-mono tracking-wider ${t.textLight}`}>{isRevealed ? (emp.password || "N/A") : "••••••••"}</span>
-                                  <button onClick={() => toggleRowPassword(emp._id)} className={`${t.textMuted} hover:text-[#9E217B] cursor-pointer`}><FaEyeSlash /></button>
+                                  <button onClick={() => toggleRowPassword(emp._id)} className={`${t.textMuted} hover:text-[#8B5CF6] cursor-pointer`}><FaEyeSlash /></button>
                                 </div>
                               }
                             </td>
@@ -1161,7 +1067,7 @@ export default function EmployeesPage() {
                                     <option key={roleName} value={roleName} className="text-black dark:text-white bg-white dark:bg-[#1a1a1a]">{roleName}</option>
                                   ))}
                                 </select>
-                                : <span className={`font-semibold capitalize ${isDark ? "text-[#d946a8]" : "text-[#9E217B]"}`}>{emp.role}</span>
+                                : <span className={`font-semibold capitalize ${isDark ? "text-[#A78BFA]" : "text-[#8B5CF6]"}`}>{emp.role}</span>
                               }
                             </td>
                             {/* Status */}
@@ -1176,7 +1082,7 @@ export default function EmployeesPage() {
                                 <div className="flex flex-col items-center gap-1.5">
                                   <div className="flex gap-2">
                                     <button onClick={() => handleEditSave(emp._id)} disabled={editSaving}
-                                      className="bg-[#9E217B] hover:bg-[#b8268f] disabled:opacity-50 text-white text-xs font-bold px-3 py-1.5 rounded-lg cursor-pointer transition-colors">
+                                      className="bg-[#8B5CF6] hover:bg-[#7C3AED] disabled:opacity-50 text-white text-xs font-bold px-3 py-1.5 rounded-lg cursor-pointer transition-colors">
                                       {editSaving ? "Saving..." : "Save"}
                                     </button>
                                     <button onClick={handleEditCancel}
@@ -1193,7 +1099,7 @@ export default function EmployeesPage() {
                               ) : (
                                 <div className="flex items-center justify-center gap-1">
                                   <button onClick={() => handleEditStart(emp)}
-                                    className={`p-2 rounded-lg transition-colors cursor-pointer ${t.textMuted} hover:text-[#d946a8] hover:bg-[#9E217B]/10`}>
+                                    className={`p-2 rounded-lg transition-colors cursor-pointer ${t.textMuted} hover:text-[#A78BFA] hover:bg-[#8B5CF6]/10`}>
                                     <FaUserEdit />
                                   </button>
                                   {isOrgAdmin(user?.role) && (
@@ -1257,7 +1163,7 @@ export default function EmployeesPage() {
                   </button>
                   <label
                     className={`flex-1 flex items-center justify-center gap-2 border py-2 rounded-lg text-xs font-bold transition-all cursor-pointer
-                      ${isDark ? "bg-[#1a1a1a] hover:bg-[#222] border-[#333] hover:border-[#9E217B]/50 text-gray-300 hover:text-white" : "bg-white hover:bg-pink-50 border-indigo-200 hover:border-[#9E217B]/50 text-[#6B7280] hover:text-[#9E217B]"}`}
+                      ${isDark ? "bg-[#1a1a1a] hover:bg-[#222] border-[#333] hover:border-[#8B5CF6]/50 text-gray-300 hover:text-white" : "bg-white hover:bg-indigo-50 border-indigo-200 hover:border-[#8B5CF6]/50 text-[#6B7280] hover:text-[#8B5CF6]"}`}
                     onDragOver={e => { e.preventDefault(); setIsDragging(true); }}
                     onDragLeave={() => setIsDragging(false)}
                     onDrop={e => { e.preventDefault(); setIsDragging(false); const f = e.dataTransfer.files[0]; if (f) handleAdminUpload(f, assignUploadTo || undefined); }}
@@ -1283,11 +1189,11 @@ export default function EmployeesPage() {
                 {/* All Callers */}
                 <div onClick={() => { setSelectedCaller(null); setCallerSubView("table"); setSelectedLead(null); setLeadSearch(""); setSelectedBatch("all"); }}
                   className={`p-4 flex items-center gap-3 cursor-pointer transition-all ${t.callerItemBdr} ${!selectedCaller ? t.callerItemSel : `${t.callerItemDef} ${t.callerItemHov}`}`}>
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-white flex-shrink-0 ${!selectedCaller ? "bg-[#9E217B]" : isDark ? "bg-[#333] text-gray-400" : "bg-gray-300 text-gray-600"}`}><FaPhoneAlt className="text-sm" /></div>
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-white flex-shrink-0 ${!selectedCaller ? "bg-[#8B5CF6]" : isDark ? "bg-[#333] text-gray-400" : "bg-gray-300 text-gray-600"}`}><FaPhoneAlt className="text-sm" /></div>
                   <div className="flex-1 min-w-0">
                     <div className="flex justify-between items-center">
                       <h3 className={`font-bold text-sm ${t.text}`}>All Callers</h3>
-                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${isDark ? "text-[#d946a8] bg-[#9E217B]/10" : "text-[#9E217B] bg-pink-100"}`}>{callerLeads.length} leads</span>
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${isDark ? "text-[#A78BFA] bg-[#8B5CF6]/10" : "text-[#8B5CF6] bg-indigo-100"}`}>{callerLeads.length} leads</span>
                     </div>
                     <p className={`text-xs ${t.textFaint}`}>{callers.length} callers total</p>
                   </div>
@@ -1302,13 +1208,13 @@ export default function EmployeesPage() {
                         <div key={caller._id || caller.name} className={`${t.callerItemBdr} ${isSel ? t.callerItemSel : t.callerItemDef}`}>
                           <div onClick={() => { setSelectedCaller(caller); setCallerSubView("table"); setSelectedLead(null); setLeadSearch(""); setSelectedBatch("all"); }}
                             className={`p-4 flex items-center gap-3 cursor-pointer transition-all ${t.callerItemHov}`}>
-                            <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-white flex-shrink-0 ${isSel ? "bg-[#9E217B]" : isDark ? "bg-[#333] text-gray-400" : "bg-gray-300 text-gray-600"}`}>
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-white flex-shrink-0 ${isSel ? "bg-[#8B5CF6]" : isDark ? "bg-[#333] text-gray-400" : "bg-gray-300 text-gray-600"}`}>
                               {caller.name?.charAt(0).toUpperCase()}
                             </div>
                             <div className="flex-1 min-w-0">
                               <div className="flex justify-between items-center mb-0.5">
                                 <h3 className={`font-bold truncate text-sm ${t.text}`}>{caller.name}</h3>
-                                <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${isDark ? "text-[#d946a8] bg-[#9E217B]/10" : "text-[#9E217B] bg-pink-100"}`}>{caller.totalLeads} leads</span>
+                                <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${isDark ? "text-[#A78BFA] bg-[#8B5CF6]/10" : "text-[#8B5CF6] bg-indigo-100"}`}>{caller.totalLeads} leads</span>
                               </div>
                               <p className={`text-xs flex items-center gap-2 ${t.textFaint}`}>
                                 <span className="text-green-500">{caller.interested} interested</span>
@@ -1360,7 +1266,7 @@ export default function EmployeesPage() {
               <div className={`p-5 border-b flex justify-between items-center flex-shrink-0 shadow-sm ${t.rightHeader}`}>
                 <div>
                   <h2 className={`text-lg font-bold flex items-center gap-2 ${t.text}`}>
-                    <FaPhoneAlt className="text-[#9E217B]" />
+                    <FaPhoneAlt className="text-[#8B5CF6]" />
                     {selectedCaller ? `${selectedCaller.name}'s Saved Forms` : "All Caller Leads"}
                   </h2>
                   <p className={`text-xs mt-1 ${t.textFaint}`}>
@@ -1373,12 +1279,12 @@ export default function EmployeesPage() {
                   <div className="flex gap-2 text-xs flex-wrap items-center">
                     <span className="bg-green-500/10 border border-green-500/30 text-green-400 px-3 py-1 rounded-full">{filteredCallerLeads.filter((l: any) => l.interest_status === "Interested").length} Interested</span>
                     <span className="bg-red-500/10 border border-red-500/30 text-red-400 px-3 py-1 rounded-full">{filteredCallerLeads.filter((l: any) => l.interest_status === "Not Interested").length} Not Interested</span>
-                    <span className={`px-3 py-1 rounded-full border ${isDark ? "bg-[#9E217B]/10 border-[#9E217B]/30 text-[#d946a8]" : "bg-pink-50 border-pink-200 text-[#9E217B]"}`}>{filteredCallerLeads.filter((l: any) => l.status === "saved").length} Saved</span>
+                    <span className={`px-3 py-1 rounded-full border ${isDark ? "bg-[#8B5CF6]/10 border-[#8B5CF6]/30 text-[#A78BFA]" : "bg-indigo-50 border-indigo-200 text-[#8B5CF6]"}`}>{filteredCallerLeads.filter((l: any) => l.status === "saved").length} Saved</span>
                   </div>
                 )}
                 {selectedCaller && (
                   <div className="flex gap-2 text-xs flex-wrap items-center">
-                    <span className={`px-3 py-1 rounded-full border ${isDark ? "bg-[#9E217B]/10 border-[#9E217B]/30 text-[#d946a8]" : "bg-pink-50 border-pink-200 text-[#9E217B]"}`}>{callerSavedFormLeads.length} Forms</span>
+                    <span className={`px-3 py-1 rounded-full border ${isDark ? "bg-[#8B5CF6]/10 border-[#8B5CF6]/30 text-[#A78BFA]" : "bg-indigo-50 border-indigo-200 text-[#8B5CF6]"}`}>{callerSavedFormLeads.length} Forms</span>
                     <span className="bg-green-500/10 border border-green-500/30 text-green-400 px-3 py-1 rounded-full">{callerSavedFormLeads.filter((l: any) => l.interest_status === "Interested").length} Interested</span>
                     <span className="bg-red-500/10 border border-red-500/30 text-red-400 px-3 py-1 rounded-full">{callerSavedFormLeads.filter((l: any) => l.interest_status === "Not Interested").length} Not Int.</span>
                   </div>
@@ -1480,7 +1386,7 @@ export default function EmployeesPage() {
                     <div className="space-y-5 animate-fadeIn">
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         {[
-                          { label: "Saved Forms", value: callerSavedFormLeads.length, color: "text-[#d946a8]", bg: isDark ? "bg-[#9E217B]/10 border-[#9E217B]/20" : "bg-pink-50 border-pink-200" },
+                          { label: "Saved Forms", value: callerSavedFormLeads.length, color: "text-[#A78BFA]", bg: isDark ? "bg-[#8B5CF6]/10 border-[#8B5CF6]/20" : "bg-indigo-50 border-indigo-200" },
                           { label: "Interested", value: callerSavedFormLeads.filter((l: any) => l.interest_status === "Interested").length, color: "text-green-400", bg: "bg-green-500/10 border-green-500/20" },
                           { label: "Not Interested", value: callerSavedFormLeads.filter((l: any) => l.interest_status === "Not Interested").length, color: "text-red-400", bg: "bg-red-500/10 border-red-500/20" },
                           { label: "Pending Review", value: callerSavedFormLeads.filter((l: any) => !l.interest_status && l.status === "saved").length, color: "text-yellow-400", bg: "bg-yellow-500/10 border-yellow-500/20" },
@@ -1505,7 +1411,7 @@ export default function EmployeesPage() {
                                 className={`${t.searchInp} w-44`} />
                             </div>
                             <span className={`text-[10px] px-2 py-0.5 rounded border ${t.textFaint} ${t.pillBg} ${t.pillBorder}`}>{callerSavedFormLeads.length} forms</span>
-                            <button onClick={fetchCallerData} className={`text-xs font-bold px-3 py-2 rounded-lg cursor-pointer border transition-colors ${isDark ? "text-[#d946a8] bg-[#9E217B]/10 border-[#9E217B]/20 hover:bg-[#9E217B]/20" : "text-[#9E217B] bg-pink-50 border-pink-200 hover:bg-pink-100"}`}>↻ Refresh</button>
+                            <button onClick={fetchCallerData} className={`text-xs font-bold px-3 py-2 rounded-lg cursor-pointer border transition-colors ${isDark ? "text-[#A78BFA] bg-[#8B5CF6]/10 border-[#8B5CF6]/20 hover:bg-[#8B5CF6]/20" : "text-[#8B5CF6] bg-indigo-50 border-indigo-200 hover:bg-indigo-100"}`}>↻ Refresh</button>
                           </div>
                         </div>
                         <div className="overflow-x-auto">
@@ -1540,7 +1446,7 @@ export default function EmployeesPage() {
                                       <td className="px-4 py-3 align-middle">{interestBadge(lead.interest_status)}</td>
                                       <td className="px-4 py-3 whitespace-nowrap">
                                         {lead.status === "saved" || lead.status === "not_interested" || lead.status === "interested" || !!lead.interest_status
-                                          ? <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full flex items-center gap-1 w-fit border ${isDark ? "text-[#d946a8] bg-[#9E217B]/10 border-[#9E217B]/20" : "text-[#9E217B] bg-pink-50 border-pink-200"}`}>
+                                          ? <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full flex items-center gap-1 w-fit border ${isDark ? "text-[#A78BFA] bg-[#8B5CF6]/10 border-[#8B5CF6]/20" : "text-[#8B5CF6] bg-indigo-50 border-indigo-200"}`}>
                                             <FaPhoneAlt className="text-[8px]" />
                                             {lead.uploaded_by && lead.uploaded_by !== "admin" && lead.uploaded_by !== "Admin" && lead.uploaded_by !== "unknown"
                                               ? `Caller · ${lead.uploaded_by}`
@@ -1550,12 +1456,12 @@ export default function EmployeesPage() {
                                           </span>
                                           : <span className={`text-[10px] italic ${t.textLight2}`}>Not saved yet</span>}
                                       </td>
-                                      <td className={`px-4 py-3 text-[11px] whitespace-nowrap ${isDark ? "text-[#d946a8]/70" : "text-[#9E217B]/60"}`}>{lead.batch_name || "—"}</td>
+                                      <td className={`px-4 py-3 text-[11px] whitespace-nowrap ${isDark ? "text-[#A78BFA]/70" : "text-[#8B5CF6]/60"}`}>{lead.batch_name || "—"}</td>
                                       <td className={`px-4 py-3 text-[11px] whitespace-nowrap ${t.textFaint}`}>{formatDate(lead.created_at).split(",")[0]}</td>
                                       <td className="px-4 py-3 text-center">
                                         <div className="flex items-center justify-center gap-1">
                                           <button onClick={() => { setSelectedLead(lead); setCallerSubView("detail"); }}
-                                            className={`text-xs flex items-center gap-1 px-2 py-1 rounded-lg border border-transparent cursor-pointer mx-auto transition-colors ${t.textMuted} hover:text-[#9E217B] hover:bg-[#9E217B]/10 hover:border-[#9E217B]/20`}>
+                                            className={`text-xs flex items-center gap-1 px-2 py-1 rounded-lg border border-transparent cursor-pointer mx-auto transition-colors ${t.textMuted} hover:text-[#8B5CF6] hover:bg-[#8B5CF6]/10 hover:border-[#8B5CF6]/20`}>
                                             <FaEye className="text-[10px]" /> View
                                           </button>
                                           <button onClick={e => { e.stopPropagation(); handleDeleteLead(lead.id, lead.name); }}
@@ -1589,7 +1495,7 @@ export default function EmployeesPage() {
                               className={`${t.searchInp} w-44`} />
                           </div>
                           <span className={`text-[10px] px-2 py-0.5 rounded border ${t.textFaint} ${t.pillBg} ${t.pillBorder}`}>{filteredCallerLeads.length} leads</span>
-                          <button onClick={fetchCallerData} className={`text-xs font-bold px-3 py-2 rounded-lg cursor-pointer border transition-colors ${isDark ? "text-[#d946a8] bg-[#9E217B]/10 border-[#9E217B]/20 hover:bg-[#9E217B]/20" : "text-[#9E217B] bg-pink-50 border-pink-200 hover:bg-pink-100"}`}>↻ Refresh</button>
+                          <button onClick={fetchCallerData} className={`text-xs font-bold px-3 py-2 rounded-lg cursor-pointer border transition-colors ${isDark ? "text-[#A78BFA] bg-[#8B5CF6]/10 border-[#8B5CF6]/20 hover:bg-[#8B5CF6]/20" : "text-[#8B5CF6] bg-indigo-50 border-indigo-200 hover:bg-indigo-100"}`}>↻ Refresh</button>
                         </div>
                       </div>
                       <div className="overflow-x-auto">
@@ -1618,7 +1524,7 @@ export default function EmployeesPage() {
                                     <td className="px-4 py-3 align-middle">{interestBadge(lead.interest_status)}</td>
                                     <td className="px-4 py-3 whitespace-nowrap">
                                       {lead.status === "saved" || lead.status === "not_interested" || lead.status === "interested" || !!lead.interest_status
-                                        ? <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full flex items-center gap-1 w-fit border ${isDark ? "text-[#d946a8] bg-[#9E217B]/10 border-[#9E217B]/20" : "text-[#9E217B] bg-pink-50 border-pink-200"}`}>
+                                        ? <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full flex items-center gap-1 w-fit border ${isDark ? "text-[#A78BFA] bg-[#8B5CF6]/10 border-[#8B5CF6]/20" : "text-[#8B5CF6] bg-indigo-50 border-indigo-200"}`}>
                                           <FaPhoneAlt className="text-[8px]" />
                                           {lead.uploaded_by && lead.uploaded_by !== "admin" && lead.uploaded_by !== "Admin" && lead.uploaded_by !== "unknown"
                                             ? `Caller · ${lead.uploaded_by}`
@@ -1628,12 +1534,12 @@ export default function EmployeesPage() {
                                         </span>
                                         : <span className={`text-[10px] italic ${t.textLight2}`}>Not saved yet</span>}
                                     </td>
-                                    <td className={`px-4 py-3 text-[11px] whitespace-nowrap ${isDark ? "text-[#d946a8]/70" : "text-[#9E217B]/60"}`}>{lead.batch_name || "—"}</td>
+                                    <td className={`px-4 py-3 text-[11px] whitespace-nowrap ${isDark ? "text-[#A78BFA]/70" : "text-[#8B5CF6]/60"}`}>{lead.batch_name || "—"}</td>
                                     <td className={`px-4 py-3 text-[11px] whitespace-nowrap ${t.textFaint}`}>{formatDate(lead.created_at).split(",")[0]}</td>
                                     <td className="px-4 py-3 text-center">
                                       <div className="flex items-center justify-center gap-1">
                                         <button onClick={() => { setSelectedLead(lead); setCallerSubView("detail"); }}
-                                          className={`text-xs flex items-center gap-1 px-2 py-1 rounded-lg border border-transparent cursor-pointer transition-colors ${t.textMuted} hover:text-[#9E217B] hover:bg-[#9E217B]/10 hover:border-[#9E217B]/20`}>
+                                          className={`text-xs flex items-center gap-1 px-2 py-1 rounded-lg border border-transparent cursor-pointer transition-colors ${t.textMuted} hover:text-[#8B5CF6] hover:bg-[#8B5CF6]/10 hover:border-[#8B5CF6]/20`}>
                                           <FaEye className="text-[10px]" /> View
                                         </button>
                                         <button onClick={e => { e.stopPropagation(); handleDeleteLead(lead.id, lead.name); }}
@@ -1692,11 +1598,11 @@ export default function EmployeesPage() {
                   <label className={`block text-xs mb-1.5 font-semibold ${t.textMuted}`}>🔄 Transfer From</label>
                   <div className={`w-full rounded-lg px-4 py-2.5 text-sm font-semibold border ${isDark ? "bg-[#1a1a1a] border-[#333] text-gray-300" : "bg-[#F8FAFC] border-indigo-200 text-[#374151]"}`}>
                     <div className="flex items-center gap-2">
-                      <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white ${isDark ? "bg-[#9E217B]" : "bg-[#9E217B]"}`}>
+                      <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white ${isDark ? "bg-[#8B5CF6]" : "bg-[#8B5CF6]"}`}>
                         {transferFrom.name.charAt(0).toUpperCase()}
                       </div>
                       {transferFrom.name}
-                      <span className={`ml-auto text-[10px] px-2 py-0.5 rounded-full border ${isDark ? "text-[#d946a8] bg-[#9E217B]/10 border-[#9E217B]/30" : "text-[#9E217B] bg-[#9E217B]/10 border-[#9E217B]/30"}`}>{transferFrom.role}</span>
+                      <span className={`ml-auto text-[10px] px-2 py-0.5 rounded-full border ${isDark ? "text-[#A78BFA] bg-[#8B5CF6]/10 border-[#8B5CF6]/30" : "text-[#8B5CF6] bg-[#8B5CF6]/10 border-[#8B5CF6]/30"}`}>{transferFrom.role}</span>
                     </div>
                   </div>
                 </div>
@@ -1732,7 +1638,7 @@ export default function EmployeesPage() {
                     type="checkbox"
                     checked={transferConfirmed}
                     onChange={e => setTransferConfirmed(e.target.checked)}
-                    className="w-4 h-4 rounded border-2 accent-[#9E217B] cursor-pointer"
+                    className="w-4 h-4 rounded border-2 accent-[#8B5CF6] cursor-pointer"
                   />
                   <span className={`text-xs ${t.textMuted} group-hover:${t.text}`}>
                     I understand this action cannot be undone
@@ -2129,7 +2035,7 @@ function CallerControlMode({ leads, savedLeads, setSavedLeads, adminName, onExit
                           {(lead.channel_partner || lead.channelPartner) && <p className="text-gray-400 text-xs flex items-center gap-2"><FaUserTie className="text-[10px]" />{lead.channel_partner || lead.channelPartner}</p>}
                           {lead.feedback && <p className="text-yellow-400 text-xs truncate">{lead.feedback}</p>}
                           {lead.siteVisitDate && <p className="text-orange-400 text-xs flex items-center gap-1"><FaCalendarAlt className="text-[9px]" />{fmtDate(lead.siteVisitDate).split(",")[0]}</p>}
-                          {(lead.followUps || []).length > 0 && <p className="text-[#d946a8] text-xs">{lead.followUps.length} follow-up{lead.followUps.length > 1 ? "s" : ""}</p>}
+                          {(lead.followUps || []).length > 0 && <p className="text-[#A78BFA] text-xs">{lead.followUps.length} follow-up{lead.followUps.length > 1 ? "s" : ""}</p>}
                         </div>
                         <div className="mt-4 pt-3 border-t border-[#2a2a2a] flex justify-between items-center">
                           <span className="text-[10px] text-gray-600">{fmtDate(lead.savedAt).split(",")[0]}</span>
@@ -2256,7 +2162,7 @@ function CallerControlMode({ leads, savedLeads, setSavedLeads, adminName, onExit
                             <td className="px-5 py-3 text-[11px] text-gray-500 whitespace-nowrap">{fmtDate(lead.savedAt).split(",")[0]}</td>
                             <td className="px-5 py-3">
                               <div className="flex items-center gap-2 justify-center">
-                                <button onClick={() => setDetailLead(lead)} className="text-gray-500 hover:text-[#d946a8] cursor-pointer text-xs flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-[#9E217B]/10 border border-transparent hover:border-[#9E217B]/20">
+                                <button onClick={() => setDetailLead(lead)} className="text-gray-500 hover:text-[#A78BFA] cursor-pointer text-xs flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-[#8B5CF6]/10 border border-transparent hover:border-[#8B5CF6]/20">
                                   <FaEye className="text-[10px]" /> View
                                 </button>
                                 <button onClick={() => revertLead(lead.id)} className="text-gray-500 hover:text-green-400 cursor-pointer text-xs flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-green-500/10 border border-transparent hover:border-green-500/20">
@@ -2313,7 +2219,7 @@ function CallerControlMode({ leads, savedLeads, setSavedLeads, adminName, onExit
                         {(lead.channel_partner || lead.channelPartner) && <p className="text-gray-400 text-xs flex items-center gap-2"><FaUserTie className="text-[10px]" />{lead.channel_partner || lead.channelPartner}</p>}
                         {lead.feedback && <p className="text-yellow-400 text-xs truncate">{lead.feedback}</p>}
                         {lead.siteVisitDate && <p className="text-orange-400 text-xs flex items-center gap-1"><FaCalendarAlt className="text-[9px]" />{fmtDate(lead.siteVisitDate).split(",")[0]}</p>}
-                        {(lead.followUps || []).length > 0 && <p className="text-[#d946a8] text-xs">{lead.followUps.length} follow-up{lead.followUps.length > 1 ? "s" : ""}</p>}
+                        {(lead.followUps || []).length > 0 && <p className="text-[#A78BFA] text-xs">{lead.followUps.length} follow-up{lead.followUps.length > 1 ? "s" : ""}</p>}
                       </div>
                       <div className="mt-4 pt-3 border-t border-[#2a2a2a] flex justify-between items-center">
                         <span className="text-[10px] text-gray-600">{fmtDate(lead.savedAt).split(",")[0]}</span>
@@ -2404,7 +2310,7 @@ function CallerControlMode({ leads, savedLeads, setSavedLeads, adminName, onExit
                             <td className="px-5 py-3 text-[11px] text-gray-500 whitespace-nowrap">{fmtDate(lead.savedAt).split(",")[0]}</td>
                             <td className="px-5 py-3">
                               <div className="flex items-center gap-2 justify-center">
-                                <button onClick={() => setDetailLead(lead)} className="text-gray-500 hover:text-[#d946a8] cursor-pointer text-xs flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-[#9E217B]/10 border border-transparent hover:border-[#9E217B]/20">
+                                <button onClick={() => setDetailLead(lead)} className="text-gray-500 hover:text-[#A78BFA] cursor-pointer text-xs flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-[#8B5CF6]/10 border border-transparent hover:border-[#8B5CF6]/20">
                                   <FaEye className="text-[10px]" /> View
                                 </button>
                                 <button onClick={() => revertLead(lead.id)} className="text-gray-500 hover:text-green-400 cursor-pointer text-xs flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-green-500/10 border border-transparent hover:border-green-500/20">

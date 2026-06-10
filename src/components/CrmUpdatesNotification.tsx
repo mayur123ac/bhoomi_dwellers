@@ -74,9 +74,9 @@ export default function CrmUpdatesNotification({ user, theme, isDark, isOpen, on
         className="relative cursor-pointer"
         onClick={handleToggle}
       >
-        <FaBullhorn className={`${theme.textMuted} hover:text-[#9E217B] transition-colors w-5 h-5`} />
+        <FaBullhorn className={`${theme.textMuted} hover:text-[#8B5CF6] transition-colors w-5 h-5`} />
         {unreadCount > 0 && (
-          <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-[#9E217B] rounded-full text-[9px] font-black text-white flex items-center justify-center shadow-md">
+          <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-[#8B5CF6] rounded-full text-[9px] font-black text-white flex items-center justify-center shadow-md">
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         )}
@@ -94,7 +94,7 @@ export default function CrmUpdatesNotification({ user, theme, isDark, isOpen, on
           >
             <div className={`p-4 border-b flex justify-between items-center ${theme.tableBorder}`}>
               <h3 className={`font-bold text-sm flex items-center gap-2 ${theme.text}`}>
-                <FaBullhorn className="text-[#9E217B]" />
+                <FaBullhorn className="text-[#8B5CF6]" />
                 System Updates
               </h3>
               <button onClick={() => onToggle ? onToggle() : setInternalIsOpen(false)} className={`${theme.textMuted} hover:text-red-500 transition-colors`}>
@@ -122,8 +122,8 @@ export default function CrmUpdatesNotification({ user, theme, isDark, isOpen, on
                   <div
                     key={update.id}
                     className={`p-4 border-b last:border-b-0 transition-colors ${!update.has_read
-                      ? (isDark ? "bg-[#9E217B]/10 border-[#9E217B]/20" : "bg-[#9E217B]/5 border-[#9E217B]/10")
-                      : (isDark ? "hover:bg-white/5 border-[#333]" : "hover:bg-black/5 border-[#E5E7EB]")
+                      ? (isDark ? "bg-[#8B5CF6]/10 border-[#8B5CF6]/20" : "bg-[#8B5CF6]/5 border-[#8B5CF6]/10")
+                      : (isDark ? "hover:bg-white/5 border-[#333]" : "hover:bg-black/5 border-[#E2E8F0]")
                       }`}
                   >
                     <div className="flex justify-between items-start mb-2">
@@ -139,7 +139,7 @@ export default function CrmUpdatesNotification({ user, theme, isDark, isOpen, on
                           </span>
                         )}
                         {!update.has_read && (
-                          <span className="w-2 h-2 bg-[#9E217B] rounded-full animate-pulse" />
+                          <span className="w-2 h-2 bg-[#8B5CF6] rounded-full animate-pulse" />
                         )}
                       </div>
                       <span className={`text-[10px] ${theme.textMuted}`}>
@@ -159,7 +159,7 @@ export default function CrmUpdatesNotification({ user, theme, isDark, isOpen, on
                       <ul className="mt-3 space-y-1">
                         {parsedFeatures.map((feat, i) => (
                           <li key={i} className={`flex items-start gap-1.5 text-[11px] ${theme.textMuted}`}>
-                            <FaCheck className="text-[#9E217B] mt-0.5 flex-shrink-0 text-[8px]" />
+                            <FaCheck className="text-[#8B5CF6] mt-0.5 flex-shrink-0 text-[8px]" />
                             <span>{feat}</span>
                           </li>
                         ))}
@@ -169,7 +169,7 @@ export default function CrmUpdatesNotification({ user, theme, isDark, isOpen, on
                     {!update.has_read && (
                       <button
                         onClick={() => markAsRead(update.id)}
-                        className="mt-3 text-[10px] font-bold text-[#9E217B] hover:text-[#d946a8] transition-colors"
+                        className="mt-3 text-[10px] font-bold text-[#8B5CF6] hover:text-[#A78BFA] transition-colors"
                       >
                         Mark as read
                       </button>

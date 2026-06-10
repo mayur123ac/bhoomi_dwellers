@@ -35,8 +35,8 @@ interface Props {
 
 // Config colour mapping for pin icons
 const CONFIG_COLORS: Record<string, string> = {
-  "1 BHK": "#00AEEF",
-  "2 BHK": "#9E217B",
+  "1 BHK": "#8B5CF6",
+  "2 BHK": "#8B5CF6",
   "3 BHK": "#f97316",
   "4 BHK+": "#4ade80",
   "Studio/1RK": "#fbbf24",
@@ -437,7 +437,7 @@ export default function LeafletMapComponent({ leads, isDark, isGeocoding }: Prop
                     <span style="color:#666;">Status</span>
                     <strong style="color:${interestColor}">${lead.interestStatus || "Pending"}</strong>
                   </div>
-                  ${canRoute ? `<button onclick="document.dispatchEvent(new CustomEvent('draw-route', {detail: '${lead.id}'}))" style="margin-top:6px;width:100%;padding:6px;background:#9E217B;color:white;border:none;border-radius:6px;font-weight:bold;cursor:pointer;font-size:10px;">Show Route to Property ↗</button>` : ''}
+                  ${canRoute ? `<button onclick="document.dispatchEvent(new CustomEvent('draw-route', {detail: '${lead.id}'}))" style="margin-top:6px;width:100%;padding:6px;background:#8B5CF6;color:white;border:none;border-radius:6px;font-weight:bold;cursor:pointer;font-size:10px;">Show Route to Property ↗</button>` : ''}
                 </div>
               </div>
             `;
@@ -573,7 +573,7 @@ export default function LeafletMapComponent({ leads, isDark, isGeocoding }: Prop
             <p style={{ fontSize: 10, fontWeight: 700, color: isDark ? "#9ca3af" : "#6b7280", textTransform: 'uppercase' }}>{routeInfo.name}'s Route</p>
             <div className="flex items-center gap-3">
               <span style={{ fontWeight: 800, color: isDark ? '#fff' : '#000' }}>{routeInfo.from || 'Unknown'}</span>
-              <span style={{ color: '#9E217B' }}>→</span>
+              <span style={{ color: '#8B5CF6' }}>→</span>
               <span style={{ fontWeight: 800, color: isDark ? '#fff' : '#000' }}>{routeInfo.to}</span>
             </div>
           </div>
@@ -606,7 +606,7 @@ export default function LeafletMapComponent({ leads, isDark, isGeocoding }: Prop
       {isGeocoding && (
         <div className="absolute inset-0 z-[500] flex items-center justify-center" style={{ background: "rgba(0,0,0,0.35)", backdropFilter: "blur(2px)" }}>
           <div style={{ background: isDark ? "#1a1a1a" : "#fff", borderRadius: 12, padding: "16px 24px", textAlign: "center" }}>
-            <div style={{ width: 28, height: 28, border: "3px solid #9E217B", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 8px" }} />
+            <div style={{ width: 28, height: 28, border: "3px solid #8B5CF6", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 8px" }} />
             <p style={{ color: isDark ? "#d1d5db" : "#374151", fontSize: 12, fontWeight: 600 }}>Locating leads on map...</p>
           </div>
         </div>

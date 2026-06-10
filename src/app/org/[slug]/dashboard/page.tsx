@@ -8,6 +8,7 @@ import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { clearCrmSession, getStoredCrmUser, installLoggedOutBackGuard } from "@/lib/authSession";
 import { isOrgAdmin, isSiteHead as isSiteHeadRole } from "@/lib/rbac";
+import { buildTheme } from "@/lib/theme";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   FaThLarge, FaClipboardList, FaUsers, FaIdCard,
@@ -44,106 +45,6 @@ const SunIcon = () => (
     <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" /><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
   </svg>
 );
-const MoonIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-  </svg>
-);
-
-// ─── THEME TOKEN BUILDER — MAGENTA ACCENT ────────────────────────
-// ─── THEME TOKEN BUILDER — MAGENTA ACCENT ────────────────────────
-function buildTheme(isDark: boolean) {
-  return {
-    pageWrap: isDark ? "bg-[#0A0A0F] text-white" : "text-[#1A1A1A]",
-    mainBg: isDark ? "bg-[#121212]" : "bg-transparent",
-    sidebar: "bg-[#1a1a1a] border-r border-[#2a2a2a]",
-    header: isDark ? "bg-[#1a1a1a] border-b border-[#2a2a2a]" : "bg-white border-b border-[#9CA3AF]",
-    headerGlass: isDark ? {} : { boxShadow: "0 1px 0 #9CA3AF, 0 4px 16px rgba(158,33,123,0.06)" },
-    card: isDark
-      ? "bg-[#1a1a1a] border border-[#2a2a2a] hover:border-[#9E217B]/50 hover:bg-[#1e1e1e]"
-      : "bg-gradient-to-r from-[#f1f5ff] via-[#eef2ff] to-[#f5f3ff] border border-indigo-300 hover:border-[#9E217B]/40 hover:shadow-[0_-4px_16px_2px_rgba(158,33,123,0.2),0_0_24px_6px_rgba(158,33,123,0.12),0_4px_16px_rgba(0,0,0,0.08)]",
-    cardGlass: isDark ? {} : { boxShadow: "0 1px 2px rgba(0,0,0,0.04), 0 4px 12px rgba(158,33,123,0.07), 0 12px 28px rgba(0,0,0,0.08)" },
-    cardClosing: isDark ? "bg-yellow-900/10 border border-yellow-500/30 hover:border-yellow-400/60" : "bg-amber-50 border border-amber-200 hover:border-amber-400/60",
-    tableWrap: isDark ? "bg-[#1a1a1a] border border-[#2a2a2a]" : "bg-white border border-indigo-300",
-    tableGlass: isDark ? {} : { boxShadow: "0 1px 2px rgba(0,0,0,0.04), 0 4px 12px rgba(158,33,123,0.06), 0 16px 36px rgba(0,0,0,0.09)" },
-    tableHead: isDark ? "bg-[#222]" : "bg-[#F1F5F9] border-b border-indigo-300",
-    tableRow: isDark ? "hover:bg-[#252525]" : "hover:bg-[#F8FAFC] border-b border-indigo-200",
-    tableDivide: isDark ? "divide-[#2a2a2a]" : "divide-[#E5E7EB]",
-    tableBorder: isDark ? "border-b border-[#2a2a2a]" : "border-b border-[#D1D5DB]",
-    tableBorder1: isDark ? "border-t border-[#2a2a2a]" : "border-t border-[#D1D5DB]",
-    inputBg: isDark ? "bg-[#1a1a1a] border border-[#333]" : "bg-white border border-indigo-300",
-    inputInner: isDark ? "bg-[#121212] border border-[#333]" : "bg-white border border-indigo-300",
-    inputFocus: isDark ? "focus:border-[#9E217B]" : "focus:border-[#9E217B]",
-    settingsBg: isDark ? "bg-[#222] border border-[#2a2a2a]" : "bg-[#F8FAFC] border border-indigo-300",
-    settingsBgGl: isDark ? {} : { boxShadow: "inset 0 1px 3px rgba(0,0,0,0.04)" },
-    innerBlock: isDark ? "bg-[#121212] border border-[#333]" : "bg-white border border-indigo-200",
-    modalCard: isDark ? "bg-[#1a1a1a] border border-[#2a2a2a]" : "bg-white border border-indigo-300",
-    modalGlass: isDark ? {} : { boxShadow: "0 2px 4px rgba(0,0,0,0.04), 0 8px 24px rgba(158,33,123,0.08), 0 32px 72px rgba(0,0,0,0.16)" },
-    modalInner: isDark ? "bg-[#121212] border border-[#333]" : "bg-[#F8FAFC] border border-indigo-300",
-    modalHeader: isDark ? "bg-[#151515]" : "bg-[#F1F5F9]",
-    dropdown: isDark ? "bg-[#1a1a1a] border border-[#2a2a2a]" : "bg-white border border-indigo-200",
-    dropdownGlass: isDark ? {} : { boxShadow: "0 2px 4px rgba(0,0,0,0.04), 0 8px 20px rgba(158,33,123,0.08), 0 20px 40px rgba(0,0,0,0.10)" },
-    dropdownItem: isDark ? "hover:bg-[#222] border-[#222]" : "hover:bg-[#F8FAFC] border-[#F0F0F0]",
-    text: isDark ? "text-white" : "text-[#1A1A1A]",
-    textMuted: isDark ? "text-gray-400" : "text-[#6B7280]",
-    textFaint: isDark ? "text-gray-500" : "text-[#9CA3AF]",
-    textHeader: isDark ? "text-xs text-gray-500 uppercase" : "text-xs text-[#6B7280] uppercase",
-    navActive: isDark ? "bg-[#9E217B]/20 border-[#9E217B]/60 text-[#d946a8]" : "bg-[#2A2A2A] text-[#9E217B] border-transparent",
-    navInactive: isDark ? "text-gray-500 hover:text-gray-300 hover:bg-white/5 border-transparent" : "text-[#9CA3AF] hover:bg-[#2A2A2A] hover:text-white border-transparent",
-    navIndicator: isDark ? "bg-[#9E217B] shadow-[0_0_10px_2px_rgba(158,33,123,0.5)]" : "bg-[#9E217B] shadow-[0_0_8px_rgba(158,33,123,0.4)]",
-    toggleWrap: isDark ? "bg-[#1C1C2A] border border-[#2A2A38] text-yellow-300" : "bg-white border border-indigo-200 text-[#9E217B]",
-    chatArea: isDark ? "bg-[#0a0a0a]" : "bg-[#F8FAFC]",
-    chatBubbleAi: isDark ? "bg-[#141414] border border-[#1f1f1f] text-gray-200" : "bg-white border border-[#E5E7EB] text-[#1A1A1A] shadow-sm",
-    chatBubbleUser: isDark ? "bg-[#9E217B] text-white" : "bg-[#9E217B] text-white",
-    chatInput: isDark ? "bg-[#111] border border-[#222] hover:border-[#333] focus-within:border-[#9E217B]/50" : "bg-white border-[#E5E7EB] hover:border-[#9CA3AF] focus-within:border-[#9E217B]/50",
-    chatInputInner: isDark ? "bg-[#111] border border-[#222]" : "bg-white border-[#E5E7EB]",
-    chatPanel: isDark ? "bg-[#1a1a1a] border border-[#333]" : "bg-white border-[#D1D5DB]",
-    chatPanelGl: isDark ? {} : { boxShadow: "0 1px 2px rgba(0,0,0,0.04), 0 4px 12px rgba(158,33,123,0.06), 0 16px 36px rgba(0,0,0,0.09)" },
-    statGlow1: isDark ? "bg-[#9E217B]/10" : "bg-[#9E217B]/10",
-    statGlow2: isDark ? "bg-[#d946a8]/10" : "bg-[#d946a8]/10",
-    statGlow3: isDark ? "bg-blue-600/10" : "bg-indigo-400/10",
-    statGlow4: isDark ? "bg-yellow-500/10" : "bg-amber-400/10",
-    statGlow5: isDark ? "bg-green-600/10" : "bg-emerald-400/10",
-    accentText: isDark ? "text-[#d946a8]" : "text-[#9E217B]",
-    accentBg: isDark ? "bg-[#9E217B]/10 text-[#d946a8] border border-[#9E217B]/30" : "bg-[#9E217B]/10 text-[#9E217B] border border-[#9E217B]/30",
-    sectionTitle: isDark ? "text-[#d946a8]" : "text-[#9E217B]",
-    sectionBorder: isDark ? "border-[#9E217B]/20" : "border-[#9E217B]/25",
-    btnPrimary: isDark ? "bg-[#9E217B] hover:bg-[#7a1960] text-white shadow-md transition-colors duration-200" : "bg-[#9E217B] hover:bg-[#7a1960] text-white shadow-sm transition-colors duration-200",
-    btnSecondary: isDark ? "bg-[#00AEEF] hover:bg-[#0088bb] text-white shadow-md transition-colors duration-200" : "bg-[#00AEEF] hover:bg-[#0088bb] text-white shadow-sm transition-colors duration-200",
-    btnDanger: isDark ? "bg-[#3B1F1F] text-[#F28B82] hover:bg-[#4f2a2a] border border-red-900/30 transition-colors duration-200" : "bg-[#9E217B]/10 text-[#9E217B] hover:bg-[#9E217B]/20 border border-[#9E217B]/30 transition-colors duration-200",
-    btnWarning: isDark ? "bg-yellow-600 hover:bg-yellow-700 text-white shadow-md transition-colors duration-200" : "bg-amber-500 hover:bg-amber-600 text-white shadow-sm transition-colors duration-200",
-    btnClosingBadge: isDark ? "bg-yellow-900/20 border border-yellow-500/40 text-yellow-400" : "bg-amber-50 border border-amber-400/60 text-amber-600",
-    logoBg: isDark ? "bg-[#9E217B] shadow-lg shadow-[#9E217B]/30" : "bg-[#9E217B] shadow-lg shadow-[#9E217B]/30",
-    chartColors: isDark
-      ? ["#d946a8", "#e879b8", "#00AEEF", "#f97316", "#4ade80", "#fbbf24", "#60a5fa"]
-      : ["#9E217B", "#00AEEF", "#0077b6", "#f97316", "#4ade80", "#fbbf24", "#d946a8"],
-    visitPieColors: ["#9E217B", "#00AEEF", "#f97316", "#4ade80", "#fbbf24", "#e879b8", "#60a5fa", "#34d399"],
-    tooltipBg: isDark ? "#1a1a1a" : "rgba(255,255,255,0.98)",
-    tooltipColor: isDark ? "#fff" : "#1A1A1A",
-    tooltipBorder: isDark ? "1px solid rgba(158,33,123,0.3)" : "1px solid #E5E7EB",
-    tooltipShadow: isDark ? "0 8px 24px rgba(158, 33, 123, 0.35)" : "0_0_10px_rgba(236,72,153,0.6),0_0_20px_rgba(236,72,153,0.4)",
-    legendColor: isDark ? "#9ca3af" : "#6B7280",
-    fupDefault: isDark ? "bg-[#1f0a18] border border-[#9E217B]/30" : "bg-pink-50 border border-pink-200",
-    fupLoan: isDark ? "bg-blue-900/20 border border-blue-600/40" : "bg-blue-50 border border-blue-200",
-    fupSalesform: isDark ? "bg-[#222] border border-[#444]" : "bg-white border border-[#D1D5DB]",
-    fupClosing: isDark ? "bg-yellow-900/20 border border-yellow-600/40" : "bg-amber-50 border border-amber-300",
-    statusRouted: isDark ? "text-[#d946a8] border border-[#9E217B]/30 bg-[#9E217B]/10" : "text-[#9E217B] border-[#9E217B]/30 bg-[#9E217B]/10",
-    statusVisit: isDark ? "text-orange-400 border border-orange-500/30 bg-orange-500/10" : "text-orange-500 border-orange-400/40 bg-orange-50",
-    statusClosing: isDark ? "text-yellow-400 border border-yellow-500/40 bg-yellow-500/10" : "text-amber-600 border-amber-400/50 bg-amber-50",
-    select: isDark ? "bg-[#121212] border border-[#333] text-white focus:border-[#9E217B]" : "bg-white border border-indigo-300 text-[#1A1A1A] focus:border-[#9E217B]",
-    selectSmall: isDark ? "bg-[#222] border border-[#333] text-white" : "bg-white border border-indigo-200 text-[#6B7280]",
-    statusLost: isDark ? "text-red-400 border-red-500/30 bg-red-500/10" : "text-red-600 border-red-300 bg-red-50",
-    lostLeadBadge: isDark ? "bg-red-900/20 border border-red-500/30 text-red-400" : "bg-red-50 border border-red-300 text-red-600",
-    lostLeadRow: isDark ? "opacity-50" : "opacity-50 bg-gray-50/50",
-    statusNGD: "bg-[rgba(251,146,60,0.12)] text-[#F97316] border border-[rgba(249,115,22,0.4)]",
-    cardLost: isDark ? "bg-[#171717] border border-red-900/25 opacity-70 grayscale saturate-50 hover:opacity-90 hover:border-red-500/30" : "bg-slate-100 border border-red-200 opacity-75 grayscale saturate-50 hover:opacity-90 hover:border-red-300",
-    cardNGD: "bg-[rgba(249,115,22,0.06)] border border-[rgba(249,115,22,0.35)] hover:border-[#F97316] shadow-[0_4px_12px_rgba(249,115,22,0.12)] transition-all duration-300 flex flex-col h-full",
-    rowLost: isDark ? "bg-[#151515]/80 text-gray-500 opacity-75 grayscale" : "bg-slate-100/80 text-slate-500 opacity-80 grayscale",
-    rowNGD: "bg-[rgba(249,115,22,0.03)]",
-    scroll: isDark ? "scrollbar-dark" : "scrollbar-light",
-  };
-}
-
 // ============================================================================
 // SHARED REAL-TIME DATA HOOK
 // ============================================================================
@@ -284,7 +185,7 @@ function InterestBadge({ status, size = "md", isDark }: { status: string; size?:
     "Non Qualified Leads": "NGD",
     "Non qualified Lead": "NGD",
   };
-  const cls = colorMap[status] ?? (isDark ? "border-[#9E217B]/30 text-[#d946a8] bg-[#9E217B]/10" : "border-[#9E217B]/30 text-[#9E217B] bg-[#9E217B]/10");
+  const cls = colorMap[status] ?? (isDark ? "border-[#8B5CF6]/30 text-[#A78BFA] bg-[#8B5CF6]/10" : "border-[#8B5CF6]/30 text-[#8B5CF6] bg-[#8B5CF6]/10");
   const sz = size === "sm" ? "text-[9px] px-2 py-0.5" : "text-[10px] px-3 py-1";
   const label = labelMap[status] ?? status;
   return (
@@ -712,9 +613,9 @@ export default function AdminAtlasDashboard() {
 
             <div className="relative">
               <div className="relative cursor-pointer" onClick={() => { setActivePopup(activePopup === "notifications" ? null : "notifications"); setNotifCount(0); }}>
-                <FaBell className={`${theme.textMuted} hover:text-[#9E217B] transition-colors w-5 h-5`} />
+                <FaBell className={`${theme.textMuted} hover:text-[#8B5CF6] transition-colors w-5 h-5`} />
                 {notifCount > 0 && (
-                  <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-[#9E217B] rounded-full text-[9px] font-black text-white flex items-center justify-center">
+                  <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-[#8B5CF6] rounded-full text-[9px] font-black text-white flex items-center justify-center">
                     {notifCount > 9 ? "9+" : notifCount}
                   </span>
                 )}
@@ -731,7 +632,7 @@ export default function AdminAtlasDashboard() {
                   >
                     <div className={`p-4 border-b flex justify-between items-center ${theme.tableBorder}`}>
                       <h3 className={`font-bold text-sm flex items-center gap-2 ${theme.text}`}>
-                        <FaBell className="text-[#9E217B]" /> Recent Notifications
+                        <FaBell className="text-[#8B5CF6]" /> Recent Notifications
                       </h3>
                       <button onClick={() => setActivePopup(null)} className={`${theme.textMuted} hover:text-red-500`}><FaTimes className="text-xs" /></button>
                     </div>
@@ -770,7 +671,7 @@ export default function AdminAtlasDashboard() {
             <div className="relative">
               <div onClick={() => setActivePopup(activePopup === "profile" ? null : "profile")}
                 className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm cursor-pointer shadow-sm hover:opacity-80 transition-opacity border
-                  ${isDark ? "border-[#9E217B]/40 text-[#d946a8] bg-[#9E217B]/15" : "border-[#9E217B]/40 text-[#9E217B] bg-[#9E217B]/10"}`}>
+                  ${isDark ? "border-[#8B5CF6]/40 text-[#A78BFA] bg-[#8B5CF6]/15" : "border-[#8B5CF6]/40 text-[#8B5CF6] bg-[#8B5CF6]/10"}`}>
                 {String(user?.name || "A").charAt(0).toUpperCase()}
               </div>
               <AnimatePresence>
@@ -789,7 +690,7 @@ export default function AdminAtlasDashboard() {
                     <hr className={`mb-4 ${theme.tableBorder}`} />
                     <div className="space-y-4 mb-6 text-sm">
                       <p className={`flex justify-between items-center ${theme.textMuted}`}>Role:
-                        <span className={`font-bold capitalize px-2 py-0.5 rounded border ${isDark ? "text-[#d946a8] bg-[#9E217B]/10 border-[#9E217B]/30" : "text-[#9E217B] bg-[#9E217B]/10 border-[#9E217B]/30"}`}>{user?.role || "Admin"}</span>
+                        <span className={`font-bold capitalize px-2 py-0.5 rounded border ${isDark ? "text-[#A78BFA] bg-[#8B5CF6]/10 border-[#8B5CF6]/30" : "text-[#8B5CF6] bg-[#8B5CF6]/10 border-[#8B5CF6]/30"}`}>{user?.role || "Admin"}</span>
                       </p>
                       <div>
                         <p className={`text-xs mb-1 ${theme.textMuted}`}>Password</p>
@@ -968,8 +869,8 @@ function DashboardAnalytics({ leads, theme, isDark }: { leads: any[]; theme: any
 
   const interestColors: Record<string, string> = { Interested: "#4ade80", "Not Interested": "#f87171", "NON GENUINE DEMAND (NGD)": "#F97316", "Non Qualified Lead": "#F97316", Pending: "#6b7280" };
   const loanColors: Record<string, string> = { Approved: "#4ade80", "In Progress": "#fbbf24", Rejected: "#f87171", "N/A": "#6b7280" };
-  const useTypeColors: Record<string, string> = { "Self Use": "#9E217B", Investment: "#34d399", "Personal use": "#f87171", "N/A": "#6b7280" };
-  const loanReqColors: Record<string, string> = { Yes: "#9E217B", No: "#6b7280", "Not Sure": "#fbbf24", Pending: "#374151" };
+  const useTypeColors: Record<string, string> = { "Self Use": "#8B5CF6", Investment: "#34d399", "Personal use": "#f87171", "N/A": "#6b7280" };
+  const loanReqColors: Record<string, string> = { Yes: "#8B5CF6", No: "#6b7280", "Not Sure": "#fbbf24", Pending: "#374151" };
   const visitColors: Record<string, string> = { Scheduled: "#f97316", Pending: "#374151" };
 
   const pieData = pieMode === "interest" ? interestData : pieMode === "loan" ? loanPieData : pieMode === "usetype" ? useTypeData : pieMode === "loanrequired" ? loanRequiredData : visitData;
@@ -993,11 +894,11 @@ function DashboardAnalytics({ leads, theme, isDark }: { leads: any[]; theme: any
         <div className="flex items-center justify-between mb-4">
           <div>
             <h3 className={`${theme.text} font-bold text-sm flex items-center gap-2`}>
-              <FaChartPie className={`text-[#9E217B] text-xs`} />
+              <FaChartPie className={`text-[#8B5CF6] text-xs`} />
               {barMode === "weekly" ? "Leads Added This Week" : barMode === "cp" ? "Leads by Channel Partner" : "Lead Source Distribution"}
             </h3>
-            {barMode === "weekly" && <p className="text-[#9E217B] text-xs mt-0.5 font-semibold">{weeklyTotal} total this week</p>}
-            {barMode === "cp" && <p className="text-[#9E217B] text-xs mt-0.5 font-semibold">{cpData.reduce((a, b) => a + b.count, 0)} CP leads total</p>}
+            {barMode === "weekly" && <p className="text-[#8B5CF6] text-xs mt-0.5 font-semibold">{weeklyTotal} total this week</p>}
+            {barMode === "cp" && <p className="text-[#8B5CF6] text-xs mt-0.5 font-semibold">{cpData.reduce((a, b) => a + b.count, 0)} CP leads total</p>}
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -1061,7 +962,7 @@ function DashboardAnalytics({ leads, theme, isDark }: { leads: any[]; theme: any
       <div className={`${theme.card} rounded-2xl p-5`} style={theme.cardGlass}>
         <div className="flex items-center justify-between mb-4">
           <h3 className={`${theme.text} font-bold text-sm flex items-center gap-2`}>
-            <FaChartPie className="text-[#00AEEF] text-xs" />
+            <FaChartPie className="text-[#8B5CF6] text-xs" />
             {pieMode === "interest" ? "Lead Interest Breakdown" :
               pieMode === "loan" ? "Loan Status Breakdown" :
                 pieMode === "usetype" ? "Self-Use vs Investment" :
@@ -1395,7 +1296,7 @@ function DashboardOverview({ managers, siteHeads, allLeads, isLoading, user, the
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         <div className={`lg:col-span-2 ${theme.card} rounded-2xl p-6 flex flex-col`} style={theme.cardGlass}>
           <h2 className={`text-lg font-bold mb-1 flex items-center gap-2 ${theme.text}`}>
-            <FaChartPie className="text-[#9E217B]" /> Top Performers
+            <FaChartPie className="text-[#8B5CF6]" /> Top Performers
           </h2>
           <p className={`text-xs mb-6 ${theme.textFaint}`}>Sales managers ranked by active leads.</p>
           <div className="flex-1 min-h-[280px]">
@@ -1465,7 +1366,7 @@ function DashboardOverview({ managers, siteHeads, allLeads, isLoading, user, the
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-5">
           <div>
             <h2 className={`text-xl font-bold flex items-center gap-2 ${theme.text}`}>
-              <FaTable className="text-[#9E217B]" />
+              <FaTable className="text-[#8B5CF6]" />
               {perfMode === "overall" ? "Team Performance" : "Individual Performance Table"}
             </h2>
             <p className={`text-sm mt-1 ${theme.textMuted}`}>
@@ -1482,7 +1383,7 @@ function DashboardOverview({ managers, siteHeads, allLeads, isLoading, user, the
             <select
               value={perfMode}
               onChange={(e) => setPerfMode(e.target.value as any)}
-              className={`w-full text-sm font-bold rounded-xl px-4 py-3 outline-none cursor-pointer appearance-none border-2 transition-colors ${isDark ? "bg-[#14141B] border-[#9E217B]/40 text-[#d946a8]" : "bg-white border-[#9E217B]/40 text-[#9E217B]"}`}
+              className={`w-full text-sm font-bold rounded-xl px-4 py-3 outline-none cursor-pointer appearance-none border-2 transition-colors ${isDark ? "bg-[#14141B] border-[#8B5CF6]/40 text-[#A78BFA]" : "bg-white border-[#8B5CF6]/40 text-[#8B5CF6]"}`}
             >
               <option value="overall">Overall Team Performance</option>
               <option value="manager">Sales Managers</option>
@@ -1533,7 +1434,7 @@ function DashboardOverview({ managers, siteHeads, allLeads, isLoading, user, the
           {allLeads.length > 0 && (
             <div>
               <div className="flex items-center gap-3 mb-4">
-                <FaChartPie className="text-[#00AEEF]" />
+                <FaChartPie className="text-[#8B5CF6]" />
                 <h3 className={`font-bold text-sm uppercase tracking-wider ${theme.text}`}>Overall Lead Analytics</h3>
                 <span className={`text-xs px-2 py-0.5 rounded border ${theme.settingsBg} ${theme.textMuted}`}>{allLeads.length} leads</span>
               </div>
@@ -1544,7 +1445,7 @@ function DashboardOverview({ managers, siteHeads, allLeads, isLoading, user, the
           <div className={`${theme.tableWrap} rounded-2xl overflow-hidden`} style={theme.tableGlass}>
             <div className={`p-5 flex flex-wrap justify-between items-center gap-4 ${theme.tableHead}`}>
               <h3 className={`font-bold flex items-center gap-2 ${theme.text}`}>
-                <FaTable className="text-[#00AEEF]" /> Enquiry Overview
+                <FaTable className="text-[#8B5CF6]" /> Enquiry Overview
               </h3>
               <div className="flex items-center gap-3 flex-wrap">
                 <select
@@ -1561,7 +1462,7 @@ function DashboardOverview({ managers, siteHeads, allLeads, isLoading, user, the
                     type="checkbox"
                     checked={showLostLeads}
                     onChange={(e) => setShowLostLeads(e.target.checked)}
-                    className="accent-[#9E217B] w-3.5 h-3.5 cursor-pointer"
+                    className="accent-[#8B5CF6] w-3.5 h-3.5 cursor-pointer"
                     disabled={lostLeadFilter !== "all"}
                   />
                   Show Lost
@@ -1622,11 +1523,11 @@ function DashboardOverview({ managers, siteHeads, allLeads, isLoading, user, the
 
                     return (
                       <tr key={lead.id} className={`transition-colors cursor-pointer ${theme.tableRow}`} style={lead.is_lost_lead ? { opacity: 0.5, filter: "grayscale(0.5)" } : {}} onClick={() => onNavigateToSales && onNavigateToSales(lead)}>
-                        <td className={`px-6 py-4 font-bold ${isDark ? "text-[#d946a8]" : "text-[#9E217B]"}`}>#{lead.lead_number ?? lead.id}</td>
+                        <td className={`px-6 py-4 font-bold ${isDark ? "text-[#A78BFA]" : "text-[#8B5CF6]"}`}>#{lead.lead_number ?? lead.id}</td>
                         <td className={`px-4 py-4 font-medium ${theme.text}`}>
                           {(lead.assigned_to || lead.assigned_receptionist) ? (
                             <span
-                              className={`cursor-pointer hover:underline transition-colors ${isDark ? "hover:text-[#d946a8]" : "hover:text-[#9E217B]"}`}
+                              className={`cursor-pointer hover:underline transition-colors ${isDark ? "hover:text-[#A78BFA]" : "hover:text-[#8B5CF6]"}`}
                               title={`Open lead detail for ${lead.name}`}
                               onClick={(e) => { e.stopPropagation(); onNavigateToSales && onNavigateToSales(lead); }}
                             >
@@ -1696,7 +1597,7 @@ function DashboardOverview({ managers, siteHeads, allLeads, isLoading, user, the
 
               {visibleCount < filteredOverviewLeads.length && (
                 <div ref={loadMoreRef} className={`flex items-center justify-center gap-3 py-6 ${theme.textMuted}`}>
-                  <div className="w-4 h-4 rounded-full border-2 border-[#9E217B] border-t-transparent animate-spin" />
+                  <div className="w-4 h-4 rounded-full border-2 border-[#8B5CF6] border-t-transparent animate-spin" />
                   <span className="text-xs font-medium">Loading more… ({visibleCount} of {filteredOverviewLeads.length})</span>
                 </div>
               )}
@@ -1744,7 +1645,7 @@ function DashboardOverview({ managers, siteHeads, allLeads, isLoading, user, the
             </div>
             <div className={`${theme.innerBlock} rounded-2xl p-5`} style={theme.settingsBgGl}>
               <p className={`text-xs font-bold uppercase tracking-wider mb-1 ${theme.textMuted}`}>Loans Active</p>
-              <p className={`text-3xl font-black ${isDark ? "text-[#d946a8]" : "text-[#9E217B]"}`}>
+              <p className={`text-3xl font-black ${isDark ? "text-[#A78BFA]" : "text-[#8B5CF6]"}`}>
                 {activeSiteHeadLeads.filter((l: any) => l.loanPlanned === "Yes").length}
               </p>
             </div>
@@ -1754,7 +1655,7 @@ function DashboardOverview({ managers, siteHeads, allLeads, isLoading, user, the
           {activeSiteHeadLeads.length > 0 && (
             <div>
               <div className="flex items-center gap-3 mb-4">
-                <FaChartPie className="text-[#9E217B]" />
+                <FaChartPie className="text-[#8B5CF6]" />
                 <h3 className={`font-bold text-sm uppercase tracking-wider ${theme.text}`}>Lead Analytics — {selectedSiteHeadName}</h3>
                 <span className={`text-xs px-2 py-0.5 rounded border ${theme.settingsBg} ${theme.textMuted}`}>{activeSiteHeadLeads.length} leads</span>
               </div>
@@ -1766,7 +1667,7 @@ function DashboardOverview({ managers, siteHeads, allLeads, isLoading, user, the
           <div className={`${theme.tableWrap} rounded-2xl overflow-hidden`} style={theme.tableGlass}>
             <div className={`p-5 flex flex-wrap justify-between items-center gap-4 ${theme.tableHead}`}>
               <h3 className={`font-bold flex items-center gap-2 ${theme.text}`}>
-                <FaUsers className="text-[#9E217B]" /> Leads Database ({selectedSiteHeadName})
+                <FaUsers className="text-[#8B5CF6]" /> Leads Database ({selectedSiteHeadName})
               </h3>
               <div className="flex items-center gap-3 flex-wrap">
                 <TableSearchInput value={siteHeadLeadSearch} onChange={setSiteHeadLeadSearch} theme={theme} />
@@ -1807,11 +1708,11 @@ function DashboardOverview({ managers, siteHeads, allLeads, isLoading, user, the
 
                     return (
                       <tr key={lead.id} className={`transition-colors cursor-pointer ${theme.tableRow}`} onClick={() => onNavigateToSales && onNavigateToSales(lead)}>
-                        <td className={`px-6 py-4 font-bold ${isDark ? "text-[#d946a8]" : "text-[#9E217B]"}`}>#{lead.lead_number ?? lead.id}</td>
+                        <td className={`px-6 py-4 font-bold ${isDark ? "text-[#A78BFA]" : "text-[#8B5CF6]"}`}>#{lead.lead_number ?? lead.id}</td>
                         <td className={`px-4 py-4 font-medium ${theme.text}`}>
                           {(lead.assigned_to || lead.assigned_receptionist) ? (
                             <span
-                              className={`cursor-pointer hover:underline transition-colors ${isDark ? "hover:text-[#d946a8]" : "hover:text-[#9E217B]"}`}
+                              className={`cursor-pointer hover:underline transition-colors ${isDark ? "hover:text-[#A78BFA]" : "hover:text-[#8B5CF6]"}`}
                               title={`Open lead detail for ${lead.name}`}
                               onClick={(e) => { e.stopPropagation(); onNavigateToSales && onNavigateToSales(lead); }}
                             >
@@ -1871,7 +1772,7 @@ function DashboardOverview({ managers, siteHeads, allLeads, isLoading, user, the
 
               {visibleCount < filterLeads(activeSiteHeadLeads, siteHeadLeadSearch).length && (
                 <div ref={loadMoreRef} className={`flex items-center justify-center gap-3 py-6 ${theme.textMuted}`}>
-                  <div className="w-4 h-4 rounded-full border-2 border-[#9E217B] border-t-transparent animate-spin" />
+                  <div className="w-4 h-4 rounded-full border-2 border-[#8B5CF6] border-t-transparent animate-spin" />
                   <span className="text-xs font-medium">Loading more… ({visibleCount} of {filterLeads(activeSiteHeadLeads, siteHeadLeadSearch).length})</span>
                 </div>
               )}
@@ -1906,7 +1807,7 @@ function DashboardOverview({ managers, siteHeads, allLeads, isLoading, user, the
             </div>
             <div className={`${theme.innerBlock} rounded-2xl p-5`} style={theme.settingsBgGl}>
               <p className={`text-xs font-bold uppercase tracking-wider mb-1 ${theme.textMuted}`}>Assigned To</p>
-              <p className="text-3xl font-black text-[#00AEEF]">{recepAssignedLeads.length}</p>
+              <p className="text-3xl font-black text-[#8B5CF6]">{recepAssignedLeads.length}</p>
             </div>
             <div className={`${theme.innerBlock} rounded-2xl p-5`} style={theme.settingsBgGl}>
               <p className={`text-xs font-bold uppercase tracking-wider mb-1 ${theme.textMuted}`}>Self-Managed</p>
@@ -1922,7 +1823,7 @@ function DashboardOverview({ managers, siteHeads, allLeads, isLoading, user, the
           {recepAllLeads.length > 0 && (
             <div>
               <div className="flex items-center gap-3 mb-4">
-                <FaChartPie className="text-[#00AEEF]" />
+                <FaChartPie className="text-[#8B5CF6]" />
                 <h3 className={`font-bold text-sm uppercase tracking-wider ${theme.text}`}>Lead Analytics — {selectedReceptionistName}</h3>
                 <span className={`text-xs px-2 py-0.5 rounded border ${theme.settingsBg} ${theme.textMuted}`}>{recepAllLeads.length} leads</span>
               </div>
@@ -1934,7 +1835,7 @@ function DashboardOverview({ managers, siteHeads, allLeads, isLoading, user, the
           <div className={`${theme.tableWrap} rounded-2xl overflow-hidden`} style={theme.tableGlass}>
             <div className={`p-5 flex flex-wrap justify-between items-center gap-4 ${theme.tableHead}`}>
               <h3 className={`font-bold flex items-center gap-2 ${theme.text}`}>
-                <FaClipboardList className="text-[#00AEEF]" /> All Leads — {selectedReceptionistName}
+                <FaClipboardList className="text-[#8B5CF6]" /> All Leads — {selectedReceptionistName}
               </h3>
               <div className="flex items-center gap-3 flex-wrap">
                 <TableSearchInput value={recepLeadSearch} onChange={setRecepLeadSearch} theme={theme} />
@@ -1976,11 +1877,11 @@ function DashboardOverview({ managers, siteHeads, allLeads, isLoading, user, the
 
                     return (
                       <tr key={lead.id} className={`transition-colors cursor-pointer ${theme.tableRow}`} onClick={() => onNavigateToSales && onNavigateToSales(lead)}>
-                        <td className={`px-6 py-4 font-bold ${isDark ? "text-[#d946a8]" : "text-[#9E217B]"}`}>#{lead.lead_number ?? lead.id}</td>
+                        <td className={`px-6 py-4 font-bold ${isDark ? "text-[#A78BFA]" : "text-[#8B5CF6]"}`}>#{lead.lead_number ?? lead.id}</td>
                         <td className={`px-4 py-4 font-medium ${theme.text}`}>
                           {(lead.assigned_to || lead.assigned_receptionist) ? (
                             <span
-                              className={`cursor-pointer hover:underline transition-colors ${isDark ? "hover:text-[#d946a8]" : "hover:text-[#9E217B]"}`}
+                              className={`cursor-pointer hover:underline transition-colors ${isDark ? "hover:text-[#A78BFA]" : "hover:text-[#8B5CF6]"}`}
                               title={`Open lead detail for ${lead.name}`}
                               onClick={(e) => { e.stopPropagation(); onNavigateToSales && onNavigateToSales(lead); }}
                             >
@@ -2040,7 +1941,7 @@ function DashboardOverview({ managers, siteHeads, allLeads, isLoading, user, the
 
               {visibleCount < filterLeads(recepAllLeads, recepLeadSearch).length && (
                 <div ref={loadMoreRef} className={`flex items-center justify-center gap-3 py-6 ${theme.textMuted}`}>
-                  <div className="w-4 h-4 rounded-full border-2 border-[#9E217B] border-t-transparent animate-spin" />
+                  <div className="w-4 h-4 rounded-full border-2 border-[#8B5CF6] border-t-transparent animate-spin" />
                   <span className="text-xs font-medium">Loading more… ({visibleCount} of {filterLeads(recepAllLeads, recepLeadSearch).length})</span>
                 </div>
               )}
@@ -2070,7 +1971,7 @@ function DashboardOverview({ managers, siteHeads, allLeads, isLoading, user, the
             </div>
             <div className={`${theme.innerBlock} rounded-2xl p-5`} style={theme.settingsBgGl}>
               <p className={`text-xs font-bold uppercase tracking-wider mb-1 ${theme.textMuted}`}>Loans Active</p>
-              <p className={`text-3xl font-black ${isDark ? "text-[#d946a8]" : "text-[#9E217B]"}`}>
+              <p className={`text-3xl font-black ${isDark ? "text-[#A78BFA]" : "text-[#8B5CF6]"}`}>
                 {activeManagerLeads.filter((l: any) => l.loanPlanned === "Yes").length}
               </p>
             </div>
@@ -2080,7 +1981,7 @@ function DashboardOverview({ managers, siteHeads, allLeads, isLoading, user, the
           {activeManagerLeads.length > 0 && (
             <div>
               <div className="flex items-center gap-3 mb-4">
-                <FaChartPie className="text-[#9E217B]" />
+                <FaChartPie className="text-[#8B5CF6]" />
                 <h3 className={`font-bold text-sm uppercase tracking-wider ${theme.text}`}>Lead Analytics — {selectedManagerName}</h3>
                 <span className={`text-xs px-2 py-0.5 rounded border ${theme.settingsBg} ${theme.textMuted}`}>{activeManagerLeads.length} leads</span>
               </div>
@@ -2092,7 +1993,7 @@ function DashboardOverview({ managers, siteHeads, allLeads, isLoading, user, the
           <div className={`${theme.tableWrap} rounded-2xl overflow-hidden`} style={theme.tableGlass}>
             <div className={`p-5 flex flex-wrap justify-between items-center gap-4 ${theme.tableHead}`}>
               <h3 className={`font-bold flex items-center gap-2 ${theme.text}`}>
-                <FaUsers className="text-[#9E217B]" /> Leads Database ({selectedManagerName})
+                <FaUsers className="text-[#8B5CF6]" /> Leads Database ({selectedManagerName})
               </h3>
               <div className="flex items-center gap-3 flex-wrap">
                 <TableSearchInput value={managerLeadSearch} onChange={setManagerLeadSearch} theme={theme} />
@@ -2133,11 +2034,11 @@ function DashboardOverview({ managers, siteHeads, allLeads, isLoading, user, the
 
                     return (
                       <tr key={lead.id} className={`transition-colors cursor-pointer ${theme.tableRow}`} onClick={() => onNavigateToSales && onNavigateToSales(lead)}>
-                        <td className={`px-6 py-4 font-bold ${isDark ? "text-[#d946a8]" : "text-[#9E217B]"}`}>#{lead.lead_number ?? lead.id}</td>
+                        <td className={`px-6 py-4 font-bold ${isDark ? "text-[#A78BFA]" : "text-[#8B5CF6]"}`}>#{lead.lead_number ?? lead.id}</td>
                         <td className={`px-4 py-4 font-medium ${theme.text}`}>
                           {(lead.assigned_to || lead.assigned_receptionist) ? (
                             <span
-                              className={`cursor-pointer hover:underline transition-colors ${isDark ? "hover:text-[#d946a8]" : "hover:text-[#9E217B]"}`}
+                              className={`cursor-pointer hover:underline transition-colors ${isDark ? "hover:text-[#A78BFA]" : "hover:text-[#8B5CF6]"}`}
                               title={`Open lead detail for ${lead.name}`}
                               onClick={(e) => { e.stopPropagation(); onNavigateToSales && onNavigateToSales(lead); }}
                             >
@@ -2197,7 +2098,7 @@ function DashboardOverview({ managers, siteHeads, allLeads, isLoading, user, the
 
               {visibleCount < filterLeads(activeManagerLeads, managerLeadSearch).length && (
                 <div ref={loadMoreRef} className={`flex items-center justify-center gap-3 py-6 ${theme.textMuted}`}>
-                  <div className="w-4 h-4 rounded-full border-2 border-[#9E217B] border-t-transparent animate-spin" />
+                  <div className="w-4 h-4 rounded-full border-2 border-[#8B5CF6] border-t-transparent animate-spin" />
                   <span className="text-xs font-medium">Loading more… ({visibleCount} of {filterLeads(activeManagerLeads, managerLeadSearch).length})</span>
                 </div>
               )}
@@ -2212,7 +2113,7 @@ function DashboardOverview({ managers, siteHeads, allLeads, isLoading, user, the
       )}
 
       {toastMsg && (
-        <div className={`fixed top-6 left-1/2 transform -translate-x-1/2 z-[100] px-6 py-3 rounded-xl shadow-lg flex items-center gap-4 animate-fadeIn bg-[#9E217B] border-[#b8268f] text-white`}>
+        <div className={`fixed top-6 left-1/2 transform -translate-x-1/2 z-[100] px-6 py-3 rounded-xl shadow-lg flex items-center gap-4 animate-fadeIn bg-[#8B5CF6] border-[#7C3AED] text-white`}>
           <div className="text-lg"><FaCheckCircle /></div>
           <span className="text-sm font-bold">{toastMsg}</span>
         </div>
@@ -2848,7 +2749,7 @@ function AdminSalesView({ managers, allLeads, followUps, isLoading, adminUser, r
     const s = status || "Routed";
     if (s === "Closing" || s === "Closed") return isDark ? "whitespace-nowrap text-yellow-400 border-yellow-500/40 bg-yellow-500/10" : "whitespace-nowrap text-amber-600 border-amber-400/50 bg-amber-50";
     if (s === "Visit Scheduled") return isDark ? "whitespace-nowrap text-orange-400 border-orange-500/30 bg-orange-500/10" : "whitespace-nowrap text-orange-500 border-orange-400/40 bg-orange-50";
-    return isDark ? "whitespace-nowrap text-[#d946a8] border-[#9E217B]/30 bg-[#9E217B]/10" : "whitespace-nowrap text-[#9E217B] border-[#9E217B]/30 bg-[#9E217B]/10";
+    return isDark ? "whitespace-nowrap text-[#A78BFA] border-[#8B5CF6]/30 bg-[#8B5CF6]/10" : "whitespace-nowrap text-[#8B5CF6] border-[#8B5CF6]/30 bg-[#8B5CF6]/10";
   };
 
   const sections = [
@@ -2887,7 +2788,7 @@ function AdminSalesView({ managers, allLeads, followUps, isLoading, adminUser, r
               const isNGD = lead.status === "NON GENUINE DEMAND (NGD)" || lead.leadStatus === "NON GENUINE DEMAND (NGD)" || lead.leadInterestStatus === "NON GENUINE DEMAND (NGD)";
               return (
                 <tr key={lead.id} className={`transition-colors cursor-pointer ${isLost ? theme.rowLost : isNGD ? theme.rowNGD : theme.tableRow}`} onClick={() => { setSelectedLead(lead); setSubView("detail"); }}>
-                  <td className={`px-4 py-4 font-black text-sm ${isDark ? "text-[#d946a8]" : "text-[#9E217B]"}`}>#{lead.lead_number ?? lead.id}</td>
+                  <td className={`px-4 py-4 font-black text-sm ${isDark ? "text-[#A78BFA]" : "text-[#8B5CF6]"}`}>#{lead.lead_number ?? lead.id}</td>
                   <td className={`px-4 py-4 font-semibold ${theme.text}`}>{lead.name}</td>
                   <td className={`px-4 py-4 font-semibold ${isDark ? "text-green-400" : "text-emerald-600"}`}>{lead.salesBudget || lead.budget || "N/A"}</td>
                   <td className={`px-4 py-4 font-mono text-xs ${theme.textMuted}`}>{maskPhone(lead.phone, adminUser?.role, lead.assigned_to === adminUser?.name)}</td>
@@ -2934,7 +2835,7 @@ function AdminSalesView({ managers, allLeads, followUps, isLoading, adminUser, r
         {/* ── BOTTOM SENTINEL — triggers load more ── */}
         {visibleCount < leads.length && (
           <div ref={loadMoreRef} className={`flex items-center justify-center gap-3 py-6 ${theme.textMuted}`}>
-            <div className="w-4 h-4 rounded-full border-2 border-[#9E217B] border-t-transparent animate-spin" />
+            <div className="w-4 h-4 rounded-full border-2 border-[#8B5CF6] border-t-transparent animate-spin" />
             <span className="text-xs font-medium">Loading more… ({visibleCount} of {leads.length})</span>
           </div>
         )}
@@ -2953,7 +2854,7 @@ function AdminSalesView({ managers, allLeads, followUps, isLoading, adminUser, r
   return (
     <div className="flex h-full relative">
       {toastMsg && (
-        <div className={`fixed top-6 left-1/2 transform -translate-x-1/2 z-[100] px-6 py-3 rounded-xl shadow-lg flex items-center gap-4 animate-fadeIn ${toastMsg.color === "green" ? "bg-green-600 border-green-400 text-white" : "bg-[#9E217B] border-[#b8268f] text-white"}`}>
+        <div className={`fixed top-6 left-1/2 transform -translate-x-1/2 z-[100] px-6 py-3 rounded-xl shadow-lg flex items-center gap-4 animate-fadeIn ${toastMsg.color === "green" ? "bg-green-600 border-green-400 text-white" : "bg-[#8B5CF6] border-[#7C3AED] text-white"}`}>
           <div className="text-lg">{toastMsg.icon}</div>
           <span className="text-sm font-bold">{toastMsg.title}</span>
         </div>
@@ -2977,14 +2878,14 @@ function AdminSalesView({ managers, allLeads, followUps, isLoading, adminUser, r
                   const count = allLeads.filter((l: any) => l.assigned_to === sh.name).length;
                   return (
                     <div key={sh.id || sh.name} onClick={() => { setSelectedManager(sh); setSubView("list"); setActiveSection("assignedTable"); setSelectedLead(null); }}
-                      className={`p-4 flex items-center gap-4 cursor-pointer transition-all border-b ${theme.tableBorder} ${isSelected ? (isDark ? "border-r-4 border-r-[#9E217B] bg-[#9E217B]/10" : "border-r-4 border-r-[#9E217B] bg-pink-50") : "hover:opacity-80 border-r-4 border-r-transparent"}`}>
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-white shadow-sm flex-shrink-0 ${isSelected ? "bg-[#9E217B]" : isDark ? "bg-[#333] text-gray-400" : "bg-gray-400"}`}>
+                      className={`p-4 flex items-center gap-4 cursor-pointer transition-all border-b ${theme.tableBorder} ${isSelected ? (isDark ? "border-r-4 border-r-[#8B5CF6] bg-[#8B5CF6]/10" : "border-r-4 border-r-[#8B5CF6] bg-indigo-50") : "hover:opacity-80 border-r-4 border-r-transparent"}`}>
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-white shadow-sm flex-shrink-0 ${isSelected ? "bg-[#8B5CF6]" : isDark ? "bg-[#333] text-gray-400" : "bg-gray-400"}`}>
                         {sh.name?.charAt(0).toUpperCase()}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex justify-between items-center mb-1">
                           <h3 className={`font-bold truncate text-sm ${theme.text}`}>{sh.name}</h3>
-                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${isDark ? "text-[#d946a8] bg-[#9E217B]/10" : "text-[#9E217B] bg-pink-100"}`}>{count} leads</span>
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${isDark ? "text-[#A78BFA] bg-[#8B5CF6]/10" : "text-[#8B5CF6] bg-indigo-100"}`}>{count} leads</span>
                         </div>
                         <p className={`text-xs truncate capitalize ${theme.textFaint}`}>Sales Manager</p>
                       </div>
@@ -3008,7 +2909,7 @@ function AdminSalesView({ managers, allLeads, followUps, isLoading, adminUser, r
             <div className={`p-5 border-b flex justify-between items-center shadow-sm z-10 flex-shrink-0 gap-4 ${theme.header}`} style={theme.headerGlass}>
               <div>
                 <h2 className={`text-lg font-bold flex items-center gap-2 ${theme.text}`}>
-                  <FaUsers className={isDark ? "text-[#d946a8]" : "text-[#9E217B]"} /> {selectedManager.name}'s Division
+                  <FaUsers className={isDark ? "text-[#A78BFA]" : "text-[#8B5CF6]"} /> {selectedManager.name}'s Division
                 </h2>
                 <p className={`text-xs mt-1 ${theme.textFaint}`}>Admin view — monitor Sales Manager activity</p>
               </div>
@@ -3026,10 +2927,10 @@ function AdminSalesView({ managers, allLeads, followUps, isLoading, adminUser, r
                   <div className="grid grid-cols-2 gap-4">
                     {sections.map(sec => (
                       <div key={sec.key} onClick={() => setActiveSection(sec.key as any)}
-                        className={`rounded-2xl p-5 border cursor-pointer transition-all ${activeSection === sec.key ? (isDark ? "bg-[#9E217B]/20 border-[#9E217B]/50" : "bg-[#9E217B]/10 border-[#9E217B]") : `${theme.card} hover:opacity-90`}`}>
+                        className={`rounded-2xl p-5 border cursor-pointer transition-all ${activeSection === sec.key ? (isDark ? "bg-[#8B5CF6]/20 border-[#8B5CF6]/50" : "bg-[#8B5CF6]/10 border-[#8B5CF6]") : `${theme.card} hover:opacity-90`}`}>
                         <div className="flex items-center justify-between mb-2">
                           <span className="text-xl">{sec.icon}</span>
-                          <span className={`text-3xl font-black ${isDark ? "text-[#d946a8]" : "text-[#9E217B]"}`}>{sec.count}</span>
+                          <span className={`text-3xl font-black ${isDark ? "text-[#A78BFA]" : "text-[#8B5CF6]"}`}>{sec.count}</span>
                         </div>
                         <p className={`text-sm font-bold ${theme.text}`}>{sec.label}</p>
                         <p className={`text-xs mt-1 ${theme.textFaint}`}>{sec.desc}</p>
@@ -3083,7 +2984,7 @@ function AdminSalesView({ managers, allLeads, followUps, isLoading, adminUser, r
                     <div className="flex items-center gap-4">
                       <button onClick={() => { setSubView("list"); setShowSalesForm(false); setShowLoanForm(false); }} className={`w-10 h-10 flex items-center justify-center border rounded-xl transition-colors cursor-pointer shadow-sm ${theme.textMuted} ${theme.tableBorder} ${isDark ? "bg-[#222] hover:bg-[#333]" : "bg-white hover:bg-[#F8FAFC]"}`}><FaChevronLeft className="text-sm" /></button>
                       <h1 className={`text-xl md:text-2xl font-bold flex items-center gap-3 ${theme.text}`}>
-                        <span className={isDark ? "text-[#d946a8]" : "text-[#9E217B]"}>#{selectedLead.lead_number ?? selectedLead.id}</span>
+                        <span className={isDark ? "text-[#A78BFA]" : "text-[#8B5CF6]"}>#{selectedLead.lead_number ?? selectedLead.id}</span>
                         <span>{selectedLead.name}</span>
                         {selectedLead.status === "Closing" && (
                           <span className={`text-[11px] font-bold px-3 py-1 rounded-full border flex items-center gap-1.5 ${theme.statusClosing}`}><FaHandshake className="text-xs" /> Closing</span>
@@ -3135,7 +3036,7 @@ function AdminSalesView({ managers, allLeads, followUps, isLoading, adminUser, r
                           <div className={`flex justify-between items-center mb-4 border-b pb-3 ${theme.tableBorder}`}>
                             <div>
                               <h3 className={`text-base font-bold ${theme.text}`}>Sales Data Form</h3>
-                              <p className={`text-xs mt-0.5 ${isDark ? "text-[#d946a8]" : "text-[#9E217B]"}`}>Admin override — Lead #{selectedLead.lead_number ?? selectedLead.id}</p>
+                              <p className={`text-xs mt-0.5 ${isDark ? "text-[#A78BFA]" : "text-[#8B5CF6]"}`}>Admin override — Lead #{selectedLead.lead_number ?? selectedLead.id}</p>
                             </div>
                             <button type="button" onClick={() => setShowSalesForm(false)} className={`p-1 ${theme.textMuted} hover:text-red-500`}><FaTimes /></button>
                           </div>
@@ -3152,11 +3053,11 @@ function AdminSalesView({ managers, allLeads, followUps, isLoading, adminUser, r
                               </div>
                             </div>
                             <div className={`border-t pt-3 ${theme.tableBorder}`}>
-                              <label className={`block text-xs font-bold mb-1.5 ${isDark ? "text-[#d946a8]" : "text-[#9E217B]"}`}>Lead Interest Status *</label>
+                              <label className={`block text-xs font-bold mb-1.5 ${isDark ? "text-[#A78BFA]" : "text-[#8B5CF6]"}`}>Lead Interest Status *</label>
                               <select required value={salesForm.leadStatus} onChange={e => setSalesForm({ ...salesForm, leadStatus: e.target.value })} className={formSelect}><option value="" disabled>Select Status</option><option>Interested</option><option>Not Interested</option><option>NON GENUINE DEMAND (NGD)</option></select>
                             </div>
                             <div className={`border-t pt-3 ${theme.tableBorder}`}>
-                              <label className={`block text-xs font-bold mb-1.5 ${isDark ? "text-[#d946a8]" : "text-[#9E217B]"}`}>Loan Planned?</label>
+                              <label className={`block text-xs font-bold mb-1.5 ${isDark ? "text-[#A78BFA]" : "text-[#8B5CF6]"}`}>Loan Planned?</label>
                               <select required value={salesForm.loanPlanned} onChange={e => setSalesForm({ ...salesForm, loanPlanned: e.target.value })} className={formSelect}><option value="" disabled>Select Option</option><option>Yes</option><option>No</option><option>Not Sure</option></select>
                             </div>
                             <div className={`border-t pt-3 ${theme.tableBorder}`}>
@@ -3171,14 +3072,14 @@ function AdminSalesView({ managers, allLeads, followUps, isLoading, adminUser, r
                         <div className={`rounded-xl border p-5 shadow-xl flex-1 overflow-y-auto custom-scrollbar flex flex-col animate-fadeIn ${theme.modalCard}`} style={theme.modalGlass}>
                           <div className={`flex justify-between items-center mb-4 border-b pb-3 flex-shrink-0 ${theme.tableBorder}`}>
                             <div>
-                              <h3 className={`text-lg font-bold flex items-center gap-2 ${isDark ? "text-[#d946a8]" : "text-[#9E217B]"}`}><FaUsers /> Loan Tracking Workflow</h3>
+                              <h3 className={`text-lg font-bold flex items-center gap-2 ${isDark ? "text-[#A78BFA]" : "text-[#8B5CF6]"}`}><FaUsers /> Loan Tracking Workflow</h3>
                               <p className={`text-xs mt-0.5 ${theme.textFaint}`}>For Lead #{selectedLead.lead_number ?? selectedLead.id}</p>
                             </div>
                             <button type="button" onClick={() => setShowLoanForm(false)} className={`p-1 ${theme.textMuted} hover:text-red-500`}><FaTimes /></button>
                           </div>
                           <form onSubmit={handleLoanFormSubmit} className="flex flex-col gap-5 flex-1">
                             <div>
-                              <h4 className={`text-xs font-bold uppercase tracking-wider mb-3 ${isDark ? "text-[#d946a8]" : "text-[#9E217B]"}`}>1. Loan Decision</h4>
+                              <h4 className={`text-xs font-bold uppercase tracking-wider mb-3 ${isDark ? "text-[#A78BFA]" : "text-[#8B5CF6]"}`}>1. Loan Decision</h4>
                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <div><label className={`text-xs mb-1 block ${theme.textMuted}`}>Loan Required? *</label>
                                   <select required value={loanForm.loanRequired} onChange={e => setLoanForm({ ...loanForm, loanRequired: e.target.value })} className={formSelect}><option value="">Select</option><option>Yes</option><option>No</option><option>Not Sure</option></select>
@@ -3191,7 +3092,7 @@ function AdminSalesView({ managers, allLeads, followUps, isLoading, adminUser, r
                               </div>
                             </div>
                             <div className={`border-t pt-4 ${theme.tableBorder}`}>
-                              <h4 className={`text-xs font-bold uppercase tracking-wider mb-3 ${isDark ? "text-[#d946a8]" : "text-[#9E217B]"}`}>2. Bank & Loan Details</h4>
+                              <h4 className={`text-xs font-bold uppercase tracking-wider mb-3 ${isDark ? "text-[#A78BFA]" : "text-[#8B5CF6]"}`}>2. Bank & Loan Details</h4>
                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 {[{ label: "Bank Name", k: "bank", ph: "e.g. HDFC" }, { label: "Amount Required", k: "amountReq", ph: "e.g. 60L" }, { label: "Amount Approved", k: "amountApp", ph: "e.g. 55L" }, { label: "CIBIL Score", k: "cibil", ph: "e.g. 750" }, { label: "Agent Name", k: "agent", ph: "Agent Name" }, { label: "Agent Contact", k: "agentContact", ph: "Agent Phone", tel: true }].map(f => (
                                   <div key={f.k}><label className={`text-xs mb-1 block ${theme.textMuted}`}>{f.label}</label><input type={f.tel ? "tel" : "text"} value={(loanForm as any)[f.k]} onChange={e => setLoanForm({ ...loanForm, [f.k]: e.target.value })} className={formInput} placeholder={f.ph} /></div>
@@ -3199,7 +3100,7 @@ function AdminSalesView({ managers, allLeads, followUps, isLoading, adminUser, r
                               </div>
                             </div>
                             <div className={`border-t pt-4 ${theme.tableBorder}`}>
-                              <h4 className={`text-xs font-bold uppercase tracking-wider mb-3 ${isDark ? "text-[#d946a8]" : "text-[#9E217B]"}`}>3. Financial Qualification</h4>
+                              <h4 className={`text-xs font-bold uppercase tracking-wider mb-3 ${isDark ? "text-[#A78BFA]" : "text-[#8B5CF6]"}`}>3. Financial Qualification</h4>
                               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                                 <div><label className={`text-xs mb-1 block ${theme.textMuted}`}>Employment</label><select value={loanForm.empType} onChange={e => setLoanForm({ ...loanForm, empType: e.target.value })} className={formSelect}><option value="">Select</option><option>Salaried</option><option>Self-employed</option></select></div>
                                 <div><label className={`text-xs mb-1 block ${theme.textMuted}`}>Monthly Income</label><input type="text" value={loanForm.income} onChange={e => setLoanForm({ ...loanForm, income: e.target.value })} className={formInput} placeholder="e.g. 1L" /></div>
@@ -3207,7 +3108,7 @@ function AdminSalesView({ managers, allLeads, followUps, isLoading, adminUser, r
                               </div>
                             </div>
                             <div className={`border-t pt-4 ${theme.tableBorder}`}>
-                              <h4 className={`text-xs font-bold uppercase tracking-wider mb-3 flex items-center gap-1 ${isDark ? "text-[#d946a8]" : "text-[#9E217B]"}`}><FaFileAlt /> 4. Document Checklist</h4>
+                              <h4 className={`text-xs font-bold uppercase tracking-wider mb-3 flex items-center gap-1 ${isDark ? "text-[#A78BFA]" : "text-[#8B5CF6]"}`}><FaFileAlt /> 4. Document Checklist</h4>
                               <div className={`grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 rounded-lg border ${theme.settingsBg}`} style={theme.settingsBgGl}>
                                 {["docPan", "docAadhaar", "docSalary", "docBank", "docProperty"].map(docKey => {
                                   const label = docKey === "docPan" ? "PAN Card" : docKey === "docAadhaar" ? "Aadhaar Card" : docKey === "docSalary" ? "Salary Slips / ITR" : docKey === "docBank" ? "Bank Statements" : "Property Documents";
@@ -3221,7 +3122,7 @@ function AdminSalesView({ managers, allLeads, followUps, isLoading, adminUser, r
                               </div>
                             </div>
                             <div className={`border-t pt-4 ${theme.tableBorder}`}>
-                              <h4 className={`text-xs font-bold uppercase tracking-wider mb-3 ${isDark ? "text-[#d946a8]" : "text-[#9E217B]"}`}>5. Notes / Remarks</h4>
+                              <h4 className={`text-xs font-bold uppercase tracking-wider mb-3 ${isDark ? "text-[#A78BFA]" : "text-[#8B5CF6]"}`}>5. Notes / Remarks</h4>
                               <textarea value={loanForm.notes} onChange={e => setLoanForm({ ...loanForm, notes: e.target.value })} className={`w-full rounded-lg px-4 py-2.5 text-sm outline-none resize-none h-20 custom-scrollbar border ${theme.inputInner} ${theme.text} ${theme.inputFocus}`} placeholder="Bank feedback, CIBIL issues, Internal notes..." />
                             </div>
                             <button type="submit" className={`mt-4 flex-shrink-0 w-full font-bold py-3.5 rounded-xl shadow-md transition-colors cursor-pointer ${theme.btnSecondary}`}>Save Loan Tracker Update</button>
@@ -3255,7 +3156,7 @@ function AdminSalesView({ managers, allLeads, followUps, isLoading, adminUser, r
                                   <div><p className={`text-xs font-medium mb-1 ${theme.textFaint}`}>Loan Required?</p><p className={`font-semibold ${theme.text}`}>{getLatestLoanDetails()?.loanRequired}</p></div>
                                   <div><p className={`text-xs font-medium mb-1 ${theme.textFaint}`}>Status</p><span className={`text-sm font-bold ${selectedLead.status === "Closing" ? "text-amber-500" : selectedLead.status === "Visit Scheduled" ? "text-orange-400" : theme.accentText}`}>{selectedLead.status || "Routed"}</span></div>
                                   <div className={`col-span-2 p-3 rounded-xl border ${theme.settingsBg}`} style={theme.settingsBgGl}>
-                                    <p className={`text-xs font-bold uppercase tracking-wider mb-0.5 ${isDark ? "text-[#d946a8]" : "text-[#9E217B]"}`}>📍 Site Visit Date</p>
+                                    <p className={`text-xs font-bold uppercase tracking-wider mb-0.5 ${isDark ? "text-[#A78BFA]" : "text-[#8B5CF6]"}`}>📍 Site Visit Date</p>
                                     <p className={`text-base font-black ${theme.text}`}>{selectedLead.mongoVisitDate ? formatDate(selectedLead.mongoVisitDate) : "Not Scheduled"}</p>
                                   </div>
                                   {selectedLead.is_lost_lead && (
@@ -3308,7 +3209,7 @@ function AdminSalesView({ managers, allLeads, followUps, isLoading, adminUser, r
                                   const isHighProb = curLoan?.status?.toLowerCase() === "approved" && selectedLead.mongoVisitDate;
                                   return (
                                     <>
-                                      <h3 className={`text-sm font-bold border-b pb-2 mb-6 uppercase flex items-center justify-between ${isDark ? "text-[#00AEEF]" : "text-[#00AEEF]"}`}><span className="flex items-center gap-2"><FaUsers /> Deal Loan Overview</span></h3>
+                                      <h3 className={`text-sm font-bold border-b pb-2 mb-6 uppercase flex items-center justify-between ${isDark ? "text-[#8B5CF6]" : "text-[#8B5CF6]"}`}><span className="flex items-center gap-2"><FaUsers /> Deal Loan Overview</span></h3>
                                       {isHighProb && <div className="mb-6 bg-gradient-to-r from-orange-500/20 to-red-500/20 border border-orange-500/50 p-3 rounded-lg flex items-center justify-center gap-2 text-orange-400 font-bold tracking-wide shadow-md">🚀 HIGH PROBABILITY DEAL</div>}
                                       <div className="grid grid-cols-2 gap-y-5 gap-x-4 text-sm">
                                         <div><p className={`text-xs font-medium mb-1 ${theme.textFaint}`}>Loan Required?</p><p className={`font-semibold ${theme.text}`}>{curLoan?.loanRequired}</p></div>
@@ -3333,7 +3234,7 @@ function AdminSalesView({ managers, allLeads, followUps, isLoading, adminUser, r
                             )}
                           </div>
                           <div className="grid grid-cols-2 gap-3 mt-4 flex-shrink-0">
-                            <button className={`border flex flex-col items-center justify-center py-3 rounded-xl transition-all cursor-pointer gap-1 ${isDark ? "bg-[#9E217B]/10 border-[#9E217B]/30 hover:bg-[#9E217B] text-[#d946a8] hover:text-white" : "bg-[#9E217B]/10 border-[#9E217B]/30 hover:bg-[#9E217B] text-[#9E217B] hover:text-white"}`}><FaMicrophone className="text-lg" /><span className="font-bold text-[10px]">Browser Call</span></button>
+                            <button className={`border flex flex-col items-center justify-center py-3 rounded-xl transition-all cursor-pointer gap-1 ${isDark ? "bg-[#8B5CF6]/10 border-[#8B5CF6]/30 hover:bg-[#8B5CF6] text-[#A78BFA] hover:text-white" : "bg-[#8B5CF6]/10 border-[#8B5CF6]/30 hover:bg-[#8B5CF6] text-[#8B5CF6] hover:text-white"}`}><FaMicrophone className="text-lg" /><span className="font-bold text-[10px]">Browser Call</span></button>
                             <button onClick={() => setIsWaModalOpen(true)} className="bg-green-600/10 border border-green-500/30 hover:bg-green-600 text-green-400 hover:text-white flex flex-col items-center justify-center py-3 rounded-xl transition-all cursor-pointer gap-1"><FaWhatsapp className="text-xl" /><span className="font-bold text-[10px]">WhatsApp</span></button>
                           </div>
                         </div>
@@ -3378,7 +3279,7 @@ function AdminSalesView({ managers, allLeads, followUps, isLoading, adminUser, r
                       <form onSubmit={handleSendCustomNote} className={`p-4 border-t flex gap-3 items-center flex-shrink-0 ${theme.header} ${theme.tableBorder}`} style={theme.headerGlass}>
                         <input type="text" value={customNote} onChange={e => setCustomNote(e.target.value)} placeholder="Add admin note..."
                           className={`flex-1 rounded-xl px-4 py-3 text-sm outline-none transition-colors border ${theme.inputInner} ${theme.text} ${theme.inputFocus}`} />
-                        <button type="submit" className={`w-12 h-12 text-white rounded-xl flex items-center justify-center cursor-pointer transition-colors shadow-lg ${isDark ? "bg-[#9E217B] hover:bg-[#b8268f]" : "bg-[#9E217B] hover:bg-[#8a1d6b]"}`}>
+                        <button type="submit" className={`w-12 h-12 text-white rounded-xl flex items-center justify-center cursor-pointer transition-colors shadow-lg ${isDark ? "bg-[#8B5CF6] hover:bg-[#7C3AED]" : "bg-[#8B5CF6] hover:bg-[#8a1d6b]"}`}>
                           <FaPaperPlane className="text-sm ml-[-2px]" />
                         </button>
                       </form>
@@ -3874,7 +3775,7 @@ function AdminSiteHeadView({ siteHeads, allLeads, followUps, isLoading, adminUse
     const s = status || "Routed";
     if (s === "Closing" || s === "Closed") return isDark ? "whitespace-nowrap text-yellow-400 border-yellow-500/40 bg-yellow-500/10" : "whitespace-nowrap text-amber-600 border-amber-400/50 bg-amber-50";
     if (s === "Visit Scheduled") return isDark ? "whitespace-nowrap text-orange-400 border-orange-500/30 bg-orange-500/10" : "whitespace-nowrap text-orange-500 border-orange-400/40 bg-orange-50";
-    return isDark ? "whitespace-nowrap text-[#d946a8] border-[#9E217B]/30 bg-[#9E217B]/10" : "whitespace-nowrap text-[#9E217B] border-[#9E217B]/30 bg-[#9E217B]/10";
+    return isDark ? "whitespace-nowrap text-[#A78BFA] border-[#8B5CF6]/30 bg-[#8B5CF6]/10" : "whitespace-nowrap text-[#8B5CF6] border-[#8B5CF6]/30 bg-[#8B5CF6]/10";
   };
 
   const sections = [
@@ -3913,7 +3814,7 @@ function AdminSiteHeadView({ siteHeads, allLeads, followUps, isLoading, adminUse
               const isNGD = lead.status === "NON GENUINE DEMAND (NGD)" || lead.leadStatus === "NON GENUINE DEMAND (NGD)" || lead.leadInterestStatus === "NON GENUINE DEMAND (NGD)";
               return (
                 <tr key={lead.id} className={`transition-colors cursor-pointer ${isLost ? theme.rowLost : isNGD ? theme.rowNGD : theme.tableRow}`} onClick={() => { setSelectedLead(lead); setSubView("detail"); }}>
-                  <td className={`px-4 py-4 font-black text-sm ${isDark ? "text-[#d946a8]" : "text-[#9E217B]"}`}>#{lead.lead_number ?? lead.id}</td>
+                  <td className={`px-4 py-4 font-black text-sm ${isDark ? "text-[#A78BFA]" : "text-[#8B5CF6]"}`}>#{lead.lead_number ?? lead.id}</td>
                   <td className={`px-4 py-4 font-semibold ${theme.text}`}>{lead.name}</td>
                   <td className={`px-4 py-4 font-semibold ${isDark ? "text-green-400" : "text-emerald-600"}`}>{lead.salesBudget || lead.budget || "N/A"}</td>
                   <td className={`px-4 py-4 font-mono text-xs ${theme.textMuted}`}>{maskPhone(lead.phone, adminUser?.role, lead.assigned_to === adminUser?.name)}</td>
@@ -3960,7 +3861,7 @@ function AdminSiteHeadView({ siteHeads, allLeads, followUps, isLoading, adminUse
         {/* ── BOTTOM SENTINEL — triggers load more ── */}
         {visibleCount < leads.length && (
           <div ref={loadMoreRef} className={`flex items-center justify-center gap-3 py-6 ${theme.textMuted}`}>
-            <div className="w-4 h-4 rounded-full border-2 border-[#9E217B] border-t-transparent animate-spin" />
+            <div className="w-4 h-4 rounded-full border-2 border-[#8B5CF6] border-t-transparent animate-spin" />
             <span className="text-xs font-medium">Loading more… ({visibleCount} of {leads.length})</span>
           </div>
         )}
@@ -3979,7 +3880,7 @@ function AdminSiteHeadView({ siteHeads, allLeads, followUps, isLoading, adminUse
   return (
     <div className="flex h-full relative">
       {toastMsg && (
-        <div className={`fixed top-6 left-1/2 transform -translate-x-1/2 z-[100] px-6 py-3 rounded-xl shadow-lg flex items-center gap-4 animate-fadeIn ${toastMsg.color === "green" ? "bg-green-600 border-green-400 text-white" : "bg-[#9E217B] border-[#b8268f] text-white"}`}>
+        <div className={`fixed top-6 left-1/2 transform -translate-x-1/2 z-[100] px-6 py-3 rounded-xl shadow-lg flex items-center gap-4 animate-fadeIn ${toastMsg.color === "green" ? "bg-green-600 border-green-400 text-white" : "bg-[#8B5CF6] border-[#7C3AED] text-white"}`}>
           <div className="text-lg">{toastMsg.icon}</div>
           <span className="text-sm font-bold">{toastMsg.title}</span>
         </div>
@@ -4024,14 +3925,14 @@ function AdminSiteHeadView({ siteHeads, allLeads, followUps, isLoading, adminUse
                   const count = allLeads.filter((l: any) => l.assigned_to === sh.name).length;
                   return (
                     <div key={sh.id || sh.name} onClick={() => { setSelectedSiteHead(sh); setSubView("list"); setActiveSection("assignedTable"); setSelectedLead(null); }}
-                      className={`p-4 flex items-center gap-4 cursor-pointer transition-all border-b ${theme.tableBorder} ${isSelected ? (isDark ? "border-r-4 border-r-[#9E217B] bg-[#9E217B]/10" : "border-r-4 border-r-[#9E217B] bg-pink-50") : "hover:opacity-80 border-r-4 border-r-transparent"}`}>
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-white shadow-sm flex-shrink-0 ${isSelected ? "bg-[#9E217B]" : isDark ? "bg-[#333] text-gray-400" : "bg-gray-400"}`}>
+                      className={`p-4 flex items-center gap-4 cursor-pointer transition-all border-b ${theme.tableBorder} ${isSelected ? (isDark ? "border-r-4 border-r-[#8B5CF6] bg-[#8B5CF6]/10" : "border-r-4 border-r-[#8B5CF6] bg-indigo-50") : "hover:opacity-80 border-r-4 border-r-transparent"}`}>
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-white shadow-sm flex-shrink-0 ${isSelected ? "bg-[#8B5CF6]" : isDark ? "bg-[#333] text-gray-400" : "bg-gray-400"}`}>
                         {sh.name?.charAt(0).toUpperCase()}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex justify-between items-center mb-1">
                           <h3 className={`font-bold truncate text-sm ${theme.text}`}>{sh.name}</h3>
-                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${isDark ? "text-[#d946a8] bg-[#9E217B]/10" : "text-[#9E217B] bg-pink-100"}`}>{count} leads</span>
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${isDark ? "text-[#A78BFA] bg-[#8B5CF6]/10" : "text-[#8B5CF6] bg-indigo-100"}`}>{count} leads</span>
                         </div>
                         <p className={`text-xs truncate capitalize ${theme.textFaint}`}>Site Head</p>
                       </div>
@@ -4055,7 +3956,7 @@ function AdminSiteHeadView({ siteHeads, allLeads, followUps, isLoading, adminUse
             <div className={`p-5 border-b flex justify-between items-center shadow-sm z-10 flex-shrink-0 gap-4 ${theme.header}`} style={theme.headerGlass}>
               <div>
                 <h2 className={`text-lg font-bold flex items-center gap-2 ${theme.text}`}>
-                  <FaUniversity className={isDark ? "text-[#d946a8]" : "text-[#9E217B]"} /> {selectedSiteHead.name}'s Division
+                  <FaUniversity className={isDark ? "text-[#A78BFA]" : "text-[#8B5CF6]"} /> {selectedSiteHead.name}'s Division
                 </h2>
                 <p className={`text-xs mt-1 ${theme.textFaint}`}>Admin view — monitor Site Head activity</p>
               </div>
@@ -4073,10 +3974,10 @@ function AdminSiteHeadView({ siteHeads, allLeads, followUps, isLoading, adminUse
                   <div className="grid grid-cols-2 gap-4">
                     {sections.map(sec => (
                       <div key={sec.key} onClick={() => setActiveSection(sec.key as any)}
-                        className={`rounded-2xl p-5 border cursor-pointer transition-all ${activeSection === sec.key ? (isDark ? "bg-[#9E217B]/20 border-[#9E217B]/50" : "bg-[#9E217B]/10 border-[#9E217B]") : `${theme.card} hover:opacity-90`}`}>
+                        className={`rounded-2xl p-5 border cursor-pointer transition-all ${activeSection === sec.key ? (isDark ? "bg-[#8B5CF6]/20 border-[#8B5CF6]/50" : "bg-[#8B5CF6]/10 border-[#8B5CF6]") : `${theme.card} hover:opacity-90`}`}>
                         <div className="flex items-center justify-between mb-2">
                           <span className="text-xl">{sec.icon}</span>
-                          <span className={`text-3xl font-black ${isDark ? "text-[#d946a8]" : "text-[#9E217B]"}`}>{sec.count}</span>
+                          <span className={`text-3xl font-black ${isDark ? "text-[#A78BFA]" : "text-[#8B5CF6]"}`}>{sec.count}</span>
                         </div>
                         <p className={`text-sm font-bold ${theme.text}`}>{sec.label}</p>
                         <p className={`text-xs mt-1 ${theme.textFaint}`}>{sec.desc}</p>
@@ -4130,7 +4031,7 @@ function AdminSiteHeadView({ siteHeads, allLeads, followUps, isLoading, adminUse
                     <div className="flex items-center gap-4">
                       <button onClick={() => { setSubView("list"); setShowSalesForm(false); setShowLoanForm(false); }} className={`w-10 h-10 flex items-center justify-center border rounded-xl transition-colors cursor-pointer shadow-sm ${theme.textMuted} ${theme.tableBorder} ${isDark ? "bg-[#222] hover:bg-[#333]" : "bg-white hover:bg-[#F8FAFC]"}`}><FaChevronLeft className="text-sm" /></button>
                       <h1 className={`text-xl md:text-2xl font-bold flex items-center gap-3 ${theme.text}`}>
-                        <span className={isDark ? "text-[#d946a8]" : "text-[#9E217B]"}>#{selectedLead.lead_number ?? selectedLead.id}</span>
+                        <span className={isDark ? "text-[#A78BFA]" : "text-[#8B5CF6]"}>#{selectedLead.lead_number ?? selectedLead.id}</span>
                         <span>{selectedLead.name}</span>
                         {selectedLead.status === "Closing" && (
                           <span className={`text-[11px] font-bold px-3 py-1 rounded-full border flex items-center gap-1.5 ${theme.statusClosing}`}><FaHandshake className="text-xs" /> Closing</span>
@@ -4182,7 +4083,7 @@ function AdminSiteHeadView({ siteHeads, allLeads, followUps, isLoading, adminUse
                           <div className={`flex justify-between items-center mb-4 border-b pb-3 ${theme.tableBorder}`}>
                             <div>
                               <h3 className={`text-base font-bold ${theme.text}`}>Sales Data Form</h3>
-                              <p className={`text-xs mt-0.5 ${isDark ? "text-[#d946a8]" : "text-[#9E217B]"}`}>Admin override — Lead #{selectedLead.lead_number ?? selectedLead.id}</p>
+                              <p className={`text-xs mt-0.5 ${isDark ? "text-[#A78BFA]" : "text-[#8B5CF6]"}`}>Admin override — Lead #{selectedLead.lead_number ?? selectedLead.id}</p>
                             </div>
                             <button type="button" onClick={() => setShowSalesForm(false)} className={`p-1 ${theme.textMuted} hover:text-red-500`}><FaTimes /></button>
                           </div>
@@ -4199,11 +4100,11 @@ function AdminSiteHeadView({ siteHeads, allLeads, followUps, isLoading, adminUse
                               </div>
                             </div>
                             <div className={`border-t pt-3 ${theme.tableBorder}`}>
-                              <label className={`block text-xs font-bold mb-1.5 ${isDark ? "text-[#d946a8]" : "text-[#9E217B]"}`}>Lead Interest Status *</label>
+                              <label className={`block text-xs font-bold mb-1.5 ${isDark ? "text-[#A78BFA]" : "text-[#8B5CF6]"}`}>Lead Interest Status *</label>
                               <select required value={salesForm.leadStatus} onChange={e => setSalesForm({ ...salesForm, leadStatus: e.target.value })} className={formSelect}><option value="" disabled>Select Status</option><option>Interested</option><option>Not Interested</option><option>NON GENUINE DEMAND (NGD)</option></select>
                             </div>
                             <div className={`border-t pt-3 ${theme.tableBorder}`}>
-                              <label className={`block text-xs font-bold mb-1.5 ${isDark ? "text-[#d946a8]" : "text-[#9E217B]"}`}>Loan Planned?</label>
+                              <label className={`block text-xs font-bold mb-1.5 ${isDark ? "text-[#A78BFA]" : "text-[#8B5CF6]"}`}>Loan Planned?</label>
                               <select required value={salesForm.loanPlanned} onChange={e => setSalesForm({ ...salesForm, loanPlanned: e.target.value })} className={formSelect}><option value="" disabled>Select Option</option><option>Yes</option><option>No</option><option>Not Sure</option></select>
                             </div>
                             <div className={`border-t pt-3 ${theme.tableBorder}`}>
@@ -4218,14 +4119,14 @@ function AdminSiteHeadView({ siteHeads, allLeads, followUps, isLoading, adminUse
                         <div className={`rounded-xl border p-5 shadow-xl flex-1 overflow-y-auto custom-scrollbar flex flex-col animate-fadeIn ${theme.modalCard}`} style={theme.modalGlass}>
                           <div className={`flex justify-between items-center mb-4 border-b pb-3 flex-shrink-0 ${theme.tableBorder}`}>
                             <div>
-                              <h3 className={`text-lg font-bold flex items-center gap-2 ${isDark ? "text-[#d946a8]" : "text-[#9E217B]"}`}><FaUniversity /> Loan Tracking Workflow</h3>
+                              <h3 className={`text-lg font-bold flex items-center gap-2 ${isDark ? "text-[#A78BFA]" : "text-[#8B5CF6]"}`}><FaUniversity /> Loan Tracking Workflow</h3>
                               <p className={`text-xs mt-0.5 ${theme.textFaint}`}>For Lead #{selectedLead.lead_number ?? selectedLead.id}</p>
                             </div>
                             <button type="button" onClick={() => setShowLoanForm(false)} className={`p-1 ${theme.textMuted} hover:text-red-500`}><FaTimes /></button>
                           </div>
                           <form onSubmit={handleLoanFormSubmit} className="flex flex-col gap-5 flex-1">
                             <div>
-                              <h4 className={`text-xs font-bold uppercase tracking-wider mb-3 ${isDark ? "text-[#d946a8]" : "text-[#9E217B]"}`}>1. Loan Decision</h4>
+                              <h4 className={`text-xs font-bold uppercase tracking-wider mb-3 ${isDark ? "text-[#A78BFA]" : "text-[#8B5CF6]"}`}>1. Loan Decision</h4>
                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <div><label className={`text-xs mb-1 block ${theme.textMuted}`}>Loan Required? *</label>
                                   <select required value={loanForm.loanRequired} onChange={e => setLoanForm({ ...loanForm, loanRequired: e.target.value })} className={formSelect}><option value="">Select</option><option>Yes</option><option>No</option><option>Not Sure</option></select>
@@ -4238,7 +4139,7 @@ function AdminSiteHeadView({ siteHeads, allLeads, followUps, isLoading, adminUse
                               </div>
                             </div>
                             <div className={`border-t pt-4 ${theme.tableBorder}`}>
-                              <h4 className={`text-xs font-bold uppercase tracking-wider mb-3 ${isDark ? "text-[#d946a8]" : "text-[#9E217B]"}`}>2. Bank & Loan Details</h4>
+                              <h4 className={`text-xs font-bold uppercase tracking-wider mb-3 ${isDark ? "text-[#A78BFA]" : "text-[#8B5CF6]"}`}>2. Bank & Loan Details</h4>
                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 {[{ label: "Bank Name", k: "bank", ph: "e.g. HDFC" }, { label: "Amount Required", k: "amountReq", ph: "e.g. 60L" }, { label: "Amount Approved", k: "amountApp", ph: "e.g. 55L" }, { label: "CIBIL Score", k: "cibil", ph: "e.g. 750" }, { label: "Agent Name", k: "agent", ph: "Agent Name" }, { label: "Agent Contact", k: "agentContact", ph: "Agent Phone", tel: true }].map(f => (
                                   <div key={f.k}><label className={`text-xs mb-1 block ${theme.textMuted}`}>{f.label}</label><input type={f.tel ? "tel" : "text"} value={(loanForm as any)[f.k]} onChange={e => setLoanForm({ ...loanForm, [f.k]: e.target.value })} className={formInput} placeholder={f.ph} /></div>
@@ -4246,7 +4147,7 @@ function AdminSiteHeadView({ siteHeads, allLeads, followUps, isLoading, adminUse
                               </div>
                             </div>
                             <div className={`border-t pt-4 ${theme.tableBorder}`}>
-                              <h4 className={`text-xs font-bold uppercase tracking-wider mb-3 ${isDark ? "text-[#d946a8]" : "text-[#9E217B]"}`}>3. Financial Qualification</h4>
+                              <h4 className={`text-xs font-bold uppercase tracking-wider mb-3 ${isDark ? "text-[#A78BFA]" : "text-[#8B5CF6]"}`}>3. Financial Qualification</h4>
                               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                                 <div><label className={`text-xs mb-1 block ${theme.textMuted}`}>Employment</label><select value={loanForm.empType} onChange={e => setLoanForm({ ...loanForm, empType: e.target.value })} className={formSelect}><option value="">Select</option><option>Salaried</option><option>Self-employed</option></select></div>
                                 <div><label className={`text-xs mb-1 block ${theme.textMuted}`}>Monthly Income</label><input type="text" value={loanForm.income} onChange={e => setLoanForm({ ...loanForm, income: e.target.value })} className={formInput} placeholder="e.g. 1L" /></div>
@@ -4254,7 +4155,7 @@ function AdminSiteHeadView({ siteHeads, allLeads, followUps, isLoading, adminUse
                               </div>
                             </div>
                             <div className={`border-t pt-4 ${theme.tableBorder}`}>
-                              <h4 className={`text-xs font-bold uppercase tracking-wider mb-3 flex items-center gap-1 ${isDark ? "text-[#d946a8]" : "text-[#9E217B]"}`}><FaFileAlt /> 4. Document Checklist</h4>
+                              <h4 className={`text-xs font-bold uppercase tracking-wider mb-3 flex items-center gap-1 ${isDark ? "text-[#A78BFA]" : "text-[#8B5CF6]"}`}><FaFileAlt /> 4. Document Checklist</h4>
                               <div className={`grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 rounded-lg border ${theme.settingsBg}`} style={theme.settingsBgGl}>
                                 {["docPan", "docAadhaar", "docSalary", "docBank", "docProperty"].map(docKey => {
                                   const label = docKey === "docPan" ? "PAN Card" : docKey === "docAadhaar" ? "Aadhaar Card" : docKey === "docSalary" ? "Salary Slips / ITR" : docKey === "docBank" ? "Bank Statements" : "Property Documents";
@@ -4268,7 +4169,7 @@ function AdminSiteHeadView({ siteHeads, allLeads, followUps, isLoading, adminUse
                               </div>
                             </div>
                             <div className={`border-t pt-4 ${theme.tableBorder}`}>
-                              <h4 className={`text-xs font-bold uppercase tracking-wider mb-3 ${isDark ? "text-[#d946a8]" : "text-[#9E217B]"}`}>5. Notes / Remarks</h4>
+                              <h4 className={`text-xs font-bold uppercase tracking-wider mb-3 ${isDark ? "text-[#A78BFA]" : "text-[#8B5CF6]"}`}>5. Notes / Remarks</h4>
                               <textarea value={loanForm.notes} onChange={e => setLoanForm({ ...loanForm, notes: e.target.value })} className={`w-full rounded-lg px-4 py-2.5 text-sm outline-none resize-none h-20 custom-scrollbar border ${theme.inputInner} ${theme.text} ${theme.inputFocus}`} placeholder="Bank feedback, CIBIL issues, Internal notes..." />
                             </div>
                             <button type="submit" className={`mt-4 flex-shrink-0 w-full font-bold py-3.5 rounded-xl shadow-md transition-colors cursor-pointer ${theme.btnSecondary}`}>Save Loan Tracker Update</button>
@@ -4302,7 +4203,7 @@ function AdminSiteHeadView({ siteHeads, allLeads, followUps, isLoading, adminUse
                                   <div><p className={`text-xs font-medium mb-1 ${theme.textFaint}`}>Loan Required?</p><p className={`font-semibold ${theme.text}`}>{getLatestLoanDetails()?.loanRequired}</p></div>
                                   <div><p className={`text-xs font-medium mb-1 ${theme.textFaint}`}>Status</p><span className={`text-sm font-bold ${selectedLead.status === "Closing" ? "text-amber-500" : selectedLead.status === "Visit Scheduled" ? "text-orange-400" : theme.accentText}`}>{selectedLead.status || "Routed"}</span></div>
                                   <div className={`col-span-2 p-3 rounded-xl border ${theme.settingsBg}`} style={theme.settingsBgGl}>
-                                    <p className={`text-xs font-bold uppercase tracking-wider mb-0.5 ${isDark ? "text-[#d946a8]" : "text-[#9E217B]"}`}>📍 Site Visit Date</p>
+                                    <p className={`text-xs font-bold uppercase tracking-wider mb-0.5 ${isDark ? "text-[#A78BFA]" : "text-[#8B5CF6]"}`}>📍 Site Visit Date</p>
                                     <p className={`text-base font-black ${theme.text}`}>{selectedLead.mongoVisitDate ? formatDate(selectedLead.mongoVisitDate) : "Not Scheduled"}</p>
                                   </div>
                                   {selectedLead.is_lost_lead && (
@@ -4355,7 +4256,7 @@ function AdminSiteHeadView({ siteHeads, allLeads, followUps, isLoading, adminUse
                                   const isHighProb = curLoan?.status?.toLowerCase() === "approved" && selectedLead.mongoVisitDate;
                                   return (
                                     <>
-                                      <h3 className={`text-sm font-bold border-b pb-2 mb-6 uppercase flex items-center justify-between ${isDark ? "text-[#00AEEF]" : "text-[#00AEEF]"}`}><span className="flex items-center gap-2"><FaUniversity /> Deal Loan Overview</span></h3>
+                                      <h3 className={`text-sm font-bold border-b pb-2 mb-6 uppercase flex items-center justify-between ${isDark ? "text-[#8B5CF6]" : "text-[#8B5CF6]"}`}><span className="flex items-center gap-2"><FaUniversity /> Deal Loan Overview</span></h3>
                                       {isHighProb && <div className="mb-6 bg-gradient-to-r from-orange-500/20 to-red-500/20 border border-orange-500/50 p-3 rounded-lg flex items-center justify-center gap-2 text-orange-400 font-bold tracking-wide shadow-md">🚀 HIGH PROBABILITY DEAL</div>}
                                       <div className="grid grid-cols-2 gap-y-5 gap-x-4 text-sm">
                                         <div><p className={`text-xs font-medium mb-1 ${theme.textFaint}`}>Loan Required?</p><p className={`font-semibold ${theme.text}`}>{curLoan?.loanRequired}</p></div>
@@ -4380,7 +4281,7 @@ function AdminSiteHeadView({ siteHeads, allLeads, followUps, isLoading, adminUse
                             )}
                           </div>
                           <div className="grid grid-cols-2 gap-3 mt-4 flex-shrink-0">
-                            <button className={`border flex flex-col items-center justify-center py-3 rounded-xl transition-all cursor-pointer gap-1 ${isDark ? "bg-[#9E217B]/10 border-[#9E217B]/30 hover:bg-[#9E217B] text-[#d946a8] hover:text-white" : "bg-[#9E217B]/10 border-[#9E217B]/30 hover:bg-[#9E217B] text-[#9E217B] hover:text-white"}`}><FaMicrophone className="text-lg" /><span className="font-bold text-[10px]">Browser Call</span></button>
+                            <button className={`border flex flex-col items-center justify-center py-3 rounded-xl transition-all cursor-pointer gap-1 ${isDark ? "bg-[#8B5CF6]/10 border-[#8B5CF6]/30 hover:bg-[#8B5CF6] text-[#A78BFA] hover:text-white" : "bg-[#8B5CF6]/10 border-[#8B5CF6]/30 hover:bg-[#8B5CF6] text-[#8B5CF6] hover:text-white"}`}><FaMicrophone className="text-lg" /><span className="font-bold text-[10px]">Browser Call</span></button>
                             <button onClick={() => setIsWaModalOpen(true)} className="bg-green-600/10 border border-green-500/30 hover:bg-green-600 text-green-400 hover:text-white flex flex-col items-center justify-center py-3 rounded-xl transition-all cursor-pointer gap-1"><FaWhatsapp className="text-xl" /><span className="font-bold text-[10px]">WhatsApp</span></button>
                           </div>
                         </div>
@@ -4425,7 +4326,7 @@ function AdminSiteHeadView({ siteHeads, allLeads, followUps, isLoading, adminUse
                       <form onSubmit={handleSendCustomNote} className={`p-4 border-t flex gap-3 items-center flex-shrink-0 ${theme.header} ${theme.tableBorder}`} style={theme.headerGlass}>
                         <input type="text" value={customNote} onChange={e => setCustomNote(e.target.value)} placeholder="Add admin note..."
                           className={`flex-1 rounded-xl px-4 py-3 text-sm outline-none transition-colors border ${theme.inputInner} ${theme.text} ${theme.inputFocus}`} />
-                        <button type="submit" className={`w-12 h-12 text-white rounded-xl flex items-center justify-center cursor-pointer transition-colors shadow-lg ${isDark ? "bg-[#9E217B] hover:bg-[#b8268f]" : "bg-[#9E217B] hover:bg-[#8a1d6b]"}`}>
+                        <button type="submit" className={`w-12 h-12 text-white rounded-xl flex items-center justify-center cursor-pointer transition-colors shadow-lg ${isDark ? "bg-[#8B5CF6] hover:bg-[#7C3AED]" : "bg-[#8B5CF6] hover:bg-[#8a1d6b]"}`}>
                           <FaPaperPlane className="text-sm ml-[-2px]" />
                         </button>
                       </form>
@@ -4857,8 +4758,8 @@ function ReceptionistView({ receptionists, allLeads, followUps, isLoading, refet
       ? "text-orange-400 border-orange-500/30 bg-orange-500/10 text-sm font-bold"
       : "text-orange-500 border-orange-400/40 bg-orange-50 text-sm font-bold";
     return isDark
-      ? "text-[#d946a8] border-[#9E217B]/30 bg-[#9E217B]/10"
-      : "text-[#9E217B] border-[#9E217B]/30 bg-[#9E217B]/10";
+      ? "text-[#A78BFA] border-[#8B5CF6]/30 bg-[#8B5CF6]/10"
+      : "text-[#8B5CF6] border-[#8B5CF6]/30 bg-[#8B5CF6]/10";
   };
 
   // ── Section config ────────────────────────────────────────────────────────────
@@ -4903,13 +4804,13 @@ function ReceptionistView({ receptionists, allLeads, followUps, isLoading, refet
                 className={`transition-colors ${theme.tableRow} ${!isEnquiryTable ? "cursor-pointer" : ""}`}
                 onClick={!isEnquiryTable ? () => { setIsEnquiryView(false); setSelectedLead(lead); setSubView("detail"); } : undefined}
               >
-                <td className={`px-4 py-3 font-black text-sm ${isDark ? "text-[#d946a8]" : "text-[#9E217B]"}`}>#{lead.lead_number ?? lead.id}</td>
+                <td className={`px-4 py-3 font-black text-sm ${isDark ? "text-[#A78BFA]" : "text-[#8B5CF6]"}`}>#{lead.lead_number ?? lead.id}</td>
 
                 {/* CLIENT NAME */}
                 <td className={`px-4 py-3 font-semibold whitespace-nowrap ${theme.text}`}>
                   {isEnquiryTable ? (
                     <span
-                      className={`cursor-pointer hover:underline ${isDark ? "hover:text-[#d946a8]" : "hover:text-[#9E217B]"} transition-colors`}
+                      className={`cursor-pointer hover:underline ${isDark ? "hover:text-[#A78BFA]" : "hover:text-[#8B5CF6]"} transition-colors`}
                       onClick={(e) => {
                         e.stopPropagation();
                         setIsEnquiryView(true);
@@ -4962,7 +4863,7 @@ function ReceptionistView({ receptionists, allLeads, followUps, isLoading, refet
                 </td>
                 <td className="px-4 py-3">
                   <button
-                    className={`text-xs font-bold px-3 py-1.5 rounded-lg cursor-pointer transition-colors ${isDark ? "bg-[#9E217B] text-white hover:bg-[#b8268f]" : "bg-[#9E217B]/10 text-[#9E217B] hover:bg-[#9E217B] hover:text-white"}`}
+                    className={`text-xs font-bold px-3 py-1.5 rounded-lg cursor-pointer transition-colors ${isDark ? "bg-[#8B5CF6] text-white hover:bg-[#7C3AED]" : "bg-[#8B5CF6]/10 text-[#8B5CF6] hover:bg-[#8B5CF6] hover:text-white"}`}
                     onClick={e => {
                       e.stopPropagation();
                       setIsEnquiryView(isEnquiryTable);
@@ -5003,7 +4904,7 @@ function ReceptionistView({ receptionists, allLeads, followUps, isLoading, refet
         {/* ── BOTTOM SENTINEL — triggers load more ── */}
         {visibleCount < leads.length && (
           <div ref={loadMoreRef} className={`flex items-center justify-center gap-3 py-6 ${theme.textMuted}`}>
-            <div className="w-4 h-4 rounded-full border-2 border-[#9E217B] border-t-transparent animate-spin" />
+            <div className="w-4 h-4 rounded-full border-2 border-[#8B5CF6] border-t-transparent animate-spin" />
             <span className="text-xs font-medium">Loading more… ({visibleCount} of {leads.length})</span>
           </div>
         )}
@@ -5020,7 +4921,7 @@ function ReceptionistView({ receptionists, allLeads, followUps, isLoading, refet
   return (
     <div className="flex h-full relative">
       {toastMsg && (
-        <div className={`fixed top-6 left-1/2 transform -translate-x-1/2 z-[100] px-6 py-3 rounded-xl shadow-lg flex items-center gap-4 animate-fadeIn ${toastMsg.includes("🎉") ? "bg-green-600 border-green-400 text-white" : "bg-[#9E217B] border-[#b8268f] text-white"}`}>
+        <div className={`fixed top-6 left-1/2 transform -translate-x-1/2 z-[100] px-6 py-3 rounded-xl shadow-lg flex items-center gap-4 animate-fadeIn ${toastMsg.includes("🎉") ? "bg-green-600 border-green-400 text-white" : "bg-[#8B5CF6] border-[#7C3AED] text-white"}`}>
           <div className="text-lg"><FaCheckCircle /></div>
           <span className="text-sm font-bold">{toastMsg}</span>
         </div>
@@ -5052,17 +4953,17 @@ function ReceptionistView({ receptionists, allLeads, followUps, isLoading, refet
                   onClick={() => { setSelectedReceptionist(recep); setActiveSection("enquiries"); setSubView("list"); setSelectedLead(null); setIsEnquiryView(false); }}
                   className={`p-4 flex items-start gap-3 cursor-pointer transition-all border-b ${theme.tableBorder}
                     ${isSelected
-                      ? isDark ? "border-r-4 border-r-[#9E217B] bg-[#9E217B]/10" : "border-r-4 border-r-[#9E217B] bg-pink-50"
+                      ? isDark ? "border-r-4 border-r-[#8B5CF6] bg-[#8B5CF6]/10" : "border-r-4 border-r-[#8B5CF6] bg-indigo-50"
                       : "hover:opacity-80 border-r-4 border-r-transparent"}`}>
                   <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-white shadow-sm flex-shrink-0
-                    ${isSelected ? "bg-[#9E217B]" : isDark ? "bg-[#333] text-gray-400" : "bg-gray-400"}`}>
+                    ${isSelected ? "bg-[#8B5CF6]" : isDark ? "bg-[#333] text-gray-400" : "bg-gray-400"}`}>
                     {recep.name?.charAt(0).toUpperCase()}
                   </div>
                   <div className="flex-1 min-w-0">
                     <h3 className={`font-bold truncate text-sm mb-0.5 ${theme.text}`}>{recep.name}</h3>
                     <p className={`text-xs capitalize mb-2 ${theme.textFaint}`}>{recep.role?.replace("_", " ")}</p>
                     <div className="flex gap-1.5 flex-wrap">
-                      <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold border ${isDark ? "text-[#d946a8] bg-[#9E217B]/10 border-[#9E217B]/20" : "text-[#9E217B] bg-pink-50 border-pink-200"}`}>
+                      <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold border ${isDark ? "text-[#A78BFA] bg-[#8B5CF6]/10 border-[#8B5CF6]/20" : "text-[#8B5CF6] bg-indigo-50 border-indigo-200"}`}>
                         {recepAssigned} assigned
                       </span>
                       <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold border ${isDark ? "text-purple-400 bg-purple-500/10 border-purple-500/20" : "text-purple-700 bg-purple-50 border-purple-200"}`}>
@@ -5093,7 +4994,7 @@ function ReceptionistView({ receptionists, allLeads, followUps, isLoading, refet
             <div className={`p-5 border-b flex justify-between items-center shadow-sm z-10 flex-shrink-0 gap-4 ${theme.header}`} style={theme.headerGlass}>
               <div>
                 <h2 className={`text-lg font-bold flex items-center gap-2 ${theme.text}`}>
-                  <FaClipboardList className={isDark ? "text-[#d946a8]" : "text-[#9E217B]"} />
+                  <FaClipboardList className={isDark ? "text-[#A78BFA]" : "text-[#8B5CF6]"} />
                   {selectedReceptionist.name}'s Dashboard
                 </h2>
                 <p className={`text-xs mt-1 ${theme.textFaint}`}>
@@ -5117,7 +5018,7 @@ function ReceptionistView({ receptionists, allLeads, followUps, isLoading, refet
                     <FaChevronLeft className="text-sm" />
                   </button>
                   <h1 className={`text-xl font-bold flex items-center flex-wrap gap-3 ${theme.text}`}>
-                    <span className={isDark ? "text-[#d946a8]" : "text-[#9E217B]"}>#{selectedLead.lead_number ?? selectedLead.id}</span>
+                    <span className={isDark ? "text-[#A78BFA]" : "text-[#8B5CF6]"}>#{selectedLead.lead_number ?? selectedLead.id}</span>
                     <span>{selectedLead.name}</span>
                     <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${statusCls(selectedLead.status)}`}>
                       {selectedLead.status || "Routed"}
@@ -5125,7 +5026,7 @@ function ReceptionistView({ receptionists, allLeads, followUps, isLoading, refet
                   </h1>
                 </div>
                 <div className={`rounded-2xl border p-6 md:p-8 ${theme.card}`} style={theme.cardGlass}>
-                  <div className={`rounded-xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8 text-white ${isDark ? "bg-gradient-to-r from-[#9E217B] to-[#7a1a5e]" : "bg-gradient-to-r from-[#00AEEF] to-[#9E217B]"}`}>
+                  <div className={`rounded-xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8 text-white ${isDark ? "bg-gradient-to-r from-[#8B5CF6] to-[#7a1a5e]" : "bg-gradient-to-r from-[#8B5CF6] to-[#8B5CF6]"}`}>
                     <div className="flex items-center gap-4">
                       <div className="w-12 h-12 rounded-full border border-white/30 bg-white/20 flex items-center justify-center font-bold text-xl">
                         {String(selectedLead.assigned_to || "U").charAt(0).toUpperCase()}
@@ -5145,7 +5046,7 @@ function ReceptionistView({ receptionists, allLeads, followUps, isLoading, refet
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                     <div className="space-y-6">
                       <div>
-                        <h3 className={`text-sm font-bold border-b pb-2 mb-4 uppercase tracking-widest ${isDark ? "text-[#d946a8]" : "text-[#9E217B]"} ${theme.tableBorder}`}>Contact Information</h3>
+                        <h3 className={`text-sm font-bold border-b pb-2 mb-4 uppercase tracking-widest ${isDark ? "text-[#A78BFA]" : "text-[#8B5CF6]"} ${theme.tableBorder}`}>Contact Information</h3>
                         <div className="space-y-4">
                           {[
                             { label: "Phone Number", val: selectedLead.phone, mono: true },
@@ -5163,7 +5064,7 @@ function ReceptionistView({ receptionists, allLeads, followUps, isLoading, refet
                     </div>
                     <div className="space-y-6">
                       <div>
-                        <h3 className={`text-sm font-bold border-b pb-2 mb-4 uppercase tracking-widest ${isDark ? "text-[#d946a8]" : "text-[#9E217B]"} ${theme.tableBorder}`}>Property Requirements</h3>
+                        <h3 className={`text-sm font-bold border-b pb-2 mb-4 uppercase tracking-widest ${isDark ? "text-[#A78BFA]" : "text-[#8B5CF6]"} ${theme.tableBorder}`}>Property Requirements</h3>
                         <div className={`rounded-xl p-5 space-y-5 border ${theme.settingsBg}`} style={theme.settingsBgGl}>
                           <div>
                             <p className={`text-xs font-medium mb-1 pl-2 ${theme.textFaint}`}>Budget</p>
@@ -5189,7 +5090,7 @@ function ReceptionistView({ receptionists, allLeads, followUps, isLoading, refet
                   </div>
                   {selectedLead.source === "Channel Partner" && (
                     <div className={`mt-8 rounded-xl p-5 border ${theme.settingsBg}`} style={theme.settingsBgGl}>
-                      <h3 className={`text-xs font-bold uppercase tracking-widest mb-4 border-b pb-2 ${isDark ? "text-[#d946a8]" : "text-[#9E217B]"} ${theme.tableBorder}`}>Channel Partner Details</h3>
+                      <h3 className={`text-xs font-bold uppercase tracking-widest mb-4 border-b pb-2 ${isDark ? "text-[#A78BFA]" : "text-[#8B5CF6]"} ${theme.tableBorder}`}>Channel Partner Details</h3>
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         {[{ label: "CP Company", val: selectedLead.cp_company || selectedLead.cpCompany }, { label: "CP Phone", val: selectedLead.cp_phone || selectedLead.cpPhone }].map(({ label, val }) => (
                           <div key={label}>
@@ -5221,7 +5122,7 @@ function ReceptionistView({ receptionists, allLeads, followUps, isLoading, refet
                             <FaChevronLeft className="text-sm" />
                           </button>
                           <h1 className={`text-xl md:text-2xl font-bold flex items-center gap-3 ${theme.text}`}>
-                            <span className={isDark ? "text-[#d946a8]" : "text-[#9E217B]"}>#{selectedLead.lead_number ?? selectedLead.id}</span>
+                            <span className={isDark ? "text-[#A78BFA]" : "text-[#8B5CF6]"}>#{selectedLead.lead_number ?? selectedLead.id}</span>
                             <span>{selectedLead.name}</span>
                             <span className={`text-xs px-2 py-0.5 rounded-full border ${theme.settingsBg} ${theme.textFaint}`}>
                               {selectedLead.assigned_receptionist || selectedReceptionist?.name}
@@ -5304,7 +5205,7 @@ function ReceptionistView({ receptionists, allLeads, followUps, isLoading, refet
                               </select>
                             </div>
                             <div className={`border-t pt-3 mt-1 ${theme.tableBorder}`}>
-                              <label className={`block text-xs font-bold mb-1.5 ${isDark ? "text-[#d946a8]" : "text-[#9E217B]"}`}>Loan Planned?</label>
+                              <label className={`block text-xs font-bold mb-1.5 ${isDark ? "text-[#A78BFA]" : "text-[#8B5CF6]"}`}>Loan Planned?</label>
                               <select required value={salesForm.loanPlanned} onChange={e => setSalesForm({ ...salesForm, loanPlanned: e.target.value })} className={`w-full rounded-lg px-4 py-2 text-sm outline-none cursor-pointer ${theme.select}`}>
                                 <option value="" disabled>Select Option</option><option>Yes</option><option>No</option><option>Not Sure</option>
                               </select>
@@ -5321,7 +5222,7 @@ function ReceptionistView({ receptionists, allLeads, followUps, isLoading, refet
                           style={{ ...theme.modalGlass, overflowY: "scroll", height: "calc(100vh - 320px)", scrollbarWidth: "thin" }}>
                           <div className={`flex justify-between items-center mb-4 border-b pb-3 flex-shrink-0 ${theme.tableBorder}`}>
                             <div>
-                              <h3 className={`text-lg font-bold flex items-center gap-2 ${isDark ? "text-[#d946a8]" : "text-[#9E217B]"}`}><FaUniversity /> Loan Tracking</h3>
+                              <h3 className={`text-lg font-bold flex items-center gap-2 ${isDark ? "text-[#A78BFA]" : "text-[#8B5CF6]"}`}><FaUniversity /> Loan Tracking</h3>
                               <p className={`text-xs mt-0.5 ${theme.textFaint}`}>For Lead #{selectedLead.lead_number ?? selectedLead.id}</p>
                             </div>
                             <button type="button" onClick={() => setShowLoanForm(false)} className={`p-1 ${theme.textMuted}`}><FaTimes /></button>
@@ -5354,7 +5255,7 @@ function ReceptionistView({ receptionists, allLeads, followUps, isLoading, refet
                               <div><label className={`text-xs mb-1 block ${theme.textMuted}`}>Existing EMIs</label><input type="text" value={loanForm.emi} onChange={e => setLoanForm({ ...loanForm, emi: e.target.value })} className={`w-full rounded-lg px-3 py-2 text-sm outline-none ${theme.inputInner} ${theme.text} ${theme.inputFocus}`} placeholder="e.g. 15k" /></div>
                             </div>
                             <div className={`border-t pt-3 ${theme.tableBorder}`}>
-                              <p className={`text-xs font-bold mb-2 ${isDark ? "text-[#d946a8]" : "text-[#9E217B]"}`}>Document Checklist</p>
+                              <p className={`text-xs font-bold mb-2 ${isDark ? "text-[#A78BFA]" : "text-[#8B5CF6]"}`}>Document Checklist</p>
                               <div className="grid grid-cols-2 gap-2">
                                 {["docPan", "docAadhaar", "docSalary", "docBank", "docProperty"].map(docKey => {
                                   const label = docKey === "docPan" ? "PAN Card" : docKey === "docAadhaar" ? "Aadhaar" : docKey === "docSalary" ? "Salary/ITR" : docKey === "docBank" ? "Bank Stmt" : "Property Docs";
@@ -5400,8 +5301,8 @@ function ReceptionistView({ receptionists, allLeads, followUps, isLoading, refet
                                   <div><p className={`text-xs font-medium mb-1 ${theme.textMuted}`}>Planning to Buy?</p><p className={`font-semibold ${theme.text}`}>{selectedLead.planningPurchase || "Pending"}</p></div>
                                   <div><p className={`text-xs font-medium mb-1 ${theme.textMuted}`}>Loan Required?</p><p className={`font-semibold ${theme.text}`}>{getLatestLoanDetails()?.loanRequired}</p></div>
                                   <div><p className={`text-xs font-medium mb-1 ${theme.textMuted}`}>Status</p><p className={`font-semibold ${theme.accentText}`}>{selectedLead.status || "Routed"}</p></div>
-                                  <div className={`col-span-2 p-4 rounded-xl border ${isDark ? "border-[#9E217B]/20" : "border-[#9E217B]/20"} ${theme.settingsBg}`}>
-                                    <p className={`text-xs font-bold uppercase tracking-wider mb-1 ${isDark ? "text-[#d946a8]" : "text-[#9E217B]"}`}>📍 Site Visit Date</p>
+                                  <div className={`col-span-2 p-4 rounded-xl border ${isDark ? "border-[#8B5CF6]/20" : "border-[#8B5CF6]/20"} ${theme.settingsBg}`}>
+                                    <p className={`text-xs font-bold uppercase tracking-wider mb-1 ${isDark ? "text-[#A78BFA]" : "text-[#8B5CF6]"}`}>📍 Site Visit Date</p>
                                     <p className={`text-lg font-black ${theme.text}`}>{selectedLead.mongoVisitDate ? new Date(selectedLead.mongoVisitDate).toLocaleString("en-IN") : "Not Scheduled"}</p>
                                   </div>
                                   {selectedLead.closingDate && (
@@ -5453,7 +5354,7 @@ function ReceptionistView({ receptionists, allLeads, followUps, isLoading, refet
                                   const isHighProb = curLoan?.status?.toLowerCase() === "approved" && selectedLead.mongoVisitDate;
                                   return (
                                     <>
-                                      <h3 className={`text-sm font-bold border-b pb-2 mb-6 uppercase flex items-center gap-2 ${isDark ? "text-[#d946a8]" : "text-[#9E217B]"}`}><FaUniversity /> Deal Loan Overview</h3>
+                                      <h3 className={`text-sm font-bold border-b pb-2 mb-6 uppercase flex items-center gap-2 ${isDark ? "text-[#A78BFA]" : "text-[#8B5CF6]"}`}><FaUniversity /> Deal Loan Overview</h3>
                                       {isHighProb && <div className="mb-6 bg-gradient-to-r from-orange-500/10 to-red-500/10 border border-orange-500/30 p-3 rounded-lg flex items-center justify-center gap-2 text-orange-500 font-bold tracking-wide shadow-md">🚀 HIGH PROBABILITY DEAL (Visit Done + Loan Approved)</div>}
                                       <div className="grid grid-cols-2 gap-y-5 gap-x-4 text-sm">
                                         <div><p className={`text-xs font-medium mb-1 ${theme.textMuted}`}>Loan Required?</p><p className={`font-semibold ${theme.text}`}>{curLoan?.loanRequired}</p></div>
@@ -5478,7 +5379,7 @@ function ReceptionistView({ receptionists, allLeads, followUps, isLoading, refet
                             )}
                           </div>
                           <div className="grid grid-cols-2 gap-3 mt-4 flex-shrink-0">
-                            <button className={`border flex flex-col items-center justify-center py-3 rounded-xl transition-all cursor-pointer gap-1 ${isDark ? "bg-[#9E217B]/10 border-[#9E217B]/30 hover:bg-[#9E217B] text-[#d946a8] hover:text-white" : "bg-[#9E217B]/10 border-[#9E217B]/30 hover:bg-[#9E217B] text-[#9E217B] hover:text-white"}`}>
+                            <button className={`border flex flex-col items-center justify-center py-3 rounded-xl transition-all cursor-pointer gap-1 ${isDark ? "bg-[#8B5CF6]/10 border-[#8B5CF6]/30 hover:bg-[#8B5CF6] text-[#A78BFA] hover:text-white" : "bg-[#8B5CF6]/10 border-[#8B5CF6]/30 hover:bg-[#8B5CF6] text-[#8B5CF6] hover:text-white"}`}>
                               <FaMicrophone className="text-lg" /><span className="font-bold text-[10px]">Browser Call</span>
                             </button>
                             <button onClick={() => setIsWaModalOpen(true)} className="bg-green-50 dark:bg-green-600/10 border border-green-200 dark:border-green-500/30 hover:bg-green-100 dark:hover:bg-green-600 text-green-600 dark:text-green-400 flex flex-col items-center justify-center py-3 rounded-xl transition-all cursor-pointer gap-1">
@@ -5530,7 +5431,7 @@ function ReceptionistView({ receptionists, allLeads, followUps, isLoading, refet
                       <form onSubmit={handleSendCustomNote} className={`p-4 border-t flex gap-3 items-center flex-shrink-0 ${theme.chatInputInner}`}>
                         <input type="text" value={customNote} onChange={e => setCustomNote(e.target.value)} placeholder="Add admin note..."
                           className={`flex-1 border rounded-xl px-4 py-3 text-sm outline-none transition-colors shadow-inner ${theme.inputInner} ${theme.text} ${theme.inputFocus}`} />
-                        <button type="submit" className={`w-12 h-12 text-white rounded-xl flex items-center justify-center cursor-pointer transition-colors shadow-lg ${isDark ? "bg-[#9E217B] hover:bg-[#b8268f]" : "bg-[#9E217B] hover:bg-[#8a1d6b]"}`}>
+                        <button type="submit" className={`w-12 h-12 text-white rounded-xl flex items-center justify-center cursor-pointer transition-colors shadow-lg ${isDark ? "bg-[#8B5CF6] hover:bg-[#7C3AED]" : "bg-[#8B5CF6] hover:bg-[#8a1d6b]"}`}>
                           <FaPaperPlane className="text-sm ml-[-2px]" />
                         </button>
                       </form>
@@ -5548,11 +5449,11 @@ function ReceptionistView({ receptionists, allLeads, followUps, isLoading, refet
                   <div className="grid grid-cols-3 gap-4">
                     {sections.map(sec => (
                       <div key={sec.key} onClick={() => setActiveSection(sec.key)}
-                        className={`rounded-2xl p-4 border cursor-pointer transition-all ${activeSection === sec.key ? isDark ? "bg-[#9E217B]/20 border-[#9E217B]/50" : "bg-[#9E217B]/10 border-[#9E217B]" : `${theme.card} hover:opacity-90`}`}
+                        className={`rounded-2xl p-4 border cursor-pointer transition-all ${activeSection === sec.key ? isDark ? "bg-[#8B5CF6]/20 border-[#8B5CF6]/50" : "bg-[#8B5CF6]/10 border-[#8B5CF6]" : `${theme.card} hover:opacity-90`}`}
                         style={activeSection !== sec.key ? theme.cardGlass : {}}>
                         <div className="flex items-center justify-between mb-2">
                           <span className="text-lg">{sec.icon}</span>
-                          <span className={`text-2xl font-black ${isDark ? "text-[#d946a8]" : "text-[#9E217B]"}`}>{sec.count}</span>
+                          <span className={`text-2xl font-black ${isDark ? "text-[#A78BFA]" : "text-[#8B5CF6]"}`}>{sec.count}</span>
                         </div>
                         <p className={`text-xs font-bold ${theme.text}`}>{sec.label}</p>
                         <p className={`text-[10px] mt-0.5 ${theme.textFaint}`}>{sec.desc}</p>
@@ -5565,7 +5466,7 @@ function ReceptionistView({ receptionists, allLeads, followUps, isLoading, refet
                     {sections.map(sec => (
                       <button key={sec.key} onClick={() => setActiveSection(sec.key)}
                         className={`flex-1 py-2.5 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5
-                          ${activeSection === sec.key ? "bg-[#9E217B] text-white shadow-md" : `${theme.textMuted} hover:opacity-80`}`}>
+                          ${activeSection === sec.key ? "bg-[#8B5CF6] text-white shadow-md" : `${theme.textMuted} hover:opacity-80`}`}>
                         <span>{sec.icon}</span>
                         <span className="hidden sm:inline truncate">{sec.label}</span>
                         <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-black ${activeSection === sec.key ? "bg-white/20 text-white" : isDark ? "bg-[#333] text-gray-300" : "bg-gray-100 text-gray-600"}`}>
@@ -5587,7 +5488,7 @@ function ReceptionistView({ receptionists, allLeads, followUps, isLoading, refet
                               <p className={`text-xs ${theme.textFaint}`}>All walk-in forms in the system — {allEnquiries.length} total</p>
                             </div>
                           </div>
-                          <button onClick={() => downloadCSV(allEnquiries.map(formatLeadForExport), "All_Enquiries.csv")} className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold border rounded-lg hover:opacity-80 transition-colors ${isDark ? 'bg-[#222] border-[#333] text-white' : 'bg-white border-indigo-200 text-[#9E217B]'}`}><FaDownload /> Export</button>
+                          <button onClick={() => downloadCSV(allEnquiries.map(formatLeadForExport), "All_Enquiries.csv")} className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold border rounded-lg hover:opacity-80 transition-colors ${isDark ? 'bg-[#222] border-[#333] text-white' : 'bg-white border-indigo-200 text-[#8B5CF6]'}`}><FaDownload /> Export</button>
                         </div>
                         {renderTable(allEnquiries, true, true)}
                       </div>
@@ -5601,12 +5502,12 @@ function ReceptionistView({ receptionists, allLeads, followUps, isLoading, refet
                             <h3 className={`font-bold text-base ${theme.text}`}>Assigned Lead Table</h3>
                             <p className={`text-xs ${theme.textFaint}`}>Leads assigned to {recepName}</p>
                           </div>
-                          <button onClick={() => downloadCSV((assignedTableFilter === "working" ? assignedLeads.filter((l: any) => l.status !== "Closing" && l.status !== "Closed" && !l.closingDate) : assignedLeads).map(formatLeadForExport), "Assigned_Leads.csv")} className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold border rounded-lg hover:opacity-80 transition-colors ${isDark ? 'bg-[#222] border-[#333] text-white' : 'bg-white border-indigo-200 text-[#9E217B]'}`}><FaDownload /> Export</button>
+                          <button onClick={() => downloadCSV((assignedTableFilter === "working" ? assignedLeads.filter((l: any) => l.status !== "Closing" && l.status !== "Closed" && !l.closingDate) : assignedLeads).map(formatLeadForExport), "Assigned_Leads.csv")} className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold border rounded-lg hover:opacity-80 transition-colors ${isDark ? 'bg-[#222] border-[#333] text-white' : 'bg-white border-indigo-200 text-[#8B5CF6]'}`}><FaDownload /> Export</button>
                           <div className={`ml-auto flex items-center gap-2 p-1 rounded-xl border ${theme.tableWrap}`}>
-                            <button onClick={() => setAssignedTableFilter("working")} className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${assignedTableFilter === "working" ? "bg-[#9E217B] text-white shadow-md" : `${theme.textMuted} hover:opacity-80`}`}>
+                            <button onClick={() => setAssignedTableFilter("working")} className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${assignedTableFilter === "working" ? "bg-[#8B5CF6] text-white shadow-md" : `${theme.textMuted} hover:opacity-80`}`}>
                               🔄 Working Leads <span className={`ml-1.5 text-[9px] px-1.5 py-0.5 rounded-full font-black ${assignedTableFilter === "working" ? "bg-white/20 text-white" : isDark ? "bg-[#333] text-gray-300" : "bg-gray-100 text-gray-600"}`}>{assignedLeads.filter((l: any) => l.status !== "Closing" && l.status !== "Closed" && !l.closingDate).length}</span>
                             </button>
-                            <button onClick={() => setAssignedTableFilter("all")} className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${assignedTableFilter === "all" ? "bg-[#9E217B] text-white shadow-md" : `${theme.textMuted} hover:opacity-80`}`}>
+                            <button onClick={() => setAssignedTableFilter("all")} className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${assignedTableFilter === "all" ? "bg-[#8B5CF6] text-white shadow-md" : `${theme.textMuted} hover:opacity-80`}`}>
                               📋 All Leads <span className={`ml-1.5 text-[9px] px-1.5 py-0.5 rounded-full font-black ${assignedTableFilter === "all" ? "bg-white/20 text-white" : isDark ? "bg-[#333] text-gray-300" : "bg-gray-100 text-gray-600"}`}>{assignedLeads.length}</span>
                             </button>
                           </div>
@@ -5630,7 +5531,7 @@ function ReceptionistView({ receptionists, allLeads, followUps, isLoading, refet
                           <span className="text-lg">✅</span>
                           <div><h3 className={`font-bold text-base ${theme.text}`}>Closed Leads by Receptionist</h3><p className={`text-xs ${theme.textFaint}`}>Leads closed by {recepName}</p></div>
                           <div className="ml-auto flex items-center gap-3">
-                            <button onClick={() => downloadCSV(closedLeads.map(formatLeadForExport), "Closed_Leads.csv")} className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold border rounded-lg hover:opacity-80 transition-colors ${isDark ? 'bg-[#222] border-[#333] text-white' : 'bg-white border-indigo-200 text-[#9E217B]'}`}><FaDownload /> Export</button>
+                            <button onClick={() => downloadCSV(closedLeads.map(formatLeadForExport), "Closed_Leads.csv")} className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold border rounded-lg hover:opacity-80 transition-colors ${isDark ? 'bg-[#222] border-[#333] text-white' : 'bg-white border-indigo-200 text-[#8B5CF6]'}`}><FaDownload /> Export</button>
                             <span className={`text-xs px-3 py-1 rounded-full border font-bold ${isDark ? "text-yellow-400 border-yellow-500/30 bg-yellow-500/10" : "text-amber-700 border-amber-200 bg-amber-50"}`}>{closedLeads.length} closed</span>
                           </div>
                         </div>
@@ -6006,7 +5907,7 @@ function SiteVisitCenter({
                       }`}
                   >
                     <td
-                      className={`px-3 py-2.5 font-bold ${isDark ? "text-[#d946a8]" : "text-[#9E217B]"
+                      className={`px-3 py-2.5 font-bold ${isDark ? "text-[#A78BFA]" : "text-[#8B5CF6]"
                         }`}
                     >
                       #{v.lead_id}
@@ -6109,7 +6010,7 @@ function SiteVisitCenter({
                   }`}
               >
                 <td
-                  className={`px-3 py-2.5 font-bold ${isDark ? "text-[#d946a8]" : "text-[#9E217B]"
+                  className={`px-3 py-2.5 font-bold ${isDark ? "text-[#A78BFA]" : "text-[#8B5CF6]"
                     }`}
                 >
                   #{v.lead_id ?? v.id}
@@ -6330,7 +6231,7 @@ function DailyMonitoringPanel({
     return (
       <div className={`h-full flex items-center justify-center ${theme.textMuted}`}>
         <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 rounded-full border-2 border-[#9E217B] border-t-transparent animate-spin" />
+          <div className="w-8 h-8 rounded-full border-2 border-[#8B5CF6] border-t-transparent animate-spin" />
           <p className="text-sm">Loading daily stats...</p>
         </div>
       </div>
@@ -6383,8 +6284,8 @@ function DailyMonitoringPanel({
   const getRoleBadge = (role: string) => {
     if (role === "Sales Manager")
       return isDark
-        ? "text-[#d946a8] border-[#9E217B]/30 bg-[#9E217B]/10"
-        : "text-[#9E217B] border-[#9E217B]/20 bg-[#9E217B]/5";
+        ? "text-[#A78BFA] border-[#8B5CF6]/30 bg-[#8B5CF6]/10"
+        : "text-[#8B5CF6] border-[#8B5CF6]/20 bg-[#8B5CF6]/5";
     if (role === "Site Head")
       return isDark
         ? "text-blue-400 border-blue-500/30 bg-blue-500/10"
@@ -6451,7 +6352,7 @@ function DailyMonitoringPanel({
               onClick={fetchStats}
               className={`text-xs font-bold px-3 py-1.5 rounded-lg border transition-colors ${isDark
                 ? "bg-[#222] border-[#333] text-white hover:bg-[#333]"
-                : "bg-white border-indigo-200 text-[#9E217B] hover:bg-[#F8FAFC]"
+                : "bg-white border-indigo-200 text-[#8B5CF6] hover:bg-[#F8FAFC]"
                 }`}
             >
               ↻ Refresh
@@ -6466,7 +6367,7 @@ function DailyMonitoringPanel({
               key={tab.key}
               onClick={() => setActiveTab(tab.key as any)}
               className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${activeTab === tab.key
-                ? "bg-[#9E217B] text-white shadow-md"
+                ? "bg-[#8B5CF6] text-white shadow-md"
                 : `${theme.textMuted} ${isDark ? "hover:bg-[#222]" : "hover:bg-[#F1F5F9]"
                 }`
                 }`}
@@ -6485,7 +6386,7 @@ function DailyMonitoringPanel({
           <div className="space-y-6 animate-fadeIn">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {[
-                { label: "Total Staff", value: allStaff.length, glow: theme.statGlow1, color: isDark ? "text-[#d946a8]" : "text-[#9E217B]" },
+                { label: "Total Staff", value: allStaff.length, glow: theme.statGlow1, color: isDark ? "text-[#A78BFA]" : "text-[#8B5CF6]" },
                 { label: "Follow-ups Today", value: data.totalFollowUpsToday, glow: theme.statGlow5, color: isDark ? "text-green-400" : "text-emerald-600" },
                 { label: "WhatsApp Sent Today", value: data.totalWaToday, glow: theme.statGlow3, color: isDark ? "text-blue-400" : "text-blue-600" },
                 { label: "Site Visits Today", value: data.siteVisitsToday.length, glow: theme.statGlow4, color: isDark ? "text-orange-400" : "text-orange-600" },
@@ -6618,7 +6519,7 @@ function DailyMonitoringPanel({
           <div className="space-y-8 animate-fadeIn">
             <div>
               <h3 className={`text-sm font-bold uppercase tracking-wider mb-4 flex items-center gap-2 ${theme.text}`}>
-                <span className={`w-2 h-2 rounded-full ${isDark ? "bg-[#d946a8]" : "bg-[#9E217B]"}`} />
+                <span className={`w-2 h-2 rounded-full ${isDark ? "bg-[#A78BFA]" : "bg-[#8B5CF6]"}`} />
                 Sales Managers — Daily Follow-up Status
               </h3>
               {salesManagers.length === 0 ? (
@@ -6668,7 +6569,7 @@ function DailyMonitoringPanel({
             {/* Stat cards row */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {[
-                { label: "Total Today", value: data.siteVisitsToday.length, color: isDark ? "text-[#d946a8]" : "text-[#9E217B]" },
+                { label: "Total Today", value: data.siteVisitsToday.length, color: isDark ? "text-[#A78BFA]" : "text-[#8B5CF6]" },
                 { label: "Completed", value: data.completedVisitsToday ?? 0, color: "text-green-500" },
                 { label: "Pending Today", value: data.pendingVisitsToday ?? 0, color: "text-orange-500" },
                 { label: "Tomorrow", value: (data.siteVisitsTomorrow ?? []).length, color: isDark ? "text-blue-400" : "text-blue-600" },
@@ -7088,7 +6989,7 @@ function StaffCard({ s, isDark, theme, getRoleBadge, getBarColor }: any) {
           <div className="flex flex-col gap-1 max-h-24 overflow-y-auto">
             {s.noFupLeads.slice(0, 5).map((l: any) => (
               <div key={l.id} className={`flex items-center gap-2 text-xs px-2 py-1 rounded ${isDark ? "bg-[#222]" : "bg-gray-50"}`}>
-                <span className={`font-bold ${isDark ? "text-[#d946a8]" : "text-[#9E217B]"}`}>#{l.lead_number ?? l.id}</span>
+                <span className={`font-bold ${isDark ? "text-[#A78BFA]" : "text-[#8B5CF6]"}`}>#{l.lead_number ?? l.id}</span>
                 <span className={theme.textMuted}>{l.name}</span>
               </div>
             ))}
